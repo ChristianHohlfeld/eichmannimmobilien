@@ -36,7 +36,7 @@
         message;
 
       const mailto =
-        "mailto:info@eichmannimmobilien.de" +
+        "mailto:info@immobilieneichmann.de" +
         "?subject=" + encodeURIComponent(subject + " – Immobilien Eichmann") +
         "&body=" + encodeURIComponent(body);
 
