@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Kontakt zu Immobilien Eichmann in Konstanz: Telefon, E-Mail und Anfrageformular.">
+  <title>Kontakt | Immobilien Eichmann</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="logo" href="index.html">
+        <span class="logo-mark">Immobilien Eichmann</span>
+        <span class="logo-sub">Konstanz · Bodensee</span>
+      </a>
+      <button class="menu-toggle" type="button" aria-label="Menü öffnen" aria-expanded="false">☰</button>
+      <nav class="nav" aria-label="Hauptnavigation">
+        <a href="index.html">Start</a>
+        <a href="leistungen.html">Leistungen</a>
+        <a href="projekte.html">Projekte</a>
+        <a href="kontakt.html" class="nav-cta active">Kontakt</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <h1>Kontakt</h1>
+        <p>Wir freuen uns auf Ihre Nachricht – telefonisch, per E-Mail oder über das Formular.</p>
+      </div>
+    </section>
+
+    <section class="section section-alt">
+      <div class="container contact-grid">
+        <div class="contact-info">
+          <h2>Immobilien Eichmann</h2>
+          <div class="contact-row">
+            <div>
+              <div class="label">Inhaber</div>
+              <div class="value">Helmut Eichmann</div>
+            </div>
+          </div>
+          <div class="contact-row">
+            <div>
+              <div class="label">Adresse</div>
+              <div class="value">Jacob-Burckhardt-Str. 40<br>78464 Konstanz</div>
+            </div>
+          </div>
+          <div class="contact-row">
+            <div>
+              <div class="label">Telefon</div>
+              <div class="value"><a href="tel:+4975319228848">07531 9228848</a></div>
+            </div>
+          </div>
+          <div class="contact-row">
+            <div>
+              <div class="label">Fax</div>
+              <div class="value">07531 9228809</div>
+            </div>
+          </div>
+          <div class="contact-row">
+            <div>
+              <div class="label">Mobil</div>
+              <div class="value"><a href="tel:+4915146475946">0151 46475946</a></div>
+            </div>
+          </div>
+          <div class="contact-row">
+            <div>
+              <div class="label">E-Mail</div>
+              <div class="value"><a href="mailto:info@eichmannimmobilien.de">info@eichmannimmobilien.de</a></div>
+            </div>
+          </div>
+          <div class="contact-row">
+            <div>
+              <div class="label">Web</div>
+              <div class="value">eichmannimmobilien.de</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="contact-form">
+          <h2>Nachricht senden</h2>
+          <p class="form-note">Das Formular öffnet Ihr E-Mail-Programm mit vorausgefüllter Nachricht an info@eichmannimmobilien.de. Es werden keine Daten auf dem Server gespeichert.</p>
+          <form id="contact-form" action="mailto:info@eichmannimmobilien.de" method="get">
+            <div class="form-group">
+              <label for="name">Name *</label>
+              <input type="text" id="name" name="name" required autocomplete="name">
+            </div>
+            <div class="form-group">
+              <label for="email">E-Mail *</label>
+              <input type="email" id="email" name="email" required autocomplete="email">
+            </div>
+            <div class="form-group">
+              <label for="phone">Telefon</label>
+              <input type="tel" id="phone" name="phone" autocomplete="tel">
+            </div>
+            <div class="form-group">
+              <label for="subject">Betreff</label>
+              <select id="subject" name="subject">
+                <option value="Allgemeine Anfrage">Allgemeine Anfrage</option>
+                <option value="Verkauf">Verkauf</option>
+                <option value="Vermittlung / Kauf">Vermittlung / Kauf</option>
+                <option value="Vermietung">Vermietung</option>
+                <option value="Projektentwicklung">Projektentwicklung</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="message">Ihre Nachricht *</label>
+              <textarea id="message" name="message" required placeholder="Beschreiben Sie kurz Ihr Anliegen …"></textarea>
+            </div>
+            <button type="submit" class="btn btn-dark">Per E-Mail senden</button>
+            <div id="form-success" class="form-success" role="status">
+              Ihr E-Mail-Programm sollte sich öffnen. Falls nicht, schreiben Sie direkt an
+              <a href="mailto:info@eichmannimmobilien.de">info@eichmannimmobilien.de</a>.
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="logo-mark">Immobilien Eichmann</div>
+          <div class="logo-sub">Verkauf · Vermittlung · Projektentwicklung</div>
+          <p>Jacob-Burckhardt-Str. 40<br>78464 Konstanz</p>
+        </div>
+        <div class="footer-col">
+          <h4>Navigation</h4>
+          <a href="index.html">Start</a>
+          <a href="leistungen.html">Leistungen</a>
+          <a href="projekte.html">Projekte</a>
+          <a href="kontakt.html">Kontakt</a>
+        </div>
+        <div class="footer-col">
+          <h4>Rechtliches</h4>
+          <a href="impressum.html">Impressum</a>
+          <a href="datenschutz.html">Datenschutz</a>
+          <a href="mailto:info@eichmannimmobilien.de">info@eichmannimmobilien.de</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span id="y"></span> Immobilien Eichmann · Helmut Eichmann</span>
+        <span>eichmannimmobilien.de</span>
+      </div>
+    </div>
+  </footer>
+  <script>document.getElementById("y").textContent = new Date().getFullYear();</script>
+  <script src="js/main.js"></script>
+</body>
+</html>
