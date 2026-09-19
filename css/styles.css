@@ -200,7 +200,16 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
   border-radius: var(--radius); overflow: hidden;
   display: flex; flex-direction: column;
   transition: border-color 0.12s;
+  text-decoration: none !important;
+  color: inherit;
+  cursor: pointer;
 }
+a.listing-card:hover { text-decoration: none !important; color: inherit; }
+a.listing-card:focus-visible {
+  outline: 2px solid var(--lake);
+  outline-offset: 2px;
+}
+.listing-card .btn { pointer-events: none; }
 .listing-card:hover { transform: none; border-color: var(--slate); }
 .listing-photo {
   aspect-ratio: 4/3; background: var(--mist); overflow: hidden; position: relative;
