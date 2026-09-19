@@ -16,7 +16,7 @@ Die Site liegt im Root von `main` und wird über GitHub Pages ausgeliefert. Die 
 | `index.html` | Startseite (Hero, Leistungen, Projekte, CTA) |
 | `leistungen.html` | Verkauf, Vermittlung, Projektentwicklung |
 | `projekte.html` | Platzhalter-Projektkarten (Neubau / Region Konstanz) |
-| `kontakt.html` | Kontaktdaten + FormSubmit-Formular (Fallback mailto) |
+| `kontakt.html` | Kontaktdaten + Web3Forms-Formular (Fallback mailto) |
 | `impressum.html` | Impressum (Einzelunternehmen Helmut Eichmann) |
 | `datenschutz.html` | Datenschutzerklärung |
 
@@ -49,7 +49,7 @@ Danach in den GitHub-Repo-Settings unter **Pages → Custom domain** ggf. `immob
 
 ## Kontaktformular & E-Mail
 
-- **Formular:** sendet via [FormSubmit](https://formsubmit.co) (AJAX) an `chris.hohlfeld@gmail.com` (von Chris kontrolliertes Postfach). Einmalige Aktivierung: FormSubmit schickt eine „Activate Form“-Mail an dieses Postfach – Link anklicken.
+- **Formular:** sendet via [Web3Forms](https://web3forms.com) (AJAX an `https://api.web3forms.com/submit`) an `chris.hohlfeld@gmail.com`. Access Key ist im Formular/JS hinterlegt (öffentlich vorgesehen). Free-Plan: 250 Submissions/Monat.
 - **Öffentliche Adresse auf der Site:** `info@immobilieneichmann.de` (mailto-Fallback bleibt).
 - **Aktueller DNS-Stand (nicht DomainFactory-NS):** NS = GoDaddy `ns19/ns20.domaincontrol.com`, MX = GoDaddy SecureServer (`smtp.secureserver.net` / `mailstore1.secureserver.net`). Kein SPF / DKIM / DMARC gesetzt.
 - **Pages nicht anfassen:** Apex-A/AAAA (GitHub Pages) und `www` CNAME auf `christianhohlfeld.github.io` beibehalten.
