@@ -462,14 +462,27 @@ h3, .h3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-3);
 }
-.listings-spacer { display: block; visibility: hidden; pointer-events: none; min-height: 0; height: 0; margin: 0; padding: 0; border: 0; }
+/* 13 cards: center lonely orphan on incomplete last row (no empty spacer gap) */
+@media (min-width: 960px) {
+  .listings-grid > .listing-card:last-child:nth-child(3n + 1) {
+    grid-column: 2;
+  }
+}
 @media (max-width: 959px) {
   .listings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .listings-spacer:nth-last-child(1) { display: none; } /* one spacer enough for odd 13 on 2-col */
+  .listings-grid > .listing-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: calc((100% - var(--space-3)) / 2);
+    justify-self: center;
+  }
 }
 @media (max-width: 559px) {
   .listings-grid { grid-template-columns: 1fr; }
-  .listings-spacer { display: none; }
+  .listings-grid > .listing-card:last-child:nth-child(odd) {
+    grid-column: auto;
+    max-width: none;
+  }
 }
 .listing-card {
   background: var(--white);
@@ -501,9 +514,10 @@ a.listing-card:focus-visible {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 28%;
-  transform: scale(1.08);
-  transform-origin: center 30%;
+  /* Bias up + scale: crop top/bottom foreign watermarks (e.g. sunside) */
+  object-position: center 38%;
+  transform: scale(1.16);
+  transform-origin: center 40%;
 }
 .listing-badge {
   position: absolute;
