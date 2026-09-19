@@ -1250,3 +1250,77 @@ a.listing-card:focus-visible {
 }
 .process-summary li { margin-bottom: 0.4rem; }
 
+
+/* ——— Optional polish: legal pages + mobile spotcheck ——— */
+.legal-content h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.legal-content em {
+  color: var(--muted);
+  font-style: italic;
+}
+.legal-content a { font-weight: 600; }
+
+/* iOS safe-area: sticky clearance so footer/CTAs stay tappable */
+@supports (padding: max(0px)) {
+  body {
+    padding-bottom: calc(var(--sticky-h) + var(--space-2) + env(safe-area-inset-bottom, 0px));
+  }
+  .sticky-bar {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+@media (max-width: 640px) {
+  /* Open nav must sit above sticky bar and scroll if tall */
+  .site-header.is-open { z-index: 220; }
+  .nav.open {
+    z-index: 221;
+    max-height: calc(100dvh - var(--header-h) - var(--sticky-h) - env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: var(--space-2);
+  }
+  .nav .nav-cta {
+    margin-top: var(--space-1);
+    display: inline-flex;
+    justify-content: center;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Hero / page-hero CTAs: full-width stack on narrow phones */
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hero-actions .btn {
+    width: 100%;
+  }
+
+  /* Cards: keep body padding readable; avoid CTA squeeze */
+  .listing-body { padding: var(--space-2); }
+  .listing-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+  .listing-actions .btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: center;
+  }
+
+  .content-card { padding: 1.15rem; }
+  .page-hero { padding: var(--space-4) 0; }
+  .page-hero h1 { font-size: clamp(1.45rem, 6vw, 1.85rem); }
+
+  /* Sticky labels: slightly larger tap targets on phones */
+  .sticky-item {
+    min-height: 58px;
+    padding-inline: 0.25rem;
+  }
+}
