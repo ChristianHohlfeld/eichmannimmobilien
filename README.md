@@ -77,7 +77,7 @@ Aktuelle Kaufangebote auf der Website kommen aus dem Immowelt-Profil und werden 
 - **Bilder:** `assets/listings/{nn}-{uuid8}.jpg` + `.webp`
 - **HTML:** Karten in `index.html` und `projekte.html` zwischen den Markern `IMMWELT-LISTINGS` / `IMMWELT-COUNT` (Fragment auch unter `partials/listings-grid.html`)
 - **Workflow:** `.github/workflows/sync-immowelt.yml` (`Sync Immowelt Listings`)
-  - täglich per Cron + manuell unter **Actions → Sync Immowelt Listings → Run workflow**
+  - alle 3 Stunden per Cron (`0 */3 * * *` UTC) + manuell unter **Actions → Sync Immowelt Listings → Run workflow**
   - bei erfolgreichem Diff: Commit auf `main` → GitHub Pages aktualisiert sich
 
 ### Manuell aktualisieren
