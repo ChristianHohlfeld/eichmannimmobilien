@@ -158,15 +158,38 @@
   /* Flyer: never auto-open. Only [data-open-flyer]. */
 
   
-  /* Prefill subject from query */
+  /* Prefill Anliegen + Fokus Formular bei ?interesse=allmannsdorf */
   if (form && location.search.indexOf("interesse=allmannsdorf") !== -1) {
     var sel = form.querySelector('[name="anliegen"]');
     if (sel) {
-      var opt = document.createElement("option");
-      opt.value = "Vormerkung Neubau Allmannsdorf";
-      opt.textContent = "Vormerkung Neubau Allmannsdorf";
-      opt.selected = true;
-      sel.appendChild(opt);
+      var want = "Vormerkung Neubau Allmannsdorf";
+      var found = false;
+      for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === want) {
+          sel.selectedIndex = i;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        var opt = document.createElement("option");
+        opt.value = want;
+        opt.textContent = want;
+        opt.selected = true;
+        sel.appendChild(opt);
+      }
+    }
+    var msg = form.querySelector('[name="message"]');
+    if (msg && !msg.value) {
+      msg.placeholder = "Ich möchte für den Neubau Konstanz-Allmannsdorf (ImmoNr 2800) vorgemerkt werden …";
+    }
+    /* Scroll zum Formular, nicht nur zur Adresskarte */
+    var target = document.getElementById("contact-form") || document.getElementById("bewertung");
+    if (target && location.hash !== "#contact-form") {
+      /* keep hash if already contact-form; otherwise soft-scroll after paint */
+      setTimeout(function () {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
     }
   }
 })();
