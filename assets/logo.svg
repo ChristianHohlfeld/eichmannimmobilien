@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 364 93" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 88" role="img" aria-labelledby="t d">
   <title id="t">Immobilien Eichmann</title>
-  <desc id="d">Markenzeichen: Quadrat, Wortmarke und Haus – Beratung · Verkauf · Vermietung</desc>
+  <desc id="d">Quadrat, Wortmarke und Haus-Markenzeichen – Beratung · Verkauf · Vermietung</desc>
 
-  <!-- LEFT: solid square (knallrot → muted terracotta) -->
-  <rect x="10" y="30" width="28" height="28" fill="#A85A4A"/>
+  <!-- LEFT: square mark (muted terracotta) -->
+  <rect x="4" y="28" width="30" height="30" fill="#A85A4A"/>
 
-  <!-- CENTER: tagline + wordmark (no hyphen) -->
-  <text x="50" y="28"
-        font-family="DM Sans, Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif"
-        font-size="8.5" font-weight="500" letter-spacing="0.08em" fill="#6B6B6B">Beratung · Verkauf · Vermietung</text>
-  <text x="50" y="55"
-        font-family="DM Sans, Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif"
-        font-size="18" font-weight="700" letter-spacing="0.04em" fill="#1A1A1A">IMMOBILIEN EICHMANN</text>
+  <!-- CENTER: tagline + wordmark (no hyphen), heavy modern sans -->
+  <text x="46" y="26"
+        font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+        font-size="9" font-weight="600" letter-spacing="0.1em" fill="#6B6B6B">Beratung · Verkauf · Vermietung</text>
+  <text x="46" y="54"
+        font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+        font-size="20" font-weight="800" letter-spacing="0.02em" fill="#1A1A1A">IMMOBILIEN EICHMANN</text>
 
-  <!-- RIGHT: HOUSE Markenzeichen (knallgrün → muted sage) -->
+  <!-- RIGHT: HOUSE Markenzeichen (muted sage) -->
   <g fill="#5A7358">
-    <polygon points="302,6 276,36 328,36"/>
-    <rect x="280" y="36" width="44" height="42"/>
+    <polygon points="318,4 288,36 348,36"/>
+    <rect x="294" y="36" width="48" height="44"/>
   </g>
 </svg>
