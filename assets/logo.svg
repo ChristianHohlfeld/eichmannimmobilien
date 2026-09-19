@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- cache-bust: original-crisp-v2 -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 430 86" role="img" aria-labelledby="t d">
+<!-- cache-bust: original-crisp-v3<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 430 86" role="img" aria-labelledby="t d">
   <title id="t">Immobilien Eichmann</title>
   <desc id="d">Original-Logo crisp v2: rotes Quadrat #D13634; Tagline; IMMOBILIEN - EICHMANN; Haus = grünes Dach + grüner Boden, Mitte offen/weiß wie Original</desc>
 
@@ -14,6 +13,6 @@
     <text x="50" y="28" font-size="11.5" font-weight="600" letter-spacing="0.08em" fill="#4A4A4A">Beratung · Verkauf · Vermietung</text>
     <!-- white under-stroke = original letter halo against green -->
     <text x="50" y="58" font-size="28" font-weight="800" letter-spacing="-0.01em"
-          fill="#1A1A1A" stroke="#FFFFFF" stroke-width="2.5" paint-order="stroke fill">IMMOBILIEN - EICHMANN</text>
+          fill="#1A1A1A">IMMOBILIEN - EICHMANN</text>
   </g>
 </svg>
