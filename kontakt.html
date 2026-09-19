@@ -19,6 +19,9 @@
   <meta name="twitter:description" content="Kontakt zu Immobilien Eichmann / Helmut Eichmann in Konstanz: Mobil 0170 5225568, info@immobilieneichmann.de, Termine nach Vereinbarung.">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <link rel="preload" href="assets/logo.svg" as="image" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   
 </head>
@@ -26,7 +29,7 @@
   <header class="site-header">
     <div class="container header-inner">
       <a class="logo" href="index.html" aria-label="Immobilien Eichmann – Startseite">
-        <img class="logo-svg" src="assets/logo.svg" alt="Immobilien Eichmann" width="340" height="64" decoding="async">
+        <img class="logo-svg" src="assets/logo.svg" alt="Immobilien Eichmann" width="364" height="93" decoding="async">
         <span class="logo-text">
           <span class="logo-mark">Immobilien Eichmann</span>
           <span class="logo-sub">Verkauf · Vermittlung · Projektentwicklung</span>
@@ -48,8 +51,8 @@
     <section class="page-hero"><div class="container"><h1>Kontakt</h1><p>Termine nach Vereinbarung – wir melden uns zeitnah</p></div></section>
     <section class="section section-alt"><div class="container two-col">
       <div class="content-card" id="vormerken">
-        <h2 style="margin-top:0;color:var(--blue-deep)">Immobilien Eichmann</h2>
-        <p style="color:var(--muted);margin-top:0">Verkauf, Vermittlung, Projektentwicklung</p>
+        <h2 style="margin-top:0;color:var(--ink)">Immobilien Eichmann</h2>
+        <p style="color:var(--slate);margin-top:0">Verkauf, Vermittlung, Projektentwicklung</p>
         <ul class="contact-list">
           <li><span class="label">Ansprechpartner</span><span class="value">Helmut Eichmann</span></li>
           <li><span class="label">Adresse</span><span class="value">Jacob-Burckhardt-Str. 40<br>78464 Konstanz</span></li>
@@ -60,19 +63,55 @@
         </ul>
         <div class="hero-actions" style="margin-top:1.1rem">
           <a class="btn btn-accent" href="tel:+491705225568">Jetzt anrufen</a>
-          <a class="btn btn-primary" href="mailto:info@immobilieneichmann.de">E-Mail schreiben</a>
-          <a class="btn btn-green" href="#" data-open-flyer>Neubau vormerken</a>
+          <a class="btn btn-outline" href="#" data-open-flyer>Neubau vormerken</a>
         </div>
       </div>
-      <div class="content-card" id="bewertung">
-        <h2 style="margin-top:0;color:var(--blue-deep)">Immobilie bewerten lassen</h2>
-        <p style="color:var(--muted)">Eigentümerinnen und Eigentümer in Konstanz erhalten eine erste Einschätzung – unverbindlich und persönlich. Schreiben Sie kurz Lage, Wohnfläche und Objektart oder rufen Sie an.</p>
-        <div class="hero-actions" style="margin-top:1rem;flex-direction:column;align-items:stretch">
-          <a class="btn btn-primary" href="mailto:info@immobilieneichmann.de?subject=Anfrage%20Immobilienbewertung%20Konstanz">Bewertung per E-Mail anfragen</a>
-          <a class="btn btn-outline" href="tel:+491705225568">Telefonisch: 0170 5225568</a>
-          <a class="btn btn-outline" href="index.html#angebote">Aktuelle Angebote ansehen</a>
-        </div>
-        <p class="immowelt-note">Empfehlung willkommen: Kennen Sie jemanden, der verkaufen oder kaufen möchte? Einfach an info@immobilieneichmann.de oder 0170 5225568 verweisen.</p>
+      <div class="content-card contact-form" id="bewertung">
+        <h2 style="margin-top:0;color:var(--ink)">Nachricht senden</h2>
+        <p class="form-note">Ihre Anfrage wird per Formular-Dienst (Web3Forms) an uns zugestellt. Alternativ schreiben Sie direkt an
+          <a href="mailto:info@immobilieneichmann.de">info@immobilieneichmann.de</a>.</p>
+        <form id="contact-form" action="https://api.web3forms.com/submit" method="POST" novalidate>
+          <input type="hidden" name="access_key" value="49d8f579-9384-4d87-b570-67c6e835f4da">
+          <input type="hidden" name="from_name" value="Immobilien Eichmann Webseite">
+          <input type="checkbox" name="botcheck" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <div class="form-group">
+            <label for="name">Name *</label>
+            <input type="text" id="name" name="name" required autocomplete="name">
+          </div>
+          <div class="form-group">
+            <label for="email">E-Mail *</label>
+            <input type="email" id="email" name="email" required autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="phone">Telefon</label>
+            <input type="tel" id="phone" name="phone" autocomplete="tel">
+          </div>
+          <div class="form-group">
+            <label for="subject">Betreff</label>
+            <select id="subject" name="anliegen">
+              <option value="Allgemeine Anfrage">Allgemeine Anfrage</option>
+              <option value="Verkauf">Verkauf</option>
+              <option value="Vermittlung / Kauf">Vermittlung / Kauf</option>
+              <option value="Immobilienbewertung">Immobilienbewertung</option>
+              <option value="Vormerkung Neubau Allmannsdorf">Vormerkung Neubau Allmannsdorf</option>
+              <option value="Projektentwicklung">Projektentwicklung</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="message">Ihre Nachricht *</label>
+            <textarea id="message" name="message" required placeholder="Beschreiben Sie kurz Ihr Anliegen …"></textarea>
+          </div>
+          <button type="submit" class="btn btn-accent" id="contact-submit">Nachricht senden</button>
+          <div id="form-success" class="form-success" role="status" hidden>
+            Vielen Dank – Ihre Nachricht wurde übermittelt. Wir melden uns zeitnah.
+          </div>
+          <div id="form-error" class="form-error" role="alert" hidden>
+            Versand über das Formular ist gerade nicht möglich.
+            <button type="button" class="linkish" id="mailto-fallback">Stattdessen E-Mail-Programm öffnen</button>
+            oder schreiben Sie an
+            <a href="mailto:info@immobilieneichmann.de">info@immobilieneichmann.de</a>.
+          </div>
+        </form>
       </div>
     </div></section>
   </main>
@@ -81,7 +120,7 @@
       <div class="footer-grid footer-grid-seo">
         <div class="footer-brand">
           <a class="logo" href="index.html" aria-label="Immobilien Eichmann">
-            <img class="logo-svg" src="assets/logo.svg" alt="Immobilien Eichmann" width="340" height="64" loading="lazy">
+            <img class="logo-svg" src="assets/logo.svg" alt="Immobilien Eichmann" width="364" height="93" loading="lazy">
           </a>
           <p class="footer-name">Immobilien Eichmann</p>
           <p>Helmut Eichmann<br>Jacob-Burckhardt-Str. 40<br>78464 Konstanz</p>
@@ -145,7 +184,7 @@
       <div class="flyer">
         <div class="flyer-top">
           <div class="flyer-brand">
-            <img class="logo-svg" src="assets/logo.svg" alt="Immobilien Eichmann" width="340" height="64" loading="lazy">
+            <img class="logo-svg" src="assets/logo.svg" alt="Immobilien Eichmann" width="364" height="93" loading="lazy">
             <div>
               <strong>Immobilien Eichmann</strong>
               <span>Verkauf · Vermittlung · Projektentwicklung</span>
