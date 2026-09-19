@@ -793,14 +793,6 @@ a.listing-card:focus-visible {
   gap: var(--space-4);
   margin-bottom: var(--space-4);
 }
-.footer-brand .logo img,
-.footer-brand .logo svg {
-  height: 44px;
-  width: auto;
-  margin-bottom: 0.6rem;
-  /* Neutralize red/clash on dark: monochrome white mark, don't redesign file */
-  filter: brightness(0) invert(1);
-}
 .footer-name {
   font-weight: 700;
   margin: 0.4rem 0;
@@ -1335,8 +1327,7 @@ a.listing-card:focus-visible {
 }
 .logo-svg,
 .logo img.logo-svg,
-.site-header .logo-svg,
-.footer-brand .logo img {
+.site-header .logo-svg {
   width: auto;
   height: 42px;
   max-width: min(300px, 78vw);
@@ -1353,3 +1344,4 @@ a.listing-card:focus-visible {
   padding-top: 0.65rem;
   padding-bottom: 0.65rem;
 }
+
