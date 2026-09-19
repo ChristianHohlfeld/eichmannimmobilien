@@ -1,0 +1,33 @@
+# Immobilien Eichmann
+
+- **Site:** Immobilien Eichmann (Helmut Eichmann), Konstanz / Bodensee
+- **URL:** https://immobilieneichmann.de/
+- **Language:** de
+
+## Kontakt
+
+- **Adresse:** Jacob-Burckhardt-Str. 40, 78464 Konstanz
+- **Telefon:** +49 170 5225568 / 07531 9228848
+- **E-Mail:** info@immobilieneichmann.de
+
+## Wichtige Seiten
+
+- **Makler:** https://immobilieneichmann.de/immobilienmakler-konstanz.html
+- **Bewertung:** https://immobilieneichmann.de/immobilienbewertung-konstanz.html
+- **Verkaufen:** https://immobilieneichmann.de/haus-verkaufen-konstanz.html
+- **Wohnung kaufen:** https://immobilieneichmann.de/wohnung-kaufen-konstanz.html
+- **Konstanz:** https://immobilieneichmann.de/konstanz.html
+- **Wollmatingen:** https://immobilieneichmann.de/wollmatingen.html
+- **Allmannsdorf:** https://immobilieneichmann.de/allmannsdorf.html
+- **Leistungen:** https://immobilieneichmann.de/leistungen.html
+- **Projekte:** https://immobilieneichmann.de/projekte.html
+- **Kontakt:** https://immobilieneichmann.de/kontakt.html
+- **Ratgeber:** https://immobilieneichmann.de/ratgeber.html
+
+## Immobilienangebote
+
+Aktuelle Immobilienangebote werden auf dieser Website angezeigt und zu Immowelt verlinkt. Für Objektdaten ist Immowelt die maßgebliche Quelle.
+
+## Sitemap
+
+https://immobilieneichmann.de/sitemap.xml
