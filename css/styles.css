@@ -1216,21 +1216,23 @@ a.listing-card:focus-visible {
   gap: var(--space-1);
 }
 .feature-list li {
-  position: relative;
-  padding: var(--space-2) var(--space-2) var(--space-2) calc(var(--space-2) + 1.1rem);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: var(--space-2);
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--slate);
   box-shadow: var(--shadow);
+  line-height: var(--lh-body, 1.55);
 }
 .feature-list li::before {
   content: "";
-  position: absolute;
-  left: var(--space-2);
-  top: 1.15rem;
+  flex: 0 0 auto;
   width: 0.45rem;
   height: 0.45rem;
+  margin-top: 0.55em; /* align to first text line, not card center */
   border-radius: 50%;
   background: var(--accent);
 }
