@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- cache-bust: immowelt-hq-4x-v9 -->
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 364 93" role="img" aria-labelledby="t">
+<!-- cache-bust: crisp-v5-own -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 86" role="img" aria-labelledby="t d">
   <title id="t">Immobilien Eichmann</title>
-  <image width="364" height="93" href="logo.png" xlink:href="logo.png" preserveAspectRatio="xMinYMid meet"/>
+  <desc id="d">Eigenes crisp-Logo: Dach und Boden getrennt (nicht Immowelt-Rastergrafik)</desc>
+
+  <rect x="4" y="28" width="34" height="34" fill="#D13634"/>
+
+  <!-- House from original metrics: steep roof (h/w≈0.50), ~3px gap above caps, floor slightly wider -->
+  <polygon fill="#209C46" points="372,5 401,34 343,34"/>
+  <rect x="337" y="61" width="70" height="18" fill="#209C46"/>
+
+  <g font-family="Arial, Helvetica, 'Helvetica Neue', sans-serif" text-rendering="geometricPrecision">
+    <text x="50" y="28" font-size="11.5" font-weight="600" letter-spacing="0.08em" fill="#4A4A4A">Beratung · Verkauf · Vermietung</text>
+    <text x="50" y="58" font-size="28" font-weight="800" letter-spacing="-0.01em" fill="#1A1A1A">IMMOBILIEN - EICHMANN</text>
+  </g>
 </svg>

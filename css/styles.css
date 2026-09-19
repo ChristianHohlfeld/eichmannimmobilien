@@ -1388,7 +1388,7 @@ a.listing-card:focus-visible {
 
 
 
-/* logo: Immowelt HQ 4x — sharp on retina */
+/* logo: eigenes Branding crisp-v5-own */
 .logo {
   gap: 0;
   max-width: calc(100% - 3.25rem);
@@ -1400,18 +1400,21 @@ a.listing-card:focus-visible {
 .logo-svg,
 .logo img.logo-svg,
 .site-header .logo-svg,
-.footer-brand .logo img {
+.footer-brand .logo img,
+.footer-brand .logo-svg {
   width: auto !important;
-  height: 42px;
-  max-width: min(420px, calc(100vw - 3.75rem));
+  height: 44px;
+  max-width: min(400px, calc(100vw - 3.75rem));
   object-fit: contain;
   object-position: left center;
   overflow: visible;
+  filter: none;
 }
 @media (min-width: 900px) {
-  .site-header .logo-svg {
-    height: 50px;
-    max-width: 460px;
+  .site-header .logo-svg,
+  .site-header .logo img.logo-svg {
+    height: 52px;
+    max-width: 440px;
   }
 }
 .site-header .header-inner {
