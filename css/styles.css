@@ -1324,29 +1324,34 @@ a.listing-card:focus-visible {
 
 
 
-/* logo-lockup-b */
+/* logo-noclip */
 .logo {
   gap: 0;
-  max-width: calc(100% - 3.5rem);
-  padding: 0.15rem 0;
+  max-width: calc(100% - 3.25rem);
+  min-width: 0;
+  padding: 0.2rem 0;
+  overflow: visible;
+  flex: 1 1 auto;
 }
 .logo-svg,
 .logo img.logo-svg,
-.site-header .logo-svg {
-  width: auto;
-  height: 42px;
-  max-width: min(300px, 78vw);
+.site-header .logo-svg,
+.footer-brand .logo img {
+  width: auto !important;
+  height: 40px;
+  max-width: min(320px, calc(100vw - 4.5rem));
   object-fit: contain;
   object-position: left center;
+  overflow: visible;
 }
 @media (min-width: 900px) {
   .site-header .logo-svg {
-    height: 50px;
-    max-width: 340px;
+    height: 48px;
+    max-width: 360px;
   }
 }
 .site-header .header-inner {
-  padding-top: 0.65rem;
-  padding-bottom: 0.65rem;
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+  overflow: visible;
 }
-
