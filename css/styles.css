@@ -61,7 +61,7 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
   text-decoration: none; color: inherit;
 }
 .logo img, .logo svg, .logo-svg {
-  height: 48px; width: auto; object-fit: contain; display: block;
+  height: 46px; width: auto; object-fit: contain; display: block;
 }
 .logo-text { display: none; }
 .logo-mark { font-weight: 700; color: var(--ink); font-size: 0.95rem; letter-spacing: 0.06em; }
