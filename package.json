@@ -2,11 +2,14 @@
   "name": "eichmannimmobilien",
   "private": true,
   "type": "module",
-  "description": "Static site for Immobilien Eichmann – Immowelt listings sync",
+  "description": "Static site for Immobilien Eichmann \u2013 Immowelt listings sync",
   "scripts": {
     "sync-immowelt": "node scripts/sync-immowelt.mjs",
     "sync-immowelt:render": "node scripts/sync-immowelt.mjs --render-only",
-    "sync-immowelt:seed": "node scripts/sync-immowelt.mjs --from-json ../eichmann-logo/listings.json"
+    "sync-immowelt:seed": "node scripts/sync-immowelt.mjs --from-json ../eichmann-logo/listings.json",
+    "test:logo": "node scripts/test-logo-consistency.mjs",
+    "test:layout": "node scripts/test-layout-regression.mjs",
+    "test": "npm run test:logo && npm run test:layout"
   },
   "engines": {
     "node": ">=18"

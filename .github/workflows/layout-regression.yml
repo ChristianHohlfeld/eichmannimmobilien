@@ -1,0 +1,43 @@
+name: Layout regression
+on:
+  push:
+    paths:
+      - 'css/**'
+      - 'js/**'
+      - '**/*.html'
+      - 'assets/logo.*'
+      - 'scripts/test-layout-regression.mjs'
+      - '.github/workflows/layout-regression.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  pull_request:
+    paths:
+      - 'css/**'
+      - 'js/**'
+      - '**/*.html'
+      - 'assets/logo.*'
+      - 'scripts/test-layout-regression.mjs'
+      - '.github/workflows/layout-regression.yml'
+      - 'package.json'
+      - 'package-lock.json'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Layout regression (desktop + mobile)
+        run: node scripts/test-layout-regression.mjs
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: layout-screenshots
+          path: test-results/layout/

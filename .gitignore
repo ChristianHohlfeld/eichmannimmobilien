@@ -2,3 +2,7 @@ node_modules/
 .DS_Store
 *.log
 assets/listings/._tmp-*
+
+# layout/visual test artifacts
+test-results/
+
