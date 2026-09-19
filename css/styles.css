@@ -1339,14 +1339,14 @@ a.listing-card:focus-visible {
 .footer-brand .logo img {
   width: auto;
   height: 42px;
-  max-width: min(260px, 70vw);
+  max-width: min(300px, 78vw);
   object-fit: contain;
   object-position: left center;
 }
 @media (min-width: 900px) {
   .site-header .logo-svg {
     height: 50px;
-    max-width: 300px;
+    max-width: 340px;
   }
 }
 .site-header .header-inner {
