@@ -1,0 +1,30 @@
+name: Logo consistency
+on:
+  push:
+    paths:
+      - 'assets/logo.svg'
+      - 'assets/logo.png'
+      - 'assets/apple-touch-icon.png'
+      - 'css/styles.css'
+      - '**/*.html'
+      - 'scripts/test-logo-consistency.mjs'
+      - '.github/workflows/logo-consistency.yml'
+  pull_request:
+    paths:
+      - 'assets/logo.svg'
+      - 'assets/logo.png'
+      - 'assets/apple-touch-icon.png'
+      - 'css/styles.css'
+      - '**/*.html'
+      - 'scripts/test-logo-consistency.mjs'
+      - '.github/workflows/logo-consistency.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Logo consistency
+        run: node scripts/test-logo-consistency.mjs
