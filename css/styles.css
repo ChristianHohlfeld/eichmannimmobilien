@@ -914,22 +914,28 @@ a.listing-card:focus-visible {
 .flyer-overlay {
   position: fixed;
   inset: 0;
-  z-index: 300;
+  z-index: 1300; /* above cookie-banner (1200) */
   display: grid;
   place-items: center;
   padding: 1rem;
+  box-sizing: border-box;
 }
 .flyer-backdrop { position: absolute; inset: 0; background: rgba(15, 39, 68, 0.55); }
 .flyer-dialog {
   position: relative;
   z-index: 1;
-  width: min(920px, 100%);
+  width: min(920px, calc(100vw - 2rem));
+  max-width: 100%;
   max-height: min(92vh, 980px);
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   background: var(--white);
   border-radius: var(--radius);
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
+  box-sizing: border-box;
 }
 .flyer-close {
   position: absolute;
@@ -946,7 +952,19 @@ a.listing-card:focus-visible {
   cursor: pointer;
   line-height: 1;
 }
-.flyer { font-size: 0.92rem; }
+.flyer {
+  font-size: 0.92rem;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+.flyer-top,
+.flyer-mid,
+.flyer-copy,
+.flyer-thumbs {
+  min-width: 0;
+  max-width: 100%;
+}
 .flyer-top { display: grid; grid-template-columns: 1.05fr 1fr; gap: 0; position: relative; }
 .flyer-brand {
   grid-column: 1;
@@ -1094,19 +1112,32 @@ a.listing-card:focus-visible {
   .nav.open { display: flex; }
   .header-inner { position: relative; }
   .flyer-features { grid-template-columns: 1fr; }
-  .flyer-specs li { grid-template-columns: 1fr; }
+  .flyer-specs li {
+    grid-template-columns: 24px minmax(3.75rem, 5.5rem) minmax(0, 1fr);
+  }
+  .flyer-overlay { padding: 0.65rem; }
+  .flyer-dialog {
+    width: calc(100vw - 1.3rem);
+    max-height: min(88vh, 980px);
+  }
+  .flyer-brand img, .flyer-brand svg {
+    height: 36px;
+    max-width: min(220px, 70vw);
+    object-fit: contain;
+  }
 }
 
 
 /* Flyer specs with icons (BI layout) */
 .flyer-specs li {
   display: grid;
-  grid-template-columns: 28px 7rem 1fr;
+  grid-template-columns: 28px minmax(4.5rem, 7rem) minmax(0, 1fr);
   gap: 0.45rem;
   align-items: start;
   padding: 0.5rem 0;
   border-bottom: 1px solid var(--border);
   font-size: 0.86rem;
+  min-width: 0;
 }
 .flyer-ico {
   display: grid;

@@ -140,11 +140,23 @@
     if (!modal) return;
     modal.hidden = false;
     document.body.style.overflow = "hidden";
+    document.body.classList.add("flyer-open");
+    var cookie = document.getElementById("cookie-banner");
+    if (cookie && !cookie.hidden) {
+      cookie.dataset.flyerHidden = "1";
+      cookie.hidden = true;
+    }
   }
   function closeFlyer() {
     if (!modal) return;
     modal.hidden = true;
     document.body.style.overflow = "";
+    document.body.classList.remove("flyer-open");
+    var cookie = document.getElementById("cookie-banner");
+    if (cookie && cookie.dataset.flyerHidden === "1") {
+      delete cookie.dataset.flyerHidden;
+      cookie.hidden = false;
+    }
   }
   document.querySelectorAll("[data-open-flyer]").forEach(function (el) {
     el.addEventListener("click", function (e) {
