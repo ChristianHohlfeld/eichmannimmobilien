@@ -1167,3 +1167,86 @@ a.listing-card:focus-visible {
   cursor: pointer;
 }
 .consent-label input { margin-top: 0.2rem; flex-shrink: 0; }
+
+/* ——— Phase D: SEO landing layout ——— */
+.page-hero-inner { max-width: 46rem; }
+.page-hero .lead {
+  margin: 0 0 var(--space-3);
+  color: var(--slate);
+  font-size: var(--fs-h3);
+  max-width: var(--measure);
+}
+.page-hero .hero-actions { margin-top: 0; }
+.page-hero .eyebrow { margin-bottom: var(--space-1); }
+
+.narrow { max-width: 46rem; }
+.prose-lead {
+  margin: 0 0 var(--space-3);
+  color: var(--slate);
+  font-size: 1.0625rem;
+  line-height: var(--lh-body);
+  max-width: var(--measure);
+}
+
+.notice {
+  background: var(--off-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  box-shadow: var(--shadow);
+}
+.notice-legal {
+  border-left: 3px solid var(--accent);
+  background: var(--mist);
+}
+.notice-title {
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-body);
+  font-size: var(--fs-meta);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+.notice p { margin: 0; color: var(--slate); font-size: var(--fs-body); line-height: var(--lh-body); }
+.notice p + p { margin-top: var(--space-1); }
+
+.feature-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+.feature-list li {
+  position: relative;
+  padding: var(--space-2) var(--space-2) var(--space-2) calc(var(--space-2) + 1.1rem);
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--slate);
+  box-shadow: var(--shadow);
+}
+.feature-list li::before {
+  content: "";
+  position: absolute;
+  left: var(--space-2);
+  top: 1.15rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.section-alt .feature-list li { background: var(--white); }
+
+.services-strip-auto {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.process-summary {
+  margin: var(--space-3) 0 0;
+  padding-left: 1.25rem;
+  color: var(--slate);
+  max-width: var(--measure);
+}
+.process-summary li { margin-bottom: 0.4rem; }
+
