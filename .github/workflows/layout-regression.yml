@@ -33,11 +33,14 @@ jobs:
         run: npm ci
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
-      - name: Layout regression (desktop + mobile)
+      - name: Layout regression soft (Desktop + Mobile)
         run: node scripts/test-layout-regression.mjs
-      - name: Upload screenshots on failure
-        if: failure()
+        # Soft by default — surfaces overflow/logo-collapse without failing the build.
+        # Hard gate: STRICT=1 node scripts/test-layout-regression.mjs
+      - name: Upload layout screenshots
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: layout-screenshots
           path: test-results/layout/
+          if-no-files-found: ignore

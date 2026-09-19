@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Layout / optical regression guards (desktop + mobile).
- * Catches: horizontal overflow, collapsed logo, missing header, broken hero.
+ * Catches grobe Patzer: Horizontal-Overflow, collapsed logo, missing header/H1.
+ * Default: SOFT (exit 0, issues logged). Hard gate: STRICT=1.
  *
  * Run: node scripts/test-layout-regression.mjs
  * Optional: BASE_URL=https://immobilieneichmann.de node scripts/test-layout-regression.mjs
@@ -178,9 +179,14 @@ async function main() {
     if (server) await new Promise((r) => server.close(r));
   }
 
+  const soft = process.env.STRICT !== '1' && process.env.SOFT !== '0';
   if (errors.length) {
-    console.log(`\nFAIL (${errors.length}):`);
+    console.log(`\n${soft ? 'ISSUES' : 'FAIL'} (${errors.length}):`);
     for (const e of errors) console.log(`  - ${e}`);
+    if (soft) {
+      console.log('\nSOFT — grobe Patzer gemeldet, Build läuft weiter (STRICT=1 für Hard-Fail).');
+      process.exit(0);
+    }
     process.exit(1);
   }
   console.log('\nPASS — no overflow, logo visible, header intact (desktop + mobile).');

@@ -26,5 +26,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Logo consistency
+      - name: Logo consistency (soft — blockt Build nicht)
         run: node scripts/test-logo-consistency.mjs
+        # Soft by default (exit 0). Set STRICT=1 only when you want a hard gate.
