@@ -133,19 +133,15 @@
 
   /* Flyer modal */
   var modal = document.getElementById("flyerModal");
-  var KEY = "eichmann_allmannsdorf_flyer_dismissed_v1";
   function openFlyer() {
     if (!modal) return;
     modal.hidden = false;
     document.body.style.overflow = "hidden";
   }
-  function closeFlyer(remember) {
+  function closeFlyer() {
     if (!modal) return;
     modal.hidden = true;
     document.body.style.overflow = "";
-    if (remember) {
-      try { sessionStorage.setItem(KEY, "1"); } catch (e) {}
-    }
   }
   document.querySelectorAll("[data-open-flyer]").forEach(function (el) {
     el.addEventListener("click", function (e) {
@@ -154,17 +150,14 @@
     });
   });
   document.querySelectorAll("[data-close-flyer]").forEach(function (el) {
-    el.addEventListener("click", function () { closeFlyer(true); });
+    el.addEventListener("click", function () { closeFlyer(); });
   });
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && modal && !modal.hidden) closeFlyer(true);
+    if (e.key === "Escape" && modal && !modal.hidden) closeFlyer();
   });
+  /* Flyer: never auto-open. Only [data-open-flyer]. */
 
-  /* Flyer: no auto-open on home. Open only via [data-open-flyer] or deep-link. */
-  if (modal && (location.search.indexOf("flyer=1") !== -1 || location.hash === "#allmannsdorf" || location.hash === "#vormerken-neubau")) {
-    openFlyer();
-  }
-
+  
   /* Prefill subject from query */
   if (form && location.search.indexOf("interesse=allmannsdorf") !== -1) {
     var sel = form.querySelector('[name="anliegen"]');
