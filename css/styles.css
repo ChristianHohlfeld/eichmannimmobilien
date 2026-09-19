@@ -1345,8 +1345,7 @@ a.listing-card:focus-visible {
   object-fit: contain;
   object-position: left center;
   overflow: visible;
-  image-rendering: -webkit-optimize-contrast;
-}
+  }
 @media (min-width: 900px) {
   .site-header .logo-svg {
     height: 54px;
