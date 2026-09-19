@@ -1,0 +1,105 @@
+name: Admin Save Listings
+
+# Triggered by Exposé Admin (repository_dispatch) when Contents API
+# is unavailable, or explicitly for save+render. Uses GITHUB_TOKEN only.
+# Immowelt account is never touched.
+
+on:
+  repository_dispatch:
+    types: [admin_save_listings, admin_trigger_sync]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "save_json | render_only | full_sync"
+        type: choice
+        options: [save_json, render_only, full_sync]
+        default: render_only
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: admin-save
+  cancel-in-progress: false
+
+jobs:
+  save:
+    if: >
+      github.event_name == 'repository_dispatch' &&
+      github.event.action == 'admin_save_listings'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write listings.json from payload
+        env:
+          LISTINGS_JSON: ${{ github.event.client_payload.listings_json }}
+          TARGET_PATH: ${{ github.event.client_payload.path }}
+        run: |
+          set -euo pipefail
+          PATH_OUT="${TARGET_PATH:-data/listings.json}"
+          if [ -z "${LISTINGS_JSON:-}" ]; then
+            echo "Empty listings_json payload"
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json, os, pathlib
+          raw = os.environ["LISTINGS_JSON"]
+          path = pathlib.Path(os.environ.get("TARGET_PATH") or "data/listings.json")
+          data = json.loads(raw)
+          if not isinstance(data.get("listings"), list):
+            raise SystemExit("payload missing listings[]")
+          data["listing_count"] = len(data["listings"])
+          path.parent.mkdir(parents=True, exist_ok=True)
+          path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print(f"Wrote {path} ({data['listing_count']} listings)")
+          PY
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install & render
+        if: ${{ github.event.client_payload.trigger_render != false }}
+        run: |
+          npm ci || npm install
+          node scripts/sync-immowelt.mjs --render-only
+
+      - name: Commit
+        env:
+          MSG: ${{ github.event.client_payload.message }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/listings.json assets/listings partials/listings-grid.html index.html projekte.html objekt sitemap.xml || true
+          if git diff --staged --quiet; then
+            echo "No changes."
+          else
+            git commit -m "${MSG:-Admin: listings aktualisiert}"
+            git push
+          fi
+
+  sync:
+    if: >
+      (github.event_name == 'repository_dispatch' && github.event.action == 'admin_trigger_sync') ||
+      (github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch Sync Immowelt
+        env:
+          GH_TOKEN: ${{ secrets.ADMIN_DISPATCH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          MODE="${{ github.event.client_payload.mode || github.event.inputs.mode || 'full_sync' }}"
+          if [ "$MODE" = "render_only" ] || [ "$MODE" = "save_json" ]; then
+            FORCE=true
+          else
+            FORCE=false
+          fi
+          gh workflow run sync-immowelt.yml \
+            --repo "${{ github.repository }}" \
+            -f force_from_json="$FORCE"
+          echo "Triggered sync-immowelt force_from_json=$FORCE"

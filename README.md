@@ -68,6 +68,14 @@ Zusätzlich: Postfach oder **Weiterleitung** `info@immobilien-eichmann.com` → 
 
 Wenn später **DomainFactory Professional E-Mail (Titan)** genutzt wird: MX auf Titan umstellen und SPF auf Titan-Include ändern – wiederum ohne Pages-Records anzufassen. Exakte Titan-MX/SPF aus dem DF-Kundenmenü übernehmen.
 
+## Exposé Admin (Helmut)
+
+Unter **`/admin/`** – Passwort von Chris, kein Token-Setup am Rechner.
+
+- Objekte aus `data/listings.json` bearbeiten, Fotos nachpflegen, Immowelt-Sync anstoßen (nur Import/Lesen)
+- Details: [`admin/README.md`](admin/README.md)
+- Immowelt-Konto wird **nie** verändert
+
 ## Immowelt-Angebote (Single Source of Truth)
 
 Aktuelle Kaufangebote auf der Website kommen aus dem Immowelt-Profil und werden automatisch synchronisiert.
