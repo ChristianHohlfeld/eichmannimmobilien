@@ -28,7 +28,7 @@
   <link rel="preload" href="assets/logo.svg" as="image" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <script type="application/ld+json">
 {
@@ -86,6 +86,7 @@
 }
 </script>
 </head>
+
 <body>
   <header class="site-header">
     <div class="container header-inner">
@@ -97,43 +98,37 @@
         </span>
       </a>
       <button class="menu-toggle" type="button" aria-label="Menü öffnen" aria-expanded="false">☰</button>
-            <nav class="nav" aria-label="Hauptnavigation">
+      <nav class="nav" aria-label="Hauptnavigation">
         <a href="index.html" class="active">Start</a>
         <a href="index.html#angebote">Angebote</a>
         <a href="haus-verkaufen-konstanz.html">Verkauf</a>
         <a href="leistungen.html">Leistungen</a>
         <a href="immobilienbewertung-konstanz.html">Bewertung</a>
         <a href="projekte.html">Projekte</a>
-        <a href="ratgeber.html">Ratgeber</a>
-        <a href="kontakt.html" class="nav-cta">Kontakt</a>
+        <a href="kontakt.html">Kontakt</a>
+        <a href="tel:+491705225568" class="nav-cta">Anrufen</a>
       </nav>
     </div>
   </header>
 
   <main>
     <section class="hero">
-      <div class="container hero-grid">
-        <div>
-          <span class="badge">Konstanz · Bodensee</span>
-          <h1>Immobilienmakler in Konstanz – verkaufen, kaufen, entwickeln</h1>
-          <p class="lead">Immobilien Eichmann begleitet Eigentümer und Interessenten in Konstanz, Wollmatingen, Allmannsdorf und am Bodensee mit klaren Exposés, aktueller Markteinschätzung und persönlicher Erreichbarkeit.</p>
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <span class="eyebrow">Konstanz · Bodensee</span>
+          <h1>Immobilien in Konstanz – persönlich vermitteln</h1>
+          <p class="lead">Kaufangebote, Verkauf und Projektentwicklung mit Helmut Eichmann vor Ort.</p>
           <div class="hero-actions">
-            <a class="btn btn-accent" href="tel:+491705225568">Anrufen 0170 5225568</a>
+            <a class="btn btn-accent" href="#angebote">Angebote</a>
             <a class="btn btn-outline" href="kontakt.html">Kontakt</a>
-            <a class="btn btn-outline" href="#" data-open-flyer>Neubau Allmannsdorf</a>
           </div>
         </div>
-        <aside class="hero-card" aria-label="Kontaktdaten">
-          <h2>Direkt erreichbar</h2>
-          <ul>
-            <li>Helmut Eichmann</li>
-            <li>Jacob-Burckhardt-Str. 40, 78464 Konstanz</li>
-            <li><a href="tel:+491705225568">Mobil 0170 5225568</a></li>
-            <li><a href="tel:+4975319228848">Festnetz 07531 9228848</a></li>
-            <li><a href="mailto:info@immobilieneichmann.de">info@immobilieneichmann.de</a></li>
-            <li>Termine nach Vereinbarung</li>
-          </ul>
-        </aside>
+        <div class="hero-media" aria-hidden="true">
+          <picture>
+            <source srcset="assets/flyer/hero-dining.webp" type="image/webp">
+            <img src="assets/flyer/hero-dining.jpg" alt="" width="520" height="550" decoding="async" fetchpriority="high">
+          </picture>
+        </div>
       </div>
     </section>
 
@@ -464,24 +459,46 @@
           <a class="btn btn-outline btn-sm" href="leistungen.html">Alle Leistungen</a>
         </div>
         <div class="services-strip">
-          <article class="service-card"><div class="icon">V</div><h3>Verkauf</h3><p>Vermarktung Ihrer Immobilie in Konstanz mit Exposé, Preisfindung und Interessentenbetreuung.</p></article>
-          <article class="service-card"><div class="icon">M</div><h3>Vermittlung</h3><p>Passgenaue Vermittlung zwischen Eigentümern und Käufern – transparent und erreichbar.</p></article>
-          <article class="service-card"><div class="icon">P</div><h3>Projektentwicklung</h3><p>Begleitung von Neubau- und Kapitalanlageprojekten in der Region Bodensee.</p></article>
+          <article class="service-card">
+            <div class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg>
+            </div>
+            <h3>Verkauf</h3>
+            <p>Vermarktung Ihrer Immobilie in Konstanz mit Exposé, Preisfindung und Interessentenbetreuung.</p>
+          </article>
+          <article class="service-card">
+            <div class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.25"/><circle cx="16" cy="9.5" r="2.5"/><path d="M3.5 19c.4-3.2 2.6-5 5.5-5s5.1 1.8 5.5 5"/><path d="M13.5 19c.25-2.1 1.4-3.4 3.5-3.4 1.7 0 2.9.9 3.3 2.6"/></svg>
+            </div>
+            <h3>Vermittlung</h3>
+            <p>Passgenaue Vermittlung zwischen Eigentümern und Käufern – transparent und erreichbar.</p>
+          </article>
+          <article class="service-card">
+            <div class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="7" height="11" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/><path d="M5.5 14h2M5.5 17h2M16.5 7h2M16.5 11h2M16.5 15h2"/></svg>
+            </div>
+            <h3>Projektentwicklung</h3>
+            <p>Begleitung von Neubau- und Kapitalanlageprojekten in der Region Bodensee.</p>
+          </article>
         </div>
       </div>
     </section>
 
-    <section class="section">
+    <section class="section" id="stadtteile">
       <div class="container">
-        <div class="section-head"><div><h2>Konstanz &amp; Bodensee</h2><p>Orientierung für Kauf und Verkauf – mit lokalen Seiten statt leerer Versprechen.</p></div></div>
+        <div class="section-head">
+          <div>
+            <h2>Konstanz &amp; Umgebung</h2>
+            <p>Die wichtigsten Einstiege für Kauf und Verkauf vor Ort.</p>
+          </div>
+        </div>
         <div class="seo-links">
           <a href="immobilienmakler-konstanz.html">Immobilienmakler Konstanz</a>
-          <a href="wohnung-kaufen-konstanz.html">Wohnung kaufen Konstanz</a>
-          <a href="haus-verkaufen-konstanz.html">Haus verkaufen Konstanz</a>
+          <a href="wohnung-kaufen-konstanz.html">Wohnung kaufen</a>
+          <a href="haus-verkaufen-konstanz.html">Haus verkaufen</a>
           <a href="wollmatingen.html">Wollmatingen</a>
           <a href="allmannsdorf.html">Allmannsdorf</a>
-          <a href="konstanz.html">Stadt Konstanz</a>
-          <a href="ratgeber.html">Ratgeber</a>
+          <a href="immobilienbewertung-konstanz.html">Bewertung</a>
         </div>
       </div>
     </section>
@@ -502,6 +519,7 @@
       </div>
     </section>
   </main>
+
   <footer class="site-footer">
     <div class="container">
       <div class="footer-grid footer-grid-seo">
@@ -521,15 +539,13 @@
           <a href="immobilienmakler-konstanz.html">Immobilienmakler Konstanz</a>
           <a href="wohnung-kaufen-konstanz.html">Wohnung kaufen Konstanz</a>
           <a href="haus-verkaufen-konstanz.html">Haus verkaufen Konstanz</a>
-          <a href="immobilienbewertung-konstanz.html">Immobilienbewertung Konstanz</a>
-          <a href="konstanz.html">Immobilien in Konstanz</a>
+          <a href="immobilienbewertung-konstanz.html">Immobilienbewertung</a>
           <a href="index.html#angebote">Aktuelle Kaufangebote</a>
         </div>
         <div class="footer-col">
           <h4>Stadtteile &amp; Region</h4>
-          <a href="wollmatingen.html">Immobilien Wollmatingen</a>
+          <a href="wollmatingen.html">Wollmatingen</a>
           <a href="allmannsdorf.html">Neubau Allmannsdorf</a>
-          <a href="konstanz.html#bodensee">Wohnen am Bodensee</a>
           <a href="projekte.html">Projekte &amp; Angebote</a>
           <a href="https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d" target="_blank" rel="noopener noreferrer">Immowelt-Profil</a>
         </div>
@@ -537,8 +553,8 @@
           <h4>Service</h4>
           <a href="leistungen.html">Leistungen</a>
           <a href="kontakt.html">Kontakt &amp; Termin</a>
-          <a href="immobilienbewertung-konstanz.html">Immobilienbewertung Konstanz</a>
-          <a href="ratgeber.html">Ratgeber Kauf &amp; Verkauf</a>
+          <a href="kontakt.html#tippgeber">Tippgeber</a>
+          <a href="ratgeber.html">Ratgeber</a>
           <a href="impressum.html">Impressum</a>
           <a href="datenschutz.html">Datenschutz</a>
         </div>
@@ -550,14 +566,14 @@
     </div>
   </footer>
 
-  <nav class="sticky-bar" aria-label="Schnellaktionen">
-    <a href="tel:+491705225568" class="sticky-item">
-      <span class="sticky-ico" aria-hidden="true">☎</span>
-      <span>Anrufen</span>
+<nav class="sticky-bar" aria-label="Schnellaktionen">
+    <a href="kontakt.html" class="sticky-item">
+      <span class="sticky-ico" aria-hidden="true">✉</span>
+      <span>Kontakt</span>
     </a>
-    <a href="#" class="sticky-item sticky-accent" data-open-flyer>
+    <a href="kontakt.html#tippgeber" class="sticky-item sticky-accent">
       <span class="sticky-ico" aria-hidden="true">★</span>
-      <span>Vormerken</span>
+      <span>Tippgeber</span>
     </a>
     <a href="immobilienbewertung-konstanz.html" class="sticky-item">
       <span class="sticky-ico" aria-hidden="true">⌂</span>
@@ -565,8 +581,8 @@
     </a>
   </nav>
 
-  <!-- Allmannsdorf flyer modal – Eichmann brand -->
-  <div class="flyer-overlay" id="flyerModal" hidden>
+  <!-- Allmannsdorf flyer modal – opens only via button / deep-link, not auto -->
+<div class="flyer-overlay" id="flyerModal" hidden>
     <div class="flyer-backdrop" data-close-flyer tabindex="-1"></div>
     <div class="flyer-dialog" role="dialog" aria-modal="true" aria-labelledby="flyerTitle">
       <button type="button" class="flyer-close" data-close-flyer aria-label="Schließen">×</button>
@@ -648,7 +664,7 @@
       </div>
     </div>
   </div>
-  <script src="js/analytics.js" defer></script>
+    <script src="js/analytics.js" defer></script>
   <script src="js/main.js" defer></script>
 
 </body>

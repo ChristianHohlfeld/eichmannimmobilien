@@ -73,7 +73,7 @@ function imageBase(index, id) {
 function badgeFor(listing) {
   const blob = `${listing.title || ""} ${listing.short_description || ""}`.toLowerCase();
   if (blob.includes("provisionsfrei")) {
-    return { text: "Provisionsfrei", className: "listing-badge green" };
+    return { text: "Provisionsfrei", className: "listing-badge accent" };
   }
   if (blob.includes("erstbezug")) {
     return { text: "Erstbezug", className: "listing-badge" };

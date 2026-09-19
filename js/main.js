@@ -160,12 +160,7 @@
     if (e.key === "Escape" && modal && !modal.hidden) closeFlyer(true);
   });
 
-  var isHome = /(?:^|\/)(index\.html)?$/.test(location.pathname) || location.pathname.endsWith("/");
-  if (isHome && modal) {
-    var dismissed = false;
-    try { dismissed = sessionStorage.getItem(KEY) === "1"; } catch (e) {}
-    if (!dismissed) setTimeout(openFlyer, 700);
-  }
+  /* Flyer: no auto-open on home. Open only via [data-open-flyer] or deep-link. */
   if (modal && (location.search.indexOf("flyer=1") !== -1 || location.hash === "#allmannsdorf" || location.hash === "#vormerken-neubau")) {
     openFlyer();
   }
