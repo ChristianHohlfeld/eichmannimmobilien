@@ -1,17 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- cache-bust: house-orig-v1 -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 430 86" role="img" aria-labelledby="t d">
+<!-- cache-bust: crisp-v7-house-white-mid -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 364 93" role="img" aria-labelledby="t d">
   <title id="t">Immobilien Eichmann</title>
-  <desc id="d">Eigenes Logo: steiles Dach-Dreieck zentriert über Boden, Mitte weiß hinter Wortmark — nicht Immowelt-Raster</desc>
-
-  <rect x="4" y="28" width="34" height="34" fill="#D13634"/>
-
-  <!-- House: roof apex centered over floor; steep triangle like original bitmap; open white middle -->
-  <polygon fill="#209C46" points="372,2 404,31 340,31"/>
-  <rect x="340" y="61" width="64" height="17" fill="#209C46"/>
-
-  <g font-family="Arial, Helvetica, 'Helvetica Neue', sans-serif" text-rendering="geometricPrecision">
-    <text x="50" y="28" font-size="11.5" font-weight="600" letter-spacing="0.08em" fill="#4A4A4A">Beratung · Verkauf · Vermietung</text>
-    <text x="50" y="58" font-size="28" font-weight="800" letter-spacing="-0.01em" fill="#1A1A1A">IMMOBILIEN - EICHMANN</text>
+  <desc id="d">Eigenes Logo: steiles Dach, Boden grün, Mitte weiß hinter Text — kein Immowelt-Export</desc>
+  <rect width="364" height="93" fill="#ffffff"/>
+  <polygon fill="#209C46" points="303,3 325,27 281,27"/>
+  <rect x="277" y="61" width="53" height="19" fill="#209C46"/>
+  <rect x="8" y="30" width="34" height="34" fill="#D13634"/>
+  <g font-family="Arial, Helvetica, sans-serif" font-weight="800" text-rendering="geometricPrecision">
+    <text x="48" y="28" font-size="9.2" letter-spacing="0.08em" fill="#2d2d2d">Beratung · Verkauf · Vermietung</text>
+    <text x="48" y="58" font-size="22" letter-spacing="-0.01em" fill="#1A1A1A">IMMOBILIEN - EICHMANN</text>
   </g>
 </svg>
