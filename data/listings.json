@@ -5,6 +5,8 @@
   "listings": [
     {
       "id": "c6b1d820-4e82-416d-95ad-22472a129955",
+      "slug": "penthouse-konigsbau-c6b1d820",
+      "local_url": "objekt/penthouse-konigsbau-c6b1d820.html",
       "title": "Penthouse zum Kauf · provisionsfrei",
       "price": "199.000 €",
       "location": "Jacob-Burckhardt-Straße 40, Königsbau, Konstanz (78464)",
@@ -14,12 +16,23 @@
       "type": "Penthouse",
       "status": "Kauf",
       "short_description": "provisionsfrei; Geschoss 1/1; frei ab sofort",
+      "description": null,
+      "facts": null,
       "expose_url": "https://www.immowelt.de/expose/c6b1d820-4e82-416d-95ad-22472a129955",
       "main_image_url": "https://mms.immowelt.de/3/1/1/6/311601a7-d115-4294-92fb-d4b3d5a790d6.jpg?w=525&h=394",
-      "image_base": "01-c6b1d820"
+      "images": [],
+      "floor_plans": [],
+      "image_base": "01-c6b1d820",
+      "gallery_bases": [
+        "01-c6b1d820"
+      ],
+      "floor_plan_bases": [],
+      "enriched_at": null
     },
     {
       "id": "32a8908e-c8e0-4944-b44f-f203ccdaa8a9",
+      "slug": "mehrfamilienhaus-wollmatingen-32a8908e",
+      "local_url": "objekt/mehrfamilienhaus-wollmatingen-32a8908e.html",
       "title": "Mehrfamilienhaus zum Kauf",
       "price": "1.250.000 €",
       "location": "Wollmatingen, Konstanz (78467)",
@@ -29,12 +42,23 @@
       "type": "Mehrfamilienhaus",
       "status": "Kauf",
       "short_description": "frei ab sofort",
+      "description": null,
+      "facts": null,
       "expose_url": "https://www.immowelt.de/expose/32a8908e-c8e0-4944-b44f-f203ccdaa8a9",
       "main_image_url": "https://mms.immowelt.de/5/9/e/6/59e676f3-ab57-4ffe-abfb-d3db0ddf1a1a.jpg?w=525&h=394",
-      "image_base": "02-32a8908e"
+      "images": [],
+      "floor_plans": [],
+      "image_base": "02-32a8908e",
+      "gallery_bases": [
+        "02-32a8908e"
+      ],
+      "floor_plan_bases": [],
+      "enriched_at": null
     },
     {
       "id": "4fed09f2-bcef-4e96-ba56-810037b569c0",
+      "slug": "wohnung-wollmatingen-4fed09f2",
+      "local_url": "objekt/wohnung-wollmatingen-4fed09f2.html",
       "title": "Wohnung zum Kauf - Erstbezug · als Kapitalanlage geeignet",
       "price": "641.200 €",
       "location": "Wollmatingen, Konstanz (78467)",
@@ -44,12 +68,23 @@
       "type": "Wohnung",
       "status": "Kauf",
       "short_description": "Erstbezug; als Kapitalanlage geeignet",
+      "description": null,
+      "facts": null,
       "expose_url": "https://www.immowelt.de/expose/4fed09f2-bcef-4e96-ba56-810037b569c0",
       "main_image_url": "https://mms.immowelt.de/8/d/d/e/8dde84a1-a61f-45a6-a793-4cb1b97d11d5.png?w=525&h=394",
-      "image_base": "03-4fed09f2"
+      "images": [],
+      "floor_plans": [],
+      "image_base": "03-4fed09f2",
+      "gallery_bases": [
+        "03-4fed09f2"
+      ],
+      "floor_plan_bases": [],
+      "enriched_at": null
     },
     {
       "id": "d6860062-651b-4f72-a26e-b3719e525241",
+      "slug": "wohnung-wollmatingen-d6860062",
+      "local_url": "objekt/wohnung-wollmatingen-d6860062.html",
       "title": "Wohnung zum Kauf",
       "price": "140.000 €",
       "location": "Wollmatingen, Konstanz (78467)",
@@ -59,12 +94,23 @@
       "type": "Wohnung",
       "status": "Kauf",
       "short_description": "2. Geschoss; frei ab sofort",
+      "description": null,
+      "facts": null,
       "expose_url": "https://www.immowelt.de/expose/d6860062-651b-4f72-a26e-b3719e525241",
       "main_image_url": "https://mms.immowelt.de/8/6/c/4/86c4944e-4a96-4939-9838-d50245bb01a1.jpg?w=525&h=394",
-      "image_base": "04-d6860062"
+      "images": [],
+      "floor_plans": [],
+      "image_base": "04-d6860062",
+      "gallery_bases": [
+        "04-d6860062"
+      ],
+      "floor_plan_bases": [],
+      "enriched_at": null
     },
     {
       "id": "e7e58fe2-a93f-44f2-bc73-dabd3c7208b3",
+      "slug": "wohnung-wollmatingen-e7e58fe2",
+      "local_url": "objekt/wohnung-wollmatingen-e7e58fe2.html",
       "title": "Wohnung zum Kauf",
       "price": "330.000 €",
       "location": "Wollmatingen, Konstanz (78467)",
@@ -74,12 +120,23 @@
       "type": "Wohnung",
       "status": "Kauf",
       "short_description": "1. Geschoss; frei ab sofort",
+      "description": null,
+      "facts": null,
       "expose_url": "https://www.immowelt.de/expose/e7e58fe2-a93f-44f2-bc73-dabd3c7208b3",
       "main_image_url": "https://mms.immowelt.de/7/6/f/b/76fb5be0-c479-4d12-a774-d08f6fd43db1.jpg?w=525&h=394",
-      "image_base": "05-e7e58fe2"
+      "images": [],
+      "floor_plans": [],
+      "image_base": "05-e7e58fe2",
+      "gallery_bases": [
+        "05-e7e58fe2"
+      ],
+      "floor_plan_bases": [],
+      "enriched_at": null
     },
     {
       "id": "aebb3257-3317-4452-bc9c-a5dbc5ed3838",
+      "slug": "wohnung-wollmatingen-aebb3257",
+      "local_url": "objekt/wohnung-wollmatingen-aebb3257.html",
       "title": "Wohnung zum Kauf · provisionsfrei · als Kapitalanlage geeignet",
       "price": "745.300 €",
       "location": "Wollmatingen, Konstanz (78467)",
@@ -89,12 +146,23 @@
       "type": "Wohnung",
       "status": "Kauf",
       "short_description": "provisionsfrei; als Kapitalanlage geeignet",
+      "description": null,
+      "facts": null,
       "expose_url": "https://www.immowelt.de/expose/aebb3257-3317-4452-bc9c-a5dbc5ed3838",
       "main_image_url": "https://mms.immowelt.de/2/d/6/1/2d61991f-b3fe-4929-a7dd-9b6d8e45fc22.png?w=525&h=394",
-      "image_base": "06-aebb3257"
+      "images": [],
+      "floor_plans": [],
+      "image_base": "06-aebb3257",
+      "gallery_bases": [
+        "06-aebb3257"
+      ],
+      "floor_plan_bases": [],
+      "enriched_at": null
     },
     {
       "id": "86a7d4f6-0118-45fa-addc-ef5fe9edf21d",
+      "slug": "wohnung-petershausen-86a7d4f6",
+      "local_url": "objekt/wohnung-petershausen-86a7d4f6.html",
       "title": "Wohnung zum Kauf · provisionsfrei",
       "price": "735.000 €",
       "location": "Petershausen, Konstanz (78467)",
@@ -104,12 +172,23 @@
       "type": "Wohnung",
       "status": "Kauf",
       "short_description": "provisionsfrei; 1. Geschoss; frei ab sofort",
+      "description": null,
+      "facts": null,
       "expose_url": "https://www.immowelt.de/expose/86a7d4f6-0118-45fa-addc-ef5fe9edf21d",
       "main_image_url": "https://mms.immowelt.de/b/b/8/7/bb874b01-1c25-469a-b7c7-13980438c024.jpg?w=525&h=394",
-      "image_base": "07-86a7d4f6"
+      "images": [],
+      "floor_plans": [],
+      "image_base": "07-86a7d4f6",
+      "gallery_bases": [
+        "07-86a7d4f6"
+      ],
+      "floor_plan_bases": [],
+      "enriched_at": null
     },
     {
       "id": "7bff84e7-8370-471d-b359-5319c8df10ef",
+      "slug": "wohnung-wollmatingen-7bff84e7",
+      "local_url": "objekt/wohnung-wollmatingen-7bff84e7.html",
       "title": "Wohnung zum Kauf · provisionsfrei",
       "price": "695.000 €",
       "location": "Radolfzeller Straße 91, Wollmatingen, Konstanz (78467)",
@@ -119,12 +198,23 @@
       "type": "Wohnung",
       "status": "Kauf",
       "short_description": "provisionsfrei; 2. Geschoss; frei ab sofort",
+      "description": null,
+      "facts": null,
       "expose_url": "https://www.immowelt.de/expose/7bff84e7-8370-471d-b359-5319c8df10ef",
       "main_image_url": "https://mms.immowelt.de/3/4/b/9/34b93bb9-8174-47d5-bd07-a7e9d5e81245.jpg?w=525&h=394",
-      "image_base": "08-7bff84e7"
+      "images": [],
+      "floor_plans": [],
+      "image_base": "08-7bff84e7",
+      "gallery_bases": [
+        "08-7bff84e7"
+      ],
+      "floor_plan_bases": [],
+      "enriched_at": null
     },
     {
       "id": "6fd6062e-32f4-4f02-af80-d854bd090279",
+      "slug": "penthouse-furstenberg-6fd6062e",
+      "local_url": "objekt/penthouse-furstenberg-6fd6062e.html",
       "title": "Penthouse zum Kauf",
       "price": "380.000 €",
       "location": "Fürstenberg, Konstanz (78467)",
@@ -134,12 +224,23 @@
       "type": "Penthouse",
       "status": "Kauf",
       "short_description": "3. Geschoss; frei ab sofort",
+      "description": null,
+      "facts": null,
       "expose_url": "https://www.immowelt.de/expose/6fd6062e-32f4-4f02-af80-d854bd090279",
       "main_image_url": "https://mms.immowelt.de/e/d/0/6/ed06595b-23f0-45e1-9e26-bb0226387da1.jpg?w=525&h=394",
-      "image_base": "09-6fd6062e"
+      "images": [],
+      "floor_plans": [],
+      "image_base": "09-6fd6062e",
+      "gallery_bases": [
+        "09-6fd6062e"
+      ],
+      "floor_plan_bases": [],
+      "enriched_at": null
     },
     {
       "id": "484fee8a-e3f0-4f06-8d26-d740c290b320",
+      "slug": "maisonette-wollmatingen-484fee8a",
+      "local_url": "objekt/maisonette-wollmatingen-484fee8a.html",
       "title": "Maisonette zum Kauf - Erstbezug · provisionsfrei · als Kapitalanlage geeignet",
       "price": "738.100 €",
       "location": "Wollmatingen, Konstanz (78467)",
@@ -149,12 +250,23 @@
       "type": "Maisonette",
       "status": "Kauf",
       "short_description": "Erstbezug; provisionsfrei; als Kapitalanlage geeignet",
+      "description": null,
+      "facts": null,
       "expose_url": "https://www.immowelt.de/expose/484fee8a-e3f0-4f06-8d26-d740c290b320",
       "main_image_url": "https://mms.immowelt.de/e/8/e/0/e8e00bd9-52d0-4612-a2dd-53fbcde5c9c1.png?w=525&h=394",
-      "image_base": "10-484fee8a"
+      "images": [],
+      "floor_plans": [],
+      "image_base": "10-484fee8a",
+      "gallery_bases": [
+        "10-484fee8a"
+      ],
+      "floor_plan_bases": [],
+      "enriched_at": null
     },
     {
       "id": "4ac199b6-606e-470b-bb7e-d8646d47ea80",
+      "slug": "maisonette-wollmatingen-4ac199b6",
+      "local_url": "objekt/maisonette-wollmatingen-4ac199b6.html",
       "title": "Maisonette zum Kauf - Erstbezug · provisionsfrei · als Kapitalanlage geeignet",
       "price": "696.200 €",
       "location": "Wollmatingen, Konstanz (78467)",
@@ -164,12 +276,23 @@
       "type": "Maisonette",
       "status": "Kauf",
       "short_description": "Erstbezug; provisionsfrei; als Kapitalanlage geeignet",
+      "description": null,
+      "facts": null,
       "expose_url": "https://www.immowelt.de/expose/4ac199b6-606e-470b-bb7e-d8646d47ea80",
       "main_image_url": "https://mms.immowelt.de/3/1/c/4/31c4fa2a-93e9-4c46-b519-4fa5247b87c9.png?w=525&h=394",
-      "image_base": "11-4ac199b6"
+      "images": [],
+      "floor_plans": [],
+      "image_base": "11-4ac199b6",
+      "gallery_bases": [
+        "11-4ac199b6"
+      ],
+      "floor_plan_bases": [],
+      "enriched_at": null
     },
     {
       "id": "bb241b38-d292-4047-98fd-4352b841bc5a",
+      "slug": "maisonette-furstenberg-bb241b38",
+      "local_url": "objekt/maisonette-furstenberg-bb241b38.html",
       "title": "Maisonette zum Kauf · provisionsfrei · als Kapitalanlage geeignet",
       "price": "361.500 €",
       "location": "Fürstenberg, Konstanz (78467)",
@@ -179,12 +302,23 @@
       "type": "Maisonette",
       "status": "Kauf",
       "short_description": "provisionsfrei; als Kapitalanlage geeignet",
+      "description": null,
+      "facts": null,
       "expose_url": "https://www.immowelt.de/expose/bb241b38-d292-4047-98fd-4352b841bc5a",
       "main_image_url": "https://mms.immowelt.de/e/a/6/7/ea67ce6b-7159-491e-bb4c-e8177db509e6.png?w=525&h=394",
-      "image_base": "12-bb241b38"
+      "images": [],
+      "floor_plans": [],
+      "image_base": "12-bb241b38",
+      "gallery_bases": [
+        "12-bb241b38"
+      ],
+      "floor_plan_bases": [],
+      "enriched_at": null
     },
     {
       "id": "ff414db8-7e3d-4a01-99f8-029fe15a4d55",
+      "slug": "maisonette-furstenberg-ff414db8",
+      "local_url": "objekt/maisonette-furstenberg-ff414db8.html",
       "title": "Maisonette zum Kauf · provisionsfrei · als Kapitalanlage geeignet",
       "price": "363.700 €",
       "location": "Fürstenberg, Konstanz (78467)",
@@ -194,9 +328,18 @@
       "type": "Maisonette",
       "status": "Kauf",
       "short_description": "provisionsfrei; als Kapitalanlage geeignet",
+      "description": null,
+      "facts": null,
       "expose_url": "https://www.immowelt.de/expose/ff414db8-7e3d-4a01-99f8-029fe15a4d55",
       "main_image_url": "https://mms.immowelt.de/c/3/9/3/c393347b-4d2d-407a-901e-f70d2d00bf38.png?w=525&h=394",
-      "image_base": "13-ff414db8"
+      "images": [],
+      "floor_plans": [],
+      "image_base": "13-ff414db8",
+      "gallery_bases": [
+        "13-ff414db8"
+      ],
+      "floor_plan_bases": [],
+      "enriched_at": null
     }
   ]
 }

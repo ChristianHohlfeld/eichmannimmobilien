@@ -1357,3 +1357,148 @@ a.listing-card:focus-visible {
   padding-bottom: 0.7rem;
   overflow: visible;
 }
+
+/* ===== Local Exposé pages (objekt/*) ===== */
+.expose-hero .eyebrow a { color: var(--slate); text-decoration: none; }
+.expose-hero .eyebrow a:hover { color: var(--primary); }
+.expose-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+.expose-gallery {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: var(--space-3);
+}
+.expose-gallery-stage {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--mist);
+}
+.expose-gallery-item {
+  margin: 0;
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+.expose-gallery-item:first-child,
+.expose-gallery-item.is-active {
+  display: block;
+}
+.expose-gallery-stage picture,
+.expose-gallery-stage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.expose-gallery-placeholder {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: var(--slate);
+}
+.expose-thumbs {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.55rem;
+  overflow-x: auto;
+  background: var(--off-white);
+}
+.expose-thumb {
+  flex: 0 0 72px;
+  width: 72px;
+  height: 54px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--mist);
+}
+.expose-thumb.is-active,
+.expose-thumb:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+.expose-thumb picture,
+.expose-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.expose-section {
+  margin-top: var(--space-3);
+}
+.expose-section h2 {
+  margin: 0 0 0.75rem;
+  color: var(--ink);
+  font-size: 1.25rem;
+}
+.expose-facts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.expose-facts li {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.4fr) 1fr;
+  gap: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.expose-fact-label {
+  color: var(--slate);
+  font-size: var(--fs-sm);
+}
+.expose-fact-value {
+  font-weight: 600;
+  color: var(--ink);
+}
+.expose-description p { margin: 0 0 0.85rem; color: var(--slate); }
+.expose-hint { font-size: var(--fs-sm); color: var(--slate); }
+.expose-floorplans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-2);
+}
+.expose-floorplan {
+  margin: 0;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem;
+}
+.expose-floorplan-img,
+.expose-floorplan img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  background: var(--off-white);
+}
+.expose-aside { position: sticky; top: 5.5rem; }
+.expose-cta-card .form-note { font-size: var(--fs-sm); color: var(--slate); }
+.expose-secondary-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 1rem;
+}
+.expose-disclaimer {
+  margin: 0.85rem 0 0;
+  font-size: 0.8rem;
+  color: var(--slate);
+}
+@media (max-width: 900px) {
+  .expose-layout { grid-template-columns: 1fr; }
+  .expose-aside { position: static; }
+}

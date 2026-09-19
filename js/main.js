@@ -161,6 +161,26 @@
   /* Flyer: never auto-open. Only [data-open-flyer]. */
 
   
+  /* Prefill bei ?interesse=widerruf */
+  if (form && location.search.indexOf("interesse=widerruf") !== -1) {
+    var selW = form.querySelector('[name="anliegen"]');
+    if (selW) {
+      var wantW = "Widerruf";
+      var foundW = false;
+      for (var wi = 0; wi < selW.options.length; wi++) {
+        if (selW.options[wi].value === wantW) { selW.selectedIndex = wi; foundW = true; break; }
+      }
+      if (!foundW) {
+        var optW = document.createElement("option");
+        optW.value = wantW; optW.textContent = wantW; optW.selected = true; selW.appendChild(optW);
+      }
+    }
+    var msgW = form.querySelector('[name="message"]');
+    if (msgW && !msgW.value) {
+      msgW.placeholder = "Hiermit widerrufe ich den Vertrag vom … über …";
+    }
+  }
+
   /* Prefill Anliegen + Fokus Formular bei ?interesse=allmannsdorf */
   if (form && location.search.indexOf("interesse=allmannsdorf") !== -1) {
     var sel = form.querySelector('[name="anliegen"]');
@@ -195,4 +215,70 @@
       }, 50);
     }
   }
+
+
+  /* Exposé gallery thumbs */
+  var gallery = document.getElementById("expose-gallery");
+  if (gallery) {
+    var items = gallery.querySelectorAll(".expose-gallery-item");
+    var thumbs = gallery.querySelectorAll("[data-thumb-index]");
+    function showSlide(idx) {
+      items.forEach(function (el, i) {
+        if (items.length > 1) el.style.display = i === idx ? "block" : "none";
+        el.classList.toggle("is-active", i === idx);
+      });
+      thumbs.forEach(function (btn) {
+        var i = Number(btn.getAttribute("data-thumb-index"));
+        btn.classList.toggle("is-active", i === idx);
+      });
+    }
+    if (items.length > 1) showSlide(0);
+    thumbs.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        showSlide(Number(btn.getAttribute("data-thumb-index")) || 0);
+      });
+    });
+  }
+
+  /* Prefill Kontakt from ?objekt=slug */
+  if (form) {
+    var paramsObj = new URLSearchParams(location.search);
+    var objektSlug = paramsObj.get("objekt");
+    if (objektSlug) {
+      var selObj = form.querySelector('[name="anliegen"]');
+      if (selObj) {
+        var wantObj = "Exposé-Anfrage";
+        var foundObj = false;
+        for (var k = 0; k < selObj.options.length; k++) {
+          if (selObj.options[k].value === wantObj) {
+            selObj.selectedIndex = k;
+            foundObj = true;
+            break;
+          }
+        }
+        if (!foundObj) {
+          var optObj = document.createElement("option");
+          optObj.value = wantObj;
+          optObj.textContent = wantObj;
+          optObj.selected = true;
+          selObj.appendChild(optObj);
+        }
+      }
+      var msgObj = form.querySelector('[name="message"]');
+      if (msgObj && !msgObj.value) {
+        msgObj.value =
+          "Guten Tag,\n" +
+          "ich interessiere mich für das Objekt " + decodeURIComponent(objektSlug) + ".\n" +
+          "Bitte senden Sie mir das Exposé / weitere Informationen.\n\n" +
+          "Mit freundlichen Grüßen";
+      }
+      var targetObj = document.getElementById("contact-form");
+      if (targetObj) {
+        setTimeout(function () {
+          targetObj.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 50);
+      }
+    }
+  }
 })();
+
