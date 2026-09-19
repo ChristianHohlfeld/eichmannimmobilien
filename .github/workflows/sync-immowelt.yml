@@ -2,8 +2,8 @@ name: Sync Immowelt Listings
 
 on:
   schedule:
-    # Daily 05:00 UTC ≈ 07:00 Europe/Berlin (winter) / 06:00 CEST
-    - cron: "0 5 * * *"
+    # Every 3 hours (UTC). Soft-fails on DataDome keep last good list.
+    - cron: "0 */3 * * *"
   workflow_dispatch:
     inputs:
       force_from_json:
