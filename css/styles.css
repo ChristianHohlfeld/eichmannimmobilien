@@ -1274,9 +1274,12 @@ a.listing-card:focus-visible {
   content: "";
   width: 0.45rem;
   height: 0.45rem;
-  margin-top: 0.55em; /* align to first text line, not card center */
+  /* Optical center of first text line (works with multi-line cards) */
+  margin-top: 0.58em; /* fallback when 1lh unsupported */
+  margin-top: calc((1lh - 0.45rem) / 2);
   border-radius: 50%;
   background: var(--accent);
+  align-self: start;
 }
 .feature-list a {
   overflow-wrap: anywhere;
