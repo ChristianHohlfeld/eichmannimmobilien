@@ -1388,14 +1388,15 @@ a.listing-card:focus-visible {
 
 
 
-/* logo: eigenes Branding crisp-v5-own */
+/* logo-flex-fix-v1 */
+/* logo: eigenes Branding crisp-v5-own — flex darf Bild nicht auf 0 schrumpfen */
 .logo {
   gap: 0;
   max-width: calc(100% - 3.25rem);
-  min-width: 0;
+  min-width: min-content;
   padding: 0.2rem 0.15rem 0.2rem 0;
   overflow: visible;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
 }
 .logo-svg,
 .logo img.logo-svg,
@@ -1405,6 +1406,8 @@ a.listing-card:focus-visible {
   width: auto !important;
   height: 44px;
   max-width: min(400px, calc(100vw - 3.75rem));
+  min-width: 140px;
+  flex-shrink: 0;
   object-fit: contain;
   object-position: left center;
   overflow: visible;
@@ -1415,6 +1418,7 @@ a.listing-card:focus-visible {
   .site-header .logo img.logo-svg {
     height: 52px;
     max-width: 440px;
+    min-width: 180px;
   }
 }
 .site-header .header-inner {
