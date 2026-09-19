@@ -68,6 +68,45 @@ Zusätzlich: Postfach oder **Weiterleitung** `info@immobilieneichmann.de` → `c
 
 Wenn später **DomainFactory Professional E-Mail (Titan)** genutzt wird: MX auf Titan umstellen und SPF auf Titan-Include ändern – wiederum ohne Pages-Records anzufassen. Exakte Titan-MX/SPF aus dem DF-Kundenmenü übernehmen.
 
+## Immowelt-Angebote (Single Source of Truth)
+
+Aktuelle Kaufangebote auf der Website kommen aus dem Immowelt-Profil und werden automatisch synchronisiert.
+
+- **Quelle:** [Immowelt-Profil Immobilien Eichmann](https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d)
+- **Canonical JSON:** `data/listings.json` (Schlüssel = Exposé-UUID)
+- **Bilder:** `assets/listings/{nn}-{uuid8}.jpg` + `.webp`
+- **HTML:** Karten in `index.html` und `projekte.html` zwischen den Markern `IMMWELT-LISTINGS` / `IMMWELT-COUNT` (Fragment auch unter `partials/listings-grid.html`)
+- **Workflow:** `.github/workflows/sync-immowelt.yml` (`Sync Immowelt Listings`)
+  - täglich per Cron + manuell unter **Actions → Sync Immowelt Listings → Run workflow**
+  - bei erfolgreichem Diff: Commit auf `main` → GitHub Pages aktualisiert sich
+
+### Manuell aktualisieren
+
+Lokal (Node 18+):
+
+```bash
+npm install
+npx playwright install chromium   # nur für Live-Scrape
+node scripts/sync-immowelt.mjs                # Live-Scrape + Bilder + HTML
+node scripts/sync-immowelt.mjs --render-only  # nur HTML aus data/listings.json
+node scripts/sync-immowelt.mjs --from-json /pfad/zu/listings.json
+```
+
+Oder in GitHub: **Actions → Sync Immowelt Listings → Run workflow**.
+
+Optional: Workflow-Input *Skip scrape / render only* setzt `--render-only`.
+
+### Soft-Fail & Bot-Schutz
+
+Immowelt nutzt oft **DataDome** / Bot-Schutz. Schlägt der Scrape fehl, bleibt die zuletzt gültige `data/listings.json` unverändert (Exit 0) – die Site zeigt weiter die letzten guten Angebote. Kein leeres Grid durch einen fehlgeschlagenen Lauf.
+
+Einschränkungen:
+
+- Kein Login / kein Umgehen von Captchas – nur öffentliches Profil.
+- Neue Objekte erscheinen nach dem nächsten erfolgreichen Sync (Cron oder manuell).
+- Entfernte Immowelt-Exposés verschwinden beim Sync (inkl. verwaister Bilder).
+- Keine Duplikate: Deduplizierung nach Exposé-UUID.
+
 ## Lokal ansehen
 
 Einfach die HTML-Dateien im Browser öffnen oder:

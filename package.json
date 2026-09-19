@@ -1,0 +1,18 @@
+{
+  "name": "eichmannimmobilien",
+  "private": true,
+  "type": "module",
+  "description": "Static site for Immobilien Eichmann – Immowelt listings sync",
+  "scripts": {
+    "sync-immowelt": "node scripts/sync-immowelt.mjs",
+    "sync-immowelt:render": "node scripts/sync-immowelt.mjs --render-only",
+    "sync-immowelt:seed": "node scripts/sync-immowelt.mjs --from-json ../eichmann-logo/listings.json"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0",
+    "sharp": "^0.33.5"
+  }
+}
