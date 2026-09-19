@@ -701,6 +701,8 @@ a.listing-card:focus-visible {
   flex-wrap: wrap;
   gap: var(--space-1);
   margin-top: var(--space-1);
+  min-width: 0;
+  max-width: 100%;
 }
 .seo-links a {
   background: var(--white);
@@ -712,6 +714,9 @@ a.listing-card:focus-visible {
   text-decoration: none;
   color: var(--primary);
   box-shadow: var(--shadow);
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
 }
 .seo-links a:hover {
   border-color: var(--accent);
@@ -1214,11 +1219,14 @@ a.listing-card:focus-visible {
   padding: 0;
   display: grid;
   gap: var(--space-1);
+  min-width: 0;
+  max-width: 100%;
 }
 .feature-list li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.7rem;
+  display: grid;
+  grid-template-columns: 0.45rem minmax(0, 1fr);
+  column-gap: 0.7rem;
+  align-items: start;
   padding: var(--space-2);
   background: var(--white);
   border: 1px solid var(--border);
@@ -1226,15 +1234,23 @@ a.listing-card:focus-visible {
   color: var(--slate);
   box-shadow: var(--shadow);
   line-height: var(--lh-body, 1.55);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .feature-list li::before {
   content: "";
-  flex: 0 0 auto;
   width: 0.45rem;
   height: 0.45rem;
   margin-top: 0.55em; /* align to first text line, not card center */
   border-radius: 50%;
   background: var(--accent);
+}
+.feature-list a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .section-alt .feature-list li { background: var(--white); }
 
@@ -1562,3 +1578,35 @@ a.listing-card:focus-visible {
   .cookie-banner-actions { width: 100%; }
   .cookie-banner-actions .btn { flex: 1 1 auto; justify-content: center; }
 }
+
+
+/* Mobile overflow guards (SEO landings / feature lists) */
+@media (max-width: 980px) {
+  .services-strip.services-strip-auto,
+  .services-strip-auto {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .container,
+  .narrow,
+  .section,
+  .page-hero-inner {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .service-card {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .contact-grid .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .contact-grid .hero-actions .btn {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
