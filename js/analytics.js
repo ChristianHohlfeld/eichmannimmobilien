@@ -1,5 +1,5 @@
 (function () {
-  var MEASUREMENT_ID = ''; // set to 'G-XXXXXXXX' to enable GA4
+  var MEASUREMENT_ID = 'G-QVRRBPYNVM';
   if (!MEASUREMENT_ID || MEASUREMENT_ID.indexOf('G-') !== 0) return;
   window.dataLayer = window.dataLayer || [];
   function gtag(){ dataLayer.push(arguments); }
