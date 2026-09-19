@@ -1324,3 +1324,28 @@ a.listing-card:focus-visible {
     padding-inline: 0.25rem;
   }
 }
+
+
+
+/* logo-crafted */
+.logo {
+  gap: 0;
+  max-width: calc(100% - 3.2rem);
+}
+.logo-svg,
+.logo img.logo-svg,
+.site-header .logo-svg,
+.footer-brand .logo img {
+  width: auto;
+  height: 40px;
+  max-width: min(240px, 72vw);
+  object-fit: contain;
+  object-position: left center;
+}
+@media (min-width: 900px) {
+  .site-header .logo-svg {
+    height: 48px;
+    max-width: 280px;
+  }
+}
+}
