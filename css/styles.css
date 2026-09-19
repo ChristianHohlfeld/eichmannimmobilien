@@ -1,3 +1,4 @@
+/* flyer-no-close-tip v1 */
 /* cta-script-caveat v1 */
 /* Immobilien Eichmann – Design Brief v1
    Tokens: lake/night blue + sand-gold + neutrals. Calm premium local Makler. */
@@ -936,23 +937,6 @@ a.listing-card:focus-visible {
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
   box-sizing: border-box;
-}
-.flyer-close-tip {
-  position: absolute;
-  top: 0.65rem;
-  left: 0.75rem;
-  right: 3.2rem;
-  z-index: 2;
-  margin: 0;
-  padding: 0.35rem 0.55rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--slate);
-  background: rgba(255,255,255,0.92);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  cursor: pointer;
-  line-height: 1.2;
 }
 .flyer-close {
 
