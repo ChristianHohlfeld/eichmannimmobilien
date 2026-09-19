@@ -1253,10 +1253,9 @@ a.listing-card:focus-visible {
   max-width: 100%;
 }
 .feature-list li {
-  display: grid;
-  grid-template-columns: 0.45rem minmax(0, 1fr);
-  column-gap: 0.7rem;
-  align-items: start;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
   padding: var(--space-2);
   background: var(--white);
   border: 1px solid var(--border);
@@ -1274,12 +1273,13 @@ a.listing-card:focus-visible {
   content: "";
   width: 0.45rem;
   height: 0.45rem;
-  /* Optical center of first text line (works with multi-line cards) */
-  margin-top: 0.58em; /* fallback when 1lh unsupported */
-  margin-top: calc((1lh - 0.45rem) / 2);
+  /* rem/lh — em on ::before was undershooting on iOS (dots sat above first line) */
+  margin-top: 0.55rem;
+  margin-top: max(0px, calc((1lh - 0.45rem) / 2));
   border-radius: 50%;
   background: var(--accent);
   align-self: start;
+  flex-shrink: 0;
 }
 .feature-list a {
   overflow-wrap: anywhere;
