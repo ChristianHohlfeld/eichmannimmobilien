@@ -1324,3 +1324,21 @@ a.listing-card:focus-visible {
     padding-inline: 0.25rem;
   }
 }
+
+
+/* logo-orig-aspect */
+.logo-svg,
+.logo img.logo-svg,
+.site-header .logo-svg,
+.footer-brand .logo img {
+  width: auto;
+  height: 44px;
+  max-width: min(220px, 58vw);
+  object-fit: contain;
+}
+@media (min-width: 900px) {
+  .site-header .logo-svg {
+    height: 50px;
+    max-width: 240px;
+  }
+}
