@@ -1,15 +1,27 @@
 # Exposé Admin
 
-Einfaches Admin für Helmut: Exposés sehen, Texte/Fotos nachpflegen, Immowelt-Sync anstoßen.
+Einfaches Admin für Helmut: Exposés anlegen, bearbeiten, löschen, Texte/Fotos nachpflegen, optional Immowelt importieren.
 
 **Live:** [https://immobilieneichmann.de/admin/](https://immobilieneichmann.de/admin/)  
-(alternativ GitHub Pages-URL `/admin/`)
+(alternativ GitHub-Pages-URL `/admin/`)
+
+## Single Source of Truth (SoT)
+
+**SoT = unsere Exposés** in `data/listings.json` + dieses Admin.
+
+| Rolle | Bedeutung |
+|-------|-----------|
+| `data/listings.json` + Admin | **maßgeblich** – Insert / Update / Delete |
+| Immowelt | **optionaler Inbound-Import** (nur lesen) |
+| Immowelt-Konto | wird **niemals** beschrieben |
+
+Nach jedem Speichern/Löschen/Anlegen läuft automatisch **Render-only** (`objekt/*.html`, Karten, Sitemap) über `admin-save.yml` bzw. `sync-immowelt.yml` mit `force_from_json=true`.
 
 ## Für Helmut
 
 1. `/admin/` öffnen  
 2. Freigeschaltete E-Mail + Passwort eingeben (von Chris)  
-3. Fertig – Objekte bearbeiten, Fotos, Sync-Buttons  
+3. Objekte anlegen / bearbeiten / löschen, Fotos, optional Immowelt-Import  
 
 Kein GitHub-Token, kein Extra-Setup auf dem Rechner.
 
@@ -17,20 +29,25 @@ Kein GitHub-Token, kein Extra-Setup auf dem Rechner.
 
 | Funktion | Wirkung |
 |----------|---------|
-| Liste / Bearbeiten | Titel, Kurztext, Beschreibung, Preis, Zimmer, Fläche, Ort, Status |
-| Speichern | Schreibt `data/listings.json` (GitHub), setzt `manual_overrides` |
-| Fotos | Upload nach `assets/listings/`, Eintrag in Liste; Entfernen nur aus JSON |
-| Sync Immowelt | Startet Workflow **Voll-Sync** (Profil **nur lesen/importieren**) |
-| Nur rendern | Erzeugt `objekt/*.html` & Karten neu aus JSON |
+| + Neues Objekt | Lokaler SoT-Eintrag (eigene id/slug); optional Immowelt-URL/UUID nur zum Vorfüllen |
+| Bearbeiten / Speichern | Schreibt `data/listings.json`, setzt `manual_overrides`, **Auto-Render** |
+| Löschen | Entfernt aus JSON; Render löscht `objekt/{slug}.html` und orphan Assets |
+| Fotos | Upload nach `assets/listings/`, Eintrag in Liste |
+| Immowelt-Import | Liest Profil, **merged inbound**; fehlende IDs → `missing_on_immowelt` (kein Auto-Delete) |
+| Nur rendern | Erzeugt HTML/Karten/Sitemap neu aus SoT-JSON |
+
+## Immowelt-Sync-Policy
+
+- Neue Immowelt-IDs → Insert-Kandidaten  
+- Bestehende → unlocked Felder mergen; `manual_overrides` und `source: local` sind autoritativ  
+- Auf Immowelt verschwunden → **kein** Löschen lokal (Flag `missing_on_immowelt: true`)  
+- Ausnahme nur bei `sync_policy: "mirror"` **und** gesetzter `immowelt_id`  
+- Default: `sync_policy: "independent"` – Unabhängigkeit von Immowelt  
 
 ## Absolute Regel: Immowelt
 
 Das Immowelt-Konto wird **niemals** bearbeitet – weder Texte noch Fotos noch Status dort.  
 Sync = Import/Lesen in diese Website. Sonst nichts.
-
-## `manual_overrides`
-
-Felder, die Helmut speichert, werden markiert. `scripts/sync-immowelt.mjs` überschreibt diese Felder beim nächsten Immowelt-Import **nicht**.
 
 ## Sicherheit (bewusst einfach)
 
@@ -61,8 +78,4 @@ npx serve -p 5500
 ## Workflows
 
 - `sync-immowelt.yml` – Cron + manueller Immowelt-Import / Render-only  
-- `admin-save.yml` – Fallback: speichert JSON via `repository_dispatch` mit `GITHUB_TOKEN`
-
-## Phase 2 (nicht gebaut)
-
-Neue Objekte ohne Immowelt manuell anlegen.
+- `admin-save.yml` – Admin Apply: speichert JSON (optional) + **render-only** + Commit aller Outputs (`GITHUB_TOKEN`)

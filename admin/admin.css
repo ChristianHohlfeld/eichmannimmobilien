@@ -290,3 +290,20 @@ table.listings tr:hover td { background: #fafaf8; }
   .sync-panel { grid-template-columns: 1fr; }
 }
 .sync-panel .card { margin: 0; }
+
+.sot-banner {
+  background: #eef4fb;
+  border-bottom: 1px solid #c5d6ea;
+  color: var(--primary);
+  font-size: 0.9rem;
+  padding: 10px 20px;
+  line-height: 1.45;
+}
+.sot-banner code {
+  font-size: 0.85em;
+  background: rgba(15, 39, 68, 0.06);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.badge.local { background: #e8f0fe; color: var(--primary-mid, #163A5F); }
+.badge.warn { background: #fff4d6; color: var(--warn, #9a6b00); }
