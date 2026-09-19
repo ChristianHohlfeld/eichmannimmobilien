@@ -1326,19 +1326,26 @@ a.listing-card:focus-visible {
 }
 
 
-/* logo-orig-aspect */
+
+/* logo-crafted */
+.logo {
+  gap: 0;
+  max-width: calc(100% - 3.2rem);
+}
 .logo-svg,
 .logo img.logo-svg,
 .site-header .logo-svg,
 .footer-brand .logo img {
   width: auto;
-  height: 44px;
-  max-width: min(220px, 58vw);
+  height: 40px;
+  max-width: min(240px, 72vw);
   object-fit: contain;
+  object-position: left center;
 }
 @media (min-width: 900px) {
   .site-header .logo-svg {
-    height: 50px;
-    max-width: 240px;
+    height: 48px;
+    max-width: 280px;
   }
+}
 }
