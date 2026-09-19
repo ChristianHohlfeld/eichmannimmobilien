@@ -1326,7 +1326,7 @@ a.listing-card:focus-visible {
 
 
 
-/* logo: Immowelt-match, no clip on house / Schluss-N */
+/* logo: Immowelt HQ 4x — sharp on retina */
 .logo {
   gap: 0;
   max-width: calc(100% - 3.25rem);
@@ -1340,16 +1340,16 @@ a.listing-card:focus-visible {
 .site-header .logo-svg,
 .footer-brand .logo img {
   width: auto !important;
-  height: 44px;
-  max-width: min(400px, calc(100vw - 4rem));
+  height: 42px;
+  max-width: min(420px, calc(100vw - 3.75rem));
   object-fit: contain;
   object-position: left center;
   overflow: visible;
-  }
+}
 @media (min-width: 900px) {
   .site-header .logo-svg {
-    height: 54px;
-    max-width: 440px;
+    height: 50px;
+    max-width: 460px;
   }
 }
 .site-header .header-inner {
