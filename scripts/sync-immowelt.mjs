@@ -265,10 +265,21 @@ function normalizeListing(raw, index, prev = null) {
 
   base.slug = makeSlug({ ...base, slug: raw.slug || (prev && prev.slug) });
   base.local_url = localExposePath(base);
+  base.source = raw.source || (prev && prev.source) || "immowelt";
+  base.immowelt_id =
+    raw.immowelt_id ||
+    (prev && prev.immowelt_id) ||
+    (looksLikeImmoweltId(id) ? id : null);
+  base.sync_policy = raw.sync_policy || (prev && prev.sync_policy) || "independent";
+  base.missing_on_immowelt =
+    raw.missing_on_immowelt === true ||
+    (prev && prev.missing_on_immowelt === true) ||
+    false;
   // Preserve Admin locks: Immowelt must not overwrite Helmut's manual fields
   applyManualOverrides(base, prev);
+  applyLocalAuthoritative(base, prev);
   // Prefer previous slug/local_url when title was manually overridden (stable URLs)
-  if (prev && isManuallyOverridden(prev, "title") && prev.slug) {
+  if (prev && ((isManuallyOverridden(prev, "title") && prev.slug) || (prev.source === "local" && prev.slug))) {
     base.slug = prev.slug;
     base.local_url = prev.local_url || localExposePath(base);
   }
@@ -949,25 +960,34 @@ async function syncImages(data, { skipDownload = false } = {}) {
     L.floor_plan_bases = floorBases;
   }
 
-  // Remove orphaned listing images
-  const files = await readdir(IMAGES_DIR);
-  const imgRe = /^(\d{2}-[a-f0-9]{8}(?:-g\d{2}|-fp\d{2})?)\.(jpe?g|png|webp)$/i;
+  await cleanupOrphanImages(data);
+}
+
+/** Managed image stems: Immowelt NN-xxxxxxxx(+gallery) or Admin admin-xxxxxxxx-ts */
+const MANAGED_IMAGE_STEM_RE =
+  /^(?:\d{2}-[a-f0-9]{8}(?:-g\d{2}|-fp\d{2})?|admin-[a-f0-9]{8}-\d+)(?:\.[a-z]+)?$/i;
+
+async function cleanupOrphanImages(data) {
+  await mkdir(IMAGES_DIR, { recursive: true });
+  const keepFinal = collectKeepImageBases(data.listings);
+  for (const L of data.listings) {
+    for (const img of L.images || []) {
+      const base = path.basename(String(img)).replace(/\.(jpe?g|png|webp)$/i, "");
+      if (base) keepFinal.add(base);
+    }
+  }
+  const files = await readdir(IMAGES_DIR).catch(() => []);
+  const imgRe = /^(.*)\.(jpe?g|png|webp)$/i;
   for (const f of files) {
     if (f.startsWith("._tmp-")) {
-      await unlink(path.join(IMAGES_DIR, f)).catch(() => {});
+      if (!dryRun) await unlink(path.join(IMAGES_DIR, f)).catch(() => {});
       continue;
     }
     const m = f.match(imgRe);
     if (!m) continue;
-    if (!keepBases.has(m[1]) && !collectKeepImageBases(data.listings).has(m[1])) {
-      // recompute after gallery_bases assigned
-    }
-  }
-  const keepFinal = collectKeepImageBases(data.listings);
-  for (const f of files) {
-    const m = f.match(imgRe);
-    if (!m) continue;
-    if (!keepFinal.has(m[1])) {
+    const stem = m[1];
+    if (!MANAGED_IMAGE_STEM_RE.test(stem)) continue;
+    if (!keepFinal.has(stem)) {
       console.log(`Removing orphan image ${f}`);
       if (!dryRun) await unlink(path.join(IMAGES_DIR, f));
     }
@@ -975,7 +995,7 @@ async function syncImages(data, { skipDownload = false } = {}) {
 }
 
 function serializeListing(L) {
-  return {
+  const out = {
     id: L.id,
     slug: L.slug,
     local_url: L.local_url,
@@ -990,7 +1010,7 @@ function serializeListing(L) {
     short_description: L.short_description,
     description: L.description || null,
     facts: L.facts || null,
-    expose_url: L.expose_url,
+    expose_url: L.expose_url || null,
     main_image_url: L.main_image_url,
     images: L.images || [],
     floor_plans: L.floor_plans || [],
@@ -998,13 +1018,72 @@ function serializeListing(L) {
     gallery_bases: L.gallery_bases || [],
     floor_plan_bases: L.floor_plan_bases || [],
     enriched_at: L.enriched_at || null,
+    // SoT metadata (local Admin owns the record; Immowelt is optional inbound)
+    source: L.source || (L.immowelt_id || looksLikeImmoweltId(L.id) ? "immowelt" : "local"),
+    immowelt_id: L.immowelt_id || (looksLikeImmoweltId(L.id) ? L.id : null),
+    sync_policy: L.sync_policy || "independent",
+    missing_on_immowelt: L.missing_on_immowelt === true,
   };
+  if (L.manual_overrides && typeof L.manual_overrides === "object") {
+    out.manual_overrides = { ...L.manual_overrides };
+  }
+  return out;
+}
+
+function looksLikeImmoweltId(id) {
+  return typeof id === "string" && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id);
+}
+
+function listingImmoweltKey(L) {
+  if (!L) return null;
+  if (L.immowelt_id) return String(L.immowelt_id).toLowerCase();
+  const fromUrl = exposeIdFromUrl(L.expose_url);
+  if (fromUrl) return fromUrl.toLowerCase();
+  if (looksLikeImmoweltId(L.id) && L.source !== "local") return String(L.id).toLowerCase();
+  return null;
+}
+
+function hasAnyManualOverrides(prev) {
+  const mo = prev && prev.manual_overrides;
+  if (!mo || typeof mo !== "object") return false;
+  return Object.keys(mo).some((k) => k !== "updated_at" && mo[k] === true);
+}
+
+/**
+ * When source is local (or Admin locked fields), Immowelt inbound must not clobber SoT.
+ * Empty local fields may still be filled from Immowelt (inbound merge only).
+ */
+function applyLocalAuthoritative(listing, prev) {
+  if (!prev) return listing;
+  const localSoT = prev.source === "local" || hasAnyManualOverrides(prev);
+  if (!localSoT) return listing;
+
+  for (const field of MANUAL_OVERRIDE_FIELDS) {
+    const v = prev[field];
+    const empty =
+      v == null ||
+      v === "" ||
+      (Array.isArray(v) && v.length === 0);
+    if (!empty) listing[field] = v;
+  }
+  if (prev.slug) {
+    listing.slug = prev.slug;
+    listing.local_url = prev.local_url || localExposePath(prev);
+  }
+  listing.source = prev.source || listing.source;
+  listing.sync_policy = prev.sync_policy || listing.sync_policy || "independent";
+  listing.immowelt_id = prev.immowelt_id || listing.immowelt_id || null;
+  if (prev.manual_overrides) listing.manual_overrides = { ...prev.manual_overrides };
+  return listing;
 }
 
 async function writeCanonical(data) {
   await mkdir(path.dirname(DATA_PATH), { recursive: true });
   const out = {
+    // Single Source of Truth = this file + Admin. Immowelt is optional inbound only.
+    sot: "local",
     source: data.source || PROFILE_URL,
+    immowelt_profile: data.immowelt_profile || PROFILE_URL,
     scraped_at: data.scraped_at,
     listing_count: data.listings.length,
     listings: data.listings.map(serializeListing),
@@ -1105,15 +1184,25 @@ async function renderIntoPages(data) {
 }
 
 /**
- * Merge scraped card list with previous canonical data (add/update/delete).
- * Keeps enrichment fields when scrape only returns card-level data.
+ * Merge Immowelt scrape (inbound only) into local SoT.
+ * - New Immowelt IDs → insert candidates
+ * - Existing → update unlocked fields; never clobber manual_overrides / source:local
+ * - Missing on Immowelt → do NOT delete by default (flag missing_on_immowelt)
+ *   Only sync_policy:"mirror" + immowelt_id may auto-remove
+ * Immowelt account is NEVER written to.
  */
 function mergeListings(scrapedList, previousData) {
-  const prevById = new Map(
-    (previousData?.listings || []).map((L) => [L.id, L])
-  );
-  const scrapedIds = new Set();
+  const prevList = previousData?.listings || [];
+  const prevById = new Map(prevList.map((L) => [L.id, L]));
+  const prevByImmowelt = new Map();
+  for (const L of prevList) {
+    const key = listingImmoweltKey(L);
+    if (key) prevByImmowelt.set(key, L);
+  }
+
+  const scrapedKeys = new Set();
   const merged = [];
+  const matchedPrevIds = new Set();
 
   scrapedList.forEach((raw, i) => {
     const id =
@@ -1121,33 +1210,85 @@ function mergeListings(scrapedList, previousData) {
       exposeIdFromUrl(raw.expose_url) ||
       exposeIdFromUrl(raw.url);
     if (!id) return;
-    scrapedIds.add(id);
-    const prev = prevById.get(id) || null;
+    const key = String(id).toLowerCase();
+    scrapedKeys.add(key);
+    const prev = prevByImmowelt.get(key) || prevById.get(id) || null;
     const L = normalizeListing(raw, i, prev);
-    if (L) merged.push(L);
+    if (!L) return;
+
+    L.immowelt_id = (prev && prev.immowelt_id) || id;
+    L.source = (prev && prev.source) || "immowelt";
+    L.sync_policy = (prev && prev.sync_policy) || "independent";
+    L.missing_on_immowelt = false;
+
+    applyManualOverrides(L, prev);
+    applyLocalAuthoritative(L, prev);
+
+    merged.push(L);
+    if (prev) matchedPrevIds.add(prev.id);
   });
 
-  const removed = [...prevById.keys()].filter((id) => !scrapedIds.has(id));
-  if (removed.length) {
-    console.log(`Delete ${removed.length} listing(s) no longer on Immowelt:`, removed.map(shortId).join(", "));
+  let flagged = 0;
+  let mirrorRemoved = 0;
+  for (const prev of prevList) {
+    if (matchedPrevIds.has(prev.id)) continue;
+
+    const key = listingImmoweltKey(prev);
+    const policy = prev.sync_policy || "independent";
+
+    // Local-only (no Immowelt link): always keep
+    if (!key) {
+      merged.push({ ...prev, source: prev.source || "local", sync_policy: policy });
+      continue;
+    }
+
+    // Linked to Immowelt but absent from scrape
+    if (policy === "mirror") {
+      mirrorRemoved += 1;
+      console.log(
+        `Mirror-delete ${shortId(prev.id)} (sync_policy=mirror, missing on Immowelt)`
+      );
+      continue;
+    }
+
+    flagged += 1;
+    merged.push({
+      ...prev,
+      source: prev.source || "immowelt",
+      sync_policy: policy,
+      immowelt_id: prev.immowelt_id || key,
+      missing_on_immowelt: true,
+    });
   }
+
   const added = merged.filter((L) => !prevById.has(L.id));
-  const updated = merged.filter((L) => prevById.has(L.id));
+  const updated = merged.filter((L) => prevById.has(L.id) && matchedPrevIds.has(L.id));
   console.log(
-    `Sync diff: +${added.length} added, ~${updated.length} kept/updated, -${removed.length} removed → ${merged.length} total`
+    `Sync diff (SoT): +${added.length} added, ~${updated.length} updated, ` +
+      `${flagged} flagged missing_on_immowelt, ${mirrorRemoved} mirror-removed → ${merged.length} total`
   );
 
   merged.forEach((L, i) => {
     const prev = prevById.get(L.id) || null;
-    // Only refresh image_base when not manually locked (Admin photo layout)
-    if (!isManuallyOverridden(prev, "image_base") && !isManuallyOverridden(prev, "images")) {
-      L.image_base = imageBase(i, L.id);
+    if (
+      !isManuallyOverridden(prev, "image_base") &&
+      !isManuallyOverridden(prev, "images") &&
+      L.source !== "local"
+    ) {
+      // Keep stable image_base when already set
+      if (!L.image_base) L.image_base = imageBase(i, L.id);
     }
-    if (!(prev && isManuallyOverridden(prev, "title") && prev.slug)) {
-      L.slug = makeSlug(L);
-      L.local_url = localExposePath(L);
+    if (!(prev && ((isManuallyOverridden(prev, "title") && prev.slug) || (prev.source === "local" && prev.slug)))) {
+      if (!L.slug) {
+        L.slug = makeSlug(L);
+        L.local_url = localExposePath(L);
+      }
+    } else if (prev && prev.slug) {
+      L.slug = prev.slug;
+      L.local_url = prev.local_url || localExposePath(prev);
     }
     applyManualOverrides(L, prev);
+    applyLocalAuthoritative(L, prev);
   });
 
   return merged;
@@ -1505,10 +1646,12 @@ async function main() {
       process.exit(1);
     }
     data = previous;
-    // Persist normalized slug/local_url/gallery fields
+    // Persist normalized slug/local_url/gallery + SoT fields
     await writeCanonical(data);
     await renderIntoPages(data);
-    console.log("Render-only done.");
+    // Drop orphan objekt/*.html (via renderExposePages) and unused managed images
+    await cleanupOrphanImages(data);
+    console.log("Render-only done (SoT JSON → HTML/grids/sitemap + orphan cleanup).");
     return;
   }
 

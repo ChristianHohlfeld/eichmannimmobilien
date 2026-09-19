@@ -1,7 +1,9 @@
 /**
  * Exposé Admin – password gate only for Helmut.
  * GitHub write token is sealed in config.json (AES-GCM), unlocked after login.
- * Immowelt account is NEVER edited – sync only imports/reads.
+ * Single Source of Truth = data/listings.json + this Admin.
+ * Immowelt = optional inbound import only – NEVER write to Immowelt.
+ * Every Insert/Update/Delete auto-triggers render-only (objekt/grids/sitemap).
  */
 
 const STORAGE_AUTH = "ei_admin_auth";
@@ -96,7 +98,10 @@ function showView(name) {
     const el = $(`view-${v}`);
     if (el) el.classList.toggle("hidden", v !== name);
   });
-  $("app-header").classList.toggle("hidden", name === "gate");
+  const inApp = name !== "gate";
+  $("app-header").classList.toggle("hidden", !inApp);
+  const banner = $("sot-banner");
+  if (banner) banner.classList.toggle("hidden", !inApp);
 }
 
 function isAuthed() {
@@ -208,10 +213,16 @@ function renderList() {
         L.manual_overrides &&
         Object.keys(L.manual_overrides).some((k) => k !== "updated_at" && L.manual_overrides[k] === true);
       const local = L.local_url ? `../${L.local_url}` : "#";
+      const srcBadge =
+        L.source === "local"
+          ? '<span class="badge local">lokal</span>'
+          : L.missing_on_immowelt
+            ? '<span class="badge warn">fehlt Immowelt</span>'
+            : '<span class="badge">Immowelt</span>';
       return `<tr>
         <td>
           <strong>${esc(L.title || "–")}</strong>
-          ${hasManual ? '<div><span class="badge manual">manuell</span></div>' : ""}
+          <div>${srcBadge}${hasManual ? ' <span class="badge manual">manuell</span>' : ""}</div>
           <div class="mono muted">${esc(shortId(L.id))}</div>
         </td>
         <td>${esc(L.location || "–")}</td>
@@ -376,14 +387,51 @@ function utf8ToBase64(str) {
   return btoa(binary);
 }
 
+function ensureSotMeta() {
+  listingsData.sot = "local";
+  listingsData.listing_count = (listingsData.listings || []).length;
+}
+
+function slugifyTitle(title, id) {
+  const base =
+    String(title || "objekt")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/ä/g, "ae")
+      .replace(/ö/g, "oe")
+      .replace(/ü/g, "ue")
+      .replace(/ß/g, "ss")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 48) || "objekt";
+  return `${base}-${shortId(id)}`;
+}
+
+function parseImmoweltRef(raw) {
+  const s = String(raw || "").trim();
+  if (!s) return null;
+  const m = s.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
+  if (!m) return null;
+  const uuid = m[1].toLowerCase();
+  return {
+    immowelt_id: uuid,
+    expose_url: `https://www.immowelt.de/expose/${uuid}`,
+  };
+}
+
+/**
+ * Persist listings.json then always trigger render-only apply.
+ * Prefer Contents API + admin_apply_render; fallback admin_save_listings (JSON+render in one Action).
+ */
 async function persistListings(message) {
   if (!getPat()) throw new Error("Schreib-Token fehlt – bitte neu einloggen.");
   const path = config.listings_path || "data/listings.json";
+  ensureSotMeta();
   if (!listingsSha) {
     const meta = await ghFetch(`/contents/${path}?ref=${encodeURIComponent(config.branch || "main")}`);
     listingsSha = meta.sha;
   }
-  listingsData.listing_count = (listingsData.listings || []).length;
   const body = {
     message,
     content: utf8ToBase64(JSON.stringify(listingsData, null, 2) + "\n"),
@@ -398,19 +446,29 @@ async function persistListings(message) {
       body: JSON.stringify(body),
     });
   } catch (e) {
-    // Fallback: repository_dispatch → admin-save.yml (GITHUB_TOKEN schreibt)
     console.warn("Contents API failed, trying admin-save dispatch:", e);
-    await dispatchAdminSave(message);
-    // re-fetch sha/content
-    await loadListingsFromGithub();
-    return null;
+    await dispatchAdminSave(message, true);
+    await new Promise((r) => setTimeout(r, 2000));
+    try {
+      await loadListingsFromGithub();
+    } catch {
+      /* Action may still be running */
+    }
+    return { via: "dispatch_save" };
   }
   listingsSha = result.content?.sha || listingsSha;
+  try {
+    await dispatchApplyRender(message);
+  } catch (e) {
+    console.warn("admin_apply_render failed, fallback sync render:", e);
+    await triggerWorkflow(true);
+  }
   return result;
 }
 
-async function dispatchAdminSave(message) {
+async function dispatchAdminSave(message, triggerRender = true) {
   const listingsPath = config.listings_path || "data/listings.json";
+  ensureSotMeta();
   await ghFetch(`/dispatches`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -420,11 +478,39 @@ async function dispatchAdminSave(message) {
         message: message || "Admin: listings.json aktualisiert",
         listings_json: JSON.stringify(listingsData),
         path: listingsPath,
-        trigger_render: true,
+        trigger_render: triggerRender !== false,
       },
     }),
   });
-  toast("Speichern über Admin-Action gestartet …", "ok");
+  toast("Speichern + Auto-Render über Admin-Action gestartet …", "ok");
+}
+
+/** After Contents API wrote JSON: run render-only and commit generated files. */
+async function dispatchApplyRender(message) {
+  const wf = config.admin_save_workflow || "admin-save.yml";
+  try {
+    await ghFetch(`/dispatches`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event_type: "admin_apply_render",
+        client_payload: {
+          message: (message || "Admin") + " + render",
+          trigger_render: true,
+        },
+      }),
+    });
+  } catch (e) {
+    await ghFetch(`/actions/workflows/${wf}/dispatches`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ref: config.branch || "main",
+        inputs: { mode: "render_only" },
+      }),
+    });
+  }
+  toast("Auto-Render gestartet (objekt/*.html, Karten, Sitemap).", "ok");
 }
 
 async function saveEdit(ev) {
@@ -466,24 +552,133 @@ async function saveEdit(ev) {
 
   try {
     await persistListings(`Admin: ${shortId(L.id)} – ${changed.join(", ")} aktualisiert`);
-    $("save-msg").textContent = "Gespeichert in data/listings.json.";
+    $("save-msg").textContent =
+      "Gespeichert in data/listings.json. Auto-Render läuft (öffentliche Seiten folgen).";
     $("detail-title").textContent = L.title || "Objekt";
-    toast("Gespeichert", "ok");
-
-    if ($("save-and-render").checked) {
-      try {
-        await triggerWorkflow(true);
-        $("save-msg").textContent +=
-          " Render-Workflow gestartet – öffentliche Seiten aktualisieren nach dem Action-Lauf.";
-      } catch (e) {
-        $("save-msg").textContent += " Speichern ok, Render-Trigger: " + e.message;
-      }
-    }
+    toast("Gespeichert + Render", "ok");
   } catch (e) {
     $("save-msg").textContent = e.message;
     toast(e.message, "error");
   } finally {
     btn.disabled = false;
+  }
+}
+
+async function deleteCurrentListing() {
+  const id = $("edit-id").value;
+  const L = findListing(id);
+  if (!L) return;
+  const label = L.title || shortId(id);
+  if (
+    !confirm(
+      `Objekt „${label}“ wirklich löschen?\n\nEntfernt aus SoT (listings.json), löscht objekt/${L.slug || "…"}.html und räumt verwaiste Assets beim Auto-Render auf.`
+    )
+  ) {
+    return;
+  }
+  const btn = $("btn-delete");
+  if (btn) btn.disabled = true;
+  listingsData.listings = (listingsData.listings || []).filter((x) => x.id !== id);
+  ensureSotMeta();
+  try {
+    await persistListings(`Admin: gelöscht ${shortId(id)} (${L.slug || ""})`);
+    toast("Gelöscht + Auto-Render gestartet", "ok");
+    currentId = null;
+    showView("list");
+    renderList();
+  } catch (e) {
+    toast(e.message, "error");
+    try {
+      await ensureListings();
+      renderList();
+    } catch {
+      /* ignore */
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function createListing(ev) {
+  ev.preventDefault();
+  const title = $("create-title").value.trim();
+  if (!title) return;
+  const msg = $("create-msg");
+  msg.textContent = "Lege an …";
+
+  const immowelt = parseImmoweltRef($("create-immowelt").value);
+  const id = crypto.randomUUID();
+  if ((listingsData.listings || []).some((L) => L.id === id)) {
+    msg.textContent = "ID-Kollision – bitte erneut versuchen.";
+    return;
+  }
+  if (
+    immowelt &&
+    (listingsData.listings || []).some(
+      (L) => L.immowelt_id === immowelt.immowelt_id || L.id === immowelt.immowelt_id
+    )
+  ) {
+    msg.textContent = "Objekt mit dieser Immowelt-ID existiert bereits.";
+    return;
+  }
+
+  const slug = slugifyTitle(title, id);
+  const listing = {
+    id,
+    slug,
+    local_url: `objekt/${slug}.html`,
+    title,
+    price: $("create-price").value.trim() || null,
+    location: $("create-location").value.trim() || null,
+    rooms: $("create-rooms").value.trim() || null,
+    living_area: $("create-living").value.trim() || null,
+    plot_area: null,
+    type: null,
+    status: $("create-status").value.trim() || "Kauf",
+    short_description: $("create-short").value.trim() || null,
+    description: null,
+    facts: null,
+    expose_url: immowelt ? immowelt.expose_url : null,
+    main_image_url: null,
+    images: [],
+    floor_plans: [],
+    image_base: `admin-${shortId(id)}`,
+    gallery_bases: [],
+    floor_plan_bases: [],
+    enriched_at: null,
+    source: "local",
+    immowelt_id: immowelt ? immowelt.immowelt_id : null,
+    sync_policy: "independent",
+    missing_on_immowelt: false,
+    manual_overrides: {
+      title: true,
+      price: true,
+      location: true,
+      rooms: true,
+      living_area: true,
+      status: true,
+      short_description: true,
+      updated_at: new Date().toISOString(),
+    },
+  };
+
+  listingsData.listings = listingsData.listings || [];
+  listingsData.listings.unshift(listing);
+  ensureSotMeta();
+
+  try {
+    await persistListings(`Admin: neu angelegt ${shortId(id)} (${slug})`);
+    msg.textContent = "Angelegt. Auto-Render läuft.";
+    toast("Neues Objekt gespeichert + Render", "ok");
+    $("card-create").style.display = "none";
+    $("form-create").reset();
+    $("create-status").value = "Kauf";
+    renderList();
+    openDetail(id);
+  } catch (e) {
+    listingsData.listings = listingsData.listings.filter((L) => L.id !== id);
+    msg.textContent = e.message;
+    toast(e.message, "error");
   }
 }
 
@@ -499,8 +694,8 @@ async function triggerWorkflow(forceFromJson) {
   });
   toast(
     forceFromJson
-      ? "Render-Workflow gestartet (nur HTML aus JSON)."
-      : "Voll-Sync gestartet (Immowelt nur lesen/importieren).",
+      ? "Render-Workflow gestartet (nur HTML aus SoT-JSON)."
+      : "Immowelt-Import gestartet (nur lesen/mergen – nie schreiben).",
     "ok"
   );
 }
@@ -663,6 +858,26 @@ function bind() {
   });
 
   $("form-edit").addEventListener("submit", saveEdit);
+
+  const btnDelete = $("btn-delete");
+  if (btnDelete) btnDelete.addEventListener("click", () => deleteCurrentListing());
+
+  const btnNew = $("btn-new");
+  if (btnNew) {
+    btnNew.addEventListener("click", () => {
+      const card = $("card-create");
+      if (!card) return;
+      card.style.display = card.style.display === "none" || !card.style.display ? "block" : "none";
+    });
+  }
+  const btnCreateCancel = $("btn-create-cancel");
+  if (btnCreateCancel) {
+    btnCreateCancel.addEventListener("click", () => {
+      $("card-create").style.display = "none";
+    });
+  }
+  const formCreate = $("form-create");
+  if (formCreate) formCreate.addEventListener("submit", createListing);
 
   const syncFull = async () => {
     try {
