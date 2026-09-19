@@ -82,8 +82,13 @@
 
         <div class="contact-form">
           <h2>Nachricht senden</h2>
-          <p class="form-note">Das Formular öffnet Ihr E-Mail-Programm mit vorausgefüllter Nachricht an info@immobilieneichmann.de. Es werden keine Daten auf dem Server gespeichert.</p>
-          <form id="contact-form" action="mailto:info@immobilieneichmann.de" method="get">
+          <p class="form-note">Ihre Anfrage wird per Formular-Dienst an uns zugestellt. Alternativ schreiben Sie direkt an
+            <a href="mailto:info@immobilieneichmann.de">info@immobilieneichmann.de</a>.</p>
+          <form id="contact-form" action="https://formsubmit.co/ajax/chris.hohlfeld@gmail.com" method="POST" novalidate>
+            <input type="hidden" name="_subject" value="Kontaktanfrage – Immobilien Eichmann">
+            <input type="hidden" name="_template" value="table">
+            <input type="hidden" name="_captcha" value="false">
+            <input type="text" name="_honey" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
             <div class="form-group">
               <label for="name">Name *</label>
               <input type="text" id="name" name="name" required autocomplete="name">
@@ -110,9 +115,14 @@
               <label for="message">Ihre Nachricht *</label>
               <textarea id="message" name="message" required placeholder="Beschreiben Sie kurz Ihr Anliegen …"></textarea>
             </div>
-            <button type="submit" class="btn btn-dark">Per E-Mail senden</button>
-            <div id="form-success" class="form-success" role="status">
-              Ihr E-Mail-Programm sollte sich öffnen. Falls nicht, schreiben Sie direkt an
+            <button type="submit" class="btn btn-dark" id="contact-submit">Nachricht senden</button>
+            <div id="form-success" class="form-success" role="status" hidden>
+              Vielen Dank – Ihre Nachricht wurde übermittelt. Wir melden uns zeitnah.
+            </div>
+            <div id="form-error" class="form-error" role="alert" hidden>
+              Versand über das Formular ist gerade nicht möglich.
+              <button type="button" class="linkish" id="mailto-fallback">Stattdessen E-Mail-Programm öffnen</button>
+              oder schreiben Sie an
               <a href="mailto:info@immobilieneichmann.de">info@immobilieneichmann.de</a>.
             </div>
           </form>

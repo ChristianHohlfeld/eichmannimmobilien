@@ -510,6 +510,40 @@ ul { list-style: none; }
 
 .form-success.visible { display: block; }
 
+.form-error {
+  display: none;
+  background: #fdecea;
+  border: 1px solid #e8a0a0;
+  color: #7a1f1f;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.form-error.visible { display: block; }
+
+.form-error .linkish {
+  display: inline;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 0.15rem;
+  color: var(--lake-mid);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.hp-field {
+  position: absolute !important;
+  left: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* Legal pages */
 .legal-content {
   background: var(--white);

@@ -16,7 +16,7 @@ Die Site liegt im Root von `main` und wird über GitHub Pages ausgeliefert. Die 
 | `index.html` | Startseite (Hero, Leistungen, Projekte, CTA) |
 | `leistungen.html` | Verkauf, Vermittlung, Projektentwicklung |
 | `projekte.html` | Platzhalter-Projektkarten (Neubau / Region Konstanz) |
-| `kontakt.html` | Kontaktdaten + mailto-Formular |
+| `kontakt.html` | Kontaktdaten + FormSubmit-Formular (Fallback mailto) |
 | `impressum.html` | Impressum (Einzelunternehmen Helmut Eichmann) |
 | `datenschutz.html` | Datenschutzerklärung |
 
@@ -44,6 +44,29 @@ Optional IPv6 (AAAA), falls DomainFactory das anbietet:
 | AAAA | `@` | `2606:50c0:8003::153` |
 
 Danach in den GitHub-Repo-Settings unter **Pages → Custom domain** ggf. `immobilieneichmann.de` prüfen. Die Datei `CNAME` im Repo setzt die primäre Domain auf `immobilieneichmann.de`. DNS-Propagation kann bis zu einigen Stunden dauern. HTTPS wird von GitHub nach erfolgreicher Domain-Verifizierung automatisch bereitgestellt („Enforce HTTPS“ aktivieren).
+
+
+
+## Kontaktformular & E-Mail
+
+- **Formular:** sendet via [FormSubmit](https://formsubmit.co) (AJAX) an `chris.hohlfeld@gmail.com` (von Chris kontrolliertes Postfach). Einmalige Aktivierung: FormSubmit schickt eine „Activate Form“-Mail an dieses Postfach – Link anklicken.
+- **Öffentliche Adresse auf der Site:** `info@immobilieneichmann.de` (mailto-Fallback bleibt).
+- **Aktueller DNS-Stand (nicht DomainFactory-NS):** NS = GoDaddy `ns19/ns20.domaincontrol.com`, MX = GoDaddy SecureServer (`smtp.secureserver.net` / `mailstore1.secureserver.net`). Kein SPF / DKIM / DMARC gesetzt.
+- **Pages nicht anfassen:** Apex-A/AAAA (GitHub Pages) und `www` CNAME auf `christianhohlfeld.github.io` beibehalten.
+
+### Empfohlene Mail-DNS-Einträge (bei aktuellem DNS-Provider / GoDaddy DNS)
+
+Nur ergänzen, **ohne** Pages-A/AAAA/`www` zu ändern:
+
+| Typ | Host | Wert | Zweck |
+|-----|------|------|--------|
+| TXT | `@` | `v=spf1 include:secureserver.net ~all` | SPF für GoDaddy-Mail |
+| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:chris.hohlfeld@gmail.com` | DMARC monitor |
+| TXT | (DKIM-Selektor von GoDaddy/Titan) | *(Wert aus dem Mail-Panel)* | DKIM, sobald Postfach aktiv |
+
+Zusätzlich: Postfach oder **Weiterleitung** `info@immobilieneichmann.de` → `chris.hohlfeld@gmail.com` im GoDaddy-/DomainFactory-Mailpanel anlegen, sonst kommen Mails an info@ ggf. nicht an.
+
+Wenn später **DomainFactory Professional E-Mail (Titan)** genutzt wird: MX auf Titan umstellen und SPF auf Titan-Include ändern – wiederum ohne Pages-Records anzufassen. Exakte Titan-MX/SPF aus dem DF-Kundenmenü übernehmen.
 
 ## Lokal ansehen
 
