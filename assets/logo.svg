@@ -1,24 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 364 93" role="img" aria-labelledby="t d">
   <title id="t">Immobilien Eichmann</title>
-  <desc id="d">Markenzeichen: Quadrat, Wortmarke und Haus – Beratung · Verkauf · Vermietung · Konstanz</desc>
+  <desc id="d">Markenzeichen: Quadrat, Wortmarke und Haus – Beratung · Verkauf · Vermietung</desc>
 
-  <!-- LEFT: solid square (was brick red → slate) -->
-  <rect x="10" y="30" width="28" height="28" fill="#64748B"/>
+  <!-- LEFT: solid square (knallrot → muted terracotta) -->
+  <rect x="10" y="30" width="28" height="28" fill="#A85A4A"/>
 
-  <!-- CENTER: tagline + wordmark -->
+  <!-- CENTER: tagline + wordmark (no hyphen) -->
   <text x="50" y="28"
         font-family="DM Sans, Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif"
-        font-size="8.5" font-weight="500" letter-spacing="0.08em" fill="#64748B">Beratung · Verkauf · Vermietung</text>
+        font-size="8.5" font-weight="500" letter-spacing="0.08em" fill="#6B6B6B">Beratung · Verkauf · Vermietung</text>
   <text x="50" y="55"
         font-family="DM Sans, Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif"
-        font-size="18" font-weight="700" letter-spacing="0.04em" fill="#111111">IMMOBILIEN - EICHMANN</text>
+        font-size="18" font-weight="700" letter-spacing="0.04em" fill="#1A1A1A">IMMOBILIEN EICHMANN</text>
 
-  <!-- RIGHT: HOUSE Markenzeichen (was bright green → lake) — square body + pitched roof -->
-  <g fill="#3B6B7A">
-    <!-- Roof: equilateral-ish triangle -->
+  <!-- RIGHT: HOUSE Markenzeichen (knallgrün → muted sage) -->
+  <g fill="#5A7358">
     <polygon points="302,6 276,36 328,36"/>
-    <!-- Body -->
     <rect x="280" y="36" width="44" height="42"/>
   </g>
 </svg>

@@ -1,27 +1,31 @@
-/* Immobilien Eichmann – Swiss Klar (v2) */
+/* Immobilien Eichmann – Swiss Klar layout + muted brand red/green */
 :root {
   --white: #FFFFFF;
-  --mist: #F4F4F5;
-  --ink: #111111;
-  --slate: #64748B;
-  --lake: #3B6B7A;
-  --lake-hover: #2F5663;
-  --border: #E4E4E7;
+  --mist: #F5F5F4;
+  --ink: #1A1A1A;
+  --slate: #6B6B6B;
+  --brand-red: #A85A4A;
+  --brand-green: #5A7358;
+  --brand-green-hover: #4A6148;
+  --brand-red-hover: #8F4B3D;
+  --border: #E7E5E4;
   --radius: 4px;
   --font: "DM Sans", Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --max: 1120px;
   --sticky-h: 60px;
-  /* aliases so older inline var() still resolve */
+  /* aliases / accents */
+  --lake: var(--brand-green);
+  --lake-hover: var(--brand-green-hover);
   --blue-deep: var(--ink);
-  --blue-mid: var(--lake);
+  --blue-mid: var(--brand-green);
   --blue-soft: var(--mist);
   --blue-pale: var(--mist);
   --charcoal: var(--ink);
   --muted: var(--slate);
-  --accent: var(--lake);
-  --accent-hover: var(--lake-hover);
-  --red: var(--lake);
-  --green: var(--lake);
+  --accent: var(--brand-green);
+  --accent-hover: var(--brand-green-hover);
+  --red: var(--brand-red);
+  --green: var(--brand-green);
   --shadow: none;
 }
 
