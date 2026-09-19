@@ -1340,16 +1340,17 @@ a.listing-card:focus-visible {
 .site-header .logo-svg,
 .footer-brand .logo img {
   width: auto !important;
-  height: 42px;
-  max-width: min(380px, calc(100vw - 4.25rem));
+  height: 44px;
+  max-width: min(400px, calc(100vw - 4rem));
   object-fit: contain;
   object-position: left center;
   overflow: visible;
+  image-rendering: -webkit-optimize-contrast;
 }
 @media (min-width: 900px) {
   .site-header .logo-svg {
-    height: 52px;
-    max-width: 420px;
+    height: 54px;
+    max-width: 440px;
   }
 }
 .site-header .header-inner {
