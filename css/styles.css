@@ -42,6 +42,7 @@
   --space-8: 64px;
   --radius: 10px;
   --shadow: 0 4px 18px rgba(15, 39, 68, 0.08);
+  --shadow-hover: 0 10px 28px rgba(15, 39, 68, 0.14);
   --max: 1120px;
   --sticky-h: 72px;
   --header-h: 72px;
@@ -495,15 +496,20 @@ h3, .h3 {
   text-decoration: none !important;
   color: inherit;
   cursor: pointer;
-  transition: none;
+  transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
 }
-a.listing-card:hover { text-decoration: none !important; color: inherit; border-color: var(--primary-mid); }
+a.listing-card:hover {
+  text-decoration: none !important;
+  color: inherit;
+  border-color: var(--primary-mid);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
 a.listing-card:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 .listing-card .btn { pointer-events: none; }
-.listing-card:hover { transform: none; }
 .listing-photo {
   aspect-ratio: 4 / 3;
   background: var(--mist);
@@ -518,6 +524,10 @@ a.listing-card:focus-visible {
   object-position: center 38%;
   transform: scale(1.16);
   transform-origin: center 40%;
+  transition: transform 0.35s ease;
+}
+.listing-card:hover .listing-photo img {
+  transform: scale(1.2);
 }
 .listing-badge {
   position: absolute;
@@ -585,8 +595,30 @@ a.listing-card:focus-visible {
   color: var(--slate);
   flex: 1;
 }
-.listing-actions { margin-top: 0.35rem; }
-.listing-actions .btn { width: 100%; }
+.listing-actions { margin-top: auto; padding-top: 0.35rem; }
+.listing-actions .btn {
+  width: 100%;
+  transition: background 0.28s ease, border-color 0.28s ease, color 0.28s ease;
+}
+/* Clear Exposé CTA: sand-gold on card hover (matches tokens) */
+.listing-card:hover .listing-actions .btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--primary);
+}
+@media (prefers-reduced-motion: reduce) {
+  .listing-card,
+  .listing-photo img,
+  .listing-actions .btn {
+    transition: none;
+  }
+  a.listing-card:hover {
+    transform: none;
+  }
+  .listing-card:hover .listing-photo img {
+    transform: scale(1.16);
+  }
+}
 
 /* ——— Contact strip ——— */
 .contact-strip {

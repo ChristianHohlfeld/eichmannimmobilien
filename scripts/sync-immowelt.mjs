@@ -130,8 +130,9 @@ function renderCard(listing) {
     .filter(Boolean)
     .join("\n              ");
 
-  return `        <a class="listing-card" href="${escapeHtml(listing.expose_url)}" target="_blank" rel="noopener noreferrer">
-<div class="listing-photo">
+  const aria = `${listing.title} – Exposé auf Immowelt öffnen`;
+  return `        <a class="listing-card" href="${escapeHtml(listing.expose_url)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(aria)}">
+          <div class="listing-photo">
             <picture>
               <source srcset="assets/listings/${escapeHtml(base)}.webp" type="image/webp">
               <img src="assets/listings/${escapeHtml(base)}.jpg" alt="${escapeHtml(alt)}" loading="lazy" width="800" height="600" decoding="async">
@@ -146,8 +147,8 @@ function renderCard(listing) {
               ${meta}
             </div>
             <p class="listing-desc">${escapeHtml(listing.short_description || "")}</p>
-                        <div class="listing-actions">
-              <span class="btn btn-primary btn-sm">Zum Exposé</span>
+            <div class="listing-actions">
+              <span class="btn btn-primary btn-sm">Exposé ansehen</span>
             </div>
           </div>
         </a>`;
