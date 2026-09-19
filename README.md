@@ -50,7 +50,7 @@ Danach in den GitHub-Repo-Settings unter **Pages → Custom domain** ggf. `immob
 ## Kontaktformular & E-Mail
 
 - **Formular:** sendet via [Web3Forms](https://web3forms.com) (AJAX an `https://api.web3forms.com/submit`) an `chris.hohlfeld@gmail.com`. Access Key ist im Formular/JS hinterlegt (öffentlich vorgesehen). Free-Plan: 250 Submissions/Monat.
-- **Öffentliche Adresse auf der Site:** `info@immobilieneichmann.de` (mailto-Fallback bleibt).
+- **Öffentliche Adresse auf der Site:** `info@immobilien-eichmann.com` (mailto-Fallback bleibt).
 - **Aktueller DNS-Stand (nicht DomainFactory-NS):** NS = GoDaddy `ns19/ns20.domaincontrol.com`, MX = GoDaddy SecureServer (`smtp.secureserver.net` / `mailstore1.secureserver.net`). Kein SPF / DKIM / DMARC gesetzt.
 - **Pages nicht anfassen:** Apex-A/AAAA (GitHub Pages) und `www` CNAME auf `christianhohlfeld.github.io` beibehalten.
 
@@ -64,7 +64,7 @@ Nur ergänzen, **ohne** Pages-A/AAAA/`www` zu ändern:
 | TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:chris.hohlfeld@gmail.com` | DMARC monitor |
 | TXT | (DKIM-Selektor von GoDaddy/Titan) | *(Wert aus dem Mail-Panel)* | DKIM, sobald Postfach aktiv |
 
-Zusätzlich: Postfach oder **Weiterleitung** `info@immobilieneichmann.de` → `chris.hohlfeld@gmail.com` im GoDaddy-/DomainFactory-Mailpanel anlegen, sonst kommen Mails an info@ ggf. nicht an.
+Zusätzlich: Postfach oder **Weiterleitung** `info@immobilien-eichmann.com` → `chris.hohlfeld@gmail.com` im GoDaddy-/DomainFactory-Mailpanel anlegen, sonst kommen Mails an info@ ggf. nicht an.
 
 Wenn später **DomainFactory Professional E-Mail (Titan)** genutzt wird: MX auf Titan umstellen und SPF auf Titan-Include ändern – wiederum ohne Pages-Records anzufassen. Exakte Titan-MX/SPF aus dem DF-Kundenmenü übernehmen.
 

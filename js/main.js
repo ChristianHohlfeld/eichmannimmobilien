@@ -23,10 +23,9 @@
   var y = document.getElementById("y");
   if (y) y.textContent = String(new Date().getFullYear());
 
-  /* Web3Forms contact */
-  var FORM_ENDPOINT = "https://api.web3forms.com/submit";
-  var ACCESS_KEY = "49d8f579-9384-4d87-b570-67c6e835f4da";
-  var MAILTO_TO = "info@immobilieneichmann.de";
+  /* FormSubmit → info@immobilien-eichmann.com */
+  var FORM_ENDPOINT = "https://formsubmit.co/ajax/info@immobilien-eichmann.com";
+  var MAILTO_TO = "info@immobilien-eichmann.com";
 
   function buildMailto(form) {
     var name = (form.querySelector('[name="name"]') || {}).value || "";
@@ -88,14 +87,14 @@
 
       var anliegen = (form.querySelector('[name="anliegen"]') || {}).value || "Anfrage";
       var payload = {
-        access_key: ACCESS_KEY,
         name: (form.querySelector('[name="name"]') || {}).value || "",
         email: (form.querySelector('[name="email"]') || {}).value || "",
         phone: (form.querySelector('[name="phone"]') || {}).value || "",
         anliegen: anliegen,
         message: (form.querySelector('[name="message"]') || {}).value || "",
-        subject: anliegen + " – Immobilien Eichmann (Webformular)",
-        from_name: "Immobilien Eichmann Webseite"
+        _subject: anliegen + " – Immobilien Eichmann (Webformular)",
+        _template: "table",
+        _captcha: "false"
       };
 
       fetch(FORM_ENDPOINT, {
@@ -112,9 +111,13 @@
           });
         })
         .then(function (result) {
-          if (result.data && result.data.success === true) {
+          /* FormSubmit: success true, or first-time activation message */
+          if (result.ok && result.data && (result.data.success === "true" || result.data.success === true)) {
             show(success, true);
             form.reset();
+          } else if (result.ok && result.data && /Activ/i.test(JSON.stringify(result.data))) {
+            show(success, true);
+            if (success) success.textContent = "Bitte einmal die Bestätigung in info@immobilien-eichmann.com öffnen (erster Formularversand), danach kommen Anfragen direkt an.";
           } else {
             show(error, true);
           }
