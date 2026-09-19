@@ -121,6 +121,13 @@
             <label for="message">Ihre Nachricht *</label>
             <textarea id="message" name="message" required placeholder="Beschreiben Sie kurz Ihr Anliegen …"></textarea>
           </div>
+          <div class="form-group form-consent">
+            <label class="consent-label">
+              <input type="checkbox" name="datenschutz" id="datenschutz" required>
+              Ich bin mit der Verarbeitung meiner Angaben zur Bearbeitung der Anfrage einverstanden.
+              Hinweise in der <a href="datenschutz.html">Datenschutzerklärung</a>.
+            </label>
+          </div>
           <button type="submit" class="btn btn-accent" id="contact-submit">Nachricht senden</button>
           <div id="form-success" class="form-success" role="status" hidden>
             Vielen Dank – Ihre Nachricht wurde übermittelt. Wir melden uns zeitnah.
@@ -134,6 +141,26 @@
         </form>
       </div>
     </div></section>
+
+    <section class="section" id="anfahrt">
+      <div class="container">
+        <div class="content-card">
+          <h2 style="margin-top:0;color:var(--ink)">Anfahrt &amp; Lage</h2>
+          <p style="color:var(--slate)">Jacob-Burckhardt-Str. 40, 78464 Konstanz – Termine nach Vereinbarung.</p>
+          <div class="map-embed">
+            <iframe
+              title="Karte: Immobilien Eichmann, Jacob-Burckhardt-Str. 40, Konstanz"
+              src="https://maps.google.com/maps?q=Jacob-Burckhardt-Str.+40%2C+78464+Konstanz&amp;z=15&amp;output=embed"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              allowfullscreen=""
+              ></iframe>
+          </div>
+          <p class="map-link"><a href="https://www.google.com/maps/search/?api=1&amp;query=Jacob-Burckhardt-Str.+40%2C+78464+Konstanz" target="_blank" rel="noopener noreferrer">In Google Maps öffnen</a></p>
+        </div>
+      </div>
+    </section>
+
   </main>
   <footer class="site-footer">
     <div class="container">
@@ -154,6 +181,7 @@
           <a href="immobilienmakler-konstanz.html">Immobilienmakler Konstanz</a>
           <a href="wohnung-kaufen-konstanz.html">Wohnung kaufen Konstanz</a>
           <a href="haus-verkaufen-konstanz.html">Haus verkaufen Konstanz</a>
+          <a href="immobilienbewertung-konstanz.html">Immobilienbewertung Konstanz</a>
           <a href="konstanz.html">Immobilien in Konstanz</a>
           <a href="index.html#angebote">Aktuelle Kaufangebote</a>
         </div>
