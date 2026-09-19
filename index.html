@@ -6,6 +6,7 @@
   <title>Immobilienmakler Konstanz | Wohnung &amp; Haus kaufen – Immobilien Eichmann</title>
   <meta name="description" content="Immobilien Eichmann in Konstanz: aktuelle Kaufangebote, Verkauf &amp; Vermittlung am Bodensee. Persönliche Beratung mit Helmut Eichmann – Mobil 0170 5225568.">
   <meta name="robots" content="index,follow">
+  <meta name="google-site-verification" content="REPLACE_WITH_GOOGLE_SEARCH_CONSOLE_TOKEN">
   <link rel="canonical" href="https://immobilieneichmann.de/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="de_DE">
@@ -14,9 +15,14 @@
   <meta property="og:description" content="Immobilien Eichmann in Konstanz: aktuelle Kaufangebote, Verkauf &amp; Vermittlung am Bodensee. Persönliche Beratung mit Helmut Eichmann – Mobil 0170 5225568.">
   <meta property="og:url" content="https://immobilieneichmann.de/">
   <meta property="og:image" content="https://immobilieneichmann.de/assets/flyer/hero-dining.jpg">
+  <meta property="og:image:width" content="520">
+  <meta property="og:image:height" content="550">
+  <meta property="og:image:alt" content="Immobilien Eichmann – Neubau und Immobilien in Konstanz">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Immobilienmakler Konstanz | Wohnung &amp; Haus kaufen – Immobilien Eichmann">
   <meta name="twitter:description" content="Immobilien Eichmann in Konstanz: aktuelle Kaufangebote, Verkauf &amp; Vermittlung am Bodensee. Persönliche Beratung mit Helmut Eichmann – Mobil 0170 5225568.">
+  <meta name="twitter:image" content="https://immobilieneichmann.de/assets/flyer/hero-dining.jpg">
+  <meta name="twitter:image:alt" content="Immobilien Eichmann – Neubau und Immobilien in Konstanz">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <link rel="preload" href="assets/logo.svg" as="image" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,38 +32,56 @@
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": ["RealEstateAgent", "LocalBusiness"],
-  "name": "Immobilien Eichmann",
-  "alternateName": "Immobilien Eichmann Verkauf, Vermittlung, Projektentwicklung",
-  "url": "https://immobilieneichmann.de/",
-  "logo": "https://immobilieneichmann.de/assets/logo.svg",
-  "image": "https://immobilieneichmann.de/assets/logo.svg",
-  "description": "Immobilienmakler in Konstanz: Verkauf, Vermittlung und Projektentwicklung am Bodensee.",
-  "telephone": "+491705225568",
-  "email": "info@immobilieneichmann.de",
-  "address": {
-    "@type": "PostalAddress",
-    "streetAddress": "Jacob-Burckhardt-Str. 40",
-    "addressLocality": "Konstanz",
-    "postalCode": "78464",
-    "addressCountry": "DE"
-  },
-  "geo": {
-    "@type": "GeoCoordinates",
-    "latitude": 47.6779,
-    "longitude": 9.1732
-  },
-  "areaServed": ["Konstanz", "Wollmatingen", "Allmannsdorf", "Bodensee"],
-  "priceRange": "€€€",
-  "openingHoursSpecification": {
-    "@type": "OpeningHoursSpecification",
-    "description": "Termine nach Vereinbarung"
-  },
-  "sameAs": ["https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d"],
-  "founder": {
-    "@type": "Person",
-    "name": "Helmut Eichmann"
-  }
+  "@graph": [
+    {
+      "@type": ["RealEstateAgent", "LocalBusiness"],
+      "@id": "https://immobilieneichmann.de/#business",
+      "name": "Immobilien Eichmann",
+      "alternateName": "Immobilien Eichmann Verkauf, Vermittlung, Projektentwicklung",
+      "url": "https://immobilieneichmann.de/",
+      "logo": "https://immobilieneichmann.de/assets/logo.svg",
+      "image": "https://immobilieneichmann.de/assets/flyer/hero-dining.jpg",
+      "description": "Immobilienmakler in Konstanz: Verkauf, Vermittlung und Projektentwicklung am Bodensee.",
+      "telephone": ["+491705225568", "+4975319228848"],
+      "email": "info@immobilieneichmann.de",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Jacob-Burckhardt-Str. 40",
+        "addressLocality": "Konstanz",
+        "postalCode": "78464",
+        "addressCountry": "DE"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 47.6779,
+        "longitude": 9.1732
+      },
+      "areaServed": ["Konstanz", "Wollmatingen", "Allmannsdorf", "Bodensee"],
+      "priceRange": "€€€",
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "description": "Termine nach Vereinbarung"
+      },
+      "sameAs": ["https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d"],
+      "founder": {"@type": "Person", "name": "Helmut Eichmann"},
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Leistungen von Immobilien Eichmann",
+        "itemListElement": [
+          {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Verkauf", "description": "Vermarktung von Immobilien in Konstanz und Umgebung."}},
+          {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Vermittlung", "description": "Persönliche Vermittlung zwischen Eigentümern und Kaufinteressenten."}},
+          {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Projektentwicklung", "description": "Begleitung von Neubau- und Kapitalanlageprojekten am Bodensee."}}
+        ]
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://immobilieneichmann.de/#website",
+      "url": "https://immobilieneichmann.de/",
+      "name": "Immobilien Eichmann",
+      "publisher": {"@id": "https://immobilieneichmann.de/#business"}
+    }
+  ]
 }
 </script>
 </head>
@@ -629,6 +653,7 @@
       </div>
     </div>
   </div>
+  <script src="js/analytics.js" defer></script>
   <script src="js/main.js" defer></script>
 
 </body>
