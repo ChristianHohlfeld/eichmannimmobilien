@@ -128,6 +128,65 @@ function localExposePath(listing) {
   return `objekt/${listing.slug}.html`;
 }
 
+
+/** Fields Helmut can lock via Admin (manual_overrides[field] === true). */
+const MANUAL_OVERRIDE_FIELDS = [
+  "title",
+  "price",
+  "location",
+  "rooms",
+  "living_area",
+  "plot_area",
+  "type",
+  "status",
+  "short_description",
+  "description",
+  "images",
+  "gallery_bases",
+  "floor_plans",
+  "floor_plan_bases",
+  "facts",
+  "main_image_url",
+  "image_base",
+];
+
+function isManuallyOverridden(prev, field) {
+  const mo = prev && prev.manual_overrides;
+  return !!(mo && mo[field] === true);
+}
+
+/**
+ * Re-apply fields Helmut locked in Admin so Immowelt scrape/enrich cannot overwrite them.
+ * Always preserves the manual_overrides object itself.
+ */
+function applyManualOverrides(listing, prev) {
+  if (!prev) return listing;
+  const mo = prev.manual_overrides;
+  if (!mo || typeof mo !== "object") return listing;
+
+  for (const field of MANUAL_OVERRIDE_FIELDS) {
+    if (mo[field] === true && Object.prototype.hasOwnProperty.call(prev, field)) {
+      listing[field] = prev[field];
+    }
+  }
+  // If images locked, keep related gallery paths too even if not explicitly flagged
+  if (mo.images === true) {
+    if (Array.isArray(prev.images)) listing.images = prev.images;
+    if (Array.isArray(prev.gallery_bases)) listing.gallery_bases = prev.gallery_bases;
+    if (prev.image_base) listing.image_base = prev.image_base;
+    if (prev.main_image_url) listing.main_image_url = prev.main_image_url;
+  }
+  if (mo.description === true && prev.description != null) {
+    listing.description = prev.description;
+  }
+  if (mo.short_description === true && prev.short_description != null) {
+    listing.short_description = prev.short_description;
+  }
+
+  listing.manual_overrides = { ...mo };
+  return listing;
+}
+
 function badgeFor(listing) {
   const blob = `${listing.title || ""} ${listing.short_description || ""}`.toLowerCase();
   if (blob.includes("provisionsfrei")) {
@@ -206,6 +265,13 @@ function normalizeListing(raw, index, prev = null) {
 
   base.slug = makeSlug({ ...base, slug: raw.slug || (prev && prev.slug) });
   base.local_url = localExposePath(base);
+  // Preserve Admin locks: Immowelt must not overwrite Helmut's manual fields
+  applyManualOverrides(base, prev);
+  // Prefer previous slug/local_url when title was manually overridden (stable URLs)
+  if (prev && isManuallyOverridden(prev, "title") && prev.slug) {
+    base.slug = prev.slug;
+    base.local_url = prev.local_url || localExposePath(base);
+  }
   return base;
 }
 
@@ -1072,9 +1138,16 @@ function mergeListings(scrapedList, previousData) {
   );
 
   merged.forEach((L, i) => {
-    L.image_base = imageBase(i, L.id);
-    L.slug = makeSlug(L);
-    L.local_url = localExposePath(L);
+    const prev = prevById.get(L.id) || null;
+    // Only refresh image_base when not manually locked (Admin photo layout)
+    if (!isManuallyOverridden(prev, "image_base") && !isManuallyOverridden(prev, "images")) {
+      L.image_base = imageBase(i, L.id);
+    }
+    if (!(prev && isManuallyOverridden(prev, "title") && prev.slug)) {
+      L.slug = makeSlug(L);
+      L.local_url = localExposePath(L);
+    }
+    applyManualOverrides(L, prev);
   });
 
   return merged;
@@ -1188,15 +1261,18 @@ async function enrichFromExposePage(page, listing) {
     return { description, images, floor_plans, facts, raw_len: text.length };
   });
 
-  if (detail.description) listing.description = detail.description.slice(0, 15000);
-  if (detail.images?.length) {
+  const mo = listing.manual_overrides || {};
+  if (detail.description && mo.description !== true) {
+    listing.description = detail.description.slice(0, 15000);
+  }
+  if (detail.images?.length && mo.images !== true) {
     listing.images = detail.images.slice(0, 24);
     if (!listing.main_image_url) listing.main_image_url = detail.images[0];
   }
-  if (detail.floor_plans?.length) {
+  if (detail.floor_plans?.length && mo.floor_plans !== true) {
     listing.floor_plans = detail.floor_plans.slice(0, 8);
   }
-  if (detail.facts && Object.keys(detail.facts).length) {
+  if (detail.facts && Object.keys(detail.facts).length && mo.facts !== true) {
     listing.facts = { ...(listing.facts || {}), ...detail.facts };
   }
   listing.enriched_at = new Date().toISOString();
@@ -1226,6 +1302,12 @@ async function enrichListings(listings) {
 
     for (let i = 0; i < listings.length; i++) {
       const L = listings[i];
+      const mo = L.manual_overrides || {};
+      // Admin locked both text & photos – nothing useful to pull from Immowelt
+      if (mo.description === true && mo.images === true) {
+        console.log(`Enrich skip (manual_overrides): ${shortId(L.id)}`);
+        continue;
+      }
       // Skip recent enrichment unless forced (save scrape budget)
       if (L.enriched_at && L.description && (L.images || []).length > 1) {
         const age = Date.now() - Date.parse(L.enriched_at);

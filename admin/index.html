@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Exposé Admin – Immobilien Eichmann</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <header class="app-header hidden" id="app-header">
+    <div>
+      <h1>Exposé Admin</h1>
+      <div class="sub">Immobilien Eichmann · für Helmut</div>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-sync-full" title="Vollständiger Immowelt-Import (nur Lesen)">Sync Immowelt</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-sync-render" title="Nur HTML aus JSON neu erzeugen">Nur rendern</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-settings" title="Erweitert">Erweitert</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-logout">Abmelden</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="view-gate" class="card gate-card">
+      <h2 style="margin-top:0;font-family:var(--font-display);color:var(--primary)">Anmeldung</h2>
+      <p class="hint">Passwort eingeben – fertig. Kein Token-Setup nötig.</p>
+      <form id="form-login">
+        <label for="password">Passwort</label>
+        <input type="password" id="password" autocomplete="current-password" required autofocus />
+        <div class="btn-row">
+          <button type="submit" class="btn btn-primary">Einloggen</button>
+        </div>
+        <p id="login-error" class="err-box hidden"></p>
+      </form>
+    </section>
+
+    <section id="view-setup" class="card setup-card hidden">
+      <h2 style="margin-top:0;font-family:var(--font-display);color:var(--primary)">Erweitert</h2>
+      <div class="ok-box">
+        Normalbetrieb: nur Passwort. Der Schreibzugriff wird beim Login automatisch freigeschaltet.
+      </div>
+      <p class="hint">Nur für Notfälle / Rotation – optional ein Sitzungs-Token setzen (nicht persistent).</p>
+      <form id="form-pat">
+        <label for="pat">Sitzungs-Token (optional)</label>
+        <input type="password" id="pat" autocomplete="off" placeholder="github_pat_… / gho_…" />
+        <div class="btn-row">
+          <button type="submit" class="btn btn-outline">Für diese Sitzung setzen</button>
+          <button type="button" class="btn btn-outline" id="btn-clear-pat">Löschen</button>
+        </div>
+        <p id="pat-msg" class="hint"></p>
+      </form>
+      <p class="hint" style="margin-top:16px"><a href="#" id="link-skip-setup">← Zurück zur Liste</a></p>
+    </section>
+
+    <section id="view-list" class="hidden">
+      <div class="toolbar">
+        <h2>Objekte <span class="muted" id="list-count"></span></h2>
+        <div class="btn-row" style="margin:0">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-reload">Neu laden</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <strong>Immowelt-Sync</strong>
+        <p class="hint" style="margin:4px 0 12px">Importiert Angebote von Immowelt (<strong>nur Lesen</strong> – Immowelt-Konto wird nie geändert).</p>
+        <div class="btn-row" style="margin:0">
+          <button type="button" class="btn btn-accent btn-sm" id="btn-sync-full-2">Voll-Sync starten</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-sync-render-2">Nur HTML neu erzeugen</button>
+        </div>
+      </div>
+      <div class="card table-wrap" style="padding:0;overflow:hidden">
+        <table class="listings">
+          <thead>
+            <tr>
+              <th>Titel</th>
+              <th>Ort</th>
+              <th>Preis</th>
+              <th>Status</th>
+              <th>Text</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="listings-tbody">
+            <tr><td colspan="6" class="muted">Lade …</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="hint">Neue Objekte entstehen über Immowelt-Sync (manuell anlegen = Phase 2).</p>
+    </section>
+
+    <section id="view-detail" class="hidden">
+      <div class="toolbar">
+        <h2 id="detail-title">Objekt bearbeiten</h2>
+        <div class="btn-row" style="margin:0">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-back">← Zur Liste</button>
+          <a class="btn btn-outline btn-sm" id="link-local" href="#" target="_blank" rel="noopener">Öffentliche Seite</a>
+        </div>
+      </div>
+      <div class="card">
+        <form id="form-edit">
+          <input type="hidden" id="edit-id" />
+          <div class="form-grid">
+            <div class="full">
+              <label for="edit-title">Titel</label>
+              <input type="text" id="edit-title" />
+            </div>
+            <div>
+              <label for="edit-price">Preis</label>
+              <input type="text" id="edit-price" placeholder="z. B. 199.000 €" />
+            </div>
+            <div>
+              <label for="edit-status">Status</label>
+              <input type="text" id="edit-status" placeholder="Kauf / Miete / …" />
+            </div>
+            <div>
+              <label for="edit-rooms">Zimmer</label>
+              <input type="text" id="edit-rooms" />
+            </div>
+            <div>
+              <label for="edit-living">Wohnfläche</label>
+              <input type="text" id="edit-living" placeholder="z. B. 85 m²" />
+            </div>
+            <div class="full">
+              <label for="edit-location">Ort / Adresse</label>
+              <input type="text" id="edit-location" />
+            </div>
+            <div class="full">
+              <label for="edit-short">Kurzbeschreibung (Karten-Text)</label>
+              <textarea id="edit-short"></textarea>
+            </div>
+            <div class="full">
+              <label for="edit-desc">Beschreibung (Exposé)</label>
+              <textarea id="edit-desc" class="tall"></textarea>
+            </div>
+          </div>
+          <p class="hint">Gespeicherte Felder werden als <code>manual_overrides</code> markiert und vom Immowelt-Sync nicht überschrieben.</p>
+          <div class="btn-row">
+            <button type="submit" class="btn btn-primary" id="btn-save">Speichern</button>
+            <label style="display:inline-flex;align-items:center;gap:8px;font-weight:500;margin:0;color:var(--slate)">
+              <input type="checkbox" id="save-and-render" checked />
+              Danach HTML neu erzeugen
+            </label>
+          </div>
+          <p id="save-msg" class="hint"></p>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0;color:var(--primary)">Fotos</h3>
+        <p class="hint">Upload nach <code>assets/listings/</code>. Entfernen nimmt nur aus der Liste (Datei bleibt ggf. liegen).</p>
+        <div class="btn-row" style="margin-top:8px">
+          <label class="btn btn-outline btn-sm" style="cursor:pointer;margin:0">
+            Foto hochladen
+            <input type="file" id="photo-input" accept="image/jpeg,image/png,image/webp" hidden />
+          </label>
+        </div>
+        <div class="photo-grid" id="photo-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="admin.js" type="module"></script>
+</body>
+</html>
