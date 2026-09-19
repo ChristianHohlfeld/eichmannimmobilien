@@ -29,8 +29,10 @@
       <h2 style="margin-top:0;font-family:var(--font-display);color:var(--primary)">Anmeldung</h2>
       <p class="hint">Passwort eingeben – fertig. Kein Token-Setup nötig.</p>
       <form id="form-login">
+        <label for="email">E-Mail</label>
+        <input type="email" id="email" autocomplete="username" required autofocus placeholder="chris.hohlfeld@gmail.com" />
         <label for="password">Passwort</label>
-        <input type="password" id="password" autocomplete="current-password" required autofocus />
+        <input type="password" id="password" autocomplete="current-password" required />
         <div class="btn-row">
           <button type="submit" class="btn btn-primary">Einloggen</button>
         </div>

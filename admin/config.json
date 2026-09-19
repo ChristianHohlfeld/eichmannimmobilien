@@ -12,5 +12,10 @@
     "hash": "SHA-256",
     "iterations": 120000
   },
-  "note": "Nur SHA-256 und versiegelter Token. Klartext-Passwort nie committen. Immowelt-Konto bleibt unberührt."
+  "note": "Login: erlaubte E-Mail + Passwort. Immowelt-Konto bleibt unberührt. SoT = data/listings.json.",
+  "admin_emails": [
+    "chris.hohlfeld@gmail.com",
+    "chris.hohlfeld@googlemail.com",
+    "info@immobilien-eichmann.com"
+  ]
 }

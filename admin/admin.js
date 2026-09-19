@@ -567,7 +567,20 @@ async function enterApp() {
   }
 }
 
-async function handleLogin(password) {
+function normalizeEmail(e) {
+  return String(e || "").trim().toLowerCase();
+}
+
+function emailAllowed(email) {
+  const list = (config.admin_emails || []).map(normalizeEmail).filter(Boolean);
+  if (!list.length) return true; // legacy: password only
+  return list.includes(normalizeEmail(email));
+}
+
+async function handleLogin(password, email) {
+  if (!emailAllowed(email)) {
+    throw new Error("Diese E-Mail hat keinen Admin-Zugang.");
+  }
   const hash = await sha256Hex(password);
   if (hash !== (config.password_sha256 || "").toLowerCase()) {
     throw new Error("Falsches Passwort.");
@@ -575,6 +588,7 @@ async function handleLogin(password) {
   const token = await unsealToken(password);
   setPatSession(token);
   sessionPassword = password;
+  sessionEmail = normalizeEmail(email);
   sessionStorage.setItem(STORAGE_AUTH, "1");
 }
 
@@ -584,7 +598,7 @@ function bind() {
     const err = $("login-error");
     err.classList.add("hidden");
     try {
-      await handleLogin($("password").value);
+      await handleLogin($("password").value, $("email").value);
       $("password").value = "";
       await enterApp();
     } catch (ex) {

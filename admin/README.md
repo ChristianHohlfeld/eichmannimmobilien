@@ -8,7 +8,7 @@ Einfaches Admin für Helmut: Exposés sehen, Texte/Fotos nachpflegen, Immowelt-S
 ## Für Helmut
 
 1. `/admin/` öffnen  
-2. Passwort eingeben (von Chris)  
+2. Freigeschaltete E-Mail + Passwort eingeben (von Chris)  
 3. Fertig – Objekte bearbeiten, Fotos, Sync-Buttons  
 
 Kein GitHub-Token, kein Extra-Setup auf dem Rechner.
