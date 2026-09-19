@@ -1326,12 +1326,12 @@ a.listing-card:focus-visible {
 
 
 
-/* logo-noclip */
+/* logo: Immowelt-match, no clip on house / Schluss-N */
 .logo {
   gap: 0;
   max-width: calc(100% - 3.25rem);
   min-width: 0;
-  padding: 0.2rem 0;
+  padding: 0.2rem 0.15rem 0.2rem 0;
   overflow: visible;
   flex: 1 1 auto;
 }
@@ -1340,16 +1340,16 @@ a.listing-card:focus-visible {
 .site-header .logo-svg,
 .footer-brand .logo img {
   width: auto !important;
-  height: 40px;
-  max-width: min(320px, calc(100vw - 4.5rem));
+  height: 42px;
+  max-width: min(380px, calc(100vw - 4.25rem));
   object-fit: contain;
   object-position: left center;
   overflow: visible;
 }
 @media (min-width: 900px) {
   .site-header .logo-svg {
-    height: 48px;
-    max-width: 360px;
+    height: 52px;
+    max-width: 420px;
   }
 }
 .site-header .header-inner {
@@ -1501,4 +1501,64 @@ a.listing-card:focus-visible {
 @media (max-width: 900px) {
   .expose-layout { grid-template-columns: 1fr; }
   .expose-aside { position: static; }
+}
+
+
+/* Cookie consent — bottom bar, non-blocking */
+.cookie-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1200;
+  padding: 0.85rem 1rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
+  background: rgba(15, 23, 32, 0.96);
+  color: #f5f7fa;
+  box-shadow: 0 -8px 28px rgba(0,0,0,0.18);
+}
+.cookie-banner[hidden] { display: none !important; }
+.cookie-banner-inner {
+  max-width: var(--measure, 1120px);
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem 1.25rem;
+  align-items: center;
+  justify-content: space-between;
+}
+.cookie-banner-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+}
+.cookie-banner-desc {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: rgba(245,247,250,0.88);
+  max-width: 46rem;
+}
+.cookie-banner-desc a {
+  color: #9ec5ff;
+  text-decoration: underline;
+}
+.cookie-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.cookie-banner .btn-outline {
+  border-color: rgba(255,255,255,0.45);
+  color: #fff;
+  background: transparent;
+}
+.cookie-banner .btn-outline:hover {
+  border-color: #fff;
+  background: rgba(255,255,255,0.08);
+}
+@media (max-width: 640px) {
+  .cookie-banner-actions { width: 100%; }
+  .cookie-banner-actions .btn { flex: 1 1 auto; justify-content: center; }
 }
