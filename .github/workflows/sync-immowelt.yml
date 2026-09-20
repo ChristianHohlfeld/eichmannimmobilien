@@ -44,12 +44,8 @@ jobs:
         if: ${{ inputs.force_from_json != true }}
         run: npx playwright install chromium --with-deps
 
-      - name: Refresh detail galleries from canonical listings
-        if: ${{ github.event_name == 'push' && inputs.force_from_json != true }}
-        run: node scripts/sync-immowelt.mjs --enrich-only --force-scrape
-
       - name: Full sync from Immowelt
-        if: ${{ github.event_name != 'push' && inputs.force_from_json != true }}
+        if: ${{ inputs.force_from_json != true }}
         env:
           IMMOWELT_PROFILE_URL: https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d
         run: node scripts/sync-immowelt.mjs
@@ -67,6 +63,12 @@ jobs:
           const publicListings = listings.filter((item) => item.active !== false);
           const detailedListings = publicListings.filter((item) => item.detail_page !== false);
           const problems = [];
+          if (raw.sot !== "immowelt") problems.push(`sot must be immowelt, got ${raw.sot || "missing"}`);
+          for (const item of listings) {
+            if (item.source !== "immowelt") problems.push(`${item.slug}: non-Immowelt source ${item.source || "missing"}`);
+            if (item.active === false) problems.push(`${item.slug}: profile offer persisted as inactive`);
+            if (item.manual_overrides) problems.push(`${item.slug}: manual_overrides must not exist in Immowelt-authoritative mirror`);
+          }
           for (const item of detailedListings) {
             const description = String(item.description || "").trim();
             if (!description) problems.push(`${item.slug}: missing description`);

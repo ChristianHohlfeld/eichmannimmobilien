@@ -297,7 +297,7 @@ function sanitizeListingForPublic(listing) {
 }
 
 function isPublicListing(listing) {
-  return Boolean(listing) && listing.active !== false;
+  return Boolean(listing) && listing.active !== false && listing.site_hidden !== true;
 }
 
 function hasPublicDetail(listing) {
@@ -403,6 +403,8 @@ function normalizeListing(raw, index, prev = null) {
         : prev && typeof prev.detail_page === "boolean"
           ? prev.detail_page
           : true,
+    // Local presentation-only override. Object content/status still comes from Immowelt.
+    site_hidden: prev?.site_hidden === true,
   };
   if (base.detail_page === false && !base.main_image_url && !base.images.length && !base.gallery_bases.length) {
     base.image_base = null;
@@ -420,21 +422,52 @@ function normalizeListing(raw, index, prev = null) {
     raw.missing_on_immowelt === true ||
     (prev && prev.missing_on_immowelt === true) ||
     false;
-  // Preserve Admin locks: Immowelt must not overwrite Helmut's manual fields
-  applyManualOverrides(base, prev);
-  applyLocalAuthoritative(base, prev);
-  // Prefer previous slug/local_url when title was manually overridden (stable URLs)
-  if (prev && ((isManuallyOverridden(prev, "title") && prev.slug) || (prev.source === "local" && prev.slug))) {
-    base.slug = prev.slug;
-    base.local_url = prev.local_url || localExposePath(base);
-  }
+  // Immowelt is the single source of truth for offer content and publication state.
+  // Previous data is used only for stable local rendering assets/URLs, never to override source fields.
+  base.active = true;
+  base.detail_page = true;
+  base.source = "immowelt";
+  base.sync_policy = "mirror";
+  base.missing_on_immowelt = false;
+  delete base.manual_overrides;
   return base;
+}
+
+function listingReference(listing) {
+  return String(
+    listing?.reference_number ||
+    listing?.facts?.Referenznummer ||
+    ""
+  ).trim().toUpperCase();
+}
+
+function escapeRegExp(value) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function listingDisplayTitle(listing) {
+  const raw = String(listing?.title || "Immobilie").replace(/\s+/g, " ").trim();
+  const ref = listingReference(listing);
+  if (!ref) return raw;
+
+  const safe = escapeRegExp(ref);
+  let title = raw
+    .replace(new RegExp("^Wohnung\\s+" + safe + "\\s*(?:[·:/-]\\s*)?", "i"), "")
+    .replace(new RegExp("\\b" + safe + "\\b\\s*(?:/\\s*Haus\\s+[A-Z])?", "i"), "")
+    .replace(/^[-–—·:/\s]+|[-–—·:/\s]+$/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  return title || raw;
 }
 
 function renderCard(listing) {
   const badge = badgeFor(listing);
   const base = listing.image_base;
-  const alt = `${listing.title} – Immobilien Eichmann Konstanz`;
+  const ref = listingReference(listing);
+  const displayTitle = listingDisplayTitle(listing);
+  const accessibleTitle = ref ? ref + " · " + displayTitle : displayTitle;
+  const alt = `${accessibleTitle} – Immobilien Eichmann Konstanz`;
   const meta = [
     listing.rooms ? `<span>${escapeHtml(listing.rooms)}</span>` : "",
     listing.living_area ? `<span>${escapeHtml(listing.living_area)}</span>` : "",
@@ -457,9 +490,12 @@ function renderCard(listing) {
             <span class="${badge.className}">${escapeHtml(badge.text)}</span>
           </div>
           <div class="listing-body">
-            <p class="listing-price">${escapeHtml(listing.price || "")}</p>
-            <h3 class="listing-title">${escapeHtml(listing.title)}</h3>
+            <div class="listing-heading">
+              ${ref ? `<span class="listing-reference" aria-label="Objektnummer ${escapeHtml(ref)}">${escapeHtml(ref)}</span>` : ""}
+              <h3 class="listing-title">${escapeHtml(displayTitle)}</h3>
+            </div>
             <p class="listing-loc">${escapeHtml(publicLocation(listing.location) || "")}</p>
+            <p class="listing-price">${escapeHtml(listing.price || "")}</p>
             <div class="listing-meta">
               ${meta}
             </div>
@@ -472,11 +508,11 @@ function renderCard(listing) {
           </div>`;
 
   if (!detailed) {
-    return `        <article class="listing-card listing-card-static" aria-label="${escapeHtml(listing.title)} – Details auf Anfrage">
+    return `        <article class="listing-card listing-card-static" aria-label="${escapeHtml(accessibleTitle)} – Details auf Anfrage">
           ${body}
         </article>`;
   }
-  return `        <a class="listing-card" href="${escapeHtml(href)}" aria-label="${escapeHtml(listing.title)} – Exposé öffnen">
+  return `        <a class="listing-card" href="${escapeHtml(href)}" aria-label="${escapeHtml(accessibleTitle)} – Exposé öffnen">
           ${body}
         </a>`;
 }
@@ -567,8 +603,10 @@ function pictureTag(base, alt, { prefix = "", loading = "lazy", className = "" }
 function renderExposeHtml(listing) {
   const p = "../";
   const badge = badgeFor(listing);
-  const title = listing.title || "Immobilie";
-  const pageTitle = `${title} | Exposé – Immobilien Eichmann Konstanz`;
+  const ref = listingReference(listing);
+  const title = listingDisplayTitle(listing);
+  const fullTitle = ref ? ref + " · " + title : title;
+  const pageTitle = `${fullTitle} | Exposé – Immobilien Eichmann Konstanz`;
   const descBits = [
     listing.price,
     listing.rooms,
@@ -592,6 +630,7 @@ function renderExposeHtml(listing) {
     : `${SITE_ORIGIN}/assets/share-card-plain-v2.jpg`;
 
   const factRows = [
+    ref ? ["Objektnummer", ref] : null,
     listing.price ? ["Kaufpreis", listing.price] : null,
     listing.rooms ? ["Zimmer", listing.rooms] : null,
     listing.living_area ? ["Wohnfläche", listing.living_area] : null,
@@ -615,7 +654,8 @@ function renderExposeHtml(listing) {
       listing.living_area ? "Wohnfläche" : "",
       listing.plot_area ? "Grundstücksfläche" : "",
       listing.location ? "PLZ" : "",
-      listing.location ? "Ort" : ""
+      listing.location ? "Ort" : "",
+      ref ? "Referenznummer" : ""
     ].filter(Boolean));
     const labelMap = {
       "Anzahl Balkone": "Balkone",
@@ -807,7 +847,7 @@ ${JSON.stringify(schema, null, 2)}
     <section class="page-hero expose-hero">
       <div class="container">
         <p class="eyebrow"><a href="${p}index.html#angebote">← Alle Angebote</a></p>
-        <h1>${escapeHtml(title)}</h1>
+        <h1 class="expose-title">${ref ? `<span class="expose-reference">${escapeHtml(ref)}</span>` : ""}<span>${escapeHtml(title)}</span></h1>
         <p>${listing.reference_number ? `<strong>${escapeHtml(listing.reference_number)}</strong> · ` : ""}${escapeHtml(listing.location || "Konstanz")}${listing.price ? ` · <strong>${escapeHtml(listing.price)}</strong>` : ""}</p>
         <span class="${badge.className}" style="position:static;display:inline-block;margin-top:0.5rem">${escapeHtml(badge.text)}</span>
       </div>
@@ -1239,6 +1279,7 @@ function serializeListing(L) {
     enriched_at: L.enriched_at || null,
     active: L.active !== false,
     detail_page: L.detail_page !== false,
+    site_hidden: L.site_hidden === true,
     // SoT metadata (local Admin owns the record; Immowelt is optional inbound)
     source: L.source || (L.immowelt_id || looksLikeImmoweltId(L.id) ? "immowelt" : "local"),
     immowelt_id: L.immowelt_id || (looksLikeImmoweltId(L.id) ? L.id : null),
@@ -1302,8 +1343,8 @@ async function writeCanonical(data) {
   await mkdir(path.dirname(DATA_PATH), { recursive: true });
   data.listings = data.listings.map(sanitizeListingForPublic);
   const out = {
-    // Single Source of Truth = this file + Admin. Immowelt is optional inbound only.
-    sot: "local",
+    // Single Source of Truth = Immowelt. This file is a generated local mirror for rendering.
+    sot: "immowelt",
     source: data.source || PROFILE_URL,
     immowelt_profile: data.immowelt_profile || PROFILE_URL,
     scraped_at: data.scraped_at,
@@ -1419,110 +1460,40 @@ async function renderIntoPages(data) {
  */
 function mergeListings(scrapedList, previousData) {
   const prevList = previousData?.listings || [];
-  const prevById = new Map(prevList.map((L) => [L.id, L]));
   const prevByImmowelt = new Map();
-  for (const L of prevList) {
-    const key = listingImmoweltKey(L);
-    if (key) prevByImmowelt.set(key, L);
+  for (const item of prevList) {
+    const key = listingImmoweltKey(item);
+    if (key) prevByImmowelt.set(key, item);
   }
 
-  const scrapedKeys = new Set();
   const merged = [];
-  const matchedPrevIds = new Set();
-
-  scrapedList.forEach((raw, i) => {
-    const id =
-      raw.id ||
-      exposeIdFromUrl(raw.expose_url) ||
-      exposeIdFromUrl(raw.url);
+  scrapedList.forEach((raw, index) => {
+    const id = raw.id || exposeIdFromUrl(raw.expose_url) || exposeIdFromUrl(raw.url);
     if (!id) return;
+
     const key = String(id).toLowerCase();
-    scrapedKeys.add(key);
-    const prev = prevByImmowelt.get(key) || prevById.get(id) || null;
-    const L = normalizeListing(raw, i, prev);
-    if (!L) return;
+    const prev = prevByImmowelt.get(key) || null;
+    const listing = normalizeListing(raw, index, prev);
+    if (!listing) return;
 
-    L.immowelt_id = (prev && prev.immowelt_id) || id;
-    L.source = (prev && prev.source) || "immowelt";
-    L.sync_policy = (prev && prev.sync_policy) || "independent";
-    L.missing_on_immowelt = false;
-
-    applyManualOverrides(L, prev);
-    applyLocalAuthoritative(L, prev);
-
-    merged.push(L);
-    if (prev) matchedPrevIds.add(prev.id);
+    // Presence on the current Immowelt profile means public/active here.
+    listing.active = true;
+    listing.detail_page = true;
+    listing.site_hidden = prev?.site_hidden === true;
+    listing.source = "immowelt";
+    listing.immowelt_id = id;
+    listing.sync_policy = "mirror";
+    listing.missing_on_immowelt = false;
+    delete listing.manual_overrides;
+    merged.push(listing);
   });
 
-  let flagged = 0;
-  let mirrorRemoved = 0;
-  for (const prev of prevList) {
-    if (matchedPrevIds.has(prev.id)) continue;
-
-    const key = listingImmoweltKey(prev);
-    const policy = prev.sync_policy || "independent";
-
-    // Local-only (no Immowelt link): always keep
-    if (!key) {
-      merged.push({ ...prev, source: prev.source || "local", sync_policy: policy });
-      continue;
-    }
-
-    // Linked to Immowelt but absent from scrape
-    if (policy === "mirror") {
-      mirrorRemoved += 1;
-      console.log(
-        `Mirror-delete ${shortId(prev.id)} (sync_policy=mirror, missing on Immowelt)`
-      );
-      continue;
-    }
-
-    flagged += 1;
-    merged.push({
-      ...prev,
-      source: prev.source || "immowelt",
-      sync_policy: policy,
-      immowelt_id: prev.immowelt_id || key,
-      missing_on_immowelt: true,
-    });
-  }
-
-  const added = merged.filter((L) => !prevById.has(L.id));
-  const updated = merged.filter((L) => prevById.has(L.id) && matchedPrevIds.has(L.id));
   console.log(
-    `Sync diff (SoT): +${added.length} added, ~${updated.length} updated, ` +
-      `${flagged} flagged missing_on_immowelt, ${mirrorRemoved} mirror-removed → ${merged.length} total`
+    `Immowelt authority: ${merged.length} current profile offers mirrored; ${Math.max(0, prevList.length - merged.length)} stale/local records dropped.`
   );
-
-  merged.forEach((L, i) => {
-    const prev = prevById.get(L.id) || null;
-    if (
-      !isManuallyOverridden(prev, "image_base") &&
-      !isManuallyOverridden(prev, "images") &&
-      L.source !== "local"
-    ) {
-      // Keep stable image_base when already set
-      if (!L.image_base) L.image_base = imageBase(i, L.id);
-    }
-    if (!(prev && ((isManuallyOverridden(prev, "title") && prev.slug) || (prev.source === "local" && prev.slug)))) {
-      if (!L.slug) {
-        L.slug = makeSlug(L);
-        L.local_url = localExposePath(L);
-      }
-    } else if (prev && prev.slug) {
-      L.slug = prev.slug;
-      L.local_url = prev.local_url || localExposePath(prev);
-    }
-    applyManualOverrides(L, prev);
-    applyLocalAuthoritative(L, prev);
-  });
-
   return merged;
 }
 
-/**
- * Enrich a single listing from Immowelt expose detail page (read-only).
- */
 async function enrichFromExposePage(page, listing) {
   const url = listing.expose_url;
   const mobileUrl = url + (url.includes("?") ? "&app=1" : "?app=1");
@@ -1649,6 +1620,7 @@ async function enrichFromExposePage(page, listing) {
 
     const facts = {};
     const factPatterns = [
+      [/Referenz(?:nummer|nr\.?)[\s:#-]*([A-Z0-9][A-Z0-9._/-]{0,31})/i, "Referenznummer"],
       [/Energieeffizienzklasse\s*([A-G]\+?)/i, "Energieeffizienzklasse"],
       [/Baujahr\s*(\d{4})/i, "Baujahr"],
       [/(\d+\.\s*Geschoss|Erdgeschoss|Dachgeschoss)/i, "Geschoss"],
@@ -1675,6 +1647,9 @@ async function enrichFromExposePage(page, listing) {
   }
   if (detail.facts && Object.keys(detail.facts).length && mo.facts !== true) {
     listing.facts = { ...(listing.facts || {}), ...detail.facts };
+  }
+  if (detail.facts?.Referenznummer && mo.reference_number !== true) {
+    listing.reference_number = String(detail.facts.Referenznummer).trim().toUpperCase();
   }
   listing.enriched_at = new Date().toISOString();
   return listing;
@@ -1767,15 +1742,38 @@ async function enrichGalleryFromSparkasse(page, listing) {
       return String(value || "")
         .replace(/\s+/g, " ")
         .replace(/\s+([,.;:!?])/g, "$1")
-        .replace(/([,.;:!?])(?=[A-Za-zÄÖÜäöüß])/g, "$1 ")
+        .replace(/([.!?])(?=[A-ZÄÖÜ])/g, "$1 ")
         .replace(/A\+(?=[A-Za-zÄÖÜäöüß])/g, "A+ ")
+        .trim();
+    }
+    function dedupeRepeatedProse(value) {
+      let text = cleanProse(value);
+      if (!text) return "";
+      const ellipsis = text.indexOf("…");
+      if (ellipsis > 50) {
+        const teaser = text.slice(0, ellipsis).trim();
+        const rest = text.slice(ellipsis + 1).trim();
+        const probe = teaser.slice(0, Math.min(90, teaser.length));
+        if (probe.length >= 40 && rest.startsWith(probe)) text = rest;
+      }
+      const probe = text.slice(0, Math.min(100, text.length));
+      if (probe.length >= 50) {
+        const second = text.indexOf(probe, probe.length);
+        if (second > 0 && text.length - second >= second * 0.75) text = text.slice(second).trim();
+      }
+      return text;
+    }
+    function cleanLocationProse(value) {
+      return dedupeRepeatedProse(value)
+        .replace(/^Straße nicht freigegeben.*?(?:OpenStreetMap contributors)\s*/i, "")
+        .replace(/^Vollständige Adresse beim Anbieter\s*/i, "")
         .trim();
     }
     function longestUseful(items, strip = "") {
       const cleaned = items
         .filter((line) => !/^(Mehr anzeigen|Auf Karte anzeigen|Loading \(MapContainer\)|Vollständige Adresse beim Anbieter)$/i.test(line))
         .map((line) => strip && line.startsWith(strip) ? line.slice(strip.length).trim() : line)
-        .map(cleanProse)
+        .map(dedupeRepeatedProse)
         .filter((line) => line.length > 20);
       return cleaned.sort((a,b) => b.length - a.length)[0] || "";
     }
@@ -1784,7 +1782,7 @@ async function enrichGalleryFromSparkasse(page, listing) {
     }
     const knownFactLabels = new Set([
       "Kaufpreis","Käuferprovision","Nettokaltmiete","Tiefgaragen Stellplatz (Kaufpreis)","Garagen Stellplatz (Kaufpreis)",
-      "Garagen Stellplatz (Kaufpreis)","PLZ","Ort","Wohnfläche","Grundstücksfläche",
+      "Garagen Stellplatz (Kaufpreis)","Referenznummer","PLZ","Ort","Wohnfläche","Grundstücksfläche",
       "Anzahl Zimmer","Anzahl Balkone","Anzahl Terrassen","Parkplatztyp",
       "Anzahl Tiefgaragen Stellplätze","Zustand","Boden","Energieausweistyp",
       "Energiestandard","Effizienzklasse","Ausstellungsdatum des Energieausweises",
@@ -1847,7 +1845,7 @@ async function enrichGalleryFromSparkasse(page, listing) {
 
     const factLabels = [
       "Kaufpreis","Käuferprovision","Nettokaltmiete","Tiefgaragen Stellplatz (Kaufpreis)",
-      "PLZ","Ort","Wohnfläche","Grundstücksfläche","Anzahl Zimmer","Anzahl Balkone","Anzahl Terrassen",
+      "Referenznummer","PLZ","Ort","Wohnfläche","Grundstücksfläche","Anzahl Zimmer","Anzahl Balkone","Anzahl Terrassen",
       "Parkplatztyp","Anzahl Tiefgaragen Stellplätze","Zustand","Boden","Energieausweistyp",
       "Energiestandard","Effizienzklasse","Ausstellungsdatum des Energieausweises",
       "Energieausweis gültig bis","Gebäudeart","Heizung","Befeuerung","Endenergiebedarf"
@@ -1864,10 +1862,10 @@ async function enrichGalleryFromSparkasse(page, listing) {
       urls,
       sourceTitle,
       titleRef,
-      description: fullDescription || longestUseful(description, "Objektbeschreibung"),
-      locationDescription: fullLocation || longestUseful(location),
+      description: dedupeRepeatedProse(fullDescription || longestUseful(description, "Objektbeschreibung")),
+      locationDescription: cleanLocationProse(fullLocation || longestUseful(location)),
       amenities: dedupe(equipment.filter((line) => line.length >= 2 && line.length <= 100 && !/Mehr anzeigen/i.test(line))),
-      additionalInformation: fullMore || longestUseful(more),
+      additionalInformation: dedupeRepeatedProse(fullMore || longestUseful(more)),
       facts
     };
   });
@@ -1892,8 +1890,9 @@ async function enrichGalleryFromSparkasse(page, listing) {
   }
   if (mo.reference_number !== true) {
     listing.reference_number =
-      PROJECT_REFERENCE_BY_IMMOWELT_ID[listingKey] ||
+      media.facts?.Referenznummer ||
       media.titleRef ||
+      PROJECT_REFERENCE_BY_IMMOWELT_ID[listingKey] ||
       listing.reference_number ||
       null;
   }
@@ -2107,6 +2106,10 @@ async function scrapeImmowelt() {
           }
         }
 
+        const referenceM = text.match(/Referenz(?:nummer|nr\.?)[\s:#-]*([A-Z0-9][A-Z0-9._/-]{0,31})/i);
+        const titleReferenceM = title.match(/\b([AB]\d{1,3})\b/i);
+        const reference_number = (referenceM?.[1] || titleReferenceM?.[1] || "").toUpperCase() || null;
+
         const shortBits = [];
         if (/provisionsfrei/i.test(text)) shortBits.push("provisionsfrei");
         if (/Erstbezug/i.test(text)) shortBits.push("Erstbezug");
@@ -2125,6 +2128,7 @@ async function scrapeImmowelt() {
           plot_area: plotM ? plotM[1] : null,
           type,
           status: /Miete/i.test(title) ? "Miete" : "Kauf",
+          reference_number,
           short_description: shortBits.join("; ") || null,
           expose_url: `https://www.immowelt.de/expose/${id}`,
           main_image_url: img,
