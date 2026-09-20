@@ -2012,34 +2012,54 @@ async function scrapeImmowelt() {
     const page = await context.newPage();
     page.setDefaultTimeout(60000);
 
-    console.log(`Scraping ${PROFILE_URL}`);
-    const resp = await page.goto(PROFILE_URL, {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
-    if (!resp || resp.status() >= 400) {
-      throw new Error(`Profile HTTP ${resp && resp.status()}`);
+    const profileCandidates = [...new Set([
+      PROFILE_URL,
+      PROFILE_URL.replace("www.immowelt.de", "www.immowelt.at"),
+    ])];
+    let loadedProfile = null;
+    const profileErrors = [];
+
+    for (const candidate of profileCandidates) {
+      console.log(`Scraping ${candidate}`);
+      try {
+        const resp = await page.goto(candidate, {
+          waitUntil: "domcontentloaded",
+          timeout: 60000,
+        });
+        if (!resp || resp.status() >= 400) {
+          profileErrors.push(`${candidate}: HTTP ${resp && resp.status()}`);
+          continue;
+        }
+
+        await page.waitForTimeout(1800);
+        const blocked = await page.evaluate(() => {
+          const t = document.body?.innerText || "";
+          return /datadome|captcha|access denied|bitte aktivieren sie javascript/i.test(t);
+        });
+        if (blocked) {
+          profileErrors.push(`${candidate}: bot protection`);
+          continue;
+        }
+
+        await page.waitForSelector('a[href*="/expose/"]', { timeout: 15000 }).catch(() => {});
+        const exposeCount = await page.locator('a[href*="/expose/"]').count().catch(() => 0);
+        if (!exposeCount) {
+          profileErrors.push(`${candidate}: no expose links`);
+          continue;
+        }
+
+        loadedProfile = candidate;
+        break;
+      } catch (err) {
+        profileErrors.push(`${candidate}: ${err.message || err}`);
+      }
     }
 
-    await page.waitForTimeout(3000);
-    const blocked = await page.evaluate(() => {
-      const t = document.body?.innerText || "";
-      return /datadome|captcha|access denied|bitte aktivieren sie javascript/i.test(
-        t
-      );
-    });
-    if (blocked) {
-      throw new Error("Immowelt bot protection (DataDome/captcha) blocked scrape");
+    if (!loadedProfile) {
+      throw new Error(`Immowelt profile unavailable: ${profileErrors.join(" | ")}`);
     }
 
-    for (let s = 0; s < 6; s++) {
-      await page.mouse.wheel(0, 1200);
-      await page.waitForTimeout(800);
-    }
-
-    await page.waitForSelector('a[href*="/expose/"]', { timeout: 20000 }).catch(() => {});
-
-    const raw = await page.evaluate(() => {
+    const extractCurrentPage = async () => page.evaluate(() => {
       const out = [];
       const seen = new Set();
       const anchors = [...document.querySelectorAll('a[href*="/expose/"]')];
@@ -2138,13 +2158,61 @@ async function scrapeImmowelt() {
       return out;
     });
 
+    const expectedCount = await page.evaluate(() => {
+      const t = document.body?.innerText || "";
+      const m = t.match(/Immobilien\s+zum\s+Verkauf\s*\((\d+)\)/i);
+      return m ? Number(m[1]) : null;
+    });
+
+    const byId = new Map();
+    const collectCurrentPage = async () => {
+      for (const item of await extractCurrentPage()) {
+        if (item?.id) byId.set(item.id, item);
+      }
+    };
+
+    const settleAndCollect = async () => {
+      await page.waitForTimeout(700);
+      for (let i = 0; i < 3; i++) {
+        await page.mouse.wheel(0, 900);
+        await page.waitForTimeout(180);
+      }
+      await collectCurrentPage();
+    };
+
+    await settleAndCollect();
+
+    // Immowelt profile currently paginates offers. Traverse visible page-number
+    // controls and dedupe by canonical expose UUID.
+    for (let pageNumber = 2; pageNumber <= 20; pageNumber++) {
+      if (expectedCount && byId.size >= expectedCount) break;
+      const control = page
+        .locator("main button, main a")
+        .filter({ hasText: new RegExp(`^\\s*${pageNumber}\\s*$`) })
+        .first();
+      if (!(await control.count().catch(() => 0))) break;
+      if (!(await control.isVisible().catch(() => false))) break;
+
+      const before = page.url();
+      await control.click({ timeout: 5000 }).catch(() => {});
+      await page.waitForTimeout(500);
+      if (page.url() === before) {
+        await page.waitForTimeout(500);
+      }
+      await settleAndCollect();
+    }
+
+    const raw = [...byId.values()];
     if (!raw.length) {
       throw new Error("No expose links found on profile page");
     }
+    if (expectedCount && raw.length !== expectedCount) {
+      throw new Error(`Profile count mismatch: expected ${expectedCount}, scraped ${raw.length}`);
+    }
 
-    console.log(`Scraped ${raw.length} listings from profile`);
+    console.log(`Scraped ${raw.length} listings from profile (${loadedProfile})`);
     return {
-      source: PROFILE_URL,
+      source: loadedProfile,
       scraped_at: new Date().toISOString(),
       listings: raw,
     };
