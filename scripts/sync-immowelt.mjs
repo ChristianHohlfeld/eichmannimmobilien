@@ -423,9 +423,9 @@ function normalizeListing(raw, index, prev = null) {
     (prev && prev.missing_on_immowelt === true) ||
     false;
   // Immowelt is the single source of truth for offer content and publication state.
-  // Previous data is used only for stable local rendering assets/URLs, never to override source fields.
-  base.active = true;
-  base.detail_page = true;
+  // Preserve persisted active/detail flags while loading the local mirror.
+  // A successful full Immowelt sync explicitly sets current profile offers active
+  // and drops offers that are no longer present.
   base.source = "immowelt";
   base.sync_policy = "mirror";
   base.missing_on_immowelt = false;
