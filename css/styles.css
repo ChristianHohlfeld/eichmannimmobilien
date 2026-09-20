@@ -1839,3 +1839,25 @@ a.listing-card:focus-visible {
 }
 
 /* deploy-refresh-form-logo-v1 */
+
+
+/* Sunside project inventory */
+.project-inventory-section{padding-top:var(--space-4);padding-bottom:var(--space-3);background:var(--off-white)}
+.project-inventory-head{align-items:flex-end}
+.project-inventory-note{margin:0;color:var(--slate);font-size:var(--fs-sm);font-weight:650}
+.project-units{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0.8rem}
+.project-unit-card{display:flex;flex-direction:column;gap:0.45rem;min-width:0;padding:1rem;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm)}
+.project-unit-card.is-sold{opacity:.7}
+.project-unit-head{display:flex;align-items:center;justify-content:space-between;gap:.6rem}
+.project-unit-head strong{font-size:1.35rem;color:var(--ink)}
+.project-unit-status{font-size:.72rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--slate)}
+.project-unit-status.is-free{color:var(--accent)}
+.project-unit-card p{margin:0;color:var(--slate)}
+.project-unit-card .project-unit-price{font-size:1.05rem;font-weight:800;color:var(--ink)}
+.project-unit-card small{color:var(--muted);margin-bottom:.3rem}
+.project-unit-card .btn{margin-top:auto}
+.expose-amenities{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem .8rem;margin:0;padding:0;list-style:none}
+.expose-amenities li{position:relative;padding:.55rem .7rem .55rem 1.55rem;background:var(--white);border:1px solid var(--border);border-radius:8px;color:var(--slate)}
+.expose-amenities li::before{content:"✓";position:absolute;left:.55rem;font-weight:800;color:var(--accent)}
+@media(max-width:980px){.project-units{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.project-units{grid-template-columns:1fr}.expose-amenities{grid-template-columns:1fr}}
