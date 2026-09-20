@@ -26,7 +26,7 @@
 
 ## Immobilienangebote
 
-Aktuelle Immobilienangebote liegen lokal als Single Source of Truth (`data/listings.json` + Admin) und werden auf dieser Website angezeigt. Immowelt ist optionaler Import (nur lesen), nie Schreibziel.
+Immowelt ist die Single Source of Truth für aktuelle Immobilienangebote. `data/listings.json` ist ein lokaler Spiegel für die Website; lokal darf nur die Website-Sichtbarkeit (`site_hidden`) abweichen.
 
 ## Sitemap
 
