@@ -653,12 +653,9 @@ ${JSON.stringify(schema, null, 2)}
         <aside class="expose-aside">
           <div class="content-card expose-cta-card" id="anfragen">
             <h2 style="margin-top:0;color:var(--ink)">Exposé anfragen</h2>
-            <form id="contact-form" class="expose-form" action="https://formsubmit.co/info@immobilien-eichmann.com" method="POST"
+            <form id="contact-form" class="expose-form" action="https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/expose" method="POST"
               data-expose-title="${escapeHtml(title)}"
               data-expose-slug="${escapeHtml(listing.slug)}">
-              <input type="hidden" name="_subject" value="${escapeHtml(anfrageSubject)} – Immobilien Eichmann">
-              <input type="hidden" name="_captcha" value="false">
-              <input type="hidden" name="_template" value="table">
               <input type="hidden" name="anliegen" value="Exposé-Anfrage">
               <input type="hidden" name="objekt" value="${escapeHtml(title)}">
               <input type="hidden" name="objekt_url" value="${escapeHtml(canonical)}">
