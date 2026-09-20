@@ -25,6 +25,8 @@ for (const file of html) {
   assert.ok(!s.includes("[Platzhalter"), file + ": legal placeholder");
   assert.ok(!s.includes('name="datenschutz"'), file + ": unnecessary mandatory privacy-consent checkbox");
   assert.ok(!s.includes("Einwilligung oder Maklervertrag in Textform zurücknehmen"), file + ": privacy/contract withdrawal conflated");
+  assert.ok(!s.includes("Ausführliche Objektbeschreibung folgt mit dem nächsten Immowelt-Abgleich"), file + ": synthetic expose-description fallback must never appear");
+  assert.ok(!s.includes("Die ausführliche Objektbeschreibung stellen wir Ihnen gerne auf Anfrage zu"), file + ": generic expose-description fallback must never appear");
 }
 for (const file of html) {
   const s = await readFile(file, "utf8");
@@ -52,6 +54,8 @@ assert.ok(generator.includes("Durch das Absenden kommt kein Maklervertrag zustan
 assert.ok(!generator.includes('name="privacy_ack"'), "Generator: unnecessary privacy acknowledgement present");
 assert.ok(generator.includes('action="https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/expose"'), "Generator: own expose gateway missing");
 assert.ok(!generator.includes("formsubmit.co"), "Generator: retired FormSubmit action");
+assert.ok(!generator.includes("Ausführliche Objektbeschreibung folgt mit dem nächsten Immowelt-Abgleich"), "Generator: synthetic expose-description fallback must never return");
+assert.ok(!generator.includes("Die ausführliche Objektbeschreibung stellen wir Ihnen gerne auf Anfrage zu"), "Generator: generic expose-description fallback must never return");
 assert.ok(!kontakt.includes("Die Anfrage ist unverbindlich;"), "Kontakt: verbose request notice should be removed");
 assert.ok(generator.includes("logo-header.svg?v=header-safe-v1"), "Generator: safe header logo missing");
 console.log("Legal baseline OK: " + html.length + " HTML files checked.");
