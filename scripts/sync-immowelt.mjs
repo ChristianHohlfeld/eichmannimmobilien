@@ -70,6 +70,7 @@ const fromJsonArg = (() => {
   return i >= 0 ? process.argv[i + 1] : null;
 })();
 const renderOnly = args.has("--render-only");
+const enrichOnly = args.has("--enrich-only");
 const dryRun = args.has("--dry-run");
 const forceScrape = args.has("--force-scrape");
 const skipEnrich = args.has("--skip-enrich");
@@ -1304,8 +1305,9 @@ function mergeListings(scrapedList, previousData) {
  */
 async function enrichFromExposePage(page, listing) {
   const url = listing.expose_url;
-  console.log(`Enrich ${shortId(listing.id)}: ${url}`);
-  const resp = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+  const mobileUrl = url + (url.includes("?") ? "&app=1" : "?app=1");
+  console.log(`Enrich ${shortId(listing.id)}: ${mobileUrl}`);
+  const resp = await page.goto(mobileUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
   if (!resp || resp.status() >= 400) {
     throw new Error(`Exposé HTTP ${resp && resp.status()}`);
   }
@@ -1352,44 +1354,77 @@ async function enrichFromExposePage(page, listing) {
     const floor_plans = [];
     const seen = new Set();
 
-    for (const img of imgEls) {
-      let src =
-        img.currentSrc ||
-        img.src ||
-        img.getAttribute("data-src") ||
-        img.getAttribute("data-lazy") ||
-        "";
-      if (!src || !/mms\.immowelt\.de|immowelt/i.test(src)) continue;
-      // Prefer larger variants
-      src = src.replace(/([?&])w=\d+/g, "$1w=1200").replace(/([?&])h=\d+/g, "$1h=900");
-      const key = src.split("?")[0];
-      if (seen.has(key)) continue;
-      seen.add(key);
+    function normalizeMediaUrl(raw) {
+      let src = String(raw || "")
+        .replace(/\\u0026/gi, "&")
+        .replace(/\\u003d/gi, "=")
+        .replace(/\\\//g, "/")
+        .replace(/&amp;/g, "&")
+        .trim();
+      if (!/^https:\/\/mms\.immowelt\.de\//i.test(src)) return "";
+      src = src
+        .replace(/([?&])w=\d+/gi, "$1w=1600")
+        .replace(/([?&])h=\d+/gi, "$1h=1200");
+      return src;
+    }
 
-      const alt = `${img.alt || ""} ${img.title || ""}`.toLowerCase();
-      const parentText = `${img.closest("figure,li,div")?.innerText || ""}`.toLowerCase();
-      const blob = `${alt} ${parentText}`;
-      if (/grundriss|floor\s*plan|grundrissplan|floorplan/.test(blob)) {
+    function addMedia(raw, context = "") {
+      const src = normalizeMediaUrl(raw);
+      if (!src) return;
+      const key = src.split("?")[0].toLowerCase();
+      if (seen.has(key)) return;
+
+      const ctx = String(context || "").toLowerCase();
+      // Provider/logo/badge media is also served by mms.immowelt.de but must
+      // never enter a property gallery.
+      if (/companylogo|logourl|badgeimage|agencylogo|intermediary.{0,40}logo/.test(ctx)) return;
+
+      seen.add(key);
+      if (/grundriss|floor[ _-]?plan|floorplan|floor_plan|grundrissplan/.test(ctx)) {
         floor_plans.push(src);
       } else {
         images.push(src);
       }
     }
 
-    // Also scan for grundriss in nearby headings
-    for (const el of document.querySelectorAll("img")) {
-      let node = el;
-      for (let i = 0; i < 5 && node; i++) {
-        const t = (node.innerText || node.alt || "").toLowerCase();
-        if (/grundriss/.test(t)) {
-          const src = el.currentSrc || el.src || "";
-          if (src && /immowelt/i.test(src) && !floor_plans.includes(src)) {
-            floor_plans.push(src);
-          }
-          break;
-        }
-        node = node.parentElement;
+    // 1) Media that Immowelt has materialised into the DOM.
+    for (const img of imgEls) {
+      const context = `${img.alt || ""} ${img.title || ""} ${img.getAttribute("aria-label") || ""} ${img.closest("figure,li,div")?.innerText || ""}`;
+      for (const raw of [
+        img.currentSrc,
+        img.src,
+        img.getAttribute("data-src"),
+        img.getAttribute("data-lazy")
+      ]) addMedia(raw, context);
+
+      for (const srcset of [img.srcset, img.getAttribute("data-srcset")]) {
+        if (!srcset) continue;
+        for (const candidate of srcset.split(",")) addMedia(candidate.trim().split(/\s+/)[0], context);
       }
+    }
+    for (const source of document.querySelectorAll("source[srcset]")) {
+      for (const candidate of String(source.srcset || "").split(",")) {
+        addMedia(candidate.trim().split(/\s+/)[0], source.closest("picture,figure")?.innerText || "");
+      }
+    }
+
+    // 2) Immowelt's mobile SSR embeds the complete media collection in JSON
+    // (__UFRN_* / lifecycle data). Carousel DOM only contains the currently
+    // visible slide, so scan the embedded payload as the authoritative fallback.
+    const embedded = [
+      document.documentElement?.innerHTML || "",
+      ...[...document.scripts].map((node) => node.textContent || "")
+    ].join("\n")
+      .replace(/\\u0026/gi, "&")
+      .replace(/\\u003d/gi, "=")
+      .replace(/\\\//g, "/");
+
+    const mediaRe = /https:\/\/mms\.immowelt\.de\/[A-Za-z0-9_./%-]+(?:\?[A-Za-z0-9_=&.%+-]*)?/gi;
+    let match;
+    while ((match = mediaRe.exec(embedded))) {
+      const from = Math.max(0, match.index - 260);
+      const to = Math.min(embedded.length, match.index + match[0].length + 260);
+      addMedia(match[0], embedded.slice(from, to));
     }
 
     const facts = {};
@@ -1439,10 +1474,19 @@ async function enrichListings(listings) {
   try {
     const context = await browser.newContext({
       userAgent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1",
       locale: "de-DE",
-      viewport: { width: 1365, height: 900 },
+      viewport: { width: 390, height: 844 },
+      isMobile: true,
+      hasTouch: true,
     });
+    await context.addCookies([{
+      name: "aviv_client",
+      value: "ios",
+      domain: ".immowelt.de",
+      path: "/",
+      secure: true
+    }]);
     const page = await context.newPage();
     page.setDefaultTimeout(60000);
 
@@ -1660,7 +1704,15 @@ async function main() {
     return;
   }
 
-  if (fromJsonArg) {
+  if (enrichOnly) {
+    if (!previous) {
+      console.error("No data/listings.json – cannot --enrich-only");
+      process.exit(1);
+    }
+    data = previous;
+    data.scraped_at = new Date().toISOString();
+    data.listings = await enrichListings(data.listings);
+  } else if (fromJsonArg) {
     const src = path.resolve(fromJsonArg);
     console.log("Seeding from", src);
     const seeded = await loadJson(src);
