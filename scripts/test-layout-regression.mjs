@@ -138,6 +138,37 @@ async function measurePage(page, base, path, vp) {
   if (!metrics.hasH1) fail(`${label}: missing <h1>`);
   if (!metrics.title || metrics.title.length < 5) fail(`${label}: missing document title`);
 
+  // Home flyer: Close button must sit on the flyer's right edge on desktop and mobile.
+  // Wait for the intentional 800ms auto-open delay before measuring.
+  if (path === '/') {
+    await page.waitForTimeout(900);
+    const flyer = await page.evaluate(() => {
+      const modal = document.getElementById('flyerModal');
+      const dialog = modal?.querySelector('.flyer-dialog');
+      const close = modal?.querySelector('.flyer-close');
+      if (!modal || modal.hidden || !dialog || !close) return null;
+      const d = dialog.getBoundingClientRect();
+      const c = close.getBoundingClientRect();
+      return {
+        dialogLeft: Math.round(d.left),
+        dialogRight: Math.round(d.right),
+        closeLeft: Math.round(c.left),
+        closeRight: Math.round(c.right),
+      };
+    });
+    if (!flyer) {
+      fail(`${label}: flyer did not auto-open for geometry check`);
+    } else {
+      const rightGap = Math.abs(flyer.dialogRight - flyer.closeRight);
+      if (rightGap > 24) {
+        fail(`${label}: flyer close is not aligned to flyer right edge (gap=${rightGap}px, closeRight=${flyer.closeRight}, dialogRight=${flyer.dialogRight})`);
+      }
+      if (flyer.closeLeft < flyer.dialogLeft - 2) {
+        fail(`${label}: flyer close sits left of flyer dialog`);
+      }
+    }
+  }
+
   // sample screenshot path for debugging on fail (always write small set)
   const shotDir = join(ROOT, 'test-results/layout');
   await page.screenshot({

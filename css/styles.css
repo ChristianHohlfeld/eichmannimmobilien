@@ -980,7 +980,13 @@ a.listing-card:focus-visible {
   /* Am Viewport fixiert — immer sichtbar, nicht abgeschnitten */
   position: fixed;
   top: max(0.85rem, calc(env(safe-area-inset-top) + 0.35rem));
-  right: max(0.85rem, calc(env(safe-area-inset-right) + 0.35rem));
+  /* Horizontal an der rechten Flyer-Kante ausrichten, aber viewport-fixed lassen,
+     damit der Button beim Scrollen sichtbar bleibt. */
+  right: max(
+    calc(env(safe-area-inset-right) + 0.35rem),
+    0.85rem,
+    calc((100vw - 920px) / 2 + 0.85rem)
+  );
   z-index: 1400;
   width: 44px;
   height: 44px;
