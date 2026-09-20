@@ -73,6 +73,10 @@ for (const full of await htmlFiles()) {
   const prefix = rel.startsWith("objekt/") ? "../" : "";
   s = replaceDataConsent(s, prefix);
   s = removePrivacyAck(s);
+  s = s.replaceAll(
+    'Mit dem Absenden werden Ihre Angaben zur Bearbeitung der Anfrage verarbeitet. Hinweise finden Sie in der <a href="' + prefix + 'datenschutz.html">Datenschutzerklärung</a>. Die Anfrage ist unverbindlich; durch das Absenden kommt kein Maklervertrag zustande.',
+    'Informationen zur Verarbeitung Ihrer Angaben finden Sie in der <a href="' + prefix + 'datenschutz.html">Datenschutzerklärung</a>. Durch das Absenden kommt kein Maklervertrag zustande.'
+  );
   s = useSafeHeaderLogo(s);
   s = s.replace(/js\/main\.js\?v=[^"]+/g, "js/main.js?v=form-guard-v2");
   await writeFile(full, s, "utf8");
