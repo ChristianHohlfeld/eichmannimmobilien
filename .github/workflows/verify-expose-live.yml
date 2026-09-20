@@ -1,14 +1,14 @@
 name: Verify live expose transport
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
-      - 'scripts/test-expose-form.mjs'
       - '.github/workflows/verify-expose-live.yml'
 
 jobs:
   verify:
-    if: ${{ contains(github.event.head_commit.message, '[live-form-test]') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[live-form-test]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,20 +18,59 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - name: Browser flow with mocked transport
-        run: node scripts/test-expose-form.mjs
-      - name: One-time real FormSubmit transport check
-        shell: bash
+      - name: Production browser submission
         run: |
-          set -euo pipefail
-          payload='{"anrede":"Herr","vorname":"Technischer","name":"Test","strasse":"Teststraße 1","plz":"78462","ort":"Konstanz","phone":"000000000","email":"technical-test@example.com","anliegen":"Exposé-Anfrage","objekt":"TECHNISCHER TEST – bitte ignorieren","objekt_url":"https://immobilieneichmann.de/","_subject":"TECHNISCHER TEST Exposé-Formular – bitte ignorieren","_template":"table","_captcha":"false"}'
-          response="$(curl --fail-with-body -sS -X POST \
-            -H 'Content-Type: application/json' \
-            -H 'Accept: application/json' \
-            -H 'Origin: https://immobilieneichmann.de' \
-            -H 'Referer: https://immobilieneichmann.de/objekt/penthouse-konigsbau-c6b1d820.html' \
-            -H 'User-Agent: Mozilla/5.0' \
-            --data "$payload" \
-            'https://formsubmit.co/ajax/info@immobilien-eichmann.com')"
-          echo "$response"
-          RESPONSE="$response" node -e 'const r=JSON.parse(process.env.RESPONSE); if (!(r.success===true || r.success==="true")) { console.error(r); process.exit(1); }'
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright';
+
+          const url = 'https://immobilieneichmann.de/objekt/penthouse-konigsbau-c6b1d820.html';
+          const browser = await chromium.launch({ headless: true });
+          const page = await browser.newPage();
+
+          let formSubmit = null;
+          page.on('response', async (res) => {
+            if (res.url().includes('formsubmit.co/ajax/')) {
+              let body = null;
+              try { body = await res.json(); } catch {}
+              formSubmit = { status: res.status(), body };
+            }
+          });
+
+          try {
+            await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+            await page.selectOption('[name="anrede"]', 'Herr');
+            await page.fill('[name="vorname"]', 'Technischer');
+            await page.fill('[name="name"]', 'Test – bitte ignorieren');
+            await page.fill('[name="strasse"]', 'Teststraße 1');
+            await page.fill('[name="plz"]', '78462');
+            await page.fill('[name="ort"]', 'Konstanz');
+            await page.fill('[name="phone"]', '000000000');
+            await page.fill('[name="email"]', 'technical-test@example.com');
+
+            const valid = await page.locator('#contact-form').evaluate((f) => f.checkValidity());
+            if (!valid) throw new Error('Production form is not valid after filling all BI-parity fields');
+
+            await page.click('#contact-submit');
+            await page.waitForFunction(() => {
+              const el = document.getElementById('form-success');
+              return el && !el.hidden;
+            }, { timeout: 20000 });
+
+            await page.waitForTimeout(800);
+            const successText = await page.locator('#form-success').innerText();
+            if (/Bestätigung|Aktiv/i.test(successText)) {
+              throw new Error('FormSubmit endpoint is not activated yet: ' + successText);
+            }
+            if (!formSubmit || formSubmit.status < 200 || formSubmit.status >= 300) {
+              throw new Error('FormSubmit browser transport failed: ' + JSON.stringify(formSubmit));
+            }
+            if (!(formSubmit.body && (formSubmit.body.success === true || formSubmit.body.success === 'true'))) {
+              throw new Error('FormSubmit did not confirm success: ' + JSON.stringify(formSubmit));
+            }
+
+            console.log('PASS — production browser submitted BI-parity expose form through FormSubmit.');
+            console.log(JSON.stringify(formSubmit));
+          } finally {
+            await browser.close();
+          }
+          NODE
