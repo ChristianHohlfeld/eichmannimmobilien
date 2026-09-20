@@ -7,6 +7,7 @@ on:
       - '**/*.html'
       - 'assets/logo.*'
       - 'scripts/test-layout-regression.mjs'
+      - 'scripts/test-legal-baseline.mjs'
       - '.github/workflows/layout-regression.yml'
       - 'package.json'
       - 'package-lock.json'
@@ -31,6 +32,8 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
+      - name: Legal / privacy baseline
+        run: node scripts/test-legal-baseline.mjs
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Layout regression hard gate (Desktop + Mobile)

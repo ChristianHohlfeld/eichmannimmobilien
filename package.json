@@ -2,7 +2,7 @@
   "name": "eichmannimmobilien",
   "private": true,
   "type": "module",
-  "description": "Static site for Immobilien Eichmann \u2013 Immowelt listings sync",
+  "description": "Static site for Immobilien Eichmann – Immowelt listings sync",
   "scripts": {
     "sync-immowelt": "node scripts/sync-immowelt.mjs",
     "sync-immowelt:render": "node scripts/sync-immowelt.mjs --render-only",
@@ -11,12 +11,13 @@
     "test:layout": "node scripts/test-layout-regression.mjs",
     "build:share": "node scripts/build-share-card.mjs",
     "test:share": "node scripts/test-share-card.mjs",
-    "test": "npm run test:share && npm run test:logo && npm run test:jsonld && npm run test:layout",
-    "test:strict": "STRICT=1 npm run test:logo && STRICT=1 npm run test:layout",
-    "test:jsonld": "node scripts/test-jsonld.mjs"
+    "test": "npm run test:share && npm run test:logo && npm run test:jsonld && npm run test:legal && npm run test:layout",
+    "test:strict": "npm run test:legal && STRICT=1 npm run test:logo && STRICT=1 npm run test:layout",
+    "test:jsonld": "node scripts/test-jsonld.mjs",
+    "test:legal": "node scripts/test-legal-baseline.mjs"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {
     "playwright": "^1.49.0",
