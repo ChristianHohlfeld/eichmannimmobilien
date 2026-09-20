@@ -114,12 +114,12 @@ const PROJECT_DISPLAY_TITLE_BY_IMMOWELT_ID = Object.freeze({
 });
 
 const PROJECT_LOCATION_BY_IMMOWELT_ID = Object.freeze({
-  "4fed09f2-bcef-4e96-ba56-810037b569c0": "Kindlebildstraße, Wollmatingen, Konstanz (78467)",
-  "aebb3257-3317-4452-bc9c-a5dbc5ed3838": "Kindlebildstraße, Wollmatingen, Konstanz (78467)",
-  "484fee8a-e3f0-4f06-8d26-d740c290b320": "Kindlebildstraße, Wollmatingen, Konstanz (78467)",
-  "4ac199b6-606e-470b-bb7e-d8646d47ea80": "Kindlebildstraße, Wollmatingen, Konstanz (78467)",
-  "bb241b38-d292-4047-98fd-4352b841bc5a": "Kindlebildstraße, Wollmatingen, Konstanz (78467)",
-  "ff414db8-7e3d-4a01-99f8-029fe15a4d55": "Kindlebildstraße, Wollmatingen, Konstanz (78467)"
+  "4fed09f2-bcef-4e96-ba56-810037b569c0": "Wollmatingen, Konstanz (78467)",
+  "aebb3257-3317-4452-bc9c-a5dbc5ed3838": "Wollmatingen, Konstanz (78467)",
+  "484fee8a-e3f0-4f06-8d26-d740c290b320": "Wollmatingen, Konstanz (78467)",
+  "4ac199b6-606e-470b-bb7e-d8646d47ea80": "Wollmatingen, Konstanz (78467)",
+  "bb241b38-d292-4047-98fd-4352b841bc5a": "Wollmatingen, Konstanz (78467)",
+  "ff414db8-7e3d-4a01-99f8-029fe15a4d55": "Wollmatingen, Konstanz (78467)"
 });
 
 const PROJECT_TYPE_BY_IMMOWELT_ID = Object.freeze({
@@ -206,6 +206,8 @@ const MANUAL_OVERRIDE_FIELDS = [
   "facts",
   "main_image_url",
   "image_base",
+  "active",
+  "detail_page",
 ];
 
 function isManuallyOverridden(prev, field) {
@@ -243,6 +245,62 @@ function applyManualOverrides(listing, prev) {
 
   listing.manual_overrides = { ...mo };
   return listing;
+}
+
+function redactPrivateAddressText(value) {
+  if (value == null) return value;
+  return String(value)
+    .replace(/das\s+an\s+der\s+Kindlebild(?:straße|strasse)\s*13\s+liegt/gi, "das in Konstanz-Wollmatingen liegt")
+    .replace(/Jacob-Burckhardt-(?:Straße|Strasse|Str\.)\s*40/gi, "Konstanz-Königsbau")
+    .replace(/Kindlebild(?:straße|strasse)(?:\s*13)?/gi, "Konstanz-Wollmatingen")
+    .replace(/Radolfzeller\s+(?:Straße|Strasse)(?:\s*91)?/gi, "Konstanz-Wollmatingen")
+    .replace(/Allensteiner\s+(?:Straße|Strasse)(?:\s*\d+[a-z]?)?/gi, "Konstanz-Wollmatingen")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function publicLocation(value) {
+  const text = String(value || "").trim();
+  if (!text) return null;
+  if (/Königsbau|Jacob-Burckhardt/i.test(text)) return "Königsbau, Konstanz (78464)";
+  if (/Wollmatingen|Kindlebild|Radolfzeller|Allensteiner/i.test(text)) return "Wollmatingen, Konstanz (78467)";
+  if (/Petershausen/i.test(text)) return "Petershausen, Konstanz (78467)";
+  if (/Fürstenberg/i.test(text)) return "Fürstenberg, Konstanz (78467)";
+  const postcode = text.match(/\b(7846\d)\b/);
+  if (/Konstanz/i.test(text) && postcode) return `Konstanz (${postcode[1]})`;
+  if (/Konstanz/i.test(text)) return "Konstanz";
+  return redactPrivateAddressText(text);
+}
+
+function sanitizeListingForPublic(listing) {
+  listing.location = publicLocation(listing.location);
+  for (const field of [
+    "title",
+    "source_title",
+    "short_description",
+    "description",
+    "location_description",
+    "additional_information"
+  ]) {
+    if (listing[field] != null) listing[field] = redactPrivateAddressText(listing[field]);
+  }
+  if (Array.isArray(listing.amenities)) {
+    listing.amenities = listing.amenities.map(redactPrivateAddressText).filter(Boolean);
+  }
+  if (listing.facts && typeof listing.facts === "object") {
+    listing.facts = Object.fromEntries(
+      Object.entries(listing.facts).map(([key, value]) => [key, redactPrivateAddressText(value)])
+    );
+  }
+  return listing;
+}
+
+function isPublicListing(listing) {
+  return Boolean(listing) && listing.active !== false;
+}
+
+function hasPublicDetail(listing) {
+  return isPublicListing(listing) && listing.detail_page !== false;
 }
 
 function badgeFor(listing) {
@@ -332,7 +390,22 @@ function normalizeListing(raw, index, prev = null) {
           ? prev.facts
           : null,
     enriched_at: raw.enriched_at || (prev && prev.enriched_at) || null,
+    active:
+      typeof raw.active === "boolean"
+        ? raw.active
+        : prev && typeof prev.active === "boolean"
+          ? prev.active
+          : true,
+    detail_page:
+      typeof raw.detail_page === "boolean"
+        ? raw.detail_page
+        : prev && typeof prev.detail_page === "boolean"
+          ? prev.detail_page
+          : true,
   };
+  if (base.detail_page === false && !base.main_image_url && !base.images.length && !base.gallery_bases.length) {
+    base.image_base = null;
+  }
 
   base.slug = makeSlug({ ...base, slug: raw.slug || (prev && prev.slug) });
   base.local_url = localExposePath(base);
@@ -365,48 +438,55 @@ function renderCard(listing) {
     listing.rooms ? `<span>${escapeHtml(listing.rooms)}</span>` : "",
     listing.living_area ? `<span>${escapeHtml(listing.living_area)}</span>` : "",
     listing.plot_area
-      ? `<span>${escapeHtml(
-          /grundstück/i.test(listing.plot_area)
-            ? listing.plot_area
-            : `${listing.plot_area} Grundstück`
-        )}</span>`
+      ? `<span>${escapeHtml(/grundstück/i.test(listing.plot_area) ? listing.plot_area : `${listing.plot_area} Grundstück`)}</span>`
       : "",
-  ]
-    .filter(Boolean)
-    .join("\n              ");
+  ].filter(Boolean).join("\n              ");
 
+  const detailed = hasPublicDetail(listing);
   const href = listing.local_url || localExposePath(listing);
-  const aria = `${listing.title} – Exposé öffnen`;
-  return `        <a class="listing-card" href="${escapeHtml(href)}" aria-label="${escapeHtml(aria)}">
-          <div class="listing-photo">
-            <picture>
+  const media = base
+    ? `<picture>
               <source srcset="assets/listings/${escapeHtml(base)}.webp" type="image/webp">
               <img src="assets/listings/${escapeHtml(base)}.jpg" alt="${escapeHtml(alt)}" loading="lazy" width="800" height="600" decoding="async">
-            </picture>
+            </picture>`
+    : `<div class="listing-photo-placeholder" aria-hidden="true"><span>Immobilien Eichmann</span></div>`;
+
+  const body = `<div class="listing-photo">
+            ${media}
             <span class="${badge.className}">${escapeHtml(badge.text)}</span>
           </div>
           <div class="listing-body">
             <p class="listing-price">${escapeHtml(listing.price || "")}</p>
             <h3 class="listing-title">${escapeHtml(listing.title)}</h3>
-            <p class="listing-loc">${escapeHtml(listing.location || "")}</p>
+            <p class="listing-loc">${escapeHtml(publicLocation(listing.location) || "")}</p>
             <div class="listing-meta">
               ${meta}
             </div>
             <p class="listing-desc">${escapeHtml(listing.short_description || "")}</p>
             <div class="listing-actions">
-              <span class="btn btn-primary btn-sm">Exposé ansehen</span>
+              ${detailed
+                ? '<span class="btn btn-primary btn-sm">Exposé ansehen</span>'
+                : '<a class="btn btn-primary btn-sm" href="kontakt.html">Details anfragen</a>'}
             </div>
-          </div>
+          </div>`;
+
+  if (!detailed) {
+    return `        <article class="listing-card listing-card-static" aria-label="${escapeHtml(listing.title)} – Details auf Anfrage">
+          ${body}
+        </article>`;
+  }
+  return `        <a class="listing-card" href="${escapeHtml(href)}" aria-label="${escapeHtml(listing.title)} – Exposé öffnen">
+          ${body}
         </a>`;
 }
 
 function renderGrid(listings) {
-  const cards = listings.map(renderCard).join("\n\n");
+  const cards = listings.filter(isPublicListing).map(renderCard).join("\n\n");
   return `${MARKER_START}\n${cards}\n${MARKER_END}`;
 }
 
 function countTextIndex(n) {
-  return `${COUNT_START}${n} Kaufobjekte in und um Konstanz – Fotos und Eckdaten, Details im Exposé.${COUNT_END}`;
+  return `${COUNT_START}${n} Kaufobjekte in und um Konstanz – Fotos und Eckdaten, Details zum Objekt.${COUNT_END}`;
 }
 
 function countTextProjekte(n) {
@@ -917,7 +997,11 @@ async function loadJson(filePath) {
     unique.push(L);
   }
   unique.forEach((L, i) => {
-    L.image_base = imageBase(i, L.id);
+    if (!(L.detail_page === false && !L.main_image_url && !(L.images || []).length)) {
+      L.image_base = L.image_base || imageBase(i, L.id);
+    } else {
+      L.image_base = null;
+    }
     L.slug = makeSlug(L);
     L.local_url = localExposePath(L);
   });
@@ -1024,7 +1108,14 @@ async function syncImages(data, { skipDownload = false } = {}) {
 
   for (let i = 0; i < data.listings.length; i++) {
     const L = data.listings[i];
-    console.log(`Images ${i + 1}/${data.listings.length}: ${L.image_base}`);
+    console.log(`Images ${i + 1}/${data.listings.length}: ${L.image_base || "-"}`);
+    if (L.active === false) continue;
+    if (L.detail_page === false && !L.main_image_url) {
+      L.image_base = null;
+      L.gallery_bases = [];
+      L.floor_plan_bases = [];
+      continue;
+    }
 
     if (!skipDownload) {
       await syncOneImage(L.main_image_url, L.image_base);
@@ -1145,6 +1236,8 @@ function serializeListing(L) {
     gallery_bases: L.gallery_bases || [],
     floor_plan_bases: L.floor_plan_bases || [],
     enriched_at: L.enriched_at || null,
+    active: L.active !== false,
+    detail_page: L.detail_page !== false,
     // SoT metadata (local Admin owns the record; Immowelt is optional inbound)
     source: L.source || (L.immowelt_id || looksLikeImmoweltId(L.id) ? "immowelt" : "local"),
     immowelt_id: L.immowelt_id || (looksLikeImmoweltId(L.id) ? L.id : null),
@@ -1206,6 +1299,7 @@ function applyLocalAuthoritative(listing, prev) {
 
 async function writeCanonical(data) {
   await mkdir(path.dirname(DATA_PATH), { recursive: true });
+  data.listings = data.listings.map(sanitizeListingForPublic);
   const out = {
     // Single Source of Truth = this file + Admin. Immowelt is optional inbound only.
     sot: "local",
@@ -1213,6 +1307,7 @@ async function writeCanonical(data) {
     immowelt_profile: data.immowelt_profile || PROFILE_URL,
     scraped_at: data.scraped_at,
     listing_count: data.listings.length,
+    active_listing_count: data.listings.filter(isPublicListing).length,
     listings: data.listings.map(serializeListing),
   };
   const json = JSON.stringify(out, null, 2) + "\n";
@@ -1222,9 +1317,10 @@ async function writeCanonical(data) {
 
 async function renderExposePages(data) {
   await mkdir(OBJEKT_DIR, { recursive: true });
-  const keepSlugs = new Set(data.listings.map((L) => L.slug));
+  const detailed = data.listings.filter(hasPublicDetail);
+  const keepSlugs = new Set(detailed.map((L) => L.slug));
 
-  for (const L of data.listings) {
+  for (const L of detailed) {
     const html = renderExposeHtml(L);
     const fp = path.join(OBJEKT_DIR, `${L.slug}.html`);
     if (!dryRun) await writeFile(fp, html, "utf8");
@@ -1255,6 +1351,7 @@ async function updateSitemap(data) {
   }).join("\n");
 
   const objektUrls = data.listings
+    .filter(hasPublicDetail)
     .map((L) => {
       const loc = `${SITE_ORIGIN}/${L.local_url}`;
       return `  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>`;
@@ -1270,12 +1367,13 @@ ${SITEMAP_OBJEKT_END}
 </urlset>
 `;
   if (!dryRun) await writeFile(SITEMAP_PATH, xml, "utf8");
-  console.log(`Updated sitemap.xml (${data.listings.length} objekt URLs)`);
+  console.log(`Updated sitemap.xml (${data.listings.filter(hasPublicDetail).length} objekt URLs)`);
 }
 
 async function renderIntoPages(data) {
-  const grid = renderGrid(data.listings);
-  const n = data.listings.length;
+  const publicListings = data.listings.filter(isPublicListing);
+  const grid = renderGrid(publicListings);
+  const n = publicListings.length;
 
   if (!dryRun) {
     await mkdir(path.dirname(PARTIAL_PATH), { recursive: true });
@@ -1649,7 +1747,7 @@ async function enrichGalleryFromSparkasse(page, listing) {
       const alt = String(img?.alt || link.getAttribute("aria-label") || "");
       if (/Konstanz/i.test(alt) && /(kaufen|mieten)/i.test(alt)) add(link.href);
     }
-    const lines = String(document.body?.innerText || "")
+    const lines = String(document.body?.textContent || document.body?.innerText || "")
       .split(/\n+/)
       .map((line) => line.replace(/\s+/g, " ").trim())
       .filter(Boolean);
@@ -1819,6 +1917,10 @@ async function enrichListings(listings) {
 
     for (let i = 0; i < listings.length; i++) {
       const L = listings[i];
+      if (L.active === false || L.detail_page === false) {
+        console.log(`Enrich skip (not publicly detailed): ${shortId(L.id)}`);
+        continue;
+      }
       const mo = L.manual_overrides || {};
       // Admin locked both text & photos – nothing useful to pull from Immowelt
       if (mo.description === true && mo.images === true) {
@@ -2089,7 +2191,11 @@ async function main() {
   }
 
   data.listings.forEach((L, i) => {
-    L.image_base = imageBase(i, L.id);
+    if (!(L.detail_page === false && !L.main_image_url && !(L.images || []).length)) {
+      L.image_base = L.image_base || imageBase(i, L.id);
+    } else {
+      L.image_base = null;
+    }
     L.slug = makeSlug(L);
     L.local_url = localExposePath(L);
   });
