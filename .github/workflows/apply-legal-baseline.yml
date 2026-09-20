@@ -1,0 +1,48 @@
+name: Apply legal baseline
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/apply-legal-baseline.mjs'
+      - 'scripts/test-legal-baseline.mjs'
+      - '.github/workflows/apply-legal-baseline.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-legal-baseline
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Apply baseline
+        run: node scripts/apply-legal-baseline.mjs
+      - name: Legal checks
+        run: node scripts/test-legal-baseline.mjs
+      - name: Install
+        run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Layout regression
+        env:
+          STRICT: "1"
+        run: node scripts/test-layout-regression.mjs
+      - name: Commit applied baseline
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No changes."
+          else
+            git commit -m "fix: apply legal privacy baseline"
+            git push
+          fi
