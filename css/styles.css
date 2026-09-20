@@ -899,11 +899,18 @@ a.listing-card:focus-visible {
   flex-shrink: 0;
   color: rgba(255, 255, 255, 0.92);
   line-height: 0;
+  font-size: 0;
 }
 .sticky-ico svg {
   width: 22px;
   height: 22px;
   display: block;
+  stroke: currentColor;
+  fill: none;
+}
+.sticky-item .sticky-ico,
+.sticky-accent .sticky-ico {
+  color: rgba(255, 255, 255, 0.92);
 }
 .sticky-accent {
   background: var(--primary-mid);
