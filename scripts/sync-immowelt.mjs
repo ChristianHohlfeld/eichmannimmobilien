@@ -1620,6 +1620,7 @@ async function enrichFromExposePage(page, listing) {
 
     const facts = {};
     const factPatterns = [
+      [/Referenz(?:nummer|nr\.?)[\s:#-]*([A-Z0-9][A-Z0-9._/-]{0,31})/i, "Referenznummer"],
       [/Energieeffizienzklasse\s*([A-G]\+?)/i, "Energieeffizienzklasse"],
       [/Baujahr\s*(\d{4})/i, "Baujahr"],
       [/(\d+\.\s*Geschoss|Erdgeschoss|Dachgeschoss)/i, "Geschoss"],
@@ -1646,6 +1647,9 @@ async function enrichFromExposePage(page, listing) {
   }
   if (detail.facts && Object.keys(detail.facts).length && mo.facts !== true) {
     listing.facts = { ...(listing.facts || {}), ...detail.facts };
+  }
+  if (detail.facts?.Referenznummer && mo.reference_number !== true) {
+    listing.reference_number = String(detail.facts.Referenznummer).trim().toUpperCase();
   }
   listing.enriched_at = new Date().toISOString();
   return listing;
@@ -1778,7 +1782,7 @@ async function enrichGalleryFromSparkasse(page, listing) {
     }
     const knownFactLabels = new Set([
       "Kaufpreis","Käuferprovision","Nettokaltmiete","Tiefgaragen Stellplatz (Kaufpreis)","Garagen Stellplatz (Kaufpreis)",
-      "Garagen Stellplatz (Kaufpreis)","PLZ","Ort","Wohnfläche","Grundstücksfläche",
+      "Garagen Stellplatz (Kaufpreis)","Referenznummer","PLZ","Ort","Wohnfläche","Grundstücksfläche",
       "Anzahl Zimmer","Anzahl Balkone","Anzahl Terrassen","Parkplatztyp",
       "Anzahl Tiefgaragen Stellplätze","Zustand","Boden","Energieausweistyp",
       "Energiestandard","Effizienzklasse","Ausstellungsdatum des Energieausweises",
@@ -1841,7 +1845,7 @@ async function enrichGalleryFromSparkasse(page, listing) {
 
     const factLabels = [
       "Kaufpreis","Käuferprovision","Nettokaltmiete","Tiefgaragen Stellplatz (Kaufpreis)",
-      "PLZ","Ort","Wohnfläche","Grundstücksfläche","Anzahl Zimmer","Anzahl Balkone","Anzahl Terrassen",
+      "Referenznummer","PLZ","Ort","Wohnfläche","Grundstücksfläche","Anzahl Zimmer","Anzahl Balkone","Anzahl Terrassen",
       "Parkplatztyp","Anzahl Tiefgaragen Stellplätze","Zustand","Boden","Energieausweistyp",
       "Energiestandard","Effizienzklasse","Ausstellungsdatum des Energieausweises",
       "Energieausweis gültig bis","Gebäudeart","Heizung","Befeuerung","Endenergiebedarf"
@@ -1886,8 +1890,9 @@ async function enrichGalleryFromSparkasse(page, listing) {
   }
   if (mo.reference_number !== true) {
     listing.reference_number =
-      PROJECT_REFERENCE_BY_IMMOWELT_ID[listingKey] ||
+      media.facts?.Referenznummer ||
       media.titleRef ||
+      PROJECT_REFERENCE_BY_IMMOWELT_ID[listingKey] ||
       listing.reference_number ||
       null;
   }
@@ -2101,6 +2106,10 @@ async function scrapeImmowelt() {
           }
         }
 
+        const referenceM = text.match(/Referenz(?:nummer|nr\.?)[\s:#-]*([A-Z0-9][A-Z0-9._/-]{0,31})/i);
+        const titleReferenceM = title.match(/\b([AB]\d{1,3})\b/i);
+        const reference_number = (referenceM?.[1] || titleReferenceM?.[1] || "").toUpperCase() || null;
+
         const shortBits = [];
         if (/provisionsfrei/i.test(text)) shortBits.push("provisionsfrei");
         if (/Erstbezug/i.test(text)) shortBits.push("Erstbezug");
@@ -2119,6 +2128,7 @@ async function scrapeImmowelt() {
           plot_area: plotM ? plotM[1] : null,
           type,
           status: /Miete/i.test(title) ? "Miete" : "Kauf",
+          reference_number,
           short_description: shortBits.join("; ") || null,
           expose_url: `https://www.immowelt.de/expose/${id}`,
           main_image_url: img,
