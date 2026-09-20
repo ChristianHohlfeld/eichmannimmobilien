@@ -952,22 +952,34 @@ a.listing-card:focus-visible {
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
   box-sizing: border-box;
+  /* Platz unter dem fixen Close-Button */
+  scroll-padding-top: 3rem;
 }
 .flyer-close {
-
-  position: absolute;
-  top: 0.5rem;
-  right: 0.55rem;
-  z-index: 2;
-  width: 36px;
-  height: 36px;
+  /* Am Viewport fixiert — bleibt beim Scrollen des Flyer-Inhalts sichtbar */
+  position: fixed;
+  top: max(0.65rem, env(safe-area-inset-top));
+  right: max(0.65rem, env(safe-area-inset-right));
+  z-index: 1400;
+  width: 40px;
+  height: 40px;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--white);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.97);
   color: var(--ink);
-  font-size: 1.35rem;
+  font-size: 1.4rem;
   cursor: pointer;
   line-height: 1;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 12px rgba(15, 39, 68, 0.22);
+}
+.flyer-close:hover {
+  background: #fff;
+  color: var(--accent, #c45c26);
+}
+.flyer-overlay[hidden] .flyer-close {
+  /* nicht relevant; Overlay ist hidden */
 }
 .flyer {
   font-size: 0.92rem;
