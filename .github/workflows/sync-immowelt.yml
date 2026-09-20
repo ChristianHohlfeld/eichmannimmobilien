@@ -64,13 +64,33 @@ jobs:
           import { readFile, readdir } from "node:fs/promises";
           const raw = JSON.parse(await readFile("data/listings.json", "utf8"));
           const listings = Array.isArray(raw) ? raw : raw.listings || [];
+          const publicListings = listings.filter((item) => item.active !== false);
+          const detailedListings = publicListings.filter((item) => item.detail_page !== false);
           const problems = [];
-          for (const item of listings) {
+          for (const item of detailedListings) {
             const description = String(item.description || "").trim();
             if (!description) problems.push(`${item.slug}: missing description`);
             if (description.length < 80) problems.push(`${item.slug}: description is only a teaser`);
             if (/…$/.test(description)) problems.push(`${item.slug}: description still ends in collapsed teaser ellipsis`);
             if (!Array.isArray(item.gallery_bases) || item.gallery_bases.length < 2) problems.push(`${item.slug}: gallery has <2 images`);
+          }
+          const forbiddenObjectAddresses = [
+            /Jacob-Burckhardt-(?:Straße|Strasse|Str\.)\s*40/i,
+            /Kindlebild(?:straße|strasse)\s*13/i,
+            /Radolfzeller\s+(?:Straße|Strasse)\s*91/i,
+            /Allensteiner\s+(?:Straße|Strasse)\s*\d+/i
+          ];
+          for (const item of publicListings) {
+            const blob = JSON.stringify({
+              location: item.location,
+              description: item.description,
+              location_description: item.location_description,
+              additional_information: item.additional_information,
+              short_description: item.short_description
+            });
+            if (forbiddenObjectAddresses.some((re) => re.test(blob))) {
+              problems.push(`${item.slug}: exact object address leaked into public data`);
+            }
           }
           for (const name of await readdir("objekt")) {
             if (!name.endsWith(".html")) continue;
@@ -84,7 +104,7 @@ jobs:
             console.error("Refusing to publish incomplete Exposés:\n" + problems.join("\n"));
             process.exit(1);
           }
-          console.log(`Detail quality OK: ${listings.length} listings with real descriptions and galleries.`);
+          console.log(`Detail quality OK: ${detailedListings.length} detailed public listings; ${publicListings.length} active offers.`);
           NODE
 
       - name: Commit & push if changed
