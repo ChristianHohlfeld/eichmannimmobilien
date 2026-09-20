@@ -689,7 +689,7 @@ ${JSON.stringify(schema, null, 2)}
                   `Guten Tag,\nich interessiere mich für: ${title}${listing.location ? ` (${listing.location})` : ""}.\nBitte senden Sie mir das Exposé / weitere Informationen.\n\nMit freundlichen Grüßen`
                 )}</textarea>
               </div>
-              <p class="form-note legal-request-note">Mit dem Absenden werden Ihre Angaben zur Bearbeitung der Anfrage verarbeitet. Hinweise finden Sie in der <a href="${p}datenschutz.html">Datenschutzerklärung</a>. Die Anfrage ist unverbindlich; durch das Absenden kommt kein Maklervertrag zustande.</p>
+              <p class="form-note legal-request-note">Informationen zur Verarbeitung Ihrer Angaben finden Sie in der <a href="${p}datenschutz.html">Datenschutzerklärung</a>. Durch das Absenden kommt kein Maklervertrag zustande.</p>
               <button type="submit" class="btn btn-accent" id="contact-submit">Exposé anfragen</button>
               <div id="form-success" class="form-success" role="status" hidden>
                 Vielen Dank – Ihre Anfrage wurde übermittelt. Wir melden uns zeitnah.

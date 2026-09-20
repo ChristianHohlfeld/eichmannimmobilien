@@ -29,7 +29,7 @@ function stripGoogleFonts(s) {
 }
 
 function replaceDataConsent(s, prefix) {
-  const notice = '<p class="form-note legal-request-note">Mit dem Absenden werden Ihre Angaben zur Bearbeitung der Anfrage verarbeitet. Hinweise finden Sie in der <a href="' + prefix + 'datenschutz.html">Datenschutzerklärung</a>. Die Anfrage ist unverbindlich; durch das Absenden kommt kein Maklervertrag zustande.</p>';
+  const notice = '<p class="form-note legal-request-note">Informationen zur Verarbeitung Ihrer Angaben finden Sie in der <a href="' + prefix + 'datenschutz.html">Datenschutzerklärung</a>. Durch das Absenden kommt kein Maklervertrag zustande.</p>';
   return s.replace(
     /<div class="form-group form-consent">\s*<label class="consent-label"[^>]*>\s*<input[^>]*name="datenschutz"[\s\S]*?<\/label>\s*<\/div>/g,
     notice
@@ -274,14 +274,6 @@ for (const full of await htmlFiles()) {
 
       if (submitBtn) {`;
   s = s.replace(oldGuard, newGuard);
-  if (!s.includes('privacy_ack: "Datenschutzerklärung zur Kenntnis genommen"')) {
-    s = s.replace(
-      `        message: (form.querySelector('[name="message"]') || {}).value || "",
-        _subject:`,
-      `        message: (form.querySelector('[name="message"]') || {}).value || "",
-        _subject:`
-    );
-  }
   await write("js/main.js", s);
 }
 
@@ -311,7 +303,7 @@ for (const full of await htmlFiles()) {
   s = s.replaceAll("Einwilligung oder Maklervertrag in Textform zurücknehmen", "Maklervertrag in Textform widerrufen");
   s = s.replace(
     /<div class="form-group form-consent">\s*<label class="consent-label"[^>]*>\s*<input[^>]*name="datenschutz"[\s\S]*?<\/label>\s*<\/div>/g,
-    '<p class="form-note legal-request-note">Mit dem Absenden werden Ihre Angaben zur Bearbeitung der Anfrage verarbeitet. Hinweise finden Sie in der <a href="${p}datenschutz.html">Datenschutzerklärung</a>. Die Anfrage ist unverbindlich; durch das Absenden kommt kein Maklervertrag zustande.</p>'
+    '<p class="form-note legal-request-note">Informationen zur Verarbeitung Ihrer Angaben finden Sie in der <a href="${p}datenschutz.html">Datenschutzerklärung</a>. Durch das Absenden kommt kein Maklervertrag zustande.</p>'
   );
   s = s.replace(/<img class="logo-svg" src="${p}assets\/logo\.(?:png|svg)\?v=[^"]+"/g, '<img class="logo-svg" src="${p}assets/logo-header.svg?v=header-safe-v1"');
   s = s.replace(/js\/main\.js\?v=[^"]+/g, 'js/main.js?v=form-guard-v2');

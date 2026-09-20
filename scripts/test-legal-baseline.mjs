@@ -35,7 +35,7 @@ assert.ok(impressum.includes("Industrie- und Handelskammer Hochrhein-Bodensee"),
 const datenschutz = await readFile(path.join(ROOT, "datenschutz.html"), "utf8");
 for (const needle of ["GitHub Pages","FormSubmit","Google Analytics","Local Storage","Landesbeauftragte"]) assert.ok(datenschutz.includes(needle), "Datenschutz missing " + needle);
 const kontakt = await readFile(path.join(ROOT, "kontakt.html"), "utf8");
-assert.ok(kontakt.includes("Die Anfrage ist unverbindlich; durch das Absenden kommt kein Maklervertrag zustande."), "Kontakt: non-binding notice missing");
+assert.ok(kontakt.includes("Durch das Absenden kommt kein Maklervertrag zustande."), "Kontakt: no-contract notice missing");
 const widerruf = await readFile(path.join(ROOT, "widerrufsbelehrung.html"), "utf8");
 assert.ok(widerruf.includes("vierzehn Tagen"), "Widerruf: 14 days missing");
 assert.ok(!widerruf.includes("30 Tagen"), "Widerruf: obsolete 30 days");
@@ -45,7 +45,8 @@ assert.ok(!vertragWiderrufen.includes("blo√üe Kontakt-, Vormerkungs- oder Expos√
 const generator = await readFile(path.join(ROOT, "scripts", "sync-immowelt.mjs"), "utf8");
 assert.ok(generator.includes("cookie-consent.js"), "Generator: cookie consent missing");
 assert.ok(!generator.includes('src="${p}js/analytics.js"'), "Generator: direct analytics load");
-assert.ok(generator.includes("Die Anfrage ist unverbindlich; durch das Absenden kommt kein Maklervertrag zustande."), "Generator: non-binding notice missing");
+assert.ok(generator.includes("Durch das Absenden kommt kein Maklervertrag zustande."), "Generator: no-contract notice missing");
 assert.ok(!generator.includes('name="privacy_ack"'), "Generator: unnecessary privacy acknowledgement present");
+assert.ok(!kontakt.includes("Die Anfrage ist unverbindlich;"), "Kontakt: verbose request notice should be removed");
 assert.ok(generator.includes("logo-header.svg?v=header-safe-v1"), "Generator: safe header logo missing");
 console.log("Legal baseline OK: " + html.length + " HTML files checked.");
