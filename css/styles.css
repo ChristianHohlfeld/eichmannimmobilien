@@ -1,3 +1,4 @@
+/* expose-lightbox-v1 */
 /* sticky-icons-neutral-v1 + flyer-session-once */
 /* cta-script-caveat v1 */
 /* Immobilien Eichmann – Design Brief v1
@@ -1664,3 +1665,76 @@ a.listing-card:focus-visible {
   }
 }
 
+
+
+/* ——— Exposé lightbox ——— */
+.expose-gallery-stage img,
+.expose-floorplan img,
+.expose-floorplan-img {
+  cursor: zoom-in;
+}
+.lb-overlay[hidden] { display: none !important; }
+.lb-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 39, 68, 0.82);
+}
+.lb-dialog {
+  position: relative;
+  max-width: min(1100px, 100%);
+  max-height: min(90vh, 100%);
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.lb-dialog img {
+  display: block;
+  max-width: 100%;
+  max-height: min(82vh, 900px);
+  width: auto;
+  height: auto;
+  margin: 0 auto;
+  border-radius: var(--radius);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  object-fit: contain;
+  background: #0b1a2e;
+}
+.lb-close,
+.lb-nav {
+  position: absolute;
+  border: 0;
+  background: rgba(255,255,255,0.92);
+  color: var(--primary);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+.lb-close { top: -0.35rem; right: -0.35rem; }
+.lb-nav { top: 50%; transform: translateY(-50%); }
+.lb-prev { left: -0.25rem; }
+.lb-next { right: -0.25rem; }
+.lb-close:hover,
+.lb-nav:hover { background: #fff; }
+.lb-caption {
+  margin: 0.65rem 0 0;
+  text-align: center;
+  color: rgba(255,255,255,0.9);
+  font-size: 0.9rem;
+}
+@media (max-width: 700px) {
+  .lb-prev { left: 0.15rem; }
+  .lb-next { right: 0.15rem; }
+  .lb-close { top: 0.15rem; right: 0.15rem; }
+}
