@@ -2,8 +2,9 @@
   "sot": "local",
   "source": "https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d",
   "immowelt_profile": "https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d",
-  "scraped_at": "2026-09-20T18:11:48.190Z",
+  "scraped_at": "2026-09-20T18:49:02.890Z",
   "listing_count": 14,
+  "active_listing_count": 12,
   "listings": [
     {
       "id": "c6b1d820-4e82-416d-95ad-22472a129955",
@@ -18,16 +19,16 @@
       "type": "Penthouse",
       "status": "Kauf",
       "short_description": "provisionsfrei; Geschoss 1/1; frei ab sofort",
-      "description": "Bei der Ausstattung wurde besonderer Wert auf modernes, hochwertiges und komfortables Wohnen gelegt.Die Wohnung verfügt über: hochwertige Fußbodenheizung durchgängig großformatige Fliesen 1,20 m × 0,60 m im Badezimmer hochwertige 60 × 60 cm Fliesen sämtliche Wände mit…",
+      "description": "Bei der Ausstattung wurde besonderer Wert auf modernes, hochwertiges und komfortables Wohnen gelegt. Die Wohnung verfügt über: hochwertige Fußbodenheizung durchgängig großformatige Fliesen 1,20 m × 0,60 m im Badezimmer hochwertige 60 × 60 cm Fliesen sämtliche Wände mit…Bei der Ausstattung wurde besonderer Wert auf modernes, hochwertiges und komfortables Wohnen gelegt. Die Wohnung verfügt über: hochwertige Fußbodenheizung durchgängig großformatige Fliesen 1,20 m × 0,60 m im Badezimmer hochwertige 60 × 60 cm Fliesen sämtliche Wände mit hochwertigem Glattputz integrierte Deckenspots mit Dimmer moderne Einbauküche platzsparendes Schiebefenster, das seitlich geöffnet werden kann modernes Bad mit bodengleicher Dusche und Ablaufrinne, ohne Duschwanne hochwertige Doppelfalztüren mit Sicherheitsschloss großzügige Terrasse mit Waschbetonplatten eigener, schöner Kellerraum eigener AußenstellplatzDie großformatigen Fliesen und der Glattputz verleihen den Räumen eine moderne, elegante Optik. Die eingelassenen und dimmbaren Leuchten ermöglichen eine individuelle Lichtgestaltung und schaffen je nach Tageszeit eine angenehme Atmosphäre. Ein besonderes architektonisches Detail ist das seitlich zu öffnende Schiebefenster. Durch die platzsparende Konstruktion lässt sich der vorhandene Wohnraum optimal nutzen. Auch das Badezimmer überzeugt durch seine moderne Gestaltung. Die bodengleiche Dusche mit Ablaufrinne bietet nicht nur eine elegante Optik, sondern auch einen komfortablen und zeitgemäßen Zugang.",
       "source_title": "KfW-55 Sonnige 1 Zimmerwohnung Neubau Konstanz (Königsbau)",
       "reference_number": null,
-      "location_description": "Attraktive Lage in Konstanz – KönigsbauDie Wohnanlage im Konstanzer Königsbau befindet sich in einer äußerst attraktiven und zentralen Lage, nur wenige Minuten von der Universität Konstanz entfernt. Der Stadtteil verbindet die Vorzüge einer ruhigen Wohnlage mit der hervorragenden…",
+      "location_description": "Straße nicht freigegeben78464 KonstanzVollständige Adresse beim AnbieterAuf Karte anzeigen© SmartMaps | Leaflet | © OpenStreetMap contributorsAttraktive Lage in Konstanz – KönigsbauDie Wohnanlage im Konstanzer Königsbau befindet sich in einer äußerst attraktiven und zentralen Lage, nur wenige Minuten von der Universität Konstanz entfernt. Der Stadtteil verbindet die Vorzüge einer ruhigen Wohnlage mit der hervorragenden…Attraktive Lage in Konstanz – KönigsbauDie Wohnanlage im Konstanzer Königsbau befindet sich in einer äußerst attraktiven und zentralen Lage, nur wenige Minuten von der Universität Konstanz entfernt. Der Stadtteil verbindet die Vorzüge einer ruhigen Wohnlage mit der hervorragenden Erreichbarkeit nahezu aller wichtigen Einrichtungen des täglichen Lebens. Durch die Lage zwischen Petershausen und der Konstanzer Innenstadt profitieren die Bewohner von kurzen Wegen in alle Richtungen. Einkaufsmöglichkeiten, Ärzte, Apotheken, Banken, Behörden sowie weitere Einrichtungen des täglichen Bedarfs sind schnell und bequem erreichbar. Auch das Klinikum Konstanz befindet sich in gut erreichbarer Nähe. Ein weiterer großer Vorteil ist die sehr gute öffentliche Verkehrsanbindung. Bushaltestellen befinden sich in unmittelbarer Umgebung und ermöglichen eine schnelle Verbindung in die Innenstadt, zur Universität und zu weiteren wichtigen Zielen in Konstanz. Besonders interessant ist die Lage für Studierende, Mitarbeiter der Universität sowie Beschäftigte des Klinikums, da Universität und Klinikum bequem erreichbar sind. Gleichzeitig bietet der Königsbau durch seine zentrale Lage eine hohe Attraktivität für Kapitalanleger und Eigennutzer. Kurz gesagt: Der Königsbau bietet kurze Wege, eine hervorragende Infrastruktur und eine zentrale Lage – mitten in Konstanz und nahe der Universität und Bodensee.",
       "amenities": [
         "Balkon",
         "Fußbodenheizung",
         "Terrasse"
       ],
-      "additional_information": "Provisionsfrei!!!Der Käufer braucht an dem Markler keine Provision Zahlen.",
+      "additional_information": "Provisionsfrei!!! Der Käufer braucht an dem Markler keine Provision Zahlen. Provisionsfrei!!! Der Käufer braucht an dem Markler keine Provision Zahlen.",
       "facts": {
         "Kaufpreis": "199.000 €",
         "Käuferprovision": "provisionsfrei",
@@ -126,19 +127,13 @@
         "01-c6b1d820-g34"
       ],
       "floor_plan_bases": [],
-      "enriched_at": "2026-09-20T18:11:52.246Z",
+      "enriched_at": "2026-09-20T18:49:15.833Z",
+      "active": true,
+      "detail_page": true,
       "source": "immowelt",
       "immowelt_id": "c6b1d820-4e82-416d-95ad-22472a129955",
       "sync_policy": "independent",
-      "missing_on_immowelt": false,
-      "active": true,
-      "detail_page": true,
-      "manual_overrides": {
-        "active": true,
-        "detail_page": true,
-        "updated_at": "2026-09-20T18:37:15.326Z",
-        "location": true
-      }
+      "missing_on_immowelt": false
     },
     {
       "id": "32a8908e-c8e0-4944-b44f-f203ccdaa8a9",
@@ -153,10 +148,10 @@
       "type": "Mehrfamilienhaus",
       "status": "Kauf",
       "short_description": "frei ab sofort",
-      "description": "Das Dreifamilienhaus befindet sich in einem unsanierten Zustand und bietet somit erhebliches Potenzial zur individuellen Weiterentwicklung. Im Zuge einer umfassenden Sanierung besteht die Möglichkeit, den Kellerbereich auszubauen und eine zusätzliche Zwei-Zimmer-Wohnung zu schaff…",
+      "description": "Das Dreifamilienhaus befindet sich in einem unsanierten Zustand und bietet somit erhebliches Potenzial zur individuellen Weiterentwicklung. Im Zuge einer umfassenden Sanierung besteht die Möglichkeit, den Kellerbereich auszubauen und eine zusätzliche Zwei-Zimmer-Wohnung zu schaff…Das Dreifamilienhaus befindet sich in einem unsanierten Zustand und bietet somit erhebliches Potenzial zur individuellen Weiterentwicklung. Im Zuge einer umfassenden Sanierung besteht die Möglichkeit, den Kellerbereich auszubauen und eine zusätzliche Zwei-Zimmer-Wohnung zu schaffen. Dadurch kann die Immobilie perspektivisch zu einem attraktiven Vierfamilienhaus erweitert werden. Besonders hervorzuheben ist die Chance, das Objekt im Rahmen einer energetischen Sanierung auf einen modernen Stand zu bringen. Durch den Einsatz erneuerbarer Energien lassen sich nicht nur Betriebskosten nachhaltig senken, sondern auch staatliche Förderprogramme nutzen, die eine solche Modernisierung finanziell unterstützen können. Diese Immobilie eignet sich ideal für Investoren oder Eigennutzer mit Weitblick, die das vorhandene Potenzial erkennen und gezielt ausschöpfen möchten.",
       "source_title": "Ein Dreifamillienhaus in wunderschöner, grüner Lage",
       "reference_number": null,
-      "location_description": "Das Dreifamilienhaus befindet sich in absolut ruhiger, verkehrsberuhigter Lage im begehrten Stadtteil Wollmatingen in Konstanz. Die Umgebung ist geprägt von nur wenigen Wohnhäusern, überwiegend Ein- und kleineren Mehrfamilienhäusern, und bietet dadurch ein besonders privates und…",
+      "location_description": "Straße nicht freigegeben78467 KonstanzVollständige Adresse beim AnbieterAuf Karte anzeigen© SmartMaps | Leaflet | © OpenStreetMap contributorsDas Dreifamilienhaus befindet sich in absolut ruhiger, verkehrsberuhigter Lage im begehrten Stadtteil Wollmatingen in Konstanz. Die Umgebung ist geprägt von nur wenigen Wohnhäusern, überwiegend Ein- und kleineren Mehrfamilienhäusern, und bietet dadurch ein besonders privates und…Das Dreifamilienhaus befindet sich in absolut ruhiger, verkehrsberuhigter Lage im begehrten Stadtteil Wollmatingen in Konstanz. Die Umgebung ist geprägt von nur wenigen Wohnhäusern, überwiegend Ein- und kleineren Mehrfamilienhäusern, und bietet dadurch ein besonders privates und entspanntes Wohngefühl. Die Immobilie verfügt über Balkone sowie ein großzügiges Grundstück mit viel Grün und hoher Aufenthaltsqualität. Dank der Grundstücksgröße besteht - vorbehaltlich der Genehmigung durch die Stadt Konstanz – die Möglichkeit eines Anbaus, was zusätzliches Entwicklungspotenzial eröffnet. Mehrere Stellplätze lassen sich problemlos realisieren; Kapazitäten für etwa fünf bis sieben Fahrzeuge sind gegeben. Die Kombination aus ruhiger Lage, viel Platz und Erweiterungsmöglichkeiten macht dieses Objekt zu einer seltenen Gelegenheit auf dem Konstanzer Immobilienmarkt. Das Haus ist nach Absprache verfügbar.",
       "amenities": [
         "Bad mit Fenster",
         "Badewanne",
@@ -167,7 +162,7 @@
         "Terrasse",
         "3 Badezimmer"
       ],
-      "additional_information": "Das Haus kann nach Terminabsprache mit unserem Büro unter der Telefonnummer 0170 522 5568 jederzeit besichtigt werden.",
+      "additional_information": "Das Haus kann nach Terminabsprache mit unserem Büro unter der Telefonnummer 0170 522 5568 jederzeit besichtigt werden. Das Haus kann nach Terminabsprache mit unserem Büro unter der Telefonnummer 0170 522 5568 jederzeit besichtigt werden.",
       "facts": {
         "Kaufpreis": "1.250.000 €",
         "Käuferprovision": "provisionspflichtig",
@@ -314,19 +309,13 @@
         "02-32a8908e-g60"
       ],
       "floor_plan_bases": [],
-      "enriched_at": "2026-09-20T18:11:53.615Z",
+      "enriched_at": "2026-09-20T18:49:26.481Z",
+      "active": true,
+      "detail_page": true,
       "source": "immowelt",
       "immowelt_id": "32a8908e-c8e0-4944-b44f-f203ccdaa8a9",
       "sync_policy": "independent",
-      "missing_on_immowelt": false,
-      "active": true,
-      "detail_page": true,
-      "manual_overrides": {
-        "active": true,
-        "detail_page": true,
-        "updated_at": "2026-09-20T18:37:15.326Z",
-        "location": true
-      }
+      "missing_on_immowelt": false
     },
     {
       "id": "4fed09f2-bcef-4e96-ba56-810037b569c0",
@@ -341,10 +330,10 @@
       "type": "Wohnung",
       "status": "Kauf",
       "short_description": "Erstbezug; als Kapitalanlage geeignet",
-      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
-      "source_title": "Verkaufsstart 3 Zimmer 1 OG Wohnung mit Balkon.KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Konstanz-Wollmatingen",
+      "description": "ObjektbeschreibungDas gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+ besteht aus einem Mehrfamilienhaus A, das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten. Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…ObjektbeschreibungDas gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+ besteht aus einem Mehrfamilienhaus A, das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten. Sowohl bei Haus A wie bei Haus B werden die Balkone alle nach Süd-Westen ausgerichtet sein. Die Informationen zur Bauausführung der beiden Mehrfamilienhäuser, finden sie in den Anlagen unter Baubeschreibung als PDF. RaumaufteilungAlle Wohnungen können noch vor Baubegin in den Grundrissen umgestaltet werden, sofern es die Statik erlaubt. Siehe Expose/Grundrisse in den Anlagen.",
+      "source_title": "Verkaufsstart 3 Zimmer 1 OG Wohnung mit Balkon. KFW 55 Effizenzhaus A+; Neubau-Mehrfamilienhaus-Konstanz-Wollmatingen",
       "reference_number": "A5",
-      "location_description": "Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe.Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant..Unmi…",
+      "location_description": "Straße nicht freigegeben78467 KonstanzVollständige Adresse beim AnbieterAuf Karte anzeigen© SmartMaps | Leaflet | © OpenStreetMap contributorsDas Mehrfamilienhaus entsteht in unserem beliebten Konstanzer Stadteil Wollmatingen. Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe. Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant.. Unmi…Das Mehrfamilienhaus entsteht in unserem beliebten Konstanzer Stadteil Wollmatingen. Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe. Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant.. Unmittelbar in der nähe der Konstanz-Wollmatingen befinden sich Sportplätze und Tennisanlagen, sowie schöne Fahrradwege die direkt in die umliegenden Wälder führen. Bis zum See und auf die Insel Reichenau sind es mit dem Fahhrad nur wenige Minuten. Restaurants und Banken sind ebenfalls füssläufig erreichbar. Bus und Bahn befinden sich in unmittelbarer Nähe. Auch sind sie in wenigen Gehminuten im Erholungsgebiet Wollmatinger Ried. Das neue Schwaketenbad befindet sich in direkter Umgebung.",
       "amenities": [
         "Bad mit Fenster",
         "Badewanne",
@@ -359,7 +348,7 @@
         "Rollstuhlgerecht",
         "WG-Geeignet"
       ],
-      "additional_information": "BesichtigungstermineAlle Besichtigungstermine finden nach Vereinbarung statt. Wir sind auch an Wochenenden und Feiertagen für sie da.StichworteSonstiges/Wohnen: seniorengerechtes WohnenVersorgung: Städtische Wasserversorgung, Städtische StromversorgungServiceleistungen: Hausmeist…",
+      "additional_information": "BesichtigungstermineAlle Besichtigungstermine finden nach Vereinbarung statt. Wir sind auch an Wochenenden und Feiertagen für sie da. StichworteSonstiges/Wohnen: seniorengerechtes WohnenVersorgung: Städtische Wasserversorgung, Städtische StromversorgungServiceleistungen: Hausmeist…BesichtigungstermineAlle Besichtigungstermine finden nach Vereinbarung statt. Wir sind auch an Wochenenden und Feiertagen für sie da. StichworteSonstiges/Wohnen: seniorengerechtes WohnenVersorgung: Städtische Wasserversorgung, Städtische StromversorgungServiceleistungen: HausmeisterSonstiges: ISDN",
       "facts": {
         "Referenznummer": "A5",
         "Kaufpreis": "641.200 €",
@@ -433,19 +422,13 @@
         "03-4fed09f2-g20"
       ],
       "floor_plan_bases": [],
-      "enriched_at": "2026-09-20T18:11:54.920Z",
+      "enriched_at": "2026-09-20T18:49:37.072Z",
+      "active": true,
+      "detail_page": true,
       "source": "immowelt",
       "immowelt_id": "4fed09f2-bcef-4e96-ba56-810037b569c0",
       "sync_policy": "independent",
-      "missing_on_immowelt": false,
-      "active": true,
-      "detail_page": true,
-      "manual_overrides": {
-        "active": true,
-        "detail_page": true,
-        "updated_at": "2026-09-20T18:37:15.326Z",
-        "location": true
-      }
+      "missing_on_immowelt": false
     },
     {
       "id": "d6860062-651b-4f72-a26e-b3719e525241",
@@ -532,17 +515,12 @@
       ],
       "floor_plan_bases": [],
       "enriched_at": "2026-09-20T18:11:56.235Z",
+      "active": false,
+      "detail_page": true,
       "source": "immowelt",
       "immowelt_id": "d6860062-651b-4f72-a26e-b3719e525241",
       "sync_policy": "independent",
-      "missing_on_immowelt": false,
-      "active": false,
-      "detail_page": true,
-      "manual_overrides": {
-        "active": true,
-        "detail_page": true,
-        "updated_at": "2026-09-20T18:37:15.326Z"
-      }
+      "missing_on_immowelt": false
     },
     {
       "id": "e7e58fe2-a93f-44f2-bc73-dabd3c7208b3",
@@ -557,16 +535,16 @@
       "type": "Wohnung",
       "status": "Kauf",
       "short_description": "1. Geschoss; frei ab sofort",
-      "description": "Diese helle 3-Zimmer-Wohnung mit grossen Balkon befindet sich in einem ruhigen, gepflegten 10-Familienhaus aus dem Jahr 1967. Das Gebäude steht auf einem",
+      "description": "Diese helle 3-Zimmer-Wohnung mit grossen Balkon befindet sich in einem ruhigen, gepflegten 10-Familienhaus aus dem Jahr 1967. Das Gebäude steht auf einem 495 m² großen Grundstück im Stadtteil Wollmatingen (Konstanz). Wichtige Eckdaten: Baujahr: 1967Sanierung: umfassend saniert im J…Diese helle 3-Zimmer-Wohnung mit grossen Balkon befindet sich in einem ruhigen, gepflegten 10-Familienhaus aus dem Jahr 1967. Das Gebäude steht auf einem 495 m² großen Grundstück im Stadtteil Wollmatingen (Konstanz). Wichtige Eckdaten: Baujahr: 1967Sanierung: umfassend saniert im Jahr 2025Heizung: moderne Pelletheizung (2025 eingebaut)Wohnfläche: ca. 67 m²Bezugsfrei: sofortRaumaufteilung: Die Wohnung überzeugt durch eine funktionale Raumaufteilung: GarderobenbereichFlurBad mit Toilette und DuscheWohn-/Ess-/SchlafbereichAbgeschlossene Küche mit FensterZusätzlich: Ein Kellerraum ist der Wohnung zugeordnet. Es besteht die Möglichkeit, eine abgeschlossene Garage in der Tiefgarage für 15.000,00 € zu erwerben. Das Objekt steht aktuell leer und kann kurzfristig bezogen werden – ideal für Eigennutzer oder Kapitalanleger.",
       "source_title": "3 Zimmerwohnung Konstanz Wollmatingen",
       "reference_number": null,
-      "location_description": "Die Wohnung befindet sich im Herzen von Konstanz-Wollmatingen, einem zentral gelegenen und gut angebundenen Stadtteil von Konstanz. Alle wichtigen Einrichtungen des täglichen Bedarfs wie Supermärkte (z.?B. Edeka), Bäckereien, Banken, Apotheken, Schulen und Kindergärten sind fußlä…",
+      "location_description": "Straße nicht freigegeben78467 KonstanzVollständige Adresse beim AnbieterAuf Karte anzeigen© SmartMaps | Leaflet | © OpenStreetMap contributorsDie Wohnung befindet sich im Herzen von Konstanz-Wollmatingen, einem zentral gelegenen und gut angebundenen Stadtteil von Konstanz. Alle wichtigen Einrichtungen des täglichen Bedarfs wie Supermärkte (z.? B. Edeka), Bäckereien, Banken, Apotheken, Schulen und Kindergärten sind fußlä…Die Wohnung befindet sich im Herzen von Konstanz-Wollmatingen, einem zentral gelegenen und gut angebundenen Stadtteil von Konstanz. Alle wichtigen Einrichtungen des täglichen Bedarfs wie Supermärkte (z.? B. Edeka), Bäckereien, Banken, Apotheken, Schulen und Kindergärten sind fußläufig erreichbar. Mehrere Bushaltestellen befinden sich direkt vor dem Haus und bieten eine hervorragende Anbindung an den öffentlichen Nahverkehr. Der Bahnhof Konstanz-Wollmatingen ist in nur etwa 5 Gehminuten erreichbar. Von dort aus fährt der Seehas-Zug, der alle Stadtteile von Konstanz sowie die Region bequem verbindet. Die Umgebung ist zudem sehr fahrradfreundlich und bietet zahlreiche Radwege in Richtung Innenstadt und in die Natur. Die Konstanzer Altstadt erreicht man mit dem Bus in ca. 10 Minuten. Auch Freizeitangebote kommen nicht zu kurz: In unmittelbarer Nähe befinden sich Spielplätze, Freibäder, Hallenbäder und weitere Erholungsmöglichkeiten.",
       "amenities": [
         "Balkon",
         "Dusche",
         "Keller"
       ],
-      "additional_information": "BesichtigungstermineTermine zur Besichtigung können Sie gerne unter 0170 522 55 68 vereinbare.StichworteZustand: neuwertig, renoviert, saniertTV: Kabelanschluss, AntennenanschlussVersorgung: Städtische WasserversorgungServiceleistungen: HausmeisterSonstiges: ISDN, Analog, Etagenh…",
+      "additional_information": "BesichtigungstermineTermine zur Besichtigung können Sie gerne unter 0170 522 55 68 vereinbare. StichworteZustand: neuwertig, renoviert, saniertTV: Kabelanschluss, AntennenanschlussVersorgung: Städtische WasserversorgungServiceleistungen: HausmeisterSonstiges: ISDN, Analog, Etagenh…BesichtigungstermineTermine zur Besichtigung können Sie gerne unter 0170 522 55 68 vereinbare. StichworteZustand: neuwertig, renoviert, saniertTV: Kabelanschluss, AntennenanschlussVersorgung: Städtische WasserversorgungServiceleistungen: HausmeisterSonstiges: ISDN, Analog, Etagenheizung",
       "facts": {
         "Kaufpreis": "330.000 €",
         "Käuferprovision": "provisionspflichtig",
@@ -636,19 +614,13 @@
         "05-e7e58fe2-g19"
       ],
       "floor_plan_bases": [],
-      "enriched_at": "2026-09-20T18:11:57.552Z",
+      "enriched_at": "2026-09-20T18:49:47.672Z",
+      "active": true,
+      "detail_page": true,
       "source": "immowelt",
       "immowelt_id": "e7e58fe2-a93f-44f2-bc73-dabd3c7208b3",
       "sync_policy": "independent",
-      "missing_on_immowelt": false,
-      "active": true,
-      "detail_page": true,
-      "manual_overrides": {
-        "active": true,
-        "detail_page": true,
-        "updated_at": "2026-09-20T18:37:15.326Z",
-        "location": true
-      }
+      "missing_on_immowelt": false
     },
     {
       "id": "local-wollmatingen-133000",
@@ -664,8 +636,13 @@
       "status": "Kauf",
       "short_description": "3-Zimmer-Wohnung · weitere Details auf Anfrage",
       "description": null,
+      "source_title": null,
+      "reference_number": null,
+      "location_description": null,
+      "amenities": [],
+      "additional_information": null,
       "facts": null,
-      "expose_url": null,
+      "expose_url": "https://www.immowelt.de/expose/local-wollmatingen-133000",
       "main_image_url": null,
       "images": [],
       "floor_plans": [],
@@ -678,18 +655,7 @@
       "source": "local",
       "immowelt_id": null,
       "sync_policy": "independent",
-      "missing_on_immowelt": false,
-      "manual_overrides": {
-        "title": true,
-        "price": true,
-        "location": true,
-        "rooms": true,
-        "status": true,
-        "short_description": true,
-        "active": true,
-        "detail_page": true,
-        "updated_at": "2026-09-20T18:37:15.326Z"
-      }
+      "missing_on_immowelt": false
     },
     {
       "id": "aebb3257-3317-4452-bc9c-a5dbc5ed3838",
@@ -795,17 +761,12 @@
       ],
       "floor_plan_bases": [],
       "enriched_at": "2026-09-20T18:11:58.860Z",
+      "active": false,
+      "detail_page": true,
       "source": "immowelt",
       "immowelt_id": "aebb3257-3317-4452-bc9c-a5dbc5ed3838",
       "sync_policy": "independent",
-      "missing_on_immowelt": false,
-      "active": false,
-      "detail_page": true,
-      "manual_overrides": {
-        "active": true,
-        "detail_page": true,
-        "updated_at": "2026-09-20T18:37:15.326Z"
-      }
+      "missing_on_immowelt": false
     },
     {
       "id": "86a7d4f6-0118-45fa-addc-ef5fe9edf21d",
@@ -820,10 +781,10 @@
       "type": "Wohnung",
       "status": "Kauf",
       "short_description": "provisionsfrei; 1. Geschoss; frei ab sofort",
-      "description": "Die hochwertig sanierte 4-Zimmerwohnung im 1. Stock eines eleganten 5-Familien-Jugendstilhauses besticht durch ihre moderne Ausstattung und umweltfreundliche Technik, einschließlich einer Wärmepumpe und einer Gashybridanlage. Eiche-Landhausstil-Böden verleihen der Wohnung einen w…",
+      "description": "Die hochwertig sanierte 4-Zimmerwohnung im 1. Stock eines eleganten 5-Familien-Jugendstilhauses besticht durch ihre moderne Ausstattung und umweltfreundliche Technik, einschließlich einer Wärmepumpe und einer Gashybridanlage. Eiche-Landhausstil-Böden verleihen der Wohnung einen w…Die hochwertig sanierte 4-Zimmerwohnung im 1. Stock eines eleganten 5-Familien-Jugendstilhauses besticht durch ihre moderne Ausstattung und umweltfreundliche Technik, einschließlich einer Wärmepumpe und einer Gashybridanlage. Eiche-Landhausstil-Böden verleihen der Wohnung einen warmen Charakter, während die Bäder mit edlen Feinsteinzeug-Fliesen in 60 x 120 cm bestechen. Eine Badewanne und eine großzügige Duschwanne mit Sicherheitsglaswand sorgen für höchsten Komfort. Mit einem neuwertigen Dachgeschoss, das modernen Energiesparstandards entspricht, bietet diese Wohnung eine attraktive AfA von 2,5% und ist provisionsfrei direkt vom Eigentümer erhältlich.",
       "source_title": "4-Zimmer-Wohnung in neu saniertem 5-Familien-Jugendstil-Haus 1. OG Provisionsfrei",
       "reference_number": null,
-      "location_description": "Die Wohnung befindet sich in einer erstklassigen Lage, nur fünf Gehminuten vom malerischen Rhein und zehn Minuten vom Bodensee entfernt. Die charmante Innenstadt erreichen Sie bequem in 15 Minuten über die Fahrradbrücke. Die Umgebung bietet den idyllischen Herosé-Park, der mit se…",
+      "location_description": "Straße nicht freigegeben78467 KonstanzVollständige Adresse beim AnbieterAuf Karte anzeigen© SmartMaps | Leaflet | © OpenStreetMap contributorsDie Wohnung befindet sich in einer erstklassigen Lage, nur fünf Gehminuten vom malerischen Rhein und zehn Minuten vom Bodensee entfernt. Die charmante Innenstadt erreichen Sie bequem in 15 Minuten über die Fahrradbrücke. Die Umgebung bietet den idyllischen Herosé-Park, der mit se…Die Wohnung befindet sich in einer erstklassigen Lage, nur fünf Gehminuten vom malerischen Rhein und zehn Minuten vom Bodensee entfernt. Die charmante Innenstadt erreichen Sie bequem in 15 Minuten über die Fahrradbrücke. Die Umgebung bietet den idyllischen Herosé-Park, der mit seinen großzügigen Grünflächen direkt am Rhein zum Verweilen einlädt. Diversifizierte Bus- und Bahnverbindungen sind fußläufig erreichbar, während sich in der Nähe vielseitige Restaurants, Bäckereien, Ärzte, Cafés und Supermärkte befinden. Auch Bars, Fitnessstudios und Modegeschäfte sind in der Nähe vorhanden und sorgen für ein lebendiges Lebensumfeld. Sehenswerte Erholungs- und Sportmöglichkeiten sowie abendliche Freizeitangebote lassen keine Wünsche offen. Zudem sind die Uferpromenade und das Rheinstrandbad in nur fünf Minuten fußläufig erreichbar. Trotz der zentralen Lage bietet die Wohnung eine ruhige Atmosphäre, dank der umliegenden Gebäude, die jeglichen Straßenlärm abhalten.",
       "amenities": [
         "Bad mit Fenster",
         "Badewanne",
@@ -831,7 +792,7 @@
         "Dusche",
         "Keller"
       ],
-      "additional_information": "Besichtigungstermine sind flexibel und können nach telefonischer Vereinbarung unter 0049 170 522 5568 organisiert werden. Um die Wohnung bequem zu erkunden, nutzen Sie den folgenden Link für eine virtuelle Tour: https://youtube.com/shorts/Lg9c3GMgCHE?si=612XY1hfsfe_Qpv_.Die Wohne…",
+      "additional_information": "Besichtigungstermine sind flexibel und können nach telefonischer Vereinbarung unter 0049 170 522 5568 organisiert werden. Um die Wohnung bequem zu erkunden, nutzen Sie den folgenden Link für eine virtuelle Tour: https://youtube. com/shorts/Lg9c3GMgCHE? si=612XY1hfsfe_Qpv_. Die Wohne…Besichtigungstermine sind flexibel und können nach telefonischer Vereinbarung unter 0049 170 522 5568 organisiert werden. Um die Wohnung bequem zu erkunden, nutzen Sie den folgenden Link für eine virtuelle Tour: https://youtube. com/shorts/Lg9c3GMgCHE? si=612XY1hfsfe_Qpv_. Die Wohneinheit befindet sich in einem neuwertigen Zustand und wurde umfassend saniert, sodass Sie in ein modernes Zuhause einziehen können. Die zentrale Wasserversorgung und die städtische Stromversorgung garantieren komfortables Wohnen. Zusätzliche Serviceleistungen wie ein Hausmeister sorgen für eine angenehme Wohnatmosphäre. Zögern Sie nicht, diese einmalige Gelegenheit zu ergreifen und vereinbaren Sie noch heute einen Besichtigungstermin!",
       "facts": {
         "Kaufpreis": "735.000 €",
         "Käuferprovision": "provisionsfrei",
@@ -953,19 +914,13 @@
         "07-86a7d4f6-g47"
       ],
       "floor_plan_bases": [],
-      "enriched_at": "2026-09-20T18:12:00.176Z",
+      "enriched_at": "2026-09-20T18:49:58.269Z",
+      "active": true,
+      "detail_page": true,
       "source": "immowelt",
       "immowelt_id": "86a7d4f6-0118-45fa-addc-ef5fe9edf21d",
       "sync_policy": "independent",
-      "missing_on_immowelt": false,
-      "active": true,
-      "detail_page": true,
-      "manual_overrides": {
-        "active": true,
-        "detail_page": true,
-        "updated_at": "2026-09-20T18:37:15.326Z",
-        "location": true
-      }
+      "missing_on_immowelt": false
     },
     {
       "id": "7bff84e7-8370-471d-b359-5319c8df10ef",
@@ -980,10 +935,10 @@
       "type": "Wohnung",
       "status": "Kauf",
       "short_description": "provisionsfrei; 2. Geschoss; frei ab sofort",
-      "description": "Im Wohnprojekt Green Living kann sich jeder wohlfühlen. Von der kleinen 2-Zimmer-Wohnung mit ca. 47 m² Wohnfläche über die 3-Zimmer-Wohnung zwischen ca. 80 und 98 m² Wohnfläche bis zur großzügigen 4- oder 5-Zimmer-Wohnung mit ca. 114 m² Wohnfläche bieten die Wohnungen Singles, Pa…",
+      "description": "Im Wohnprojekt Green Living kann sich jeder wohlfühlen. Von der kleinen 2-Zimmer-Wohnung mit ca. 47 m² Wohnfläche über die 3-Zimmer-Wohnung zwischen ca. 80 und 98 m² Wohnfläche bis zur großzügigen 4- oder 5-Zimmer-Wohnung mit ca. 114 m² Wohnfläche bieten die Wohnungen Singles, Pa…Im Wohnprojekt Green Living kann sich jeder wohlfühlen. Von der kleinen 2-Zimmer-Wohnung mit ca. 47 m² Wohnfläche über die 3-Zimmer-Wohnung zwischen ca. 80 und 98 m² Wohnfläche bis zur großzügigen 4- oder 5-Zimmer-Wohnung mit ca. 114 m² Wohnfläche bieten die Wohnungen Singles, Paaren und Familien passenden Wohnraum. Lichtdurchflutete Wohnungen mit einladenden Terrassen oder Balkonen sorgen für großzügiges Flair. Jede Wohnung ist barrierefrei und stufenlos mit dem Aufzug erreichbar. Für den besonderen Wohnkomfort sorgt die Fußbodenheizung mit elektrischer Einzelraumsteuerung. Wir erfüllen mit unserer Bauweise die KfW-55 Anforderungen. Und das lohnt sich mehrfach: Sie sparen Heizkosten und schonen die Umwelt. Das wird vom Staat mit KfW-Förderkrediten und Zuschüssen gefördert. Das grüne Umfeld gibt dem Projekt zur Recht den Namen Green Living",
       "source_title": "4 Zimmer Wohnung B9 / Haus B",
       "reference_number": "B9",
-      "location_description": "Zwischen Wasser und Grün gelegen entstehen im Stadtteil Wollmatingen auf zwei Häuser verteilt 23 Eigentumswohnungen für unterschiedliche Wohnansprüche.",
+      "location_description": "Straße nicht freigegeben78467 KonstanzVollständige Adresse beim AnbieterAuf Karte anzeigen© SmartMaps | Leaflet | © OpenStreetMap contributorsZwischen Wasser und Grün gelegen entstehen im Stadtteil Wollmatingen auf zwei Häuser verteilt 23 Eigentumswohnungen für unterschiedliche Wohnansprüche. Wenige Kilometer vom Naturschutzgebiet Wollmatinger Ried entfernt, können Sie die Ruhe bei langen Spaziergängen genießen und die…Zwischen Wasser und Grün gelegen entstehen im Stadtteil Wollmatingen auf zwei Häuser verteilt 23 Eigentumswohnungen für unterschiedliche Wohnansprüche. Wenige Kilometer vom Naturschutzgebiet Wollmatinger Ried entfernt, können Sie die Ruhe bei langen Spaziergängen genießen und die Seele baumeln lassen. Oder Sie nehmen an bunten Treiben von Konstanz teil. Das Zentrum der Kulturstadt ist nur wenige Kilometer entfernt und lässt sich unter anderem bei einer gemütlichen Radtour über den Bodenseeradweg erreichen. In unmittelbarer Nähe zur Wohnlage finden Sie neben verschiedenen Einkaufsmöglichkeiten, Ärzten und Apotheken auch diverse gastronomische Angebote. Mit Grundschulen, einer Sonderschule, weiterführenden Schulen und Kindergärten gibt es zahlreiche Bildungsangebote für Kinder und Erwachsene. Nicht nur der Bodensee, auch mehrere Spielplätze, ein Skatepark und ein Schwimmbad versprechen ein umfangreiches Freizeitangebot.",
       "amenities": [
         "Bad mit Fenster",
         "Badewanne",
@@ -996,7 +951,7 @@
         "Personenaufzug",
         "Rollstuhlgerecht"
       ],
-      "additional_information": "SonstigesZwischen Wasser und Grün gelegen entstehen im Stadtteil Wollmatingen auf zwei Häuser verteilt 23 Eigentumswohnungen für unterschiedliche Wohnansprüche.",
+      "additional_information": "SonstigesZwischen Wasser und Grün gelegen entstehen im Stadtteil Wollmatingen auf zwei Häuser verteilt 23 Eigentumswohnungen für unterschiedliche Wohnansprüche. Wenige Kilometer vom Naturschutzgebiet Wollmatinger Ried entfernt, können Sie die Ruhe bei langen Spaziergängen genieße…SonstigesZwischen Wasser und Grün gelegen entstehen im Stadtteil Wollmatingen auf zwei Häuser verteilt 23 Eigentumswohnungen für unterschiedliche Wohnansprüche. Wenige Kilometer vom Naturschutzgebiet Wollmatinger Ried entfernt, können Sie die Ruhe bei langen Spaziergängen genießen und die Seele baumeln lassen. Oder Sie nehmen an bunten Treiben von Konstanz teil. Das Zentrum der Kulturstadt ist nur wenige Kilometer entfernt und lässt sich unter anderem bei einer gemütlichen Radtour über den Bodenseeradweg erreichen. In unmittelbarer Nähe zur Wohnlage finden Sie neben verschiedenen Einkaufsmöglichkeiten, Ärzten und Apotheken auch diverse gastronomische Angebote. Mit Grundschulen, einer Sonderschule, weiterführenden Schulen und Kindergärten gibt es zahlreiche Bildungsangebote für Kinder und Erwachsene. Nicht nur der Bodensee, auch mehrere Spielplätze, ein Skatepark und ein Schwimmbad versprechen ein umfangreiches Freizeitangebot. StichworteAnzahl Balkone: 1TV: Kabelanschluss, AntennenanschlussVersorgung: Städtische Wasserversorgung, Städtische StromversorgungServiceleistungen: HausmeisterSonstiges: Kabelkanäle",
       "facts": {
         "Referenznummer": "B9",
         "Kaufpreis": "695.000 €",
@@ -1106,20 +1061,13 @@
         "08-7bff84e7-g40"
       ],
       "floor_plan_bases": [],
-      "enriched_at": "2026-09-20T18:12:01.481Z",
+      "enriched_at": "2026-09-20T18:50:11.943Z",
+      "active": true,
+      "detail_page": true,
       "source": "immowelt",
       "immowelt_id": "7bff84e7-8370-471d-b359-5319c8df10ef",
       "sync_policy": "independent",
-      "missing_on_immowelt": false,
-      "active": true,
-      "detail_page": true,
-      "manual_overrides": {
-        "active": true,
-        "detail_page": true,
-        "updated_at": "2026-09-20T18:37:15.326Z",
-        "location": true,
-        "living_area": true
-      }
+      "missing_on_immowelt": false
     },
     {
       "id": "6fd6062e-32f4-4f02-af80-d854bd090279",
@@ -1134,17 +1082,17 @@
       "type": "Penthouse",
       "status": "Kauf",
       "short_description": "3. Geschoss; frei ab sofort",
-      "description": "Die Attraktive 2-Zimmer-Penthouse-Wohnung befindet sich im 3. Obergeschoss und verfügt über Balkone mit Ausrichtung in verschiedene Himmelsrichtungen. Dadurch genießen Sie ganztägig Lichtverhältnisse sowie sonnige und geschützte Außenbereiche.Diese gepflegte und lichtdurchflutete…",
+      "description": "Die Attraktive 2-Zimmer-Penthouse-Wohnung befindet sich im 3. Obergeschoss und verfügt über Balkone mit Ausrichtung in verschiedene Himmelsrichtungen. Dadurch genießen Sie ganztägig Lichtverhältnisse sowie sonnige und geschützte Außenbereiche. Diese gepflegte und lichtdurchflutete…Die Attraktive 2-Zimmer-Penthouse-Wohnung befindet sich im 3. Obergeschoss und verfügt über Balkone mit Ausrichtung in verschiedene Himmelsrichtungen. Dadurch genießen Sie ganztägig Lichtverhältnisse sowie sonnige und geschützte Außenbereiche. Diese gepflegte und lichtdurchflutete 2-Zimmer-Penthouse-Wohnung befindet sich in begehrter Lage von Konstanz im Stadtteil Wollmatingen/Fürstenberg. Die Wohnung liegt in der obersten Etage eines Zehnfamilienhauses und bietet dadurch ein angenehmes Maß an Ruhe, Privatsphäre und Wohnkomfort. Ein Aufzug ist im Haus vorhanden und ermöglicht einen bequemen Zugang zur Wohnung. Wohnkomfort & AusstattungDie Wohnung überzeugt durch eine durchdachte Raumaufteilung sowie eine hochwertige Ausstattung: Neuwertige EinbaukücheParkettboden in den WohnräumenFliesen in Küche und BadBadezimmer vor ca. fünf Jahren umfassend saniertDurch die Süd- und Westausrichtung genießen Sie helle Räume und sonnige Abendstunden mit schönem Ausblick über die ganze Stadt bis ins Schweizer Hinterland. Zur Wohnung gehört ein Stellplatz in der hauseigenen Tiefgarage in Form eines Doppelparkers.",
       "source_title": "2 1/2 Zimmer Penthouse Wohnung",
       "reference_number": null,
-      "location_description": "Das Objekt liegt in Konstanz-Fürstenberg. In unmittelbarer Nähe befinden sich:Sämtliche Schulen und KindergärtenEinkaufsmöglichkeiten für den täglichen BedarfBahnhofÄrzte und ApothekenRestaurantsBanken und GeldautomatenDie Universität Konstanz ist in ca. 10 Minuten bequem mit dem…",
+      "location_description": "Straße nicht freigegeben78467 KonstanzVollständige Adresse beim AnbieterAuf Karte anzeigen© SmartMaps | Leaflet | © OpenStreetMap contributorsDas Objekt liegt in Konstanz-Fürstenberg. In unmittelbarer Nähe befinden sich: Sämtliche Schulen und KindergärtenEinkaufsmöglichkeiten für den täglichen BedarfBahnhofÄrzte und ApothekenRestaurantsBanken und GeldautomatenDie Universität Konstanz ist in ca. 10 Minuten bequem mit dem…Das Objekt liegt in Konstanz-Fürstenberg. In unmittelbarer Nähe befinden sich: Sämtliche Schulen und KindergärtenEinkaufsmöglichkeiten für den täglichen BedarfBahnhofÄrzte und ApothekenRestaurantsBanken und GeldautomatenDie Universität Konstanz ist in ca. 10 Minuten bequem mit dem Fahrrad erreichbar. Die Kombination aus urbaner Infrastruktur und kurzer Wege macht diese Lage besonders attraktiv – sowohl für Eigennutzer als auch für Kapitalanleger.",
       "amenities": [
         "Bad mit Fenster",
         "Dusche",
         "Klimaanlage",
         "Personenaufzug"
       ],
-      "additional_information": "SonstigesInfo: Anzahl Etagen: 3Sie können uns jederzeit unter folgender Nummer erreichen um einen Besichtigungstermin zu vereinbaren.Tel: 0170 5225568Heizungsart:Heizkoerper",
+      "additional_information": "SonstigesInfo: Anzahl Etagen: 3Sie können uns jederzeit unter folgender Nummer erreichen um einen Besichtigungstermin zu vereinbaren. Tel: 0170 5225568Heizungsart: HeizkoerperSonstigesInfo: Anzahl Etagen: 3Sie können uns jederzeit unter folgender Nummer erreichen um einen Besichtigungstermin zu vereinbaren. Tel: 0170 5225568Heizungsart: Heizkoerper",
       "facts": {
         "Kaufpreis": "380.000 €",
         "Käuferprovision": "provisionspflichtig",
@@ -1240,19 +1188,13 @@
         "09-6fd6062e-g36"
       ],
       "floor_plan_bases": [],
-      "enriched_at": "2026-09-20T18:12:02.922Z",
+      "enriched_at": "2026-09-20T18:50:19.442Z",
+      "active": true,
+      "detail_page": true,
       "source": "immowelt",
       "immowelt_id": "6fd6062e-32f4-4f02-af80-d854bd090279",
       "sync_policy": "independent",
-      "missing_on_immowelt": false,
-      "active": true,
-      "detail_page": true,
-      "manual_overrides": {
-        "active": true,
-        "detail_page": true,
-        "updated_at": "2026-09-20T18:37:15.326Z",
-        "location": true
-      }
+      "missing_on_immowelt": false
     },
     {
       "id": "484fee8a-e3f0-4f06-8d26-d740c290b320",
@@ -1267,10 +1209,10 @@
       "type": "Maisonette",
       "status": "Kauf",
       "short_description": "Erstbezug; provisionsfrei; als Kapitalanlage geeignet",
-      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
-      "source_title": "Verkaufstart 4 Zimmer Dachgeschoss Wohnung mit Dachterasse.KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Konstanz-Wollmatingen",
+      "description": "ObjektbeschreibungDas gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+ besteht aus einem Mehrfamilienhaus A, das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten. Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…ObjektbeschreibungDas gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+ besteht aus einem Mehrfamilienhaus A, das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten. Sowohl bei Haus A wie bei Haus B werden die Balkone alle nach Süd-Westen ausgerichtet sein. Die Informationen zur Bauausführung der beiden Mehrfamilienhäuser, finden sie in den Anlagen unter Baubeschreibung als PDF. RaumaufteilungAlle Wohnungen können noch vor Baubegin in den Grundrissen umgestaltet werden, sofern es die Statik erlaubt. Siehe Expose/Grundrisse in den Anlagen.",
+      "source_title": "Verkaufstart 4 Zimmer Dachgeschoss Wohnung mit Dachterasse. KFW 55 Effizenzhaus A+; Neubau-Mehrfamilienhaus-Konstanz-Wollmatingen",
       "reference_number": "A12",
-      "location_description": "Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe.Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant..Unmi…",
+      "location_description": "Straße nicht freigegeben78467 KonstanzVollständige Adresse beim AnbieterAuf Karte anzeigen© SmartMaps | Leaflet | © OpenStreetMap contributorsDas Mehrfamilienhaus entsteht in unserem beliebten Konstanzer Stadteil Wollmatingen. Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe. Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant.. Unmi…Das Mehrfamilienhaus entsteht in unserem beliebten Konstanzer Stadteil Wollmatingen. Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe. Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant.. Unmittelbar in der nähe der Konstanz-Wollmatingen befinden sich Sportplätze und Tennisanlagen, sowie schöne Fahrradwege die direkt in die umliegenden Wälder führen. Bis zum See und auf die Insel Reichenau sind es mit dem Fahhrad nur wenige Minuten. Restaurants und Banken sind ebenfalls füssläufig erreichbar. Bus und Bahn befinden sich in unmittelbarer Nähe. Auch sind sie in wenigen Gehminuten im Erholungsgebiet Wollmatinger Ried. Das neue Schwaketenbad befindet sich in direkter Umgebung.",
       "amenities": [
         "Bad mit Fenster",
         "Badewanne",
@@ -1285,7 +1227,7 @@
         "Terrasse",
         "WG-Geeignet"
       ],
-      "additional_information": "BesichtigungstermineAlle Besichtigungstermine finden nach Vereinbarung statt. Wir sind auch an Wochenenden und Feiertagen für sie da.StichworteTV: Kabelanschluss, Sat-AnschlussSonstiges/Wohnen: seniorengerechtes WohnenVersorgung: Städtische Wasserversorgung, Städtische Stromverso…",
+      "additional_information": "BesichtigungstermineAlle Besichtigungstermine finden nach Vereinbarung statt. Wir sind auch an Wochenenden und Feiertagen für sie da. StichworteTV: Kabelanschluss, Sat-AnschlussSonstiges/Wohnen: seniorengerechtes WohnenVersorgung: Städtische Wasserversorgung, Städtische Stromverso…BesichtigungstermineAlle Besichtigungstermine finden nach Vereinbarung statt. Wir sind auch an Wochenenden und Feiertagen für sie da. StichworteTV: Kabelanschluss, Sat-AnschlussSonstiges/Wohnen: seniorengerechtes WohnenVersorgung: Städtische Wasserversorgung, Städtische StromversorgungServiceleistungen: HausmeisterSonstiges: ISDN",
       "facts": {
         "Referenznummer": "A12",
         "Kaufpreis": "738.100 €",
@@ -1378,19 +1320,13 @@
         "10-484fee8a-g31"
       ],
       "floor_plan_bases": [],
-      "enriched_at": "2026-09-20T18:12:04.246Z",
+      "enriched_at": "2026-09-20T18:50:33.114Z",
+      "active": true,
+      "detail_page": true,
       "source": "immowelt",
       "immowelt_id": "484fee8a-e3f0-4f06-8d26-d740c290b320",
       "sync_policy": "independent",
-      "missing_on_immowelt": false,
-      "active": true,
-      "detail_page": true,
-      "manual_overrides": {
-        "active": true,
-        "detail_page": true,
-        "updated_at": "2026-09-20T18:37:15.326Z",
-        "location": true
-      }
+      "missing_on_immowelt": false
     },
     {
       "id": "4ac199b6-606e-470b-bb7e-d8646d47ea80",
@@ -1405,10 +1341,10 @@
       "type": "Maisonette",
       "status": "Kauf",
       "short_description": "Erstbezug; provisionsfrei; als Kapitalanlage geeignet",
-      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
-      "source_title": "Verkaufsstart 4 Zimmer Dachgeschoss Wohnung mit Dachterasse.KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Konstanz-Wollmatingen",
+      "description": "ObjektbeschreibungDas gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+ besteht aus einem Mehrfamilienhaus A, das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten. Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…ObjektbeschreibungDas gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+ besteht aus einem Mehrfamilienhaus A, das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten. Sowohl bei Haus A wie bei Haus B werden die Balkone alle nach Süd-Westen ausgerichtet sein. Die Informationen zur Bauausführung der beiden Mehrfamilienhäuser, finden sie in den Anlagen unter Baubeschreibung als PDF. RaumaufteilungAlle Wohnungen können noch vor Baubegin in den Grundrissen umgestaltet werden, sofern es die Statik erlaubt. Siehe Expose/Grundrisse in den Anlagen.",
+      "source_title": "Verkaufsstart 4 Zimmer Dachgeschoss Wohnung mit Dachterasse. KFW 55 Effizenzhaus A+; Neubau-Mehrfamilienhaus-Konstanz-Wollmatingen",
       "reference_number": "A9",
-      "location_description": "Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe.Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant..Unmi…",
+      "location_description": "Straße nicht freigegeben78467 KonstanzVollständige Adresse beim AnbieterAuf Karte anzeigen© SmartMaps | Leaflet | © OpenStreetMap contributorsDas Mehrfamilienhaus entsteht in unserem beliebten Konstanzer Stadteil Wollmatingen. Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe. Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant.. Unmi…Das Mehrfamilienhaus entsteht in unserem beliebten Konstanzer Stadteil Wollmatingen. Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe. Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant.. Unmittelbar in der nähe der Konstanz-Wollmatingen befinden sich Sportplätze und Tennisanlagen, sowie schöne Fahrradwege die direkt in die umliegenden Wälder führen. Bis zum See und auf die Insel Reichenau sind es mit dem Fahhrad nur wenige Minuten. Restaurants und Banken sind ebenfalls füssläufig erreichbar. Bus und Bahn befinden sich in unmittelbarer Nähe. Auch sind sie in wenigen Gehminuten im Erholungsgebiet Wollmatinger Ried. Das neue Schwaketenbad befindet sich in direkter Umgebung.",
       "amenities": [
         "Bad mit Fenster",
         "Badewanne",
@@ -1423,7 +1359,7 @@
         "Terrasse",
         "WG-Geeignet"
       ],
-      "additional_information": "BesichtigungstermineAlle Besichtigungstermine finden nach Vereinbarung statt. Wir sind auch an Wochenenden und Feiertagen für sie da.StichworteTV: Kabelanschluss, Sat-AnschlussSonstiges/Wohnen: seniorengerechtes WohnenVersorgung: Städtische Wasserversorgung, Städtische Stromverso…",
+      "additional_information": "BesichtigungstermineAlle Besichtigungstermine finden nach Vereinbarung statt. Wir sind auch an Wochenenden und Feiertagen für sie da. StichworteTV: Kabelanschluss, Sat-AnschlussSonstiges/Wohnen: seniorengerechtes WohnenVersorgung: Städtische Wasserversorgung, Städtische Stromverso…BesichtigungstermineAlle Besichtigungstermine finden nach Vereinbarung statt. Wir sind auch an Wochenenden und Feiertagen für sie da. StichworteTV: Kabelanschluss, Sat-AnschlussSonstiges/Wohnen: seniorengerechtes WohnenVersorgung: Städtische Wasserversorgung, Städtische StromversorgungServiceleistungen: HausmeisterSonstiges: ISDN",
       "facts": {
         "Referenznummer": "A9",
         "Kaufpreis": "696.200 €",
@@ -1522,19 +1458,13 @@
         "11-4ac199b6-g32"
       ],
       "floor_plan_bases": [],
-      "enriched_at": "2026-09-20T18:12:05.574Z",
+      "enriched_at": "2026-09-20T18:50:46.766Z",
+      "active": true,
+      "detail_page": true,
       "source": "immowelt",
       "immowelt_id": "4ac199b6-606e-470b-bb7e-d8646d47ea80",
       "sync_policy": "independent",
-      "missing_on_immowelt": false,
-      "active": true,
-      "detail_page": true,
-      "manual_overrides": {
-        "active": true,
-        "detail_page": true,
-        "updated_at": "2026-09-20T18:37:15.326Z",
-        "location": true
-      }
+      "missing_on_immowelt": false
     },
     {
       "id": "bb241b38-d292-4047-98fd-4352b841bc5a",
@@ -1546,13 +1476,13 @@
       "rooms": "2 Zimmer",
       "living_area": "46,5 m²",
       "plot_area": null,
-      "type": "Maisonette",
+      "type": "Wohnung",
       "status": "Kauf",
       "short_description": "provisionsfrei; als Kapitalanlage geeignet",
-      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
-      "source_title": "A3 Verkaufsstart 3 Zimmer Erdgeschoss Wohnung mit Garten Sondernutzungsrecht KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Konstanz-Wollmatingen",
+      "description": "ObjektbeschreibungDas gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+ besteht aus einem Mehrfamilienhaus A, das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten. Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…ObjektbeschreibungDas gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+ besteht aus einem Mehrfamilienhaus A, das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten. Sowohl bei Haus A wie bei Haus B werden die Balkone alle nach Süd-Westen ausgerichtet sein. Die Informationen zur Bauausführung der beiden Mehrfamilienhäuser, finden sie in den Anlagen unter Baubeschreibung als PDF. RaumaufteilungAlle Wohnungen können noch vor Baubegin in den Grundrissen umgestaltet werden, sofern es die Statik erlaubt. Siehe Expose/Grundrisse in den Anlagen.",
+      "source_title": "A3 Verkaufsstart 3 Zimmer Erdgeschoss Wohnung mit Garten Sondernutzungsrecht KFW 55 Effizenzhaus A+; Neubau-Mehrfamilienhaus-Konstanz-Wollmatingen",
       "reference_number": "A3",
-      "location_description": "Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe.Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant..Unmi…",
+      "location_description": "Straße nicht freigegeben78467 KonstanzVollständige Adresse beim AnbieterAuf Karte anzeigen© SmartMaps | Leaflet | © OpenStreetMap contributorsDas Mehrfamilienhaus entsteht in unserem beliebten Konstanzer Stadteil Wollmatingen. Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe. Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant.. Unmi…Das Mehrfamilienhaus entsteht in unserem beliebten Konstanzer Stadteil Wollmatingen. Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe. Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant.. Unmittelbar in der nähe der Konstanz-Wollmatingen befinden sich Sportplätze und Tennisanlagen, sowie schöne Fahrradwege die direkt in die umliegenden Wälder führen. Bis zum See und auf die Insel Reichenau sind es mit dem Fahhrad nur wenige Minuten. Restaurants und Banken sind ebenfalls füssläufig erreichbar. Bus und Bahn befinden sich in unmittelbarer Nähe. Auch sind sie in wenigen Gehminuten im Erholungsgebiet Wollmatinger Ried. Das neue Schwaketenbad befindet sich in direkter Umgebung.",
       "amenities": [
         "Bad mit Fenster",
         "Behindertengerecht",
@@ -1565,7 +1495,7 @@
         "Terrasse",
         "WG-Geeignet"
       ],
-      "additional_information": "BesichtigungstermineAlle Besichtigungstermine finden nach Vereinbarung statt. Wir sind auch an Wochenenden und Feiertagen für sie da.StichworteTV: Sat-Anschluss, AntennenanschlussSonstiges/Wohnen: seniorengerechtes WohnenVersorgung: Städtische Wasserversorgung, Städtische Stromve…",
+      "additional_information": "BesichtigungstermineAlle Besichtigungstermine finden nach Vereinbarung statt. Wir sind auch an Wochenenden und Feiertagen für sie da. StichworteTV: Sat-Anschluss, AntennenanschlussSonstiges/Wohnen: seniorengerechtes WohnenVersorgung: Städtische Wasserversorgung, Städtische Stromve…BesichtigungstermineAlle Besichtigungstermine finden nach Vereinbarung statt. Wir sind auch an Wochenenden und Feiertagen für sie da. StichworteTV: Sat-Anschluss, AntennenanschlussSonstiges/Wohnen: seniorengerechtes WohnenVersorgung: Städtische Wasserversorgung, Städtische StromversorgungServiceleistungen: HausmeisterSonstiges: ISDN",
       "facts": {
         "Referenznummer": "A3",
         "Kaufpreis": "361.500 €",
@@ -1632,19 +1562,13 @@
         "12-bb241b38-g21"
       ],
       "floor_plan_bases": [],
-      "enriched_at": "2026-09-20T18:12:06.899Z",
+      "enriched_at": "2026-09-20T18:50:57.436Z",
+      "active": true,
+      "detail_page": true,
       "source": "immowelt",
       "immowelt_id": "bb241b38-d292-4047-98fd-4352b841bc5a",
       "sync_policy": "independent",
-      "missing_on_immowelt": false,
-      "active": true,
-      "detail_page": true,
-      "manual_overrides": {
-        "active": true,
-        "detail_page": true,
-        "updated_at": "2026-09-20T18:37:15.326Z",
-        "location": true
-      }
+      "missing_on_immowelt": false
     },
     {
       "id": "ff414db8-7e3d-4a01-99f8-029fe15a4d55",
@@ -1656,13 +1580,13 @@
       "rooms": "2 Zimmer",
       "living_area": "47 m²",
       "plot_area": null,
-      "type": "Maisonette",
+      "type": "Wohnung",
       "status": "Kauf",
       "short_description": "provisionsfrei; als Kapitalanlage geeignet",
-      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
-      "source_title": "A2 Verkaufsstart 3 Zimmer Erdgeschoss Wohnung mit Garten Sondernutzungsrecht KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Konstanz-Wollmatingen",
+      "description": "ObjektbeschreibungDas gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+ besteht aus einem Mehrfamilienhaus A, das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten. Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…ObjektbeschreibungDas gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+ besteht aus einem Mehrfamilienhaus A, das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten. Sowohl bei Haus A wie bei Haus B werden die Balkone alle nach Süd-Westen ausgerichtet sein. Die Informationen zur Bauausführung der beiden Mehrfamilienhäuser, finden sie in den Anlagen unter Baubeschreibung als PDF. RaumaufteilungAlle Wohnungen können noch vor Baubegin in den Grundrissen umgestaltet werden, sofern es die Statik erlaubt. Siehe Expose/Grundrisse in den Anlagen.",
+      "source_title": "A2 Verkaufsstart 3 Zimmer Erdgeschoss Wohnung mit Garten Sondernutzungsrecht KFW 55 Effizenzhaus A+; Neubau-Mehrfamilienhaus-Konstanz-Wollmatingen",
       "reference_number": "A2",
-      "location_description": "Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe.Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant..Unmi…",
+      "location_description": "Straße nicht freigegeben78467 KonstanzVollständige Adresse beim AnbieterAuf Karte anzeigen© SmartMaps | Leaflet | © OpenStreetMap contributorsDas Mehrfamilienhaus entsteht in unserem beliebten Konstanzer Stadteil Wollmatingen. Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe. Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant.. Unmi…Das Mehrfamilienhaus entsteht in unserem beliebten Konstanzer Stadteil Wollmatingen. Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe. Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant.. Unmittelbar in der nähe der Konstanz-Wollmatingen befinden sich Sportplätze und Tennisanlagen, sowie schöne Fahrradwege die direkt in die umliegenden Wälder führen. Bis zum See und auf die Insel Reichenau sind es mit dem Fahhrad nur wenige Minuten. Restaurants und Banken sind ebenfalls füssläufig erreichbar. Bus und Bahn befinden sich in unmittelbarer Nähe. Auch sind sie in wenigen Gehminuten im Erholungsgebiet Wollmatinger Ried. Das neue Schwaketenbad befindet sich in direkter Umgebung.",
       "amenities": [
         "Bad mit Fenster",
         "Behindertengerecht",
@@ -1675,7 +1599,7 @@
         "Terrasse",
         "WG-Geeignet"
       ],
-      "additional_information": "BesichtigungstermineAlle Besichtigungstermine finden nach Vereinbarung statt. Wir sind auch an Wochenenden und Feiertagen für sie da.StichworteTV: Sat-Anschluss, AntennenanschlussSonstiges/Wohnen: seniorengerechtes WohnenVersorgung: Städtische Wasserversorgung, Städtische Stromve…",
+      "additional_information": "BesichtigungstermineAlle Besichtigungstermine finden nach Vereinbarung statt. Wir sind auch an Wochenenden und Feiertagen für sie da. StichworteTV: Sat-Anschluss, AntennenanschlussSonstiges/Wohnen: seniorengerechtes WohnenVersorgung: Städtische Wasserversorgung, Städtische Stromve…BesichtigungstermineAlle Besichtigungstermine finden nach Vereinbarung statt. Wir sind auch an Wochenenden und Feiertagen für sie da. StichworteTV: Sat-Anschluss, AntennenanschlussSonstiges/Wohnen: seniorengerechtes WohnenVersorgung: Städtische Wasserversorgung, Städtische StromversorgungServiceleistungen: HausmeisterSonstiges: ISDN",
       "facts": {
         "Referenznummer": "A2",
         "Kaufpreis": "363.700 €",
@@ -1742,20 +1666,13 @@
         "13-ff414db8-g21"
       ],
       "floor_plan_bases": [],
-      "enriched_at": "2026-09-20T18:12:08.204Z",
+      "enriched_at": "2026-09-20T18:51:08.010Z",
+      "active": true,
+      "detail_page": true,
       "source": "immowelt",
       "immowelt_id": "ff414db8-7e3d-4a01-99f8-029fe15a4d55",
       "sync_policy": "independent",
-      "missing_on_immowelt": false,
-      "active": true,
-      "detail_page": true,
-      "manual_overrides": {
-        "active": true,
-        "detail_page": true,
-        "updated_at": "2026-09-20T18:37:15.326Z",
-        "location": true
-      }
+      "missing_on_immowelt": false
     }
-  ],
-  "active_listing_count": 12
+  ]
 }
