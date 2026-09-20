@@ -120,6 +120,16 @@ Einschränkungen:
 
 ## Lokal ansehen
 
+### Link-Vorschau (WhatsApp / Open Graph / Twitter)
+
+Die allgemeine Vorschau verwendet `assets/share-card-house-orig-v1.jpg` (1200 × 630).
+Sie wird mit `npm run build:share` aus dem aktuellen Header-Logo `assets/logo.png`
+erzeugt; `assets/share-card.jpg` bleibt als identische Version für alte Links erhalten.
+Bei einem Markenwechsel auch den Dateinamen in Metadaten und Exposé-Fallback ändern,
+damit Vorschau-Caches eine neue Bild-URL sehen. `npm run test:share` prüft Bildinhalt,
+Maße und Verweise und läuft als verpflichtender Check in GitHub Actions.
+Objektseiten verwenden weiterhin ihr jeweiliges Immobilienfoto als Vorschau.
+
 Einfach die HTML-Dateien im Browser öffnen oder:
 
 ```bash

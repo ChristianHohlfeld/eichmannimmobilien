@@ -9,7 +9,9 @@
     "sync-immowelt:seed": "node scripts/sync-immowelt.mjs --from-json ../eichmann-logo/listings.json",
     "test:logo": "node scripts/test-logo-consistency.mjs",
     "test:layout": "node scripts/test-layout-regression.mjs",
-    "test": "npm run test:logo && npm run test:jsonld && npm run test:layout",
+    "build:share": "node scripts/build-share-card.mjs",
+    "test:share": "node scripts/test-share-card.mjs",
+    "test": "npm run test:share && npm run test:logo && npm run test:jsonld && npm run test:layout",
     "test:strict": "STRICT=1 npm run test:logo && STRICT=1 npm run test:layout",
     "test:jsonld": "node scripts/test-jsonld.mjs"
   },
