@@ -297,7 +297,7 @@ function sanitizeListingForPublic(listing) {
 }
 
 function isPublicListing(listing) {
-  return Boolean(listing) && listing.active !== false;
+  return Boolean(listing) && listing.active !== false && listing.site_hidden !== true;
 }
 
 function hasPublicDetail(listing) {
@@ -403,6 +403,8 @@ function normalizeListing(raw, index, prev = null) {
         : prev && typeof prev.detail_page === "boolean"
           ? prev.detail_page
           : true,
+    // Local presentation-only override. Object content/status still comes from Immowelt.
+    site_hidden: prev?.site_hidden === true,
   };
   if (base.detail_page === false && !base.main_image_url && !base.images.length && !base.gallery_bases.length) {
     base.image_base = null;
@@ -1277,6 +1279,7 @@ function serializeListing(L) {
     enriched_at: L.enriched_at || null,
     active: L.active !== false,
     detail_page: L.detail_page !== false,
+    site_hidden: L.site_hidden === true,
     // SoT metadata (local Admin owns the record; Immowelt is optional inbound)
     source: L.source || (L.immowelt_id || looksLikeImmoweltId(L.id) ? "immowelt" : "local"),
     immowelt_id: L.immowelt_id || (looksLikeImmoweltId(L.id) ? L.id : null),
@@ -1476,6 +1479,7 @@ function mergeListings(scrapedList, previousData) {
     // Presence on the current Immowelt profile means public/active here.
     listing.active = true;
     listing.detail_page = true;
+    listing.site_hidden = prev?.site_hidden === true;
     listing.source = "immowelt";
     listing.immowelt_id = id;
     listing.sync_policy = "mirror";
