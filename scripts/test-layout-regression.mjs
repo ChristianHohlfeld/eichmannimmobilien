@@ -138,6 +138,31 @@ async function measurePage(page, base, path, vp) {
   if (!metrics.hasH1) fail(`${label}: missing <h1>`);
   if (!metrics.title || metrics.title.length < 5) fail(`${label}: missing document title`);
 
+  // Contact form must reject empty submit and require privacy acknowledgement.
+  if (path === '/kontakt.html') {
+    const formGuard = await page.evaluate(() => {
+      const form = document.getElementById('contact-form');
+      const success = document.getElementById('form-success');
+      const ack = form?.querySelector('[name="privacy_ack"]');
+      if (!form || !ack) return null;
+      const initialValid = form.checkValidity();
+      form.querySelector('button[type="submit"]')?.click();
+      return {
+        initialValid,
+        ackRequired: ack.required,
+        ackChecked: ack.checked,
+        successVisible: !!success && !success.hidden,
+      };
+    });
+    if (!formGuard) fail(`${label}: contact form/privacy acknowledgement missing`);
+    else {
+      if (formGuard.initialValid) fail(`${label}: contact form must reject empty submit`);
+      if (!formGuard.ackRequired) fail(`${label}: privacy acknowledgement must be required`);
+      if (formGuard.ackChecked) fail(`${label}: privacy acknowledgement must start unchecked`);
+      if (formGuard.successVisible) fail(`${label}: success message shown for invalid empty form`);
+    }
+  }
+
   // Home flyer: Close button must sit on the flyer's right edge on desktop and mobile.
   // Wait for the intentional 800ms auto-open delay before measuring.
   if (path === '/') {

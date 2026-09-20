@@ -35,10 +35,12 @@ function warn(msg) {
 
 // --- Assets present ---
 const logoSvgPath = join(ROOT, 'assets/logo.svg');
+const logoHeaderPath = join(ROOT, 'assets/logo-header.svg');
 const logoPngPath = join(ROOT, 'assets/logo.png');
 const applePath = join(ROOT, 'assets/apple-touch-icon.png');
 for (const [label, p] of [
   ['assets/logo.svg', logoSvgPath],
+  ['assets/logo-header.svg', logoHeaderPath],
   ['assets/logo.png', logoPngPath],
   ['assets/apple-touch-icon.png', applePath],
 ]) {
@@ -46,6 +48,11 @@ for (const [label, p] of [
 }
 
 const svg = existsSync(logoSvgPath) ? readFileSync(logoSvgPath, 'utf8') : '';
+const headerSvg = existsSync(logoHeaderPath) ? readFileSync(logoHeaderPath, 'utf8') : '';
+if (headerSvg) {
+  if (!/viewBox="0 0 448 86"/.test(headerSvg)) fail('assets/logo-header.svg must keep the padded 448×86 viewBox');
+  if (!/IMMOBILIEN - EICHMANN/.test(headerSvg)) fail('assets/logo-header.svg missing full wordmark');
+}
 const png = existsSync(logoPngPath) ? readFileSync(logoPngPath) : null;
 
 // Canonical version from SVG comment
@@ -117,6 +124,16 @@ if (CANONICAL && versionCounts.size === 0) {
 }
 if (versionCounts.size > 1) {
   fail(`Site-wide multiple logo versions: ${[...versionCounts.entries()].map(([k, v]) => `${k}×${v}`).join(', ')}`);
+}
+
+// Public header must use the padded vector so the last N cannot be cropped.
+for (const file of htmlFiles) {
+  const t = readFileSync(file, 'utf8');
+  const rel = relative(ROOT, file);
+  const header = t.match(/<header class="site-header"[\s\S]*?<\/header>/);
+  if (header && /class="logo-svg"/.test(header[0]) && !/logo-header\.svg\?v=header-safe-v1/.test(header[0])) {
+    fail(`${rel}: public header must use assets/logo-header.svg?v=header-safe-v1`);
+  }
 }
 
 // Prefer PNG for visible <img class="logo-svg">

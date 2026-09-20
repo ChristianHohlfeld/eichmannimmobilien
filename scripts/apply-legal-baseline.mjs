@@ -36,6 +36,24 @@ function replaceDataConsent(s, prefix) {
   );
 }
 
+function ensurePrivacyAck(s, prefix) {
+  if (!s.includes('class="legal-request-note"') || s.includes('name="privacy_ack"')) return s;
+  const ack =
+    '<div class="form-group form-consent privacy-ack">' +
+    '<label class="consent-label" for="privacy-ack">' +
+    '<input type="checkbox" name="privacy_ack" id="privacy-ack" value="acknowledged" required> ' +
+    'Ich habe die <a href="' + prefix + 'datenschutz.html">Datenschutzerklärung</a> zur Kenntnis genommen. *' +
+    '</label></div>';
+  return s.replace(/(<p class="form-note legal-request-note">[\s\S]*?<\/p>)/g, '$1\n          ' + ack);
+}
+
+function useSafeHeaderLogo(s) {
+  return s.replace(
+    /(<img class="logo-svg" src=")((?:\.\.\/)?assets\/)logo\.(?:png|svg)\?v=[^"]+(")/g,
+    '$1$2logo-header.svg?v=header-safe-v1$3'
+  );
+}
+
 function replaceLegalCard(s, inner) {
   const marker = '<div class="legal-content content-card">';
   const start = s.indexOf(marker);
@@ -52,7 +70,11 @@ for (const full of await htmlFiles()) {
   s = stripGoogleFonts(s);
   s = s.replace(/\snovalidate(?=[\s>])/g, "");
   s = s.replaceAll("Einwilligung oder Maklervertrag in Textform zurücknehmen", "Maklervertrag in Textform widerrufen");
-  s = replaceDataConsent(s, rel.startsWith("objekt/") ? "../" : "");
+  const prefix = rel.startsWith("objekt/") ? "../" : "";
+  s = replaceDataConsent(s, prefix);
+  s = ensurePrivacyAck(s, prefix);
+  s = useSafeHeaderLogo(s);
+  s = s.replace(/js\/main\.js\?v=[^"]+/g, "js/main.js?v=form-guard-v2");
   await writeFile(full, s, "utf8");
 }
 
@@ -215,14 +237,7 @@ for (const full of await htmlFiles()) {
 
 {
   let s = await read("js/main.js");
-  const needle = `      var bot = form.querySelector('[name="botcheck"]');
-      if (bot && bot.checked) {
-        show(success, true);
-        return;
-      }
-
-      if (submitBtn) {`;
-  const replacement = `      var bot = form.querySelector('[name="botcheck"]');
+  const oldGuard = `      var bot = form.querySelector('[name="botcheck"]');
       if (bot && bot.checked) {
         show(success, true);
         return;
@@ -234,9 +249,31 @@ for (const full of await htmlFiles()) {
       }
 
       if (submitBtn) {`;
-  if (!s.includes("form.checkValidity()")) {
-    if (!s.includes(needle)) throw new Error("main.js validation insertion point missing");
-    s = s.replace(needle, replacement);
+  const newGuard = `      ["name", "email", "message"].forEach(function (fieldName) {
+        var field = form.querySelector('[name="' + fieldName + '"]');
+        if (field && typeof field.value === "string") field.value = field.value.trim();
+      });
+
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      var bot = form.querySelector('[name="botcheck"]');
+      if (bot && bot.checked) {
+        return;
+      }
+
+      if (submitBtn) {`;
+  s = s.replace(oldGuard, newGuard);
+  if (!s.includes('privacy_ack: "Datenschutzerklärung zur Kenntnis genommen"')) {
+    s = s.replace(
+      `        message: (form.querySelector('[name="message"]') || {}).value || "",
+        _subject:`,
+      `        message: (form.querySelector('[name="message"]') || {}).value || "",
+        privacy_ack: "Datenschutzerklärung zur Kenntnis genommen",
+        _subject:`
+    );
   }
   await write("js/main.js", s);
 }
@@ -256,9 +293,17 @@ for (const full of await htmlFiles()) {
     /<div class="form-group form-consent">\s*<label class="consent-label"[^>]*>\s*<input[^>]*name="datenschutz"[\s\S]*?<\/label>\s*<\/div>/g,
     '<p class="form-note legal-request-note">Mit dem Absenden werden Ihre Angaben zur Bearbeitung der Anfrage verarbeitet. Hinweise finden Sie in der <a href="${p}datenschutz.html">Datenschutzerklärung</a>. Die Anfrage ist unverbindlich; durch das Absenden kommt kein Maklervertrag zustande.</p>'
   );
+  if (!s.includes('name="privacy_ack"')) {
+    s = s.replace(
+      /(<p class="form-note legal-request-note">[\s\S]*?<\/p>)/g,
+      '$1\n              <div class="form-group form-consent privacy-ack"><label class="consent-label" for="privacy-ack"><input type="checkbox" name="privacy_ack" id="privacy-ack" value="acknowledged" required> Ich habe die <a href="${p}datenschutz.html">Datenschutzerklärung</a> zur Kenntnis genommen. *</label></div>'
+    );
+  }
+  s = s.replace(/<img class="logo-svg" src="${p}assets\/logo\.(?:png|svg)\?v=[^"]+"/g, '<img class="logo-svg" src="${p}assets/logo-header.svg?v=header-safe-v1"');
+  s = s.replace(/js\/main\.js\?v=[^"]+/g, 'js/main.js?v=form-guard-v2');
   s = s.replace(
     '  <script src="${p}js/analytics.js" defer></script>\n  <script src="${p}js/main.js?v=flyer-root-v1" defer></script>',
-    '  <script>window.__eichmannJsBase="${p}js/";</script>\n  <script src="${p}js/cookie-consent.js?v=abs-datenschutz-v2" defer></script>\n  <script src="${p}js/main.js?v=legal-baseline-v1" defer></script>'
+    '  <script>window.__eichmannJsBase="${p}js/";</script>\n  <script src="${p}js/cookie-consent.js?v=abs-datenschutz-v2" defer></script>\n  <script src="${p}js/main.js?v=form-guard-v2" defer></script>'
   );
   await write("scripts/sync-immowelt.mjs", s);
 }

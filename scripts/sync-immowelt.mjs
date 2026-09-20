@@ -593,7 +593,7 @@ ${JSON.stringify(schema, null, 2)}
   <header class="site-header">
     <div class="container header-inner">
       <a class="logo" href="${p}index.html" aria-label="Immobilien Eichmann – Startseite">
-        <img class="logo-svg" src="${p}assets/logo.svg?v=noclip-v1" alt="Immobilien Eichmann" width="320" height="56" decoding="async">
+        <img class="logo-svg" src="${p}assets/logo-header.svg?v=header-safe-v1" alt="Immobilien Eichmann" width="320" height="56" decoding="async">
         <span class="logo-text">
           <span class="logo-mark">Immobilien Eichmann</span>
           <span class="logo-sub">Verkauf · Vermittlung · Projektentwicklung</span>
@@ -692,6 +692,12 @@ ${JSON.stringify(schema, null, 2)}
                 )}</textarea>
               </div>
               <p class="form-note legal-request-note">Mit dem Absenden werden Ihre Angaben zur Bearbeitung der Anfrage verarbeitet. Hinweise finden Sie in der <a href="${p}datenschutz.html">Datenschutzerklärung</a>. Die Anfrage ist unverbindlich; durch das Absenden kommt kein Maklervertrag zustande.</p>
+              <div class="form-group form-consent privacy-ack">
+                <label class="consent-label" for="privacy-ack">
+                  <input type="checkbox" name="privacy_ack" id="privacy-ack" value="acknowledged" required>
+                  Ich habe die <a href="${p}datenschutz.html">Datenschutzerklärung</a> zur Kenntnis genommen. *
+                </label>
+              </div>
               <button type="submit" class="btn btn-accent" id="contact-submit">Exposé anfragen</button>
               <div id="form-success" class="form-success" role="status" hidden>
                 Vielen Dank – Ihre Anfrage wurde übermittelt. Wir melden uns zeitnah.
@@ -780,7 +786,7 @@ ${JSON.stringify(schema, null, 2)}
 
   <script>window.__eichmannJsBase="${p}js/";</script>
   <script src="${p}js/cookie-consent.js?v=abs-datenschutz-v2" defer></script>
-  <script src="${p}js/main.js?v=legal-baseline-v1" defer></script>
+  <script src="${p}js/main.js?v=form-guard-v2" defer></script>
 </body>
 </html>
 `;

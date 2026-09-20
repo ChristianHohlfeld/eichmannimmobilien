@@ -74,14 +74,18 @@
       show(success, false);
       show(error, false);
 
-      var bot = form.querySelector('[name="botcheck"]');
-      if (bot && bot.checked) {
-        show(success, true);
-        return;
-      }
+      ["name", "email", "message"].forEach(function (fieldName) {
+        var field = form.querySelector('[name="' + fieldName + '"]');
+        if (field && typeof field.value === "string") field.value = field.value.trim();
+      });
 
       if (!form.checkValidity()) {
         form.reportValidity();
+        return;
+      }
+
+      var bot = form.querySelector('[name="botcheck"]');
+      if (bot && bot.checked) {
         return;
       }
 
@@ -97,6 +101,7 @@
         phone: (form.querySelector('[name="phone"]') || {}).value || "",
         anliegen: anliegen,
         message: (form.querySelector('[name="message"]') || {}).value || "",
+        privacy_ack: "Datenschutzerklärung zur Kenntnis genommen",
         _subject: anliegen + " – Immobilien Eichmann (Webformular)",
         _template: "table",
         _captcha: "false"

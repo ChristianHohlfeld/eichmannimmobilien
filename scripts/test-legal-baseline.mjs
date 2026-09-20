@@ -26,6 +26,12 @@ for (const file of html) {
   assert.ok(!s.includes('name="datenschutz"'), file + ": unnecessary mandatory privacy-consent checkbox");
   assert.ok(!s.includes("Einwilligung oder Maklervertrag in Textform zurücknehmen"), file + ": privacy/contract withdrawal conflated");
 }
+for (const file of html) {
+  const s = await readFile(file, "utf8");
+  if (s.includes('id="contact-form"')) {
+    assert.ok(/name="privacy_ack"[^>]*required|required[^>]*name="privacy_ack"/.test(s), file + ": contact-form missing required privacy acknowledgement");
+  }
+}
 const impressum = await readFile(path.join(ROOT, "impressum.html"), "utf8");
 assert.ok(impressum.includes("Industrie- und Handelskammer Hochrhein-Bodensee"), "Impressum: §34c authority missing");
 const datenschutz = await readFile(path.join(ROOT, "datenschutz.html"), "utf8");
@@ -39,4 +45,6 @@ const generator = await readFile(path.join(ROOT, "scripts", "sync-immowelt.mjs")
 assert.ok(generator.includes("cookie-consent.js"), "Generator: cookie consent missing");
 assert.ok(!generator.includes('src="${p}js/analytics.js"'), "Generator: direct analytics load");
 assert.ok(generator.includes("Die Anfrage ist unverbindlich; durch das Absenden kommt kein Maklervertrag zustande."), "Generator: non-binding notice missing");
+assert.ok(generator.includes('name="privacy_ack"') && generator.includes("required"), "Generator: required privacy acknowledgement missing");
+assert.ok(generator.includes("logo-header.svg?v=header-safe-v1"), "Generator: safe header logo missing");
 console.log("Legal baseline OK: " + html.length + " HTML files checked.");
