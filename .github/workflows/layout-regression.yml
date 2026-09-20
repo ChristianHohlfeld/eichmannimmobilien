@@ -47,6 +47,20 @@ jobs:
           node --check admin/admin.js
       - name: Render listings from mirrored data
         run: node scripts/sync-immowelt.mjs --render-only
+      - name: Published listing count must match visibility state
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from "node:fs/promises";
+          const data = JSON.parse(await readFile("data/listings.json", "utf8"));
+          const expected = (data.listings || []).filter((item) => item.active !== false && item.site_hidden !== true).length;
+          const partial = await readFile("partials/listings-grid.html", "utf8");
+          const actual = (partial.match(/<(?:a|article) class="listing-card\b/g) || []).length;
+          if (actual !== expected) {
+            console.error(`Published cards mismatch: expected ${expected}, rendered ${actual}`);
+            process.exit(1);
+          }
+          console.log(`Published cards OK: ${actual}`);
+          NODE
       - name: Commit rendered listing output on feature branches
         if: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
         run: |
