@@ -442,7 +442,7 @@ function listingReference(listing) {
 }
 
 function escapeRegExp(value) {
-  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\function renderCard(listing) {");
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function listingDisplayTitle(listing) {
