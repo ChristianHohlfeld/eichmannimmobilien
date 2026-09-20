@@ -23,9 +23,9 @@ async function htmlFiles() {
 
 function stripGoogleFonts(s) {
   return s
-    .replace(/\s*<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\s*/g, "\n")
-    .replace(/\s*<link rel="preconnect" href="https:\/\/fonts\.gstatic\.com" crossorigin>\s*/g, "\n")
-    .replace(/\s*<link href="https:\/\/fonts\.googleapis\.com\/css2\?[^"]+" rel="stylesheet">\s*/g, "\n");
+    .replace(/\s*<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com"\s*\/?>\s*/g, "\n")
+    .replace(/\s*<link rel="preconnect" href="https:\/\/fonts\.gstatic\.com" crossorigin\s*\/?>\s*/g, "\n")
+    .replace(/\s*<link href="https:\/\/fonts\.googleapis\.com\/css2\?[^"]+" rel="stylesheet"\s*\/?>\s*/g, "\n");
 }
 
 function replaceDataConsent(s, prefix) {
