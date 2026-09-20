@@ -25,6 +25,7 @@ let listingsData = null;
 let listingsSha = null;
 let currentId = null;
 let sessionPassword = null; // kept in memory for re-seal tools only; not persisted
+let sessionEmail = null;
 
 const $ = (id) => document.getElementById(id);
 
