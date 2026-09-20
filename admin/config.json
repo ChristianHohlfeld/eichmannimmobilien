@@ -1,18 +1,18 @@
 {
-  "password_sha256": "816a92426932ca7005a065d7e955b83fb4850ecd68b2b4e8f1d56bc42de67439",
+  "password_sha256": "ec5629d168a697d20c9fe6b47244a44040b90898b96da671c626bac915879f82",
   "repo": "ChristianHohlfeld/eichmannimmobilien",
   "branch": "main",
   "listings_path": "data/listings.json",
   "assets_prefix": "assets/listings",
   "workflow_file": "sync-immowelt.yml",
   "admin_save_workflow": "admin-save.yml",
-  "github_token_sealed": "AUwLJ97hoL/fRAf3aAbTPPIOaUSTjpM9hmeIMyry0ecpE8BZ3jRgIkotsa8STo9KEH/Q7g2xZWzg/KFEQp5ZrVOPYj/Ce/M8POyAvgcp98rb8Trr8w==",
+  "github_token_sealed": "AY060Fy9tTWdMkLWSEOqQm1j41MwYhGjBnAQn/x1M2/+2Io7QdgweNJMJKAJyOXw5+Tsd1BojA0lCIOB2w3IARewITmczPoZDEKqXckyQOgPOzljvg==",
   "kdf": {
     "name": "PBKDF2",
     "hash": "SHA-256",
     "iterations": 120000
   },
-  "note": "Login: erlaubte E-Mail + Passwort. Immowelt-Konto bleibt unberührt. SoT = data/listings.json.",
+  "note": "Login: freigeschaltete E-Mail + Passwort. Helmut: info@immobilien-eichmann.com. Nur SHA-256 und versiegelter Token. Klartext-Passwort nie committen. Immowelt-Konto bleibt unber\u00fchrt.",
   "admin_emails": [
     "chris.hohlfeld@gmail.com",
     "chris.hohlfeld@googlemail.com",
