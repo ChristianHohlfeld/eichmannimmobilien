@@ -44,6 +44,12 @@ jobs:
           node --check admin/admin.js
       - name: Render listings from mirrored data
         run: node scripts/sync-immowelt.mjs --render-only
+      - name: Generated listing output must be committed
+        run: |
+          if ! git diff --exit-code -- index.html projekte.html partials/listings-grid.html objekt sitemap.xml; then
+            echo "::error::Generated listing HTML is stale. Run npm run sync-immowelt:render and commit the generated output."
+            exit 1
+          fi
       - name: Legal / privacy baseline
         run: node scripts/test-legal-baseline.mjs
       - name: Install Playwright Chromium
