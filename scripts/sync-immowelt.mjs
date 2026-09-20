@@ -95,6 +95,15 @@ const SPARKASSE_EXPOSE_BY_IMMOWELT_ID = Object.freeze({
   "ff414db8-7e3d-4a01-99f8-029fe15a4d55": "https://immobilien.sparkasse.de/expose/FID-F13-646-971.html",
 });
 
+const PROJECT_REFERENCE_BY_IMMOWELT_ID = Object.freeze({
+  "4fed09f2-bcef-4e96-ba56-810037b569c0": "A5",
+  "aebb3257-3317-4452-bc9c-a5dbc5ed3838": "B3",
+  "484fee8a-e3f0-4f06-8d26-d740c290b320": "A12",
+  "4ac199b6-606e-470b-bb7e-d8646d47ea80": "A9",
+  "bb241b38-d292-4047-98fd-4352b841bc5a": "A3",
+  "ff414db8-7e3d-4a01-99f8-029fe15a4d55": "A2"
+});
+
 function escapeHtml(s) {
   return String(s ?? "")
     .replace(/&/g, "&amp;")
@@ -162,6 +171,11 @@ const MANUAL_OVERRIDE_FIELDS = [
   "status",
   "short_description",
   "description",
+  "source_title",
+  "reference_number",
+  "location_description",
+  "amenities",
+  "additional_information",
   "images",
   "gallery_bases",
   "floor_plans",
@@ -255,6 +269,19 @@ function normalizeListing(raw, index, prev = null) {
     // Enriched fields (prefer incoming, else keep previous)
     description:
       (raw.description || (prev && prev.description) || "").trim() || null,
+    source_title:
+      (raw.source_title || (prev && prev.source_title) || "").trim() || null,
+    reference_number:
+      (raw.reference_number || (prev && prev.reference_number) || "").trim() || null,
+    location_description:
+      (raw.location_description || (prev && prev.location_description) || "").trim() || null,
+    amenities: Array.isArray(raw.amenities)
+      ? raw.amenities.filter(Boolean)
+      : prev && Array.isArray(prev.amenities)
+        ? prev.amenities
+        : [],
+    additional_information:
+      (raw.additional_information || (prev && prev.additional_information) || "").trim() || null,
     images: Array.isArray(raw.images)
       ? raw.images.filter(Boolean)
       : prev && Array.isArray(prev.images)
@@ -539,17 +566,42 @@ function renderExposeHtml(listing) {
       </section>`
       : "";
 
-  const descriptionHtml = listing.description
-    ? listing.description
-        .split(/\n{2,}/)
-        .map((para) => para.trim())
-        .filter(Boolean)
-        .map((para) => `<p>${escapeHtml(para).replace(/\n/g, "<br>")}</p>`)
-        .join("\n          ")
-    : listing.short_description
-      ? `<p>${escapeHtml(listing.short_description)}</p>
-          <p class="expose-hint">Ausführliche Objektbeschreibung folgt mit dem nächsten Immowelt-Abgleich. Gerne senden wir Ihnen das vollständige Exposé auf Anfrage.</p>`
-      : `<p class="expose-hint">Die ausführliche Objektbeschreibung stellen wir Ihnen gerne auf Anfrage zu. Nutzen Sie das Formular „Exposé anfragen“.</p>`;
+  const proseHtml = (value) => String(value || "")
+    .split(/\n{2,}/)
+    .map((para) => para.trim())
+    .filter(Boolean)
+    .map((para) => `<p>${escapeHtml(para).replace(/\n/g, "<br>")}</p>`)
+    .join("\n          ");
+
+  const descriptionHtml = proseHtml(listing.description);
+  const descriptionSection = descriptionHtml
+    ? `<section class="expose-section">
+            <h2>Objektbeschreibung</h2>
+            <div class="expose-description prose">
+          ${descriptionHtml}
+            </div>
+          </section>`
+    : "";
+  const locationSection = listing.location_description
+    ? `<section class="expose-section">
+            <h2>Lage</h2>
+            <div class="expose-description prose">${proseHtml(listing.location_description)}</div>
+          </section>`
+    : "";
+  const amenitiesSection = Array.isArray(listing.amenities) && listing.amenities.length
+    ? `<section class="expose-section">
+            <h2>Ausstattung</h2>
+            <ul class="expose-amenities">
+              ${listing.amenities.map((item) => `<li>${escapeHtml(item)}</li>`).join("\n              ")}
+            </ul>
+          </section>`
+    : "";
+  const additionalSection = listing.additional_information
+    ? `<section class="expose-section">
+            <h2>Weitere Informationen</h2>
+            <div class="expose-description prose">${proseHtml(listing.additional_information)}</div>
+          </section>`
+    : "";
 
   const anfrageSubject = `Exposé-Anfrage: ${title}`;
   const prefillMsg = `Guten Tag,\\nich interessiere mich für: ${title}${listing.location ? ` (${listing.location})` : ""}.\\nBitte senden Sie mir das Exposé / weitere Informationen.\\n\\nMit freundlichen Grüßen`;
@@ -639,7 +691,7 @@ ${JSON.stringify(schema, null, 2)}
       <div class="container">
         <p class="eyebrow"><a href="${p}index.html#angebote">← Alle Angebote</a></p>
         <h1>${escapeHtml(title)}</h1>
-        <p>${escapeHtml(listing.location || "Konstanz")}${listing.price ? ` · <strong>${escapeHtml(listing.price)}</strong>` : ""}</p>
+        <p>${listing.reference_number ? `<strong>${escapeHtml(listing.reference_number)}</strong> · ` : ""}${escapeHtml(listing.location || "Konstanz")}${listing.price ? ` · <strong>${escapeHtml(listing.price)}</strong>` : ""}</p>
         <span class="${badge.className}" style="position:static;display:inline-block;margin-top:0.5rem">${escapeHtml(badge.text)}</span>
       </div>
     </section>
@@ -661,12 +713,10 @@ ${JSON.stringify(schema, null, 2)}
             </ul>
           </section>
 
-          <section class="expose-section">
-            <h2>Beschreibung</h2>
-            <div class="expose-description prose">
-          ${descriptionHtml}
-            </div>
-          </section>
+          ${descriptionSection}
+          ${locationSection}
+          ${amenitiesSection}
+          ${additionalSection}
 
           ${floorHtml}
         </div>
@@ -1045,6 +1095,11 @@ function serializeListing(L) {
     status: L.status,
     short_description: L.short_description,
     description: L.description || null,
+    source_title: L.source_title || null,
+    reference_number: L.reference_number || null,
+    location_description: L.location_description || null,
+    amenities: L.amenities || [],
+    additional_information: L.additional_information || null,
     facts: L.facts || null,
     expose_url: L.expose_url || null,
     main_image_url: L.main_image_url,
@@ -1545,20 +1600,110 @@ async function enrichGalleryFromSparkasse(page, listing) {
       const alt = String(img?.alt || link.getAttribute("aria-label") || "");
       if (/Konstanz/i.test(alt) && /(kaufen|mieten)/i.test(alt)) add(link.href);
     }
-    return urls;
+    const lines = String(document.body?.innerText || "")
+      .split(/\n+/)
+      .map((line) => line.replace(/\s+/g, " ").trim())
+      .filter(Boolean);
+
+    function section(name, nextNames) {
+      const start = lines.findIndex((line) => line === name);
+      if (start < 0) return [];
+      let end = lines.length;
+      for (const next of nextNames) {
+        const at = lines.findIndex((line, idx) => idx > start && line === next);
+        if (at >= 0 && at < end) end = at;
+      }
+      return lines.slice(start + 1, end);
+    }
+    function longestUseful(items, strip = "") {
+      const cleaned = items
+        .filter((line) => !/^(Mehr anzeigen|Auf Karte anzeigen|Loading \(MapContainer\)|Vollständige Adresse beim Anbieter)$/i.test(line))
+        .map((line) => strip && line.startsWith(strip) ? line.slice(strip.length).trim() : line)
+        .filter((line) => line.length > 20);
+      return cleaned.sort((a,b) => b.length - a.length)[0] || "";
+    }
+    function dedupe(items) {
+      return [...new Set(items.map((x) => String(x || "").trim()).filter(Boolean))];
+    }
+    function valueAfter(label, pools) {
+      for (const pool of pools) {
+        const idx = pool.findIndex((line) => line === label);
+        if (idx >= 0) {
+          for (let j = idx + 1; j < Math.min(pool.length, idx + 4); j++) {
+            const value = pool[j];
+            if (value && value !== "Keine Angabe" && value !== label && !/^(Mehr anzeigen)$/i.test(value)) return value;
+          }
+        }
+      }
+      return "";
+    }
+
+    const prices = section("Preise und Kosten", ["Finanzierung","Lage","Objektbeschreibung"]);
+    const location = section("Lage", ["Objektbeschreibung","Ausstattung","Objektdaten"]);
+    const description = section("Objektbeschreibung", ["Ausstattung","Objektdaten","Zustand und Energieausweis"]);
+    const equipment = section("Ausstattung", ["Objektdaten","Zustand und Energieausweis","Weitere Informationen"]);
+    const objectData = section("Objektdaten", ["Zustand und Energieausweis","Weitere Informationen","Anbieterinformationen"]);
+    const energy = section("Zustand und Energieausweis", ["Weitere Informationen","Anbieterinformationen"]);
+    const more = section("Weitere Informationen", ["Anbieterinformationen"]);
+
+    const factLabels = [
+      "Kaufpreis","Käuferprovision","Nettokaltmiete","Tiefgaragen Stellplatz (Kaufpreis)",
+      "PLZ","Ort","Wohnfläche","Grundstücksfläche","Anzahl Zimmer","Anzahl Balkone","Anzahl Terrassen",
+      "Parkplatztyp","Anzahl Tiefgaragen Stellplätze","Zustand","Boden","Energieausweistyp",
+      "Energiestandard","Effizienzklasse","Ausstellungsdatum des Energieausweises",
+      "Energieausweis gültig bis","Gebäudeart","Heizung","Befeuerung","Endenergiebedarf"
+    ];
+    const facts = {};
+    for (const label of factLabels) {
+      const value = valueAfter(label, [prices, objectData, energy]);
+      if (value) facts[label] = value;
+    }
+
+    const sourceTitle = String(document.querySelector("h1")?.innerText || "").replace(/\s+/g, " ").trim();
+    const titleRef = sourceTitle.match(/\b([AB]\d{1,2})\b/i)?.[1]?.toUpperCase() || "";
+    return {
+      urls,
+      sourceTitle,
+      titleRef,
+      description: longestUseful(description, "Objektbeschreibung"),
+      locationDescription: longestUseful(location),
+      amenities: dedupe(equipment.filter((line) => line.length >= 2 && line.length <= 100 && !/Mehr anzeigen/i.test(line))),
+      additionalInformation: longestUseful(more),
+      facts
+    };
   });
 
-  if (media.length < 2) {
-    throw new Error(`Sparkasse gallery incomplete (${media.length} image)`);
+  const mediaUrls = Array.isArray(media?.urls) ? media.urls : [];
+  if (mediaUrls.length < 2) {
+    throw new Error(`Sparkasse gallery incomplete (${mediaUrls.length} image)`);
   }
 
   const mo = listing.manual_overrides || {};
   if (mo.images !== true) {
-    listing.images = media.slice(0, 80);
+    listing.images = mediaUrls.slice(0, 80);
     if (!listing.main_image_url) listing.main_image_url = listing.images[0];
   }
+  if (media.sourceTitle && mo.source_title !== true) listing.source_title = media.sourceTitle;
+  if (media.sourceTitle && mo.title !== true) listing.title = media.sourceTitle;
+  if (mo.reference_number !== true) {
+    listing.reference_number =
+      PROJECT_REFERENCE_BY_IMMOWELT_ID[String(listing.id || "").toLowerCase()] ||
+      media.titleRef ||
+      listing.reference_number ||
+      null;
+  }
+  if (media.description && mo.description !== true) listing.description = media.description.slice(0, 2200);
+  if (media.locationDescription && mo.location_description !== true) listing.location_description = media.locationDescription.slice(0, 1800);
+  if (Array.isArray(media.amenities) && media.amenities.length && mo.amenities !== true) listing.amenities = media.amenities.slice(0, 40);
+  if (media.additionalInformation && mo.additional_information !== true) listing.additional_information = media.additionalInformation.slice(0, 1800);
+  if (media.facts && Object.keys(media.facts).length && mo.facts !== true) {
+    listing.facts = { ...(listing.facts || {}), ...media.facts };
+  }
+  if (listing.reference_number && listing.facts && mo.facts !== true) {
+    listing.facts = { Referenznummer: listing.reference_number, ...listing.facts };
+  }
   listing.enriched_at = new Date().toISOString();
-  console.log(`Gallery mirror ${shortId(listing.id)}: ${listing.images.length} images`);
+  console.log(`Gallery mirror ${shortId(listing.id)}: ${listing.images.length} images · details ${listing.description ? "yes" : "no"} · ref ${listing.reference_number || "-"}`);
   return listing;
 }
 
