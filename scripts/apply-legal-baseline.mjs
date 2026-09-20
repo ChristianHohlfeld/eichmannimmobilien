@@ -207,7 +207,6 @@ for (const full of await htmlFiles()) {
     <section class="section">
       <div class="container narrow">
         <div class="content-card prose">
-          <p class="notice"><strong>Hinweis:</strong> Eine bloße Kontakt-, Vormerkungs- oder Exposé-Anfrage über diese Website ist unverbindlich und muss nicht widerrufen werden.</p>
           <h2>Widerruf erklären</h2>
           <p>Für den Widerruf genügt eine eindeutige Erklärung. Eine Begründung ist nicht erforderlich. Sie können uns insbesondere per E-Mail oder Brief informieren.</p>
           <p><strong>Immobilien Eichmann</strong><br>Helmut Eichmann<br>Jacob-Burckhardt-Str. 40<br>78464 Konstanz<br>E-Mail: <a href="mailto:info@immobilien-eichmann.com">info@immobilien-eichmann.com</a></p>
