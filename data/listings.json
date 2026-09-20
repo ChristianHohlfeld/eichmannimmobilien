@@ -1,5 +1,7 @@
 {
+  "sot": "local",
   "source": "https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d",
+  "immowelt_profile": "https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d",
   "scraped_at": "2026-09-19T03:40:00+02:00",
   "listing_count": 13,
   "listings": [
@@ -27,7 +29,11 @@
         "01-c6b1d820"
       ],
       "floor_plan_bases": [],
-      "enriched_at": null
+      "enriched_at": null,
+      "source": "immowelt",
+      "immowelt_id": "c6b1d820-4e82-416d-95ad-22472a129955",
+      "sync_policy": "independent",
+      "missing_on_immowelt": false
     },
     {
       "id": "32a8908e-c8e0-4944-b44f-f203ccdaa8a9",
@@ -53,7 +59,11 @@
         "02-32a8908e"
       ],
       "floor_plan_bases": [],
-      "enriched_at": null
+      "enriched_at": null,
+      "source": "immowelt",
+      "immowelt_id": "32a8908e-c8e0-4944-b44f-f203ccdaa8a9",
+      "sync_policy": "independent",
+      "missing_on_immowelt": false
     },
     {
       "id": "4fed09f2-bcef-4e96-ba56-810037b569c0",
@@ -79,7 +89,11 @@
         "03-4fed09f2"
       ],
       "floor_plan_bases": [],
-      "enriched_at": null
+      "enriched_at": null,
+      "source": "immowelt",
+      "immowelt_id": "4fed09f2-bcef-4e96-ba56-810037b569c0",
+      "sync_policy": "independent",
+      "missing_on_immowelt": false
     },
     {
       "id": "d6860062-651b-4f72-a26e-b3719e525241",
@@ -105,7 +119,11 @@
         "04-d6860062"
       ],
       "floor_plan_bases": [],
-      "enriched_at": null
+      "enriched_at": null,
+      "source": "immowelt",
+      "immowelt_id": "d6860062-651b-4f72-a26e-b3719e525241",
+      "sync_policy": "independent",
+      "missing_on_immowelt": false
     },
     {
       "id": "e7e58fe2-a93f-44f2-bc73-dabd3c7208b3",
@@ -131,7 +149,11 @@
         "05-e7e58fe2"
       ],
       "floor_plan_bases": [],
-      "enriched_at": null
+      "enriched_at": null,
+      "source": "immowelt",
+      "immowelt_id": "e7e58fe2-a93f-44f2-bc73-dabd3c7208b3",
+      "sync_policy": "independent",
+      "missing_on_immowelt": false
     },
     {
       "id": "aebb3257-3317-4452-bc9c-a5dbc5ed3838",
@@ -157,7 +179,11 @@
         "06-aebb3257"
       ],
       "floor_plan_bases": [],
-      "enriched_at": null
+      "enriched_at": null,
+      "source": "immowelt",
+      "immowelt_id": "aebb3257-3317-4452-bc9c-a5dbc5ed3838",
+      "sync_policy": "independent",
+      "missing_on_immowelt": false
     },
     {
       "id": "86a7d4f6-0118-45fa-addc-ef5fe9edf21d",
@@ -183,7 +209,11 @@
         "07-86a7d4f6"
       ],
       "floor_plan_bases": [],
-      "enriched_at": null
+      "enriched_at": null,
+      "source": "immowelt",
+      "immowelt_id": "86a7d4f6-0118-45fa-addc-ef5fe9edf21d",
+      "sync_policy": "independent",
+      "missing_on_immowelt": false
     },
     {
       "id": "7bff84e7-8370-471d-b359-5319c8df10ef",
@@ -209,7 +239,11 @@
         "08-7bff84e7"
       ],
       "floor_plan_bases": [],
-      "enriched_at": null
+      "enriched_at": null,
+      "source": "immowelt",
+      "immowelt_id": "7bff84e7-8370-471d-b359-5319c8df10ef",
+      "sync_policy": "independent",
+      "missing_on_immowelt": false
     },
     {
       "id": "6fd6062e-32f4-4f02-af80-d854bd090279",
@@ -235,7 +269,11 @@
         "09-6fd6062e"
       ],
       "floor_plan_bases": [],
-      "enriched_at": null
+      "enriched_at": null,
+      "source": "immowelt",
+      "immowelt_id": "6fd6062e-32f4-4f02-af80-d854bd090279",
+      "sync_policy": "independent",
+      "missing_on_immowelt": false
     },
     {
       "id": "484fee8a-e3f0-4f06-8d26-d740c290b320",
@@ -261,7 +299,11 @@
         "10-484fee8a"
       ],
       "floor_plan_bases": [],
-      "enriched_at": null
+      "enriched_at": null,
+      "source": "immowelt",
+      "immowelt_id": "484fee8a-e3f0-4f06-8d26-d740c290b320",
+      "sync_policy": "independent",
+      "missing_on_immowelt": false
     },
     {
       "id": "4ac199b6-606e-470b-bb7e-d8646d47ea80",
@@ -287,7 +329,11 @@
         "11-4ac199b6"
       ],
       "floor_plan_bases": [],
-      "enriched_at": null
+      "enriched_at": null,
+      "source": "immowelt",
+      "immowelt_id": "4ac199b6-606e-470b-bb7e-d8646d47ea80",
+      "sync_policy": "independent",
+      "missing_on_immowelt": false
     },
     {
       "id": "bb241b38-d292-4047-98fd-4352b841bc5a",
@@ -313,7 +359,11 @@
         "12-bb241b38"
       ],
       "floor_plan_bases": [],
-      "enriched_at": null
+      "enriched_at": null,
+      "source": "immowelt",
+      "immowelt_id": "bb241b38-d292-4047-98fd-4352b841bc5a",
+      "sync_policy": "independent",
+      "missing_on_immowelt": false
     },
     {
       "id": "ff414db8-7e3d-4a01-99f8-029fe15a4d55",
@@ -339,7 +389,11 @@
         "13-ff414db8"
       ],
       "floor_plan_bases": [],
-      "enriched_at": null
+      "enriched_at": null,
+      "source": "immowelt",
+      "immowelt_id": "ff414db8-7e3d-4a01-99f8-029fe15a4d55",
+      "sync_policy": "independent",
+      "missing_on_immowelt": false
     }
   ]
 }

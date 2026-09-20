@@ -19,8 +19,8 @@
   <meta name="twitter:title" content="Penthouse zum Kauf · provisionsfrei | Exposé – Immobilien Eichmann Konstanz">
   <meta name="twitter:description" content="provisionsfrei; Geschoss 1/1; frei ab sofort">
   <meta name="twitter:image" content="https://immobilieneichmann.de/assets/listings/01-c6b1d820.jpg">
-  <link rel="icon" href="../assets/logo.svg?v=house-orig-v1" type="image/png">
-  <link rel="icon" href="../assets/logo.png?v=house-orig-v1" type="image/png" sizes="any">
+  <link rel="icon" href="../assets/logo.svg?v=noclip-v1" type="image/svg+xml">
+  <link rel="icon" href="../assets/logo.png" type="image/png" sizes="any">
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
 <link rel="stylesheet" href="../css/styles.css?v=sticky-neutral-v2">
   <script type="application/ld+json">
@@ -127,48 +127,57 @@
         <aside class="expose-aside">
           <div class="content-card expose-cta-card" id="anfragen">
             <h2 style="margin-top:0;color:var(--ink)">Exposé anfragen</h2>
-            <p class="form-note">Wir senden Ihnen gerne weitere Unterlagen. Ihre Anfrage geht an
-              <a href="mailto:info@immobilien-eichmann.com">info@immobilien-eichmann.com</a>.</p>
             <form id="contact-form" class="expose-form" action="https://formsubmit.co/info@immobilien-eichmann.com" method="POST"
               data-expose-title="Penthouse zum Kauf · provisionsfrei"
               data-expose-slug="penthouse-konigsbau-c6b1d820">
               <input type="hidden" name="_subject" value="Exposé-Anfrage: Penthouse zum Kauf · provisionsfrei – Immobilien Eichmann">
               <input type="hidden" name="_captcha" value="false">
               <input type="hidden" name="_template" value="table">
+              <input type="hidden" name="anliegen" value="Exposé-Anfrage">
               <input type="hidden" name="objekt" value="Penthouse zum Kauf · provisionsfrei">
               <input type="hidden" name="objekt_url" value="https://immobilieneichmann.de/objekt/penthouse-konigsbau-c6b1d820.html">
               <input type="checkbox" name="botcheck" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+
               <div class="form-group">
-                <label for="name">Name *</label>
-                <input type="text" id="name" name="name" required autocomplete="name">
-              </div>
-              <div class="form-group">
-                <label for="email">E-Mail *</label>
-                <input type="email" id="email" name="email" required autocomplete="email">
-              </div>
-              <div class="form-group">
-                <label for="phone">Telefon</label>
-                <input type="tel" id="phone" name="phone" autocomplete="tel">
-              </div>
-              <div class="form-group">
-                <label for="subject">Betreff</label>
-                <select id="subject" name="anliegen">
-                  <option value="Exposé-Anfrage" selected>Exposé-Anfrage</option>
-                  <option value="Besichtigung">Besichtigung</option>
-                  <option value="Vermittlung / Kauf">Vermittlung / Kauf</option>
-                  <option value="Allgemeine Anfrage">Allgemeine Anfrage</option>
+                <label for="anrede">Anrede *</label>
+                <select id="anrede" name="anrede" required autocomplete="honorific-prefix">
+                  <option value="">Bitte wählen</option>
+                  <option value="Herr">Herr</option>
+                  <option value="Frau">Frau</option>
+                  <option value="Familie">Familie</option>
                 </select>
               </div>
               <div class="form-group">
-                <label for="message">Ihre Nachricht *</label>
-                <textarea id="message" name="message" required rows="5">Guten Tag,
-ich interessiere mich für: Penthouse zum Kauf · provisionsfrei (Jacob-Burckhardt-Straße 40, Königsbau, Konstanz (78464)).
-Bitte senden Sie mir das Exposé / weitere Informationen.
-
-Mit freundlichen Grüßen</textarea>
+                <label for="vorname">Vorname *</label>
+                <input type="text" id="vorname" name="vorname" required autocomplete="given-name" placeholder="Ihr Vorname">
+              </div>
+              <div class="form-group">
+                <label for="name">Name *</label>
+                <input type="text" id="name" name="name" required autocomplete="family-name" placeholder="Ihr Name">
+              </div>
+              <div class="form-group">
+                <label for="strasse">Straße und Hausnummer *</label>
+                <input type="text" id="strasse" name="strasse" required autocomplete="street-address" placeholder="Ihre Straße und Hausnummer">
+              </div>
+              <div class="form-row expose-address-row">
+                <div class="form-group">
+                  <label for="plz">PLZ *</label>
+                  <input type="text" id="plz" name="plz" required autocomplete="postal-code" inputmode="numeric" placeholder="Ihre PLZ">
+                </div>
+                <div class="form-group">
+                  <label for="ort">Ort *</label>
+                  <input type="text" id="ort" name="ort" required autocomplete="address-level2" placeholder="Ihr Ort">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="phone">Telefonnummer</label>
+                <input type="tel" id="phone" name="phone" autocomplete="tel" placeholder="Ihre Telefonnummer">
+              </div>
+              <div class="form-group">
+                <label for="email">E-Mail-Adresse *</label>
+                <input type="email" id="email" name="email" required autocomplete="email" placeholder="Ihre E-Mail-Adresse">
               </div>
               <p class="form-note legal-request-note">Informationen zur Verarbeitung Ihrer Angaben finden Sie in der <a href="../datenschutz.html">Datenschutzerklärung</a>. Durch das Absenden kommt kein Maklervertrag zustande.</p>
-          
               <button type="submit" class="btn btn-accent" id="contact-submit">Exposé anfragen</button>
               <div id="form-success" class="form-success" role="status" hidden>
                 Vielen Dank – Ihre Anfrage wurde übermittelt. Wir melden uns zeitnah.
@@ -225,17 +234,14 @@ Mit freundlichen Grüßen</textarea>
           <a href="../ratgeber.html">Ratgeber</a>
           <a href="../impressum.html">Impressum</a>
           <a href="../datenschutz.html">Datenschutz</a>
-          <a href="#" data-open-cookie-settings>Cookie-Einstellungen</a>
           <a href="../widerrufsbelehrung.html">Widerrufsbelehrung</a>
           <a href="../vertrag-widerrufen.html">Vertrag widerrufen</a>
         </div>
       </div>
-      
       <div class="footer-widerruf">
         <a class="btn btn-footer-widerruf" href="../vertrag-widerrufen.html">Vertrag widerrufen</a>
         <p class="footer-widerruf-hint">Maklervertrag in Textform widerrufen</p>
       </div>
-
       <div class="footer-bottom">
         <span>© <span id="y">2026</span> Immobilien Eichmann · Helmut Eichmann · Einzelunternehmen</span>
         <span>immobilieneichmann.de</span>
@@ -259,7 +265,7 @@ Mit freundlichen Grüßen</textarea>
   </nav>
 
   <script>window.__eichmannJsBase="../js/";</script>
-  <script src="../js/cookie-consent.js?v=abs-datenschutz-v1" defer></script>
+  <script src="../js/cookie-consent.js?v=abs-datenschutz-v2" defer></script>
   <script src="../js/main.js?v=form-guard-v2" defer></script>
 </body>
 </html>
