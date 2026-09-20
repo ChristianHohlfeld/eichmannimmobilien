@@ -78,18 +78,12 @@ for (const full of await htmlFiles()) {
     'Informationen zur Verarbeitung Ihrer Angaben finden Sie in der <a href="' + prefix + 'datenschutz.html">Datenschutzerklärung</a>. Durch das Absenden kommt kein Maklervertrag zustande.'
   );
   s = useSafeHeaderLogo(s);
-  s = s.replace(/js\/main\.js\?v=[^"]+/g, "js/main.js?v=form-guard-v2");
+  s = s.replace(/js\/main\.js\?v=[^"]+/g, "js/main.js?v=form-gateway-v1");
   await writeFile(full, s, "utf8");
 }
 
 {
   let s = await read("kontakt.html");
-  const formBlurbStart = '<p class="form-note">Ihre Anfrage wird per Formular-Dienst (FormSubmit)';
-  if (s.includes(formBlurbStart)) {
-    const a = s.indexOf(formBlurbStart);
-    const b = s.indexOf("</p>", a);
-    if (b >= 0) s = s.slice(0, a) + s.slice(b + 4);
-  }
   const mapNote = '<p class="form-note">Google Maps wird nicht automatisch geladen. Erst beim Öffnen des folgenden Links wird eine Verbindung zu Google hergestellt.</p>';
   s = s.replace(mapNote, "");
   const mapEmbedStart = '<div class="map-embed">';
@@ -140,10 +134,10 @@ for (const full of await htmlFiles()) {
       <h2>2. Bereitstellung der Website / GitHub Pages</h2>
       <p>Diese Website wird über GitHub Pages bereitgestellt. Beim Abruf verarbeitet der Hosting-Anbieter technisch erforderliche Verbindungsdaten, insbesondere IP-Adresse, Zeitpunkt und angeforderte Datei, um die Website auszuliefern und die Sicherheit des Dienstes zu gewährleisten. Rechtsgrundlage für unsere Nutzung des Hostings ist Art. 6 Abs. 1 lit. f DSGVO.</p>
 
-      <h2>3. Kontakt, Anfragen und FormSubmit</h2>
-      <p>Wenn Sie uns per Telefon oder E-Mail kontaktieren, verarbeiten wir die von Ihnen mitgeteilten Daten zur Bearbeitung Ihrer Anfrage. Bei objektbezogenen oder sonstigen geschäftlichen Anfragen erfolgt dies regelmäßig auf Grundlage von Art. 6 Abs. 1 lit. b DSGVO; im Übrigen auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO.</p>
-      <p>Das Kontakt- und Exposé-Formular nutzt <strong>FormSubmit</strong> (formsubmit.co). Beim Absenden werden die von Ihnen eingegebenen Formulardaten an diesen Dienst übertragen und anschließend per E-Mail an uns weitergeleitet. Wenn Sie diese Übermittlung nicht wünschen, können Sie uns stattdessen direkt per E-Mail oder Telefon kontaktieren.</p>
-      <p>Anfragedaten speichern wir nur so lange, wie dies für die Bearbeitung und eine mögliche vorvertragliche oder vertragliche Abwicklung erforderlich ist. Gesetzliche Aufbewahrungspflichten bleiben unberührt.</p>
+      <h2>3. Kontakt und Anfragen</h2>
+      <p>Wenn Sie uns per Telefon, E-Mail oder über ein Formular kontaktieren, verarbeiten wir die von Ihnen mitgeteilten Daten zur Bearbeitung Ihrer Anfrage. Bei objektbezogenen oder sonstigen geschäftlichen Anfragen erfolgt dies regelmäßig auf Grundlage von Art. 6 Abs. 1 lit. b DSGVO; im Übrigen auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO.</p>
+      <p>Kontakt- und Exposé-Anfragen werden über ein technisch getrenntes Formular-Gateway unter <strong>forms.digitalisierungsplanung.de</strong> verarbeitet. Das Gateway prüft die übermittelten Pflichtfelder und leitet die Anfrage über <strong>Amazon Simple Email Service (Amazon SES)</strong> an unser E-Mail-Postfach weiter. Formularinhalte werden vom Gateway nicht in einer eigenen Formular-Datenbank gespeichert; technische Protokolle enthalten keine Namen, E-Mail-Adressen, Telefonnummern oder Nachrichtentexte.</p>
+      <p>Anfragedaten speichern wir anschließend nur so lange, wie dies für die Bearbeitung und eine mögliche vorvertragliche oder vertragliche Abwicklung erforderlich ist. Gesetzliche Aufbewahrungspflichten bleiben unberührt. Wenn Sie die Formularübermittlung nicht nutzen möchten, können Sie uns direkt per E-Mail oder Telefon kontaktieren.</p>
 
       <h2>4. Datenschutzauswahl und Google Analytics</h2>
       <p>Ihre Auswahl im Cookie-Hinweis wird im Local Storage Ihres Browsers gespeichert, damit die Website Ihre Entscheidung bei späteren Aufrufen berücksichtigen kann. Diese Speicherung dient ausschließlich der Verwaltung Ihrer Datenschutzeinstellung.</p>
