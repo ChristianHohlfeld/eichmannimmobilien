@@ -1,6 +1,7 @@
 /**
  * Exposé Admin – password gate only for Helmut.
- * GitHub write token is sealed in config.json (AES-GCM), unlocked after login.
+ * GitHub write token: session-only PAT at login (not stored in public config.json).
+ * Legacy: optional github_token_sealed still unlockable if present.
  * Single Source of Truth = data/listings.json + this Admin.
  * Immowelt = optional inbound import only – NEVER write to Immowelt.
  * Every Insert/Update/Delete auto-triggers render-only (objekt/grids/sitemap).
@@ -773,7 +774,7 @@ function emailAllowed(email) {
   return list.includes(normalizeEmail(email));
 }
 
-async function handleLogin(password, email) {
+async function handleLogin(password, email, sessionPat) {
   if (!emailAllowed(email)) {
     throw new Error("Diese E-Mail hat keinen Admin-Zugang.");
   }
@@ -781,7 +782,20 @@ async function handleLogin(password, email) {
   if (hash !== (config.password_sha256 || "").toLowerCase()) {
     throw new Error("Falsches Passwort.");
   }
-  const token = await unsealToken(password);
+  // Härte: kein github_token_sealed mehr in der öffentlichen config.json.
+  // Legacy: falls doch noch sealed vorhanden, mit Passwort entsiegeln.
+  let token = "";
+  if (config.github_token_sealed) {
+    token = await unsealToken(password);
+  }
+  const fromForm = String(sessionPat || "").trim();
+  if (fromForm) token = fromForm;
+  if (!token) {
+    throw new Error("GitHub-Token für diese Sitzung fehlt (Schreibrecht Contents).");
+  }
+  if (!/^gh[pousr]_|github_pat_/.test(token)) {
+    throw new Error("Token sieht nicht nach einem GitHub-PAT aus.");
+  }
   setPatSession(token);
   sessionPassword = password;
   sessionEmail = normalizeEmail(email);
@@ -794,7 +808,9 @@ function bind() {
     const err = $("login-error");
     err.classList.add("hidden");
     try {
-      await handleLogin($("password").value, $("email").value);
+      const patEl = $("pat-login");
+      await handleLogin($("password").value, $("email").value, patEl ? patEl.value : "");
+      if (patEl) patEl.value = "";
       $("password").value = "";
       await enterApp();
     } catch (ex) {

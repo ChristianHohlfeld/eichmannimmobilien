@@ -58,7 +58,7 @@
       '<div class="cookie-banner-inner">' +
       '<div class="cookie-banner-copy">' +
       '<p id="cookie-banner-title" class="cookie-banner-title">Cookies &amp; Datenschutz</p>' +
-      '<p id="cookie-banner-desc" class="cookie-banner-desc">Notwendige Cookies brauchen wir für die Website. Statistik (Google Analytics) nur mit Ihrer Einwilligung. Details in der <a href="datenschutz.html">Datenschutzerklärung</a>.</p>' +
+      '<p id="cookie-banner-desc" class="cookie-banner-desc">Notwendige Cookies brauchen wir für die Website. Statistik (Google Analytics) nur mit Ihrer Einwilligung. Details in der <a href="/datenschutz.html">Datenschutzerklärung</a>.</p>' +
       "</div>" +
       '<div class="cookie-banner-actions">' +
       '<button type="button" class="btn btn-outline btn-sm" data-cookie="necessary">Nur notwendige</button>' +

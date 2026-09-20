@@ -32,12 +32,16 @@
   <main class="wrap">
     <section id="view-gate" class="card gate-card">
       <h2 style="margin-top:0;font-family:var(--font-display);color:var(--primary)">Anmeldung</h2>
-      <p class="hint">Freigeschaltete E-Mail + Passwort eingeben – fertig. Kein Token-Setup nötig.</p>
+      <p class="hint">Freigeschaltete E-Mail + Passwort. Für Speichern: einmalig GitHub-PAT für diese Sitzung (fine-grained, Contents write). Der Token wird <strong>nicht</strong> auf der Website gespeichert.</p>
       <form id="form-login">
         <label for="email">E-Mail</label>
         <input type="email" id="email" autocomplete="username" required autofocus placeholder="chris.hohlfeld@gmail.com" />
         <label for="password">Passwort</label>
         <input type="password" id="password" autocomplete="current-password" required />
+        <label for="pat-login">GitHub-Token (diese Sitzung)</label>
+        <input type="password" id="pat-login" autocomplete="off" required
+          placeholder="github_pat_… (fine-grained, contents:write)" />
+        <p class="hint" style="margin-top:0.35rem">Nicht ins Repo legen. Nach Abmelden weg. Bei Leak: Token bei GitHub widerrufen.</p>
         <div class="btn-row">
           <button type="submit" class="btn btn-primary">Einloggen</button>
         </div>
@@ -48,7 +52,7 @@
     <section id="view-setup" class="card setup-card hidden">
       <h2 style="margin-top:0;font-family:var(--font-display);color:var(--primary)">Erweitert</h2>
       <div class="ok-box">
-        Normalbetrieb: nur Passwort. Der Schreibzugriff wird beim Login automatisch freigeschaltet.
+        Härte-Modus: kein Token in config.json. Schreibzugriff nur über Sitzungs-PAT beim Login oder hier.
       </div>
       <p class="hint">Nur für Notfälle / Rotation – optional ein Sitzungs-Token setzen (nicht persistent).</p>
       <form id="form-pat">

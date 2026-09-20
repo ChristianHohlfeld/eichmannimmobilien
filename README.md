@@ -16,7 +16,10 @@ Die Site liegt im Root von `main` und wird über GitHub Pages ausgeliefert. Die 
 | `index.html` | Startseite (Hero, Leistungen, Projekte, CTA) |
 | `leistungen.html` | Verkauf, Vermittlung, Projektentwicklung |
 | `projekte.html` | Platzhalter-Projektkarten (Neubau / Region Konstanz) |
-| `kontakt.html` | Kontaktdaten + Web3Forms-Formular (Fallback mailto) |
+| `kontakt.html` | Kontaktdaten + FormSubmit → `info@immobilien-eichmann.com` (Fallback mailto) |
+| `widerrufsbelehrung.html` / `vertrag-widerrufen.html` | Widerrufsbelehrung + Widerruf-Formular |
+| `objekt/*.html` | Exposé-Seiten aus `data/listings.json` |
+| `admin/` | Exposé-Admin (SoT-Pflege, Immowelt nur Import) |
 | `impressum.html` | Impressum (Einzelunternehmen Helmut Eichmann) |
 | `datenschutz.html` | Datenschutzerklärung |
 

@@ -26,7 +26,7 @@
 
 ## Immobilienangebote
 
-Aktuelle Immobilienangebote werden auf dieser Website angezeigt und zu Immowelt verlinkt. Für Objektdaten ist Immowelt die maßgebliche Quelle.
+Aktuelle Immobilienangebote liegen lokal als Single Source of Truth (`data/listings.json` + Admin) und werden auf dieser Website angezeigt. Immowelt ist optionaler Import (nur lesen), nie Schreibziel.
 
 ## Sitemap
 

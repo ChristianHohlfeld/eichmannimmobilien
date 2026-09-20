@@ -6,16 +6,11 @@
   "assets_prefix": "assets/listings",
   "workflow_file": "sync-immowelt.yml",
   "admin_save_workflow": "admin-save.yml",
-  "github_token_sealed": "AWE/tXBHqmoLOxHLRN/i8ponGzDuz7YdaQisIRpejbv6GHjfXAiEh/HViur+kX4atOA63Hsg5wS1LjvpCfxTw4YaH65O6ckp8hjMq/VMAKkah0aWww==",
-  "kdf": {
-    "name": "PBKDF2",
-    "hash": "SHA-256",
-    "iterations": 120000
-  },
-  "note": "Login: freigeschaltete E-Mail + Passwort. Helmut: info@immobilien-eichmann.com. Nur SHA-256 und versiegelter Token. Klartext-Passwort nie committen. Immowelt-Konto bleibt unber\u00fchrt.",
+  "note": "Login: Allowlist-E-Mail + Passwort. Schreibzugriff: GitHub-PAT nur in der Browser-Sitzung (nicht in config.json). Fine-grained PAT mit contents:write. Helmut: info@immobilien-eichmann.com. Immowelt-Konto bleibt unberührt. Kein Klartext-Passwort committen.",
   "admin_emails": [
     "chris.hohlfeld@gmail.com",
     "chris.hohlfeld@googlemail.com",
     "info@immobilien-eichmann.com"
-  ]
+  ],
+  "auth_mode": "password_plus_session_pat"
 }
