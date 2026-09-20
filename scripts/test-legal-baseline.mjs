@@ -33,9 +33,12 @@ for (const file of html) {
 const impressum = await readFile(path.join(ROOT, "impressum.html"), "utf8");
 assert.ok(impressum.includes("Industrie- und Handelskammer Hochrhein-Bodensee"), "Impressum: §34c authority missing");
 const datenschutz = await readFile(path.join(ROOT, "datenschutz.html"), "utf8");
-for (const needle of ["GitHub Pages","FormSubmit","Google Analytics","Local Storage","Landesbeauftragte"]) assert.ok(datenschutz.includes(needle), "Datenschutz missing " + needle);
+for (const needle of ["GitHub Pages","forms.digitalisierungsplanung.de","Amazon Simple Email Service","Google Analytics","Local Storage","Landesbeauftragte"]) assert.ok(datenschutz.includes(needle), "Datenschutz missing " + needle);
+assert.ok(!datenschutz.includes("FormSubmit"), "Datenschutz: retired FormSubmit reference");
 const kontakt = await readFile(path.join(ROOT, "kontakt.html"), "utf8");
 assert.ok(kontakt.includes("Durch das Absenden kommt kein Maklervertrag zustande."), "Kontakt: no-contract notice missing");
+assert.ok(kontakt.includes('action="https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/contact"'), "Kontakt: own form gateway missing");
+assert.ok(!kontakt.includes("formsubmit.co"), "Kontakt: retired FormSubmit action");
 const widerruf = await readFile(path.join(ROOT, "widerrufsbelehrung.html"), "utf8");
 assert.ok(widerruf.includes("vierzehn Tagen"), "Widerruf: 14 days missing");
 assert.ok(!widerruf.includes("30 Tagen"), "Widerruf: obsolete 30 days");
@@ -47,6 +50,8 @@ assert.ok(generator.includes("cookie-consent.js"), "Generator: cookie consent mi
 assert.ok(!generator.includes('src="${p}js/analytics.js"'), "Generator: direct analytics load");
 assert.ok(generator.includes("Durch das Absenden kommt kein Maklervertrag zustande."), "Generator: no-contract notice missing");
 assert.ok(!generator.includes('name="privacy_ack"'), "Generator: unnecessary privacy acknowledgement present");
+assert.ok(generator.includes('action="https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/expose"'), "Generator: own expose gateway missing");
+assert.ok(!generator.includes("formsubmit.co"), "Generator: retired FormSubmit action");
 assert.ok(!kontakt.includes("Die Anfrage ist unverbindlich;"), "Kontakt: verbose request notice should be removed");
 assert.ok(generator.includes("logo-header.svg?v=header-safe-v1"), "Generator: safe header logo missing");
 console.log("Legal baseline OK: " + html.length + " HTML files checked.");
