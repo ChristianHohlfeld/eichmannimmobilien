@@ -255,6 +255,7 @@ function redactPrivateAddressText(value) {
     .replace(/Kindlebild(?:straße|strasse)(?:\s*13)?/gi, "Konstanz-Wollmatingen")
     .replace(/Radolfzeller\s+(?:Straße|Strasse)(?:\s*91)?/gi, "Konstanz-Wollmatingen")
     .replace(/Allensteiner\s+(?:Straße|Strasse)(?:\s*\d+[a-z]?)?/gi, "Konstanz-Wollmatingen")
+    .replace(/\b[A-ZÄÖÜ][A-Za-zÄÖÜäöüß.-]*(?:[- ][A-ZÄÖÜ][A-Za-zÄÖÜäöüß.-]*)*\s+(?:Straße|Strasse|Str\.|Weg|Platz|Allee)\s*\d+[a-z]?\b/g, "Konstanz")
     .replace(/\s{2,}/g, " ")
     .trim();
 }
