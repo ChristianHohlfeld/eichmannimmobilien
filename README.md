@@ -176,7 +176,7 @@ Die DNS-Konfiguration selbst liegt **außerhalb dieses Repositories** beim jewei
 │   ├── logo*                Marken-/Header-Assets
 │   └── share-card*          Social-Preview-Bilder
 ├── css/styles.css           gesamtes Public Styling
-├── data/listings.json       kanonische Objektdaten / Single Source of Truth
+├── data/listings.json       generierter lokaler Spiegel der Immowelt-Objektdaten
 ├── js/
 │   ├── main.js
 │   ├── cookie-consent.js
@@ -203,13 +203,9 @@ Die DNS-Konfiguration selbst liegt **außerhalb dieses Repositories** beim jewei
 
 ## 6. Single Source of Truth für Immobilien
 
-Die kanonische Datenquelle der Website ist:
+Die fachliche Single Source of Truth ist **Immowelt**. Helmut pflegt dort Titel, Preis, Status, Referenznummern und Objektdaten.
 
-```text
-data/listings.json
-```
-
-Nicht Immowelt und nicht die generierten HTML-Seiten.
+`data/listings.json` ist ausschließlich der lokale, generierte Spiegel für Rendering und Website-Betrieb. Als lokale Abweichung ist nur `site_hidden` erlaubt: damit kann ein Immowelt-Objekt auf der eigenen Website ausgeblendet werden, ohne Immowelt zu verändern.
 
 Top-Level-Struktur:
 
