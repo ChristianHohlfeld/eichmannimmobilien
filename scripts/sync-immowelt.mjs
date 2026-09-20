@@ -653,8 +653,6 @@ ${JSON.stringify(schema, null, 2)}
         <aside class="expose-aside">
           <div class="content-card expose-cta-card" id="anfragen">
             <h2 style="margin-top:0;color:var(--ink)">Exposé anfragen</h2>
-            <p class="form-note">Wir senden Ihnen gerne weitere Unterlagen. Ihre Anfrage geht an
-              <a href="mailto:info@immobilien-eichmann.com">info@immobilien-eichmann.com</a>.</p>
             <form id="contact-form" class="expose-form" action="https://formsubmit.co/info@immobilien-eichmann.com" method="POST"
               data-expose-title="${escapeHtml(title)}"
               data-expose-slug="${escapeHtml(listing.slug)}">
@@ -692,12 +690,6 @@ ${JSON.stringify(schema, null, 2)}
                 )}</textarea>
               </div>
               <p class="form-note legal-request-note">Mit dem Absenden werden Ihre Angaben zur Bearbeitung der Anfrage verarbeitet. Hinweise finden Sie in der <a href="${p}datenschutz.html">Datenschutzerklärung</a>. Die Anfrage ist unverbindlich; durch das Absenden kommt kein Maklervertrag zustande.</p>
-              <div class="form-group form-consent privacy-ack">
-                <label class="consent-label" for="privacy-ack">
-                  <input type="checkbox" name="privacy_ack" id="privacy-ack" value="acknowledged" required>
-                  Ich habe die <a href="${p}datenschutz.html">Datenschutzerklärung</a> zur Kenntnis genommen. *
-                </label>
-              </div>
               <button type="submit" class="btn btn-accent" id="contact-submit">Exposé anfragen</button>
               <div id="form-success" class="form-success" role="status" hidden>
                 Vielen Dank – Ihre Anfrage wurde übermittelt. Wir melden uns zeitnah.

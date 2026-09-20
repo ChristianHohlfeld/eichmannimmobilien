@@ -101,7 +101,6 @@
         phone: (form.querySelector('[name="phone"]') || {}).value || "",
         anliegen: anliegen,
         message: (form.querySelector('[name="message"]') || {}).value || "",
-        privacy_ack: "Datenschutzerklärung zur Kenntnis genommen",
         _subject: anliegen + " – Immobilien Eichmann (Webformular)",
         _template: "table",
         _captcha: "false"

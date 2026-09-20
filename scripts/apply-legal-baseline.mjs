@@ -36,15 +36,15 @@ function replaceDataConsent(s, prefix) {
   );
 }
 
-function ensurePrivacyAck(s, prefix) {
-  if (!s.includes('legal-request-note') || s.includes('name="privacy_ack"')) return s;
-  const ack =
-    '<div class="form-group form-consent privacy-ack">' +
-    '<label class="consent-label" for="privacy-ack">' +
-    '<input type="checkbox" name="privacy_ack" id="privacy-ack" value="acknowledged" required> ' +
-    'Ich habe die <a href="' + prefix + 'datenschutz.html">Datenschutzerklärung</a> zur Kenntnis genommen. *' +
-    '</label></div>';
-  return s.replace(/(<p class="form-note legal-request-note">[\s\S]*?<\/p>)/g, '$1\n          ' + ack);
+function removePrivacyAck(s) {
+  const start = '<div class="form-group form-consent privacy-ack">';
+  while (s.includes(start)) {
+    const a = s.indexOf(start);
+    const b = s.indexOf("</div>", a);
+    if (b < 0) break;
+    s = s.slice(0, a) + s.slice(b + 6);
+  }
+  return s;
 }
 
 function useSafeHeaderLogo(s) {
@@ -72,7 +72,7 @@ for (const full of await htmlFiles()) {
   s = s.replaceAll("Einwilligung oder Maklervertrag in Textform zurücknehmen", "Maklervertrag in Textform widerrufen");
   const prefix = rel.startsWith("objekt/") ? "../" : "";
   s = replaceDataConsent(s, prefix);
-  s = ensurePrivacyAck(s, prefix);
+  s = removePrivacyAck(s);
   s = useSafeHeaderLogo(s);
   s = s.replace(/js\/main\.js\?v=[^"]+/g, "js/main.js?v=form-guard-v2");
   await writeFile(full, s, "utf8");
@@ -80,10 +80,20 @@ for (const full of await htmlFiles()) {
 
 {
   let s = await read("kontakt.html");
-  s = s.replace(
-    /\s*<div class="map-embed">[\s\S]*?<\/div>\s*<p class="map-link">/,
-    '\n          <p class="form-note">Google Maps wird nicht automatisch geladen. Erst beim Öffnen des folgenden Links wird eine Verbindung zu Google hergestellt.</p>\n          <p class="map-link">'
-  );
+  const formBlurbStart = '<p class="form-note">Ihre Anfrage wird per Formular-Dienst (FormSubmit)';
+  if (s.includes(formBlurbStart)) {
+    const a = s.indexOf(formBlurbStart);
+    const b = s.indexOf("</p>", a);
+    if (b >= 0) s = s.slice(0, a) + s.slice(b + 4);
+  }
+  const mapNote = '<p class="form-note">Google Maps wird nicht automatisch geladen. Erst beim Öffnen des folgenden Links wird eine Verbindung zu Google hergestellt.</p>';
+  s = s.replace(mapNote, "");
+  const mapEmbedStart = '<div class="map-embed">';
+  if (s.includes(mapEmbedStart)) {
+    const a = s.indexOf(mapEmbedStart);
+    const b = s.indexOf("</div>", a);
+    if (b >= 0) s = s.slice(0, a) + s.slice(b + 6);
+  }
   await write("kontakt.html", s);
 }
 
@@ -165,7 +175,6 @@ for (const full of await htmlFiles()) {
     <section class="section">
       <div class="container narrow">
         <div class="content-card prose">
-          <p class="notice"><strong>Wichtig:</strong> Eine Kontakt-, Vormerkungs- oder Exposé-Anfrage über diese Website ist unverbindlich. Allein durch das Absenden einer Anfrage kommt kein Maklervertrag zustande.</p>
           <h2 style="margin-top:0">Widerrufsrecht</h2>
           <p>Sie haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen einen im Fernabsatz oder außerhalb von Geschäftsräumen geschlossenen Verbrauchervertrag über Maklerdienstleistungen zu widerrufen, soweit Ihnen gesetzlich ein Widerrufsrecht zusteht.</p>
           <p>Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsabschlusses.</p>
@@ -270,7 +279,6 @@ for (const full of await htmlFiles()) {
       `        message: (form.querySelector('[name="message"]') || {}).value || "",
         _subject:`,
       `        message: (form.querySelector('[name="message"]') || {}).value || "",
-        privacy_ack: "Datenschutzerklärung zur Kenntnis genommen",
         _subject:`
     );
   }
@@ -286,18 +294,25 @@ for (const full of await htmlFiles()) {
 {
   let s = await read("scripts/sync-immowelt.mjs");
   s = stripGoogleFonts(s);
+  const privacyAckStart = '<div class="form-group form-consent privacy-ack">';
+  while (s.includes(privacyAckStart)) {
+    const a = s.indexOf(privacyAckStart);
+    const b = s.indexOf("</div>", a);
+    if (b < 0) break;
+    s = s.slice(0, a) + s.slice(b + 6);
+  }
+  const exposeBlurbStart = '<p class="form-note">Wir senden Ihnen gerne weitere Unterlagen.';
+  if (s.includes(exposeBlurbStart)) {
+    const a = s.indexOf(exposeBlurbStart);
+    const b = s.indexOf("</p>", a);
+    if (b >= 0) s = s.slice(0, a) + s.slice(b + 4);
+  }
   s = s.replace(/\snovalidate(?=[\s>])/g, "");
   s = s.replaceAll("Einwilligung oder Maklervertrag in Textform zurücknehmen", "Maklervertrag in Textform widerrufen");
   s = s.replace(
     /<div class="form-group form-consent">\s*<label class="consent-label"[^>]*>\s*<input[^>]*name="datenschutz"[\s\S]*?<\/label>\s*<\/div>/g,
     '<p class="form-note legal-request-note">Mit dem Absenden werden Ihre Angaben zur Bearbeitung der Anfrage verarbeitet. Hinweise finden Sie in der <a href="${p}datenschutz.html">Datenschutzerklärung</a>. Die Anfrage ist unverbindlich; durch das Absenden kommt kein Maklervertrag zustande.</p>'
   );
-  if (!s.includes('name="privacy_ack"')) {
-    s = s.replace(
-      /(<p class="form-note legal-request-note">[\s\S]*?<\/p>)/g,
-      '$1\n              <div class="form-group form-consent privacy-ack"><label class="consent-label" for="privacy-ack"><input type="checkbox" name="privacy_ack" id="privacy-ack" value="acknowledged" required> Ich habe die <a href="${p}datenschutz.html">Datenschutzerklärung</a> zur Kenntnis genommen. *</label></div>'
-    );
-  }
   s = s.replace(/<img class="logo-svg" src="${p}assets\/logo\.(?:png|svg)\?v=[^"]+"/g, '<img class="logo-svg" src="${p}assets/logo-header.svg?v=header-safe-v1"');
   s = s.replace(/js\/main\.js\?v=[^"]+/g, 'js/main.js?v=form-guard-v2');
   s = s.replace(
