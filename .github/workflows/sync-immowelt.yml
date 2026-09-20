@@ -78,16 +78,11 @@ jobs:
             /Jacob-Burckhardt-(?:Straße|Strasse|Str\.)\s*40/i,
             /Kindlebild(?:straße|strasse)\s*13/i,
             /Radolfzeller\s+(?:Straße|Strasse)\s*91/i,
-            /Allensteiner\s+(?:Straße|Strasse)\s*\d+/i
+            /Allensteiner\s+(?:Straße|Strasse)\s*\d+/i,
+            /\b[A-ZÄÖÜ][A-Za-zÄÖÜäöüß.-]*(?:[- ][A-ZÄÖÜ][A-Za-zÄÖÜäöüß.-]*)*\s+(?:Straße|Strasse|Str\.|Weg|Platz|Allee)\s*\d+[a-z]?\b/i
           ];
           for (const item of publicListings) {
-            const blob = JSON.stringify({
-              location: item.location,
-              description: item.description,
-              location_description: item.location_description,
-              additional_information: item.additional_information,
-              short_description: item.short_description
-            });
+            const blob = JSON.stringify(item);
             if (forbiddenObjectAddresses.some((re) => re.test(blob))) {
               problems.push(`${item.slug}: exact object address leaked into public data`);
             }
