@@ -38,12 +38,12 @@ await new Promise((resolve) => server.listen(PORT, "127.0.0.1", resolve));
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext();
 let posted = null;
-await context.route("https://formsubmit.co/ajax/**", async (route) => {
+await context.route("https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/expose", async (route) => {
   posted = JSON.parse(route.request().postData() || "{}");
   await route.fulfill({
     status: 200,
     contentType: "application/json",
-    body: JSON.stringify({ success: true }),
+    body: JSON.stringify({ success: true, requestId: "ci-test" }),
   });
 });
 
