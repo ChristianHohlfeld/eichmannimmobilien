@@ -1770,3 +1770,10 @@ a.listing-card:focus-visible {
   font-size: 0.85rem;
   color: rgba(255,255,255,0.72);
 }
+
+.form-label-plain {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  color: var(--ink);
+}

@@ -25,7 +25,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=widerruf-footer-v1">
+  <link rel="stylesheet" href="css/styles.css?v=widerruf-accept-v1">
 </head>
 <body>
 <header class="site-header">
@@ -65,73 +65,71 @@
       <div class="container narrow">
         <div class="content-card">
           <p style="color:var(--slate);margin-top:0">
-            Nutzen Sie dieses Formular, um einen <strong>Maklervertrag</strong> oder eine damit verbundene
-            <strong>Einwilligung / Anfrage</strong> (z.&nbsp;B. Exposé-Zusendung) in Textform zu widerrufen.
+            Nutzen Sie dieses Formular, um einen <strong>Maklervertrag</strong> in Textform zu widerrufen.
             Rechtliche Hinweise: <a href="widerrufsbelehrung.html">Widerrufsbelehrung</a>.
           </p>
 
-          <form id="widerruf-form" class="widerruf-form" action="https://formsubmit.co/info@immobilien-eichmann.com" method="POST" novalidate>
-            <input type="hidden" name="_subject" value="Widerruf Maklervertrag / Einwilligung – Immobilien Eichmann">
-            <input type="hidden" name="_captcha" value="false">
-            <input type="hidden" name="_template" value="table">
-            <input type="hidden" name="_next" value="https://immobilieneichmann.de/vertrag-widerrufen.html?sent=1">
-            <input type="checkbox" name="botcheck" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+                  <form id="widerruf-form" class="widerruf-form" action="https://formsubmit.co/info@immobilien-eichmann.com" method="POST" novalidate>
+          <input type="hidden" name="_subject" value="Widerruf Maklervertrag – Immobilien Eichmann">
+          <input type="hidden" name="_captcha" value="false">
+          <input type="hidden" name="_template" value="table">
+          <input type="hidden" name="_next" value="https://immobilieneichmann.de/vertrag-widerrufen.html?sent=1">
+          <input type="checkbox" name="botcheck" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
 
-            <div class="form-group">
-              <label for="w-name">Name *</label>
-              <input type="text" id="w-name" name="name" required autocomplete="name" placeholder="Vor- und Nachname">
-            </div>
-            <div class="form-group">
-              <label for="w-address">Anschrift *</label>
-              <input type="text" id="w-address" name="anschrift" required autocomplete="street-address" placeholder="Straße, PLZ, Stadt">
-            </div>
-            <div class="form-group">
-              <label for="w-email">E-Mail *</label>
-              <input type="email" id="w-email" name="email" required autocomplete="email" placeholder="E-Mail">
-            </div>
-            <div class="form-group">
-              <label for="w-phone">Telefon</label>
-              <input type="tel" id="w-phone" name="phone" autocomplete="tel" placeholder="Telefonnummer (optional)">
-            </div>
-            <div class="form-group">
-              <label for="w-vertrag">Betroffener Vertrag / Anfrage *</label>
-              <input type="text" id="w-vertrag" name="betroffener_vertrag" required
-                placeholder="Maklervertrag, Objektadresse, Exposé-Nr. oder Immobilienbezeichnung">
-            </div>
-            <div class="form-group">
-              <label for="w-vertrag-datum">Datum des Vertragsschlusses / der Anfrage *</label>
-              <input type="date" id="w-vertrag-datum" name="vertragsdatum" required>
-            </div>
-            <div class="form-group">
-              <label for="w-msg">Nachricht</label>
-              <textarea id="w-msg" name="message" rows="4" placeholder="Optional zusätzliche Nachricht"></textarea>
-            </div>
-            <div class="form-group form-consent">
-              <label class="consent-label">
-                <input type="checkbox" name="widerruf_erklaerung" id="w-erklaerung" required>
-                Hiermit widerrufe ich den von mir abgeschlossenen Vertrag über die Erbringung der Maklerdienstleistung
-                bzw. die damit verbundene Einwilligung zur Kontaktaufnahme / Exposé-Zusendung. *
-              </label>
-            </div>
-            <div class="form-group">
-              <label for="w-date">Datum des Widerrufs *</label>
-              <input type="date" id="w-date" name="widerrufsdatum" required value="2026-09-20">
-            </div>
-            <div class="form-group form-consent">
-              <label class="consent-label">
-                <input type="checkbox" name="datenschutz" id="w-datenschutz" required>
-                Mit dem Absenden erkläre ich mich mit der Verarbeitung meiner Angaben zum Zweck der Bearbeitung
-                dieses Widerrufs einverstanden. Hinweise in der
-                <a href="datenschutz.html">Datenschutzerklärung</a>. *
-              </label>
-            </div>
-            <button type="submit" class="btn btn-accent">Widerruf absenden</button>
-            <p style="margin-top:1rem;font-size:0.9rem;color:var(--slate)">
-              Alternativ per E-Mail an
-              <a href="mailto:info@immobilien-eichmann.com?subject=Widerruf%20Maklervertrag">info@immobilien-eichmann.com</a>
-              oder schriftlich an Helmut Eichmann, Jacob-Burckhardt-Str.&nbsp;40, 78464 Konstanz.
-            </p>
-          </form>
+          <div class="form-group">
+            <label for="w-name">Name *</label>
+            <input type="text" id="w-name" name="name" required autocomplete="name" placeholder="Vor- und Nachname">
+          </div>
+          <div class="form-group">
+            <label for="w-address">Anschrift *</label>
+            <input type="text" id="w-address" name="anschrift" required autocomplete="street-address" placeholder="Straße, PLZ, Stadt">
+          </div>
+          <div class="form-group">
+            <label for="w-email">E-Mail *</label>
+            <input type="email" id="w-email" name="email" required autocomplete="email" placeholder="E-Mail">
+          </div>
+          <div class="form-group">
+            <label for="w-phone">Telefon</label>
+            <input type="tel" id="w-phone" name="phone" autocomplete="tel" placeholder="Telefonnr. optional">
+          </div>
+          <div class="form-group">
+            <label for="w-vertrag">Betroffener Vertrag *</label>
+            <input type="text" id="w-vertrag" name="betroffener_vertrag" required
+              placeholder="Maklervertrag, Objektadresse, Exposé-Nr. oder Immobilienbezeichnung">
+          </div>
+          <div class="form-group">
+            <label for="w-vertrag-datum">Datum des Vertragsschlusses *</label>
+            <input type="date" id="w-vertrag-datum" name="vertragsdatum" required placeholder="Vertrag abgeschlossen am">
+          </div>
+          <div class="form-group">
+            <label for="w-msg">Nachricht</label>
+            <textarea id="w-msg" name="message" rows="4" placeholder="Optional zusätzliche Nachricht"></textarea>
+          </div>
+          <div class="form-group form-consent">
+            <span class="form-label-plain" id="w-widerruf-label">Widerruf *</span>
+            <label class="consent-label" for="w-erklaerung">
+              <input type="checkbox" name="widerruf_erklaerung" id="w-erklaerung" required aria-labelledby="w-widerruf-label">
+              Hiermit widerrufe ich den von mir abgeschlossenen Vertrag über die Erbringung der Maklerdienstleistung.
+            </label>
+          </div>
+          <div class="form-group">
+            <label for="w-date">Datum des Widerrufs *</label>
+            <input type="date" id="w-date" name="widerrufsdatum" required>
+          </div>
+          <div class="form-group form-consent">
+            <label class="consent-label" for="w-datenschutz">
+              <input type="checkbox" name="datenschutz" id="w-datenschutz" required>
+              Mit dem Absenden Ihrer Anfrage erklären Sie sich mit der Verarbeitung Ihrer angegebenen Daten zum Zweck der Bearbeitung der Anfrage einverstanden
+            </label>
+          </div>
+          <button type="submit" class="btn btn-accent">Senden</button>
+          <p style="margin-top:1rem;font-size:0.9rem;color:var(--slate)">
+            Alternativ per E-Mail an
+            <a href="mailto:info@immobilien-eichmann.com?subject=Widerruf%20Maklervertrag">info@immobilien-eichmann.com</a>
+            oder schriftlich an Helmut Eichmann, Jacob-Burckhardt-Str.&nbsp;40, 78464 Konstanz.
+            Rechtliche Hinweise: <a href="widerrufsbelehrung.html">Widerrufsbelehrung</a>.
+          </p>
+        </form>
         </div>
       </div>
     </section>
