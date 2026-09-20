@@ -42,6 +42,8 @@ jobs:
         run: |
           node --check scripts/sync-immowelt.mjs
           node --check admin/admin.js
+      - name: Render listings from mirrored data
+        run: node scripts/sync-immowelt.mjs --render-only
       - name: Legal / privacy baseline
         run: node scripts/test-legal-baseline.mjs
       - name: Install Playwright Chromium
