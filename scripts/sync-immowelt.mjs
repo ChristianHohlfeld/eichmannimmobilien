@@ -75,6 +75,26 @@ const dryRun = args.has("--dry-run");
 const forceScrape = args.has("--force-scrape");
 const skipEnrich = args.has("--skip-enrich");
 
+// Public syndication mirror for the same Immowelt offers. Immowelt blocks
+// GitHub-hosted runners with DataDome; Sparkassen-Immobilien publishes the
+// identical SIP offers and their full galleries without that datacenter block.
+// Key = canonical Immowelt expose UUID, value = matching syndicated expose URL.
+const SPARKASSE_EXPOSE_BY_IMMOWELT_ID = Object.freeze({
+  "c6b1d820-4e82-416d-95ad-22472a129955": "https://immobilien.sparkasse.de/expose/FID-F13-699-009.html",
+  "32a8908e-c8e0-4944-b44f-f203ccdaa8a9": "https://immobilien.sparkasse.de/expose/FID-F13-646-975.html",
+  "4fed09f2-bcef-4e96-ba56-810037b569c0": "https://immobilien.sparkasse.de/expose/FID-F13-646-974.html",
+  "d6860062-651b-4f72-a26e-b3719e525241": "https://immobilien.sparkasse.de/expose/FID-F13-646-966.html",
+  "e7e58fe2-a93f-44f2-bc73-dabd3c7208b3": "https://immobilien.sparkasse.de/expose/FID-F13-646-976.html",
+  "aebb3257-3317-4452-bc9c-a5dbc5ed3838": "https://immobilien.sparkasse.de/expose/FID-F13-646-972.html",
+  "86a7d4f6-0118-45fa-addc-ef5fe9edf21d": "https://immobilien.sparkasse.de/expose/FID-F13-646-973.html",
+  "7bff84e7-8370-471d-b359-5319c8df10ef": "https://immobilien.sparkasse.de/expose/FID-F13-646-970.html",
+  "6fd6062e-32f4-4f02-af80-d854bd090279": "https://immobilien.sparkasse.de/expose/FID-F13-646-967.html",
+  "484fee8a-e3f0-4f06-8d26-d740c290b320": "https://immobilien.sparkasse.de/expose/FID-F13-646-969.html",
+  "4ac199b6-606e-470b-bb7e-d8646d47ea80": "https://immobilien.sparkasse.de/expose/FID-F13-646-977.html",
+  "bb241b38-d292-4047-98fd-4352b841bc5a": "https://immobilien.sparkasse.de/expose/FID-F13-646-968.html",
+  "ff414db8-7e3d-4a01-99f8-029fe15a4d55": "https://immobilien.sparkasse.de/expose/FID-F13-646-971.html",
+});
+
 function escapeHtml(s) {
   return String(s ?? "")
     .replace(/&/g, "&amp;")
@@ -903,6 +923,15 @@ async function syncOneImage(url, base, opts = {}) {
   }
 }
 
+function remoteMediaKey(rawUrl) {
+  try {
+    const u = new URL(String(rawUrl || ""));
+    return path.basename(u.pathname).toLowerCase();
+  } catch {
+    return String(rawUrl || "").split("?")[0].toLowerCase();
+  }
+}
+
 async function syncImages(data, { skipDownload = false } = {}) {
   await mkdir(IMAGES_DIR, { recursive: true });
   const keepBases = collectKeepImageBases(data.listings);
@@ -930,13 +959,14 @@ async function syncImages(data, { skipDownload = false } = {}) {
     const galleryBases = [];
     for (let g = 0; g < remoteGallery.length; g++) {
       const url = remoteGallery[g];
-      // Skip near-duplicate of main (same path without query)
-      const mainKey = (L.main_image_url || "").split("?")[0];
-      if (url.split("?")[0] === mainKey && g === 0) {
+      // Skip the same media asset even when Immowelt and its syndication
+      // partner use different CDN hostnames for the identical UUID.
+      const mainKey = remoteMediaKey(L.main_image_url);
+      if (remoteMediaKey(url) === mainKey && g === 0) {
         galleryBases.push(L.image_base);
         continue;
       }
-      if (url.split("?")[0] === mainKey) continue;
+      if (remoteMediaKey(url) === mainKey) continue;
       const gBase = `${L.image_base}-g${String(g + 1).padStart(2, "0")}`;
       if (!skipDownload) await syncOneImage(url, gBase);
       if (await fileExists(path.join(IMAGES_DIR, `${gBase}.jpg`))) {
@@ -1447,7 +1477,7 @@ async function enrichFromExposePage(page, listing) {
     listing.description = detail.description.slice(0, 15000);
   }
   if (detail.images?.length && mo.images !== true) {
-    listing.images = detail.images.slice(0, 24);
+    listing.images = detail.images.slice(0, 80);
     if (!listing.main_image_url) listing.main_image_url = detail.images[0];
   }
   if (detail.floor_plans?.length && mo.floor_plans !== true) {
@@ -1457,6 +1487,78 @@ async function enrichFromExposePage(page, listing) {
     listing.facts = { ...(listing.facts || {}), ...detail.facts };
   }
   listing.enriched_at = new Date().toISOString();
+  return listing;
+}
+
+async function enrichGalleryFromSparkasse(page, listing) {
+  const mirrorUrl = SPARKASSE_EXPOSE_BY_IMMOWELT_ID[String(listing.id || "").toLowerCase()];
+  if (!mirrorUrl) throw new Error("No Sparkasse mirror mapping");
+
+  console.log(`Gallery mirror ${shortId(listing.id)}: ${mirrorUrl}`);
+  const resp = await page.goto(mirrorUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
+  if (!resp || resp.status() >= 400) {
+    throw new Error(`Sparkasse HTTP ${resp && resp.status()}`);
+  }
+  await page.waitForTimeout(800);
+
+  const media = await page.evaluate(() => {
+    const urls = [];
+    const seen = new Set();
+
+    function add(raw) {
+      let value = String(raw || "").replace(/&amp;/g, "&").trim();
+      if (!/^https:\/\/cdnihddipa\.cloudimg\.io\//i.test(value)) return;
+      try {
+        const u = new URL(value);
+        const key = u.pathname.toLowerCase();
+        if (seen.has(key)) return;
+        seen.add(key);
+        // Keep the CDN's original image (not WebP transcoding) at a useful
+        // source resolution; our own Sharp pipeline creates final local files.
+        u.searchParams.set("webp", "false");
+        u.searchParams.set("width", "1920");
+        urls.push(u.toString());
+      } catch {}
+    }
+
+    // The syndicated gallery is server-rendered. Every gallery image has an
+    // object-specific alt text ("... Konstanz ... kaufen/mieten"). Provider
+    // logos use different alt text and are deliberately excluded here.
+    for (const img of document.querySelectorAll("img")) {
+      const alt = String(img.alt || "");
+      if (!/Konstanz/i.test(alt) || !/(kaufen|mieten)/i.test(alt)) continue;
+      add(img.currentSrc);
+      add(img.src);
+      for (const srcset of [img.srcset, img.getAttribute("data-srcset")]) {
+        if (!srcset) continue;
+        for (const candidate of String(srcset).split(",")) {
+          add(candidate.trim().split(/\s+/)[0]);
+        }
+      }
+      const link = img.closest("a[href]");
+      if (link) add(link.href);
+    }
+
+    // Some variants keep full-size gallery targets only on anchors.
+    for (const link of document.querySelectorAll('a[href*="cdnihddipa.cloudimg.io"]')) {
+      const img = link.querySelector("img");
+      const alt = String(img?.alt || link.getAttribute("aria-label") || "");
+      if (/Konstanz/i.test(alt) && /(kaufen|mieten)/i.test(alt)) add(link.href);
+    }
+    return urls;
+  });
+
+  if (media.length < 2) {
+    throw new Error(`Sparkasse gallery incomplete (${media.length} image)`);
+  }
+
+  const mo = listing.manual_overrides || {};
+  if (mo.images !== true) {
+    listing.images = media.slice(0, 80);
+    if (!listing.main_image_url) listing.main_image_url = listing.images[0];
+  }
+  listing.enriched_at = new Date().toISOString();
+  console.log(`Gallery mirror ${shortId(listing.id)}: ${listing.images.length} images`);
   return listing;
 }
 
@@ -1507,10 +1609,20 @@ async function enrichListings(listings) {
         }
       }
       try {
-        await enrichFromExposePage(page, L);
-        await page.waitForTimeout(1200 + Math.floor(Math.random() * 800));
-      } catch (err) {
-        console.warn(`Enrich failed for ${shortId(L.id)}:`, err.message || err);
+        const mirrorUrl = SPARKASSE_EXPOSE_BY_IMMOWELT_ID[String(L.id || "").toLowerCase()];
+        if (mirrorUrl && mo.images !== true) {
+          await enrichGalleryFromSparkasse(page, L);
+        } else {
+          await enrichFromExposePage(page, L);
+        }
+        await page.waitForTimeout(250);
+      } catch (mirrorErr) {
+        console.warn(`Gallery mirror failed for ${shortId(L.id)}:`, mirrorErr.message || mirrorErr);
+        try {
+          await enrichFromExposePage(page, L);
+        } catch (err) {
+          console.warn(`Enrich failed for ${shortId(L.id)}:`, err.message || err);
+        }
       }
     }
   } finally {
