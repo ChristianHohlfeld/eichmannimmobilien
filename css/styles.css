@@ -931,55 +931,67 @@ a.listing-card:focus-visible {
   position: fixed;
   inset: 0;
   z-index: 1300; /* above cookie-banner (1200) */
-  display: grid;
-  place-items: center;
-  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  /* Overlay scrollt — Dialog wird nicht abgeschnitten (iOS Safari) */
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding:
+    max(0.75rem, env(safe-area-inset-top))
+    max(0.75rem, env(safe-area-inset-right))
+    max(1.25rem, env(safe-area-inset-bottom))
+    max(0.75rem, env(safe-area-inset-left));
   box-sizing: border-box;
 }
-.flyer-backdrop { position: absolute; inset: 0; background: rgba(15, 39, 68, 0.55); }
+.flyer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 39, 68, 0.55);
+}
 .flyer-dialog {
   position: relative;
   z-index: 1;
-  width: min(920px, calc(100vw - 2rem));
+  flex: 0 0 auto;
+  width: min(920px, calc(100% - 0.5rem));
   max-width: 100%;
-  max-height: min(92vh, 980px);
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
+  /* Kein max-height / kein Innen-Scroll → gesamter Flyer erreichbar */
+  max-height: none;
+  overflow: visible;
+  margin: auto; /* zentriert wenn kurz; Overlay scrollt wenn lang */
   background: var(--white);
   border-radius: var(--radius);
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
   box-sizing: border-box;
-  /* Platz unter dem fixen Close-Button */
-  scroll-padding-top: 3rem;
+  padding-bottom: 0.25rem;
 }
 .flyer-close {
-  /* Am Viewport fixiert — bleibt beim Scrollen des Flyer-Inhalts sichtbar */
+  /* Am Viewport fixiert — immer sichtbar, nicht abgeschnitten */
   position: fixed;
-  top: max(0.65rem, env(safe-area-inset-top));
-  right: max(0.65rem, env(safe-area-inset-right));
+  top: max(0.85rem, calc(env(safe-area-inset-top) + 0.35rem));
+  right: max(0.85rem, calc(env(safe-area-inset-right) + 0.35rem));
   z-index: 1400;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.97);
+  background: rgba(255, 255, 255, 0.98);
   color: var(--ink);
-  font-size: 1.4rem;
+  font-size: 1.45rem;
   cursor: pointer;
   line-height: 1;
   display: grid;
   place-items: center;
-  box-shadow: 0 2px 12px rgba(15, 39, 68, 0.22);
+  box-shadow: 0 2px 14px rgba(15, 39, 68, 0.28);
+  -webkit-tap-highlight-color: transparent;
 }
 .flyer-close:hover {
   background: #fff;
   color: var(--accent, #c45c26);
-}
-.flyer-overlay[hidden] .flyer-close {
-  /* nicht relevant; Overlay ist hidden */
 }
 .flyer {
   font-size: 0.92rem;
@@ -1082,6 +1094,7 @@ a.listing-card:focus-visible {
   background: var(--primary);
   color: rgba(255, 255, 255, 0.92);
   padding: 0.95rem 1.15rem;
+  padding-bottom: max(0.95rem, env(safe-area-inset-bottom));
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -1141,10 +1154,22 @@ a.listing-card:focus-visible {
   .flyer-specs li {
     grid-template-columns: 24px minmax(3.75rem, 5.5rem) minmax(0, 1fr);
   }
-  .flyer-overlay { padding: 0.65rem; }
+  .flyer-overlay {
+    padding:
+      max(0.5rem, env(safe-area-inset-top))
+      max(0.5rem, env(safe-area-inset-right))
+      max(1rem, env(safe-area-inset-bottom))
+      max(0.5rem, env(safe-area-inset-left));
+  }
   .flyer-dialog {
-    width: calc(100vw - 1.3rem);
-    max-height: min(88vh, 980px);
+    width: 100%;
+    max-width: calc(100vw - 1rem);
+    max-height: none;
+    margin-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+  .flyer-close {
+    top: max(0.65rem, calc(env(safe-area-inset-top) + 0.25rem));
+    right: max(0.65rem, calc(env(safe-area-inset-right) + 0.25rem));
   }
   .flyer-brand img, .flyer-brand svg {
     height: 36px;
