@@ -1,10 +1,8 @@
 name: Admin Apply (Save + Render)
 
-# Single pipeline for Exposé Admin CRUD:
-# 1) repository_dispatch admin_save_listings → write listings.json → render-only → commit
-# 2) repository_dispatch admin_apply_render → render-only → commit (after Contents API save)
-# 3) workflow_dispatch modes for manual runs
-# Immowelt account is NEVER written to. SoT = data/listings.json + Admin.
+# Single pipeline for website visibility overrides + rendering.
+# Immowelt remains the single source of truth for property content/status.
+# Admin may persist site_hidden only; sync/render never writes to Immowelt.
 
 on:
   repository_dispatch:
@@ -57,7 +55,7 @@ jobs:
           data = json.loads(raw)
           if not isinstance(data.get("listings"), list):
               raise SystemExit("payload missing listings[]")
-          data["sot"] = "local"
+          data["sot"] = "immowelt"
           data["listing_count"] = len(data["listings"])
           path.parent.mkdir(parents=True, exist_ok=True)
           path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
