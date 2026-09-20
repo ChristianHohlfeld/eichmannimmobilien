@@ -3,7 +3,7 @@
   "source": "https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d",
   "immowelt_profile": "https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d",
   "scraped_at": "2026-09-20T18:11:48.190Z",
-  "listing_count": 13,
+  "listing_count": 14,
   "listings": [
     {
       "id": "c6b1d820-4e82-416d-95ad-22472a129955",
@@ -11,7 +11,7 @@
       "local_url": "objekt/penthouse-konigsbau-c6b1d820.html",
       "title": "KfW-55 Sonnige 1 Zimmerwohnung Neubau Konstanz (Königsbau)",
       "price": "199.000 €",
-      "location": "Jacob-Burckhardt-Straße 40, Königsbau, Konstanz (78464)",
+      "location": "Königsbau, Konstanz (78464)",
       "rooms": "1 Zimmer",
       "living_area": "26 m²",
       "plot_area": null,
@@ -130,7 +130,15 @@
       "source": "immowelt",
       "immowelt_id": "c6b1d820-4e82-416d-95ad-22472a129955",
       "sync_policy": "independent",
-      "missing_on_immowelt": false
+      "missing_on_immowelt": false,
+      "active": true,
+      "detail_page": true,
+      "manual_overrides": {
+        "active": true,
+        "detail_page": true,
+        "updated_at": "2026-09-20T18:37:15.326Z",
+        "location": true
+      }
     },
     {
       "id": "32a8908e-c8e0-4944-b44f-f203ccdaa8a9",
@@ -310,7 +318,15 @@
       "source": "immowelt",
       "immowelt_id": "32a8908e-c8e0-4944-b44f-f203ccdaa8a9",
       "sync_policy": "independent",
-      "missing_on_immowelt": false
+      "missing_on_immowelt": false,
+      "active": true,
+      "detail_page": true,
+      "manual_overrides": {
+        "active": true,
+        "detail_page": true,
+        "updated_at": "2026-09-20T18:37:15.326Z",
+        "location": true
+      }
     },
     {
       "id": "4fed09f2-bcef-4e96-ba56-810037b569c0",
@@ -318,15 +334,15 @@
       "local_url": "objekt/wohnung-wollmatingen-4fed09f2.html",
       "title": "Wohnung A5 · 3 Zimmer · Neubau Sunside Living",
       "price": "641.200 €",
-      "location": "Kindlebildstraße, Wollmatingen, Konstanz (78467)",
+      "location": "Wollmatingen, Konstanz (78467)",
       "rooms": "3 Zimmer",
       "living_area": "89,5 m²",
       "plot_area": null,
       "type": "Wohnung",
       "status": "Kauf",
       "short_description": "Erstbezug; als Kapitalanlage geeignet",
-      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das an der Kindlebildstrasse 13 liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
-      "source_title": "Verkaufsstart 3 Zimmer 1 OG Wohnung mit Balkon.KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Kindlebildstraße",
+      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
+      "source_title": "Verkaufsstart 3 Zimmer 1 OG Wohnung mit Balkon.KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Konstanz-Wollmatingen",
       "reference_number": "A5",
       "location_description": "Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe.Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant..Unmi…",
       "amenities": [
@@ -421,7 +437,15 @@
       "source": "immowelt",
       "immowelt_id": "4fed09f2-bcef-4e96-ba56-810037b569c0",
       "sync_policy": "independent",
-      "missing_on_immowelt": false
+      "missing_on_immowelt": false,
+      "active": true,
+      "detail_page": true,
+      "manual_overrides": {
+        "active": true,
+        "detail_page": true,
+        "updated_at": "2026-09-20T18:37:15.326Z",
+        "location": true
+      }
     },
     {
       "id": "d6860062-651b-4f72-a26e-b3719e525241",
@@ -511,7 +535,14 @@
       "source": "immowelt",
       "immowelt_id": "d6860062-651b-4f72-a26e-b3719e525241",
       "sync_policy": "independent",
-      "missing_on_immowelt": false
+      "missing_on_immowelt": false,
+      "active": false,
+      "detail_page": true,
+      "manual_overrides": {
+        "active": true,
+        "detail_page": true,
+        "updated_at": "2026-09-20T18:37:15.326Z"
+      }
     },
     {
       "id": "e7e58fe2-a93f-44f2-bc73-dabd3c7208b3",
@@ -609,7 +640,56 @@
       "source": "immowelt",
       "immowelt_id": "e7e58fe2-a93f-44f2-bc73-dabd3c7208b3",
       "sync_policy": "independent",
-      "missing_on_immowelt": false
+      "missing_on_immowelt": false,
+      "active": true,
+      "detail_page": true,
+      "manual_overrides": {
+        "active": true,
+        "detail_page": true,
+        "updated_at": "2026-09-20T18:37:15.326Z",
+        "location": true
+      }
+    },
+    {
+      "id": "local-wollmatingen-133000",
+      "slug": "3-zimmer-wohnung-wollmatingen-133000",
+      "local_url": "objekt/3-zimmer-wohnung-wollmatingen-133000.html",
+      "title": "3-Zimmer-Wohnung in Konstanz-Wollmatingen",
+      "price": "133.000 €",
+      "location": "Wollmatingen, Konstanz (78467)",
+      "rooms": "3 Zimmer",
+      "living_area": null,
+      "plot_area": null,
+      "type": "Wohnung",
+      "status": "Kauf",
+      "short_description": "3-Zimmer-Wohnung · weitere Details auf Anfrage",
+      "description": null,
+      "facts": null,
+      "expose_url": null,
+      "main_image_url": null,
+      "images": [],
+      "floor_plans": [],
+      "image_base": null,
+      "gallery_bases": [],
+      "floor_plan_bases": [],
+      "enriched_at": null,
+      "active": true,
+      "detail_page": false,
+      "source": "local",
+      "immowelt_id": null,
+      "sync_policy": "independent",
+      "missing_on_immowelt": false,
+      "manual_overrides": {
+        "title": true,
+        "price": true,
+        "location": true,
+        "rooms": true,
+        "status": true,
+        "short_description": true,
+        "active": true,
+        "detail_page": true,
+        "updated_at": "2026-09-20T18:37:15.326Z"
+      }
     },
     {
       "id": "aebb3257-3317-4452-bc9c-a5dbc5ed3838",
@@ -617,15 +697,15 @@
       "local_url": "objekt/wohnung-wollmatingen-aebb3257.html",
       "title": "Wohnung B3 · 4 Zimmer · Neubau Sunside Living",
       "price": "745.300 €",
-      "location": "Kindlebildstraße, Wollmatingen, Konstanz (78467)",
+      "location": "Wollmatingen, Konstanz (78467)",
       "rooms": "4 Zimmer",
       "living_area": "96,4 m²",
       "plot_area": null,
       "type": "Wohnung",
       "status": "Kauf",
       "short_description": "provisionsfrei; als Kapitalanlage geeignet",
-      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das an der Kindlebildstrasse 13 liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
-      "source_title": "Verkaufsstart 4 Zimmer 1 OG Wohnung mit Balkon.KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Kindlebildstraße",
+      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
+      "source_title": "Verkaufsstart 4 Zimmer 1 OG Wohnung mit Balkon.KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Konstanz-Wollmatingen",
       "reference_number": "B3",
       "location_description": "Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe.Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant..Unmi…",
       "amenities": [
@@ -718,7 +798,14 @@
       "source": "immowelt",
       "immowelt_id": "aebb3257-3317-4452-bc9c-a5dbc5ed3838",
       "sync_policy": "independent",
-      "missing_on_immowelt": false
+      "missing_on_immowelt": false,
+      "active": false,
+      "detail_page": true,
+      "manual_overrides": {
+        "active": true,
+        "detail_page": true,
+        "updated_at": "2026-09-20T18:37:15.326Z"
+      }
     },
     {
       "id": "86a7d4f6-0118-45fa-addc-ef5fe9edf21d",
@@ -870,7 +957,15 @@
       "source": "immowelt",
       "immowelt_id": "86a7d4f6-0118-45fa-addc-ef5fe9edf21d",
       "sync_policy": "independent",
-      "missing_on_immowelt": false
+      "missing_on_immowelt": false,
+      "active": true,
+      "detail_page": true,
+      "manual_overrides": {
+        "active": true,
+        "detail_page": true,
+        "updated_at": "2026-09-20T18:37:15.326Z",
+        "location": true
+      }
     },
     {
       "id": "7bff84e7-8370-471d-b359-5319c8df10ef",
@@ -878,9 +973,9 @@
       "local_url": "objekt/wohnung-wollmatingen-7bff84e7.html",
       "title": "4 Zimmer Wohnung B9 / Haus B",
       "price": "695.000 €",
-      "location": "Radolfzeller Straße 91, Wollmatingen, Konstanz (78467)",
+      "location": "Wollmatingen, Konstanz (78467)",
       "rooms": "4 Zimmer",
-      "living_area": "92,7 m²",
+      "living_area": "92,66 m²",
       "plot_area": null,
       "type": "Wohnung",
       "status": "Kauf",
@@ -1015,7 +1110,16 @@
       "source": "immowelt",
       "immowelt_id": "7bff84e7-8370-471d-b359-5319c8df10ef",
       "sync_policy": "independent",
-      "missing_on_immowelt": false
+      "missing_on_immowelt": false,
+      "active": true,
+      "detail_page": true,
+      "manual_overrides": {
+        "active": true,
+        "detail_page": true,
+        "updated_at": "2026-09-20T18:37:15.326Z",
+        "location": true,
+        "living_area": true
+      }
     },
     {
       "id": "6fd6062e-32f4-4f02-af80-d854bd090279",
@@ -1140,7 +1244,15 @@
       "source": "immowelt",
       "immowelt_id": "6fd6062e-32f4-4f02-af80-d854bd090279",
       "sync_policy": "independent",
-      "missing_on_immowelt": false
+      "missing_on_immowelt": false,
+      "active": true,
+      "detail_page": true,
+      "manual_overrides": {
+        "active": true,
+        "detail_page": true,
+        "updated_at": "2026-09-20T18:37:15.326Z",
+        "location": true
+      }
     },
     {
       "id": "484fee8a-e3f0-4f06-8d26-d740c290b320",
@@ -1148,15 +1260,15 @@
       "local_url": "objekt/maisonette-wollmatingen-484fee8a.html",
       "title": "Wohnung A12 · 4 Zimmer · Neubau Sunside Living",
       "price": "738.100 €",
-      "location": "Kindlebildstraße, Wollmatingen, Konstanz (78467)",
+      "location": "Wollmatingen, Konstanz (78467)",
       "rooms": "4 Zimmer",
       "living_area": "102,3 m²",
       "plot_area": null,
       "type": "Maisonette",
       "status": "Kauf",
       "short_description": "Erstbezug; provisionsfrei; als Kapitalanlage geeignet",
-      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das an der Kindlebildstrasse 13 liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
-      "source_title": "Verkaufstart 4 Zimmer Dachgeschoss Wohnung mit Dachterasse.KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Kindlebildstraße",
+      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
+      "source_title": "Verkaufstart 4 Zimmer Dachgeschoss Wohnung mit Dachterasse.KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Konstanz-Wollmatingen",
       "reference_number": "A12",
       "location_description": "Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe.Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant..Unmi…",
       "amenities": [
@@ -1270,7 +1382,15 @@
       "source": "immowelt",
       "immowelt_id": "484fee8a-e3f0-4f06-8d26-d740c290b320",
       "sync_policy": "independent",
-      "missing_on_immowelt": false
+      "missing_on_immowelt": false,
+      "active": true,
+      "detail_page": true,
+      "manual_overrides": {
+        "active": true,
+        "detail_page": true,
+        "updated_at": "2026-09-20T18:37:15.326Z",
+        "location": true
+      }
     },
     {
       "id": "4ac199b6-606e-470b-bb7e-d8646d47ea80",
@@ -1278,15 +1398,15 @@
       "local_url": "objekt/maisonette-wollmatingen-4ac199b6.html",
       "title": "Wohnung A9 · 4 Zimmer · Neubau Sunside Living",
       "price": "696.200 €",
-      "location": "Kindlebildstraße, Wollmatingen, Konstanz (78467)",
+      "location": "Wollmatingen, Konstanz (78467)",
       "rooms": "4 Zimmer",
       "living_area": "95,5 m²",
       "plot_area": null,
       "type": "Maisonette",
       "status": "Kauf",
       "short_description": "Erstbezug; provisionsfrei; als Kapitalanlage geeignet",
-      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das an der Kindlebildstrasse 13 liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
-      "source_title": "Verkaufsstart 4 Zimmer Dachgeschoss Wohnung mit Dachterasse.KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Kindlebildstraße",
+      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
+      "source_title": "Verkaufsstart 4 Zimmer Dachgeschoss Wohnung mit Dachterasse.KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Konstanz-Wollmatingen",
       "reference_number": "A9",
       "location_description": "Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe.Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant..Unmi…",
       "amenities": [
@@ -1406,7 +1526,15 @@
       "source": "immowelt",
       "immowelt_id": "4ac199b6-606e-470b-bb7e-d8646d47ea80",
       "sync_policy": "independent",
-      "missing_on_immowelt": false
+      "missing_on_immowelt": false,
+      "active": true,
+      "detail_page": true,
+      "manual_overrides": {
+        "active": true,
+        "detail_page": true,
+        "updated_at": "2026-09-20T18:37:15.326Z",
+        "location": true
+      }
     },
     {
       "id": "bb241b38-d292-4047-98fd-4352b841bc5a",
@@ -1414,15 +1542,15 @@
       "local_url": "objekt/maisonette-furstenberg-bb241b38.html",
       "title": "Wohnung A3 · 2 Zimmer · Neubau Sunside Living",
       "price": "361.500 €",
-      "location": "Kindlebildstraße, Wollmatingen, Konstanz (78467)",
+      "location": "Wollmatingen, Konstanz (78467)",
       "rooms": "2 Zimmer",
       "living_area": "46,5 m²",
       "plot_area": null,
       "type": "Maisonette",
       "status": "Kauf",
       "short_description": "provisionsfrei; als Kapitalanlage geeignet",
-      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das an der Kindlebildstrasse 13 liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
-      "source_title": "A3 Verkaufsstart 3 Zimmer Erdgeschoss Wohnung mit Garten Sondernutzungsrecht KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Kindlebildstraße",
+      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
+      "source_title": "A3 Verkaufsstart 3 Zimmer Erdgeschoss Wohnung mit Garten Sondernutzungsrecht KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Konstanz-Wollmatingen",
       "reference_number": "A3",
       "location_description": "Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe.Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant..Unmi…",
       "amenities": [
@@ -1508,7 +1636,15 @@
       "source": "immowelt",
       "immowelt_id": "bb241b38-d292-4047-98fd-4352b841bc5a",
       "sync_policy": "independent",
-      "missing_on_immowelt": false
+      "missing_on_immowelt": false,
+      "active": true,
+      "detail_page": true,
+      "manual_overrides": {
+        "active": true,
+        "detail_page": true,
+        "updated_at": "2026-09-20T18:37:15.326Z",
+        "location": true
+      }
     },
     {
       "id": "ff414db8-7e3d-4a01-99f8-029fe15a4d55",
@@ -1516,15 +1652,15 @@
       "local_url": "objekt/maisonette-furstenberg-ff414db8.html",
       "title": "Wohnung A2 · 2 Zimmer · Neubau Sunside Living",
       "price": "363.700 €",
-      "location": "Kindlebildstraße, Wollmatingen, Konstanz (78467)",
+      "location": "Wollmatingen, Konstanz (78467)",
       "rooms": "2 Zimmer",
       "living_area": "47 m²",
       "plot_area": null,
       "type": "Maisonette",
       "status": "Kauf",
       "short_description": "provisionsfrei; als Kapitalanlage geeignet",
-      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das an der Kindlebildstrasse 13 liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
-      "source_title": "A2 Verkaufsstart 3 Zimmer Erdgeschoss Wohnung mit Garten Sondernutzungsrecht KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Kindlebildstraße",
+      "description": "Das gesamte Bauvorhaben und Neubauprojekt KW 55 Effizenzhaus A+besteht aus einem Mehrfamilienhaus A ,das in Konstanz-Wollmatingen liegt mit 12 Wohneinheiten, und einem Hinterhaus B mit 6 Wohneinheiten.Sowohl bei Haus A wie bei Haus B werden die Balkone alle n…",
+      "source_title": "A2 Verkaufsstart 3 Zimmer Erdgeschoss Wohnung mit Garten Sondernutzungsrecht KFW 55 Effizenzhaus A+ ; Neubau-Mehrfamilienhaus-Konstanz-Wollmatingen",
       "reference_number": "A2",
       "location_description": "Dort sind alle Schulen sowie Kindergärten und Einkaufsmöglichkeiten in unmittelbarer Nähe.Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant..Unmi…",
       "amenities": [
@@ -1610,7 +1746,16 @@
       "source": "immowelt",
       "immowelt_id": "ff414db8-7e3d-4a01-99f8-029fe15a4d55",
       "sync_policy": "independent",
-      "missing_on_immowelt": false
+      "missing_on_immowelt": false,
+      "active": true,
+      "detail_page": true,
+      "manual_overrides": {
+        "active": true,
+        "detail_page": true,
+        "updated_at": "2026-09-20T18:37:15.326Z",
+        "location": true
+      }
     }
-  ]
+  ],
+  "active_listing_count": 12
 }
