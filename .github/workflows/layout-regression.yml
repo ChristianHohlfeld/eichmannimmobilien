@@ -44,6 +44,17 @@ jobs:
           node --check admin/admin.js
       - name: Render listings from mirrored data
         run: node scripts/sync-immowelt.mjs --render-only
+      - name: Upload rendered listing output
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-listings
+          path: |
+            index.html
+            projekte.html
+            partials/listings-grid.html
+            objekt/
+            sitemap.xml
+          if-no-files-found: error
       - name: Generated listing output must be committed
         run: |
           if ! git diff --exit-code -- index.html projekte.html partials/listings-grid.html objekt sitemap.xml; then
