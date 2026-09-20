@@ -790,7 +790,7 @@ ${JSON.stringify(schema, null, 2)}
   </nav>
 
   <script src="${p}js/analytics.js" defer></script>
-  <script src="${p}js/main.js?v=expose-lightbox-v2" defer></script>
+  <script src="${p}js/main.js?v=flyer-root-v1" defer></script>
 </body>
 </html>
 `;

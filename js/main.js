@@ -170,20 +170,16 @@
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && modal && !modal.hidden) closeFlyer();
   });
-  /* Flyer: Startseite einmal pro Sitzung öffnen (nicht bei jedem Reload/Navigation). */
+  /* Flyer: nur Startseite (Root) einmalig beim Laden auto-öffnen; sonst nur via [data-open-flyer]. */
   (function () {
     if (!modal) return;
-    var file = (location.pathname || "").split("/").pop() || "";
-    var isHome = file === "" || file === "index.html";
+    var path = location.pathname || "/";
+    var isHome = path === "/" || /(?:^|\/)index\.html$/i.test(path);
     if (!isHome) return;
-    try {
-      if (sessionStorage.getItem("eichmann_flyer_shown") === "1") return;
-    } catch (e) {}
     setTimeout(function () {
       if (!modal || !modal.hidden) return;
-      try { sessionStorage.setItem("eichmann_flyer_shown", "1"); } catch (e) {}
       openFlyer();
-    }, 2000);
+    }, 800);
   })();
 
   

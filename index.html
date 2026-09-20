@@ -586,7 +586,7 @@
       <span>Bewertung</span>
     </a>
   </nav>
-  <!-- Allmannsdorf flyer – BI structure, Eichmann brand only; opens via [data-open-flyer]; auto-open on home load -->
+  <!-- Allmannsdorf flyer – BI structure, Eichmann brand only; opens via [data-open-flyer]; auto-open once on root/index load (incl. refresh) -->
   <div class="flyer-overlay" id="flyerModal" hidden>
     <div class="flyer-backdrop" data-close-flyer tabindex="-1" aria-label="Flyer schließen"></div>
     <div class="flyer-dialog" role="dialog" aria-modal="true" aria-labelledby="flyerTitle">
@@ -707,7 +707,7 @@
   </div>
 
   <script src="js/cookie-consent.js" defer></script>
-  <script src="js/main.js?v=expose-lightbox-v2" defer></script>
+  <script src="js/main.js?v=flyer-root-v1" defer></script>
 
 </body>
 </html>
