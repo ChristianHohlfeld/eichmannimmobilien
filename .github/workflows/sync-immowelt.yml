@@ -58,6 +58,32 @@ jobs:
         if: ${{ inputs.force_from_json == true }}
         run: node scripts/sync-immowelt.mjs --render-only
 
+      - name: Verify published listing detail completeness
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile, readdir } from "node:fs/promises";
+          const raw = JSON.parse(await readFile("data/listings.json", "utf8"));
+          const listings = Array.isArray(raw) ? raw : raw.listings || [];
+          const problems = [];
+          for (const item of listings) {
+            if (!String(item.description || "").trim()) problems.push(`${item.slug}: missing description`);
+            if (!Array.isArray(item.gallery_bases) || item.gallery_bases.length < 2) problems.push(`${item.slug}: gallery has <2 images`);
+          }
+          for (const name of await readdir("objekt")) {
+            if (!name.endsWith(".html")) continue;
+            const html = await readFile("objekt/" + name, "utf8");
+            if (html.includes("Ausführliche Objektbeschreibung folgt mit dem nächsten Immowelt-Abgleich") ||
+                html.includes("Die ausführliche Objektbeschreibung stellen wir Ihnen gerne auf Anfrage zu")) {
+              problems.push(name + ": synthetic description fallback");
+            }
+          }
+          if (problems.length) {
+            console.error("Refusing to publish incomplete Exposés:\n" + problems.join("\n"));
+            process.exit(1);
+          }
+          console.log(`Detail quality OK: ${listings.length} listings with real descriptions and galleries.`);
+          NODE
+
       - name: Commit & push if changed
         run: |
           git config user.name "github-actions[bot]"
