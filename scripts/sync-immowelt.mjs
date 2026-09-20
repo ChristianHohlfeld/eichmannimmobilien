@@ -437,7 +437,7 @@ function renderExposeHtml(listing) {
   const canonical = `${SITE_ORIGIN}/${listing.local_url}`;
   const ogImage = listing.image_base
     ? `${SITE_ORIGIN}/assets/listings/${listing.image_base}.jpg`
-    : `${SITE_ORIGIN}/assets/share-card-house-orig-v1.jpg`;
+    : `${SITE_ORIGIN}/assets/share-card-plain-v2.jpg`;
 
   const factRows = [
     listing.price ? ["Kaufpreis", listing.price] : null,

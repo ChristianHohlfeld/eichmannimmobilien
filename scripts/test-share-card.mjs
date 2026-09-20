@@ -4,23 +4,17 @@ import { readFile, readdir } from 'node:fs/promises';
 import sharp from 'sharp';
 
 const root = new URL('../', import.meta.url);
-const imagePath = new URL('assets/share-card-house-orig-v1.jpg', root);
-const url = 'https://immobilieneichmann.de/assets/share-card-house-orig-v1.jpg';
+const source = await readFile(new URL('assets/share-card-source-plain-v2.jpg', root));
+const imagePath = new URL('assets/share-card-plain-v2.jpg', root);
+const url = 'https://immobilieneichmann.de/assets/share-card-plain-v2.jpg';
 const bytes = await readFile(imagePath);
 const meta = await sharp(bytes).metadata();
+
 assert.equal(meta.width, 1200);
 assert.equal(meta.height, 630);
 assert.equal(meta.format, 'jpeg');
 assert.ok(bytes.length < 300000, 'Keep previews small enough for messaging clients');
-
-// Compare the entire logo region with the canonical header asset, allowing JPEG loss.
-const { data: expected, info } = await sharp(await readFile(new URL('assets/logo.png', root)))
-  .resize({ width: 960 }).flatten({ background: '#fff' }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
-const actual = await sharp(bytes).extract({ left: 120, top: 126, width: info.width, height: info.height })
-  .removeAlpha().raw().toBuffer();
-let difference = 0;
-for (let i = 0; i < actual.length; i++) difference += Math.abs(actual[i] - expected[i]);
-assert.ok(difference / actual.length < 5, 'Share card must contain the current, complete header logo');
+assert.deepEqual(bytes, source, 'Share card must be the approved property image without overlays');
 
 let checked = 0;
 for (const name of await readdir(root)) {
@@ -34,6 +28,8 @@ for (const name of await readdir(root)) {
   checked++;
 }
 const generator = await readFile(new URL('scripts/sync-immowelt.mjs', root), 'utf8');
-assert.ok(generator.includes('/assets/share-card-house-orig-v1.jpg'), 'Generated listing fallback must use the current card');
-assert.deepEqual(await readFile(new URL('assets/share-card.jpg', root)), bytes, 'Legacy image URL must also be fixed');
-console.log(`Share card OK: canonical logo, 1200×630, ${bytes.length} bytes, ${checked} pages + listing fallback.`);
+assert.ok(generator.includes('/assets/share-card-plain-v2.jpg'), 'Generated listing fallback must use current card');
+for (const legacy of ['assets/share-card-house-orig-v1.jpg', 'assets/share-card.jpg']) {
+  assert.deepEqual(await readFile(new URL(legacy, root)), bytes, `${legacy}: legacy URL must match current card`);
+}
+console.log(`Share card OK: approved plain property image, 1200×630, ${bytes.length} bytes, ${checked} pages + listing fallback.`);

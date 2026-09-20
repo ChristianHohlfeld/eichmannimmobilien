@@ -122,7 +122,7 @@ Einschränkungen:
 
 ### Link-Vorschau (WhatsApp / Open Graph / Twitter)
 
-Die allgemeine Vorschau verwendet `assets/share-card-house-orig-v1.jpg` (1200 × 630).
+Die allgemeine Vorschau verwendet `assets/share-card-plain-v2.jpg` (1200 × 630).
 Sie wird mit `npm run build:share` aus dem aktuellen Header-Logo `assets/logo.png`
 erzeugt; `assets/share-card.jpg` bleibt als identische Version für alte Links erhalten.
 Bei einem Markenwechsel auch den Dateinamen in Metadaten und Exposé-Fallback ändern,
