@@ -122,6 +122,11 @@ const PROJECT_LOCATION_BY_IMMOWELT_ID = Object.freeze({
   "ff414db8-7e3d-4a01-99f8-029fe15a4d55": "Kindlebildstraße, Wollmatingen, Konstanz (78467)"
 });
 
+const PROJECT_TYPE_BY_IMMOWELT_ID = Object.freeze({
+  "bb241b38-d292-4047-98fd-4352b841bc5a": "Wohnung",
+  "ff414db8-7e3d-4a01-99f8-029fe15a4d55": "Wohnung"
+});
+
 function escapeHtml(s) {
   return String(s ?? "")
     .replace(/&/g, "&amp;")
@@ -492,8 +497,8 @@ function renderExposeHtml(listing) {
     .filter(Boolean)
     .join(" · ");
   const metaDesc = (
-    listing.short_description ||
     listing.description ||
+    listing.short_description ||
     `${title} in ${listing.location || "Konstanz"} – ${descBits}. Exposé anfragen bei Immobilien Eichmann.`
   )
     .replace(/\s+/g, " ")
@@ -523,8 +528,21 @@ function renderExposeHtml(listing) {
   ].filter(Boolean);
 
   if (listing.facts && typeof listing.facts === "object") {
+    const represented = new Set([
+      listing.price ? "Kaufpreis" : "",
+      listing.rooms ? "Anzahl Zimmer" : "",
+      listing.living_area ? "Wohnfläche" : "",
+      listing.plot_area ? "Grundstücksfläche" : "",
+      listing.location ? "PLZ" : "",
+      listing.location ? "Ort" : ""
+    ].filter(Boolean));
+    const labelMap = {
+      "Anzahl Balkone": "Balkone",
+      "Anzahl Terrassen": "Terrassen",
+      "Anzahl Tiefgaragen Stellplätze": "Tiefgaragenstellplätze"
+    };
     for (const [k, v] of Object.entries(listing.facts)) {
-      if (v) factRows.push([k, String(v)]);
+      if (v && !represented.has(k)) factRows.push([labelMap[k] || k, String(v)]);
     }
   }
 
@@ -1737,10 +1755,15 @@ async function enrichGalleryFromSparkasse(page, listing) {
       listing.reference_number ||
       null;
   }
-  if (media.description && mo.description !== true) listing.description = media.description.slice(0, 2200);
-  if (media.locationDescription && mo.location_description !== true) listing.location_description = media.locationDescription.slice(0, 1800);
+  if (mo.price !== true && media.facts?.Kaufpreis) listing.price = media.facts.Kaufpreis;
+  if (mo.rooms !== true && media.facts?.["Anzahl Zimmer"]) listing.rooms = `${media.facts["Anzahl Zimmer"]} Zimmer`;
+  if (mo.living_area !== true && media.facts?.Wohnfläche) listing.living_area = media.facts.Wohnfläche;
+  if (mo.plot_area !== true && media.facts?.Grundstücksfläche) listing.plot_area = media.facts.Grundstücksfläche;
+  if (mo.type !== true && PROJECT_TYPE_BY_IMMOWELT_ID[listingKey]) listing.type = PROJECT_TYPE_BY_IMMOWELT_ID[listingKey];
+  if (media.description && mo.description !== true) listing.description = media.description.slice(0, 15000);
+  if (media.locationDescription && mo.location_description !== true) listing.location_description = media.locationDescription.slice(0, 10000);
   if (Array.isArray(media.amenities) && media.amenities.length && mo.amenities !== true) listing.amenities = media.amenities.slice(0, 40);
-  if (media.additionalInformation && mo.additional_information !== true) listing.additional_information = media.additionalInformation.slice(0, 1800);
+  if (media.additionalInformation && mo.additional_information !== true) listing.additional_information = media.additionalInformation.slice(0, 10000);
   if (media.facts && Object.keys(media.facts).length && mo.facts !== true) {
     // Mirror data is authoritative for the currently published detail page.
     // Replace provider-derived facts instead of merging stale keys from older
