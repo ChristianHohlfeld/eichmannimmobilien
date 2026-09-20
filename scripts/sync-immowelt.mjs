@@ -1664,10 +1664,19 @@ async function enrichGalleryFromSparkasse(page, listing) {
       }
       return lines.slice(start + 1, end);
     }
+    function cleanProse(value) {
+      return String(value || "")
+        .replace(/\s+/g, " ")
+        .replace(/\s+([,.;:!?])/g, "$1")
+        .replace(/([,.;:!?])(?=[A-Za-zÄÖÜäöüß])/g, "$1 ")
+        .replace(/A\+(?=[A-Za-zÄÖÜäöüß])/g, "A+ ")
+        .trim();
+    }
     function longestUseful(items, strip = "") {
       const cleaned = items
         .filter((line) => !/^(Mehr anzeigen|Auf Karte anzeigen|Loading \(MapContainer\)|Vollständige Adresse beim Anbieter)$/i.test(line))
         .map((line) => strip && line.startsWith(strip) ? line.slice(strip.length).trim() : line)
+        .map(cleanProse)
         .filter((line) => line.length > 20);
       return cleaned.sort((a,b) => b.length - a.length)[0] || "";
     }
@@ -1716,7 +1725,7 @@ async function enrichGalleryFromSparkasse(page, listing) {
       if (value) facts[label] = value;
     }
 
-    const sourceTitle = String(document.querySelector("h1")?.innerText || "").replace(/\s+/g, " ").trim();
+    const sourceTitle = cleanProse(document.querySelector("h1")?.innerText || "");
     const titleRef = sourceTitle.match(/\b([AB]\d{1,2})\b/i)?.[1]?.toUpperCase() || "";
     return {
       urls,
