@@ -2,9 +2,9 @@
  * Exposé Admin – password gate only for Helmut.
  * GitHub write token: session-only PAT at login (not stored in public config.json).
  * Legacy: optional github_token_sealed still unlockable if present.
- * Single Source of Truth = data/listings.json + this Admin.
- * Immowelt = optional inbound import only – NEVER write to Immowelt.
- * Every Insert/Update/Delete auto-triggers render-only (objekt/grids/sitemap).
+ * Single Source of Truth = Immowelt.
+ * This admin can only control website visibility (site_hidden) and trigger sync/render.
+ * Object content, price, status and availability are never authored here.
  */
 
 const STORAGE_AUTH = "ei_admin_auth";
@@ -212,41 +212,49 @@ function renderList() {
   }
   tbody.innerHTML = list
     .map((L) => {
-      const hasDesc = !!(L.description && String(L.description).trim());
-      const hasManual =
-        L.manual_overrides &&
-        Object.keys(L.manual_overrides).some((k) => k !== "updated_at" && L.manual_overrides[k] === true);
       const local = L.local_url ? `../${L.local_url}` : "#";
-      const srcBadge =
-        L.source === "local"
-          ? '<span class="badge local">lokal</span>'
-          : L.missing_on_immowelt
-            ? '<span class="badge warn">fehlt Immowelt</span>'
-            : '<span class="badge">Immowelt</span>';
-      const publicBadge = L.active === false
-        ? ' <span class="badge warn">inaktiv</span>'
+      const ref = String(L.reference_number || L.facts?.Referenznummer || "").trim().toUpperCase();
+      const visibilityBadge = L.site_hidden === true
+        ? ' <span class="badge warn">auf Website ausgeblendet</span>'
         : ' <span class="badge ok">öffentlich</span>';
+      const toggleLabel = L.site_hidden === true ? "Einblenden" : "Ausblenden";
+      const toggleClass = L.site_hidden === true ? "btn-primary" : "btn-outline";
       return `<tr>
         <td>
-          <strong>${esc(L.title || "–")}</strong>
-          <div>${srcBadge}${publicBadge}${hasManual ? ' <span class="badge manual">manuell</span>' : ""}</div>
+          <strong>${ref ? `<span class="badge">${esc(ref)}</span> ` : ""}${esc(L.title || "–")}</strong>
+          <div><span class="badge">Immowelt</span>${visibilityBadge}</div>
           <div class="mono muted">${esc(shortId(L.id))}</div>
         </td>
         <td>${esc(L.location || "–")}</td>
         <td>${esc(L.price || "–")}</td>
         <td><span class="badge">${esc(L.status || "–")}</span></td>
-        <td>${hasDesc ? '<span class="badge ok">ja</span>' : '<span class="badge miss">fehlt</span>'}</td>
+        <td>${L.description ? '<span class="badge ok">ja</span>' : '<span class="badge miss">fehlt</span>'}</td>
         <td>
-          <button type="button" class="btn btn-primary btn-sm" data-edit="${esc(L.id)}">Bearbeiten</button>
-          <a class="btn btn-outline btn-sm" href="${esc(local)}" target="_blank" rel="noopener">Link</a>
+          <button type="button" class="btn ${toggleClass} btn-sm" data-toggle-hidden="${esc(L.id)}">${toggleLabel}</button>
+          ${L.site_hidden === true ? "" : `<a class="btn btn-outline btn-sm" href="${esc(local)}" target="_blank" rel="noopener">Seite</a>`}
         </td>
       </tr>`;
     })
     .join("");
 
-  tbody.querySelectorAll("[data-edit]").forEach((btn) => {
-    btn.addEventListener("click", () => openDetail(btn.getAttribute("data-edit")));
+  tbody.querySelectorAll("[data-toggle-hidden]").forEach((btn) => {
+    btn.addEventListener("click", () => toggleSiteHidden(btn.getAttribute("data-toggle-hidden")));
   });
+}
+
+async function toggleSiteHidden(id) {
+  const L = findListing(id);
+  if (!L) return;
+  const nextHidden = L.site_hidden !== true;
+  L.site_hidden = nextHidden;
+  try {
+    await persistListings(`Admin: ${shortId(L.id)} ${nextHidden ? "ausgeblendet" : "eingeblendet"}`);
+    toast(nextHidden ? "Objekt auf Website ausgeblendet" : "Objekt wieder eingeblendet", "ok");
+    renderList();
+  } catch (e) {
+    L.site_hidden = !nextHidden;
+    toast(e.message, "error");
+  }
 }
 
 function resolveAssetUrl(baseOrPath) {
@@ -397,9 +405,11 @@ function utf8ToBase64(str) {
 }
 
 function ensureSotMeta() {
-  listingsData.sot = "local";
+  listingsData.sot = "immowelt";
   listingsData.listing_count = (listingsData.listings || []).length;
-  listingsData.active_listing_count = (listingsData.listings || []).filter((L) => L.active !== false).length;
+  listingsData.active_listing_count = (listingsData.listings || []).filter(
+    (L) => L.active !== false && L.site_hidden !== true
+  ).length;
 }
 
 function slugifyTitle(title, id) {
