@@ -67,5 +67,9 @@ jobs:
             echo "No listing changes."
           else
             git commit -m "chore: sync Immowelt listings ($(date -u +%Y-%m-%d))"
+            # Other site-only commits may land while the enrichment job is
+            # downloading galleries. Rebase generated output onto current main
+            # instead of losing a successful 10+ minute sync at push time.
+            git pull --rebase origin main
             git push
           fi
