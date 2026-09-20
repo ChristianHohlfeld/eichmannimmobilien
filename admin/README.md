@@ -6,7 +6,9 @@ Das Admin ist eine **statische Browseranwendung** auf GitHub Pages. Es gibt daf�
 
 ## Single Source of Truth
 
-`data/listings.json` ist die kanonische Datenquelle.
+**Immowelt** ist die kanonische fachliche Datenquelle. `data/listings.json` ist nur der lokale Spiegel.
+
+Das Admin darf Objektdaten nicht abweichend pflegen. Es steuert ausschließlich `site_hidden` (auf der eigenen Website aus-/einblenden) und kann Sync/Render auslösen.
 
 Immowelt ist ausschließlich ein optionaler **Inbound-Import**. Die Anwendung schreibt niemals in das Immowelt-Konto.
 
