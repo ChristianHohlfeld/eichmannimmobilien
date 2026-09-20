@@ -1811,6 +1811,40 @@ async function enrichGalleryFromSparkasse(page, listing) {
     const energy = section("Zustand und Energieausweis", ["Weitere Informationen","Anbieterinformationen"]);
     const more = section("Weitere Informationen", ["Anbieterinformationen"]);
 
+    // Hidden expanded prose is present in the server-rendered DOM even when
+    // the visual component initially shows a teaser. Extract the DOM range
+    // between section headings and prefer a non-ellipsis descendant.
+    function fullSectionText(name) {
+      const headings = [...document.querySelectorAll("h2,h3")];
+      const start = headings.find((el) => cleanProse(el.textContent) === name);
+      if (!start) return "";
+      const startIndex = headings.indexOf(start);
+      const end = headings.slice(startIndex + 1).find((el) => /^H2$/i.test(el.tagName)) || null;
+      try {
+        const range = document.createRange();
+        range.setStartAfter(start);
+        if (end) range.setEndBefore(end);
+        else range.setEndAfter(document.body.lastChild || document.body);
+        const fragment = range.cloneContents();
+        const candidates = [
+          fragment.textContent || "",
+          ...[...fragment.querySelectorAll("p,div,span")].map((el) => el.textContent || "")
+        ]
+          .map((value) => cleanProse(value).replace(/\s*Mehr anzeigen\s*$/i, "").trim())
+          .filter((value) => value.length > 40)
+          .filter((value, idx, arr) => arr.indexOf(value) === idx);
+        const complete = candidates.filter((value) => !/…\s*$/.test(value));
+        const pool = complete.length ? complete : candidates;
+        return pool.sort((a,b) => b.length - a.length)[0] || "";
+      } catch {
+        return "";
+      }
+    }
+
+    const fullDescription = fullSectionText("Objektbeschreibung");
+    const fullLocation = fullSectionText("Lage");
+    const fullMore = fullSectionText("Weitere Informationen");
+
     const factLabels = [
       "Kaufpreis","Käuferprovision","Nettokaltmiete","Tiefgaragen Stellplatz (Kaufpreis)",
       "PLZ","Ort","Wohnfläche","Grundstücksfläche","Anzahl Zimmer","Anzahl Balkone","Anzahl Terrassen",
@@ -1830,10 +1864,10 @@ async function enrichGalleryFromSparkasse(page, listing) {
       urls,
       sourceTitle,
       titleRef,
-      description: longestUseful(description, "Objektbeschreibung"),
-      locationDescription: longestUseful(location),
+      description: fullDescription || longestUseful(description, "Objektbeschreibung"),
+      locationDescription: fullLocation || longestUseful(location),
       amenities: dedupe(equipment.filter((line) => line.length >= 2 && line.length <= 100 && !/Mehr anzeigen/i.test(line))),
-      additionalInformation: longestUseful(more),
+      additionalInformation: fullMore || longestUseful(more),
       facts
     };
   });
