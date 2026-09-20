@@ -80,6 +80,11 @@
         return;
       }
 
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
       if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.textContent = "Wird gesendet …";

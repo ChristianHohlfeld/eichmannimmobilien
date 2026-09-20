@@ -23,9 +23,9 @@
   --muted: #7A818A;
 
   /* Type */
-  --font-display: "Source Serif 4", "Georgia", "Times New Roman", serif;
-  --font-script: "Caveat", "Segoe Print", "Comic Sans MS", cursive;
-  --font-body: "DM Sans", Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-script: "Segoe Print", "Bradley Hand", cursive;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --fs-h1: clamp(2.25rem, 4.5vw, 2.5rem);   /* ~40px */
   --fs-h2: clamp(1.5rem, 2.8vw, 1.75rem);    /* ~28px */
   --fs-h3: 1.125rem;                         /* ~18px */

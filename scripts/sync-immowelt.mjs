@@ -584,10 +584,7 @@ function renderExposeHtml(listing) {
   <link rel="icon" href="${p}assets/logo.svg?v=noclip-v1" type="image/svg+xml">
   <link rel="icon" href="${p}assets/logo.png" type="image/png" sizes="any">
   <link rel="apple-touch-icon" href="${p}assets/apple-touch-icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="${p}css/styles.css?v=sticky-neutral-v2">
+<link rel="stylesheet" href="${p}css/styles.css?v=sticky-neutral-v2">
   <script type="application/ld+json">
 ${JSON.stringify(schema, null, 2)}
   </script>
@@ -658,7 +655,7 @@ ${JSON.stringify(schema, null, 2)}
             <h2 style="margin-top:0;color:var(--ink)">Exposé anfragen</h2>
             <p class="form-note">Wir senden Ihnen gerne weitere Unterlagen. Ihre Anfrage geht an
               <a href="mailto:info@immobilien-eichmann.com">info@immobilien-eichmann.com</a>.</p>
-            <form id="contact-form" class="expose-form" action="https://formsubmit.co/info@immobilien-eichmann.com" method="POST" novalidate
+            <form id="contact-form" class="expose-form" action="https://formsubmit.co/info@immobilien-eichmann.com" method="POST"
               data-expose-title="${escapeHtml(title)}"
               data-expose-slug="${escapeHtml(listing.slug)}">
               <input type="hidden" name="_subject" value="${escapeHtml(anfrageSubject)} – Immobilien Eichmann">
@@ -694,15 +691,7 @@ ${JSON.stringify(schema, null, 2)}
                   `Guten Tag,\nich interessiere mich für: ${title}${listing.location ? ` (${listing.location})` : ""}.\nBitte senden Sie mir das Exposé / weitere Informationen.\n\nMit freundlichen Grüßen`
                 )}</textarea>
               </div>
-              <div class="form-group form-consent">
-                <label class="consent-label">
-                  <input type="checkbox" name="datenschutz" id="datenschutz" required>
-                  Ich bin mit der Verarbeitung meiner Angaben zur Bearbeitung der Anfrage einverstanden.
-                  Hinweise in der <a href="${p}datenschutz.html">Datenschutzerklärung</a>.
-                  Widerruf jederzeit über <a href="${p}vertrag-widerrufen.html">Vertrag widerrufen</a>
-                  bzw. die <a href="${p}widerrufsbelehrung.html">Widerrufsbelehrung</a>.
-                </label>
-              </div>
+              <p class="form-note legal-request-note">Mit dem Absenden werden Ihre Angaben zur Bearbeitung der Anfrage verarbeitet. Hinweise finden Sie in der <a href="${p}datenschutz.html">Datenschutzerklärung</a>. Die Anfrage ist unverbindlich; durch das Absenden kommt kein Maklervertrag zustande.</p>
               <button type="submit" class="btn btn-accent" id="contact-submit">Exposé anfragen</button>
               <div id="form-success" class="form-success" role="status" hidden>
                 Vielen Dank – Ihre Anfrage wurde übermittelt. Wir melden uns zeitnah.
@@ -765,7 +754,7 @@ ${JSON.stringify(schema, null, 2)}
       </div>
       <div class="footer-widerruf">
         <a class="btn btn-footer-widerruf" href="${p}vertrag-widerrufen.html">Vertrag widerrufen</a>
-        <p class="footer-widerruf-hint">Einwilligung oder Maklervertrag in Textform zurücknehmen</p>
+        <p class="footer-widerruf-hint">Maklervertrag in Textform widerrufen</p>
       </div>
       <div class="footer-bottom">
         <span>© <span id="y">2026</span> Immobilien Eichmann · Helmut Eichmann · Einzelunternehmen</span>
@@ -789,8 +778,9 @@ ${JSON.stringify(schema, null, 2)}
     </a>
   </nav>
 
-  <script src="${p}js/analytics.js" defer></script>
-  <script src="${p}js/main.js?v=flyer-root-v1" defer></script>
+  <script>window.__eichmannJsBase="${p}js/";</script>
+  <script src="${p}js/cookie-consent.js?v=abs-datenschutz-v2" defer></script>
+  <script src="${p}js/main.js?v=legal-baseline-v1" defer></script>
 </body>
 </html>
 `;
