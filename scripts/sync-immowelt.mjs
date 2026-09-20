@@ -1574,6 +1574,19 @@ async function enrichGalleryFromSparkasse(page, listing) {
   }
   await page.waitForTimeout(800);
 
+  // The syndicated detail page collapses long description/location blocks.
+  // Expand every visible "Mehr anzeigen" control before reading text so our
+  // local exposé never persists teaser text ending in an ellipsis.
+  const expanders = page.locator('button:has-text("Mehr anzeigen"), a:has-text("Mehr anzeigen")');
+  const expanderCount = await expanders.count().catch(() => 0);
+  for (let i = 0; i < expanderCount; i++) {
+    const control = expanders.nth(i);
+    if (await control.isVisible().catch(() => false)) {
+      await control.click({ timeout: 3000 }).catch(() => {});
+      await page.waitForTimeout(80);
+    }
+  }
+
   const media = await page.evaluate(() => {
     const urls = [];
     const seen = new Set();
@@ -1729,7 +1742,10 @@ async function enrichGalleryFromSparkasse(page, listing) {
   if (Array.isArray(media.amenities) && media.amenities.length && mo.amenities !== true) listing.amenities = media.amenities.slice(0, 40);
   if (media.additionalInformation && mo.additional_information !== true) listing.additional_information = media.additionalInformation.slice(0, 1800);
   if (media.facts && Object.keys(media.facts).length && mo.facts !== true) {
-    listing.facts = { ...(listing.facts || {}), ...media.facts };
+    // Mirror data is authoritative for the currently published detail page.
+    // Replace provider-derived facts instead of merging stale keys from older
+    // parser versions (e.g. a missing Nettokaltmiete swallowing the next label).
+    listing.facts = { ...media.facts };
   }
   if (listing.reference_number && listing.facts && mo.facts !== true) {
     listing.facts = { Referenznummer: listing.reference_number, ...listing.facts };
