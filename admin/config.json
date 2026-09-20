@@ -1,12 +1,12 @@
 {
-  "password_sha256": "ec5629d168a697d20c9fe6b47244a44040b90898b96da671c626bac915879f82",
+  "password_sha256": "328aa98fc811253a6d64cf44c54996db2ad3c51b2ffb959a11bcb1aa52c80c61",
   "repo": "ChristianHohlfeld/eichmannimmobilien",
   "branch": "main",
   "listings_path": "data/listings.json",
   "assets_prefix": "assets/listings",
   "workflow_file": "sync-immowelt.yml",
   "admin_save_workflow": "admin-save.yml",
-  "github_token_sealed": "AY060Fy9tTWdMkLWSEOqQm1j41MwYhGjBnAQn/x1M2/+2Io7QdgweNJMJKAJyOXw5+Tsd1BojA0lCIOB2w3IARewITmczPoZDEKqXckyQOgPOzljvg==",
+  "github_token_sealed": "AWE/tXBHqmoLOxHLRN/i8ponGzDuz7YdaQisIRpejbv6GHjfXAiEh/HViur+kX4atOA63Hsg5wS1LjvpCfxTw4YaH65O6ckp8hjMq/VMAKkah0aWww==",
   "kdf": {
     "name": "PBKDF2",
     "hash": "SHA-256",
