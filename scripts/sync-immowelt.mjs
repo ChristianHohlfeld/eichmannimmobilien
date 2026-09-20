@@ -104,6 +104,24 @@ const PROJECT_REFERENCE_BY_IMMOWELT_ID = Object.freeze({
   "ff414db8-7e3d-4a01-99f8-029fe15a4d55": "A2"
 });
 
+const PROJECT_DISPLAY_TITLE_BY_IMMOWELT_ID = Object.freeze({
+  "4fed09f2-bcef-4e96-ba56-810037b569c0": "Wohnung A5 · 3 Zimmer · Neubau Sunside Living",
+  "aebb3257-3317-4452-bc9c-a5dbc5ed3838": "Wohnung B3 · 4 Zimmer · Neubau Sunside Living",
+  "484fee8a-e3f0-4f06-8d26-d740c290b320": "Wohnung A12 · 4 Zimmer · Neubau Sunside Living",
+  "4ac199b6-606e-470b-bb7e-d8646d47ea80": "Wohnung A9 · 4 Zimmer · Neubau Sunside Living",
+  "bb241b38-d292-4047-98fd-4352b841bc5a": "Wohnung A3 · 2 Zimmer · Neubau Sunside Living",
+  "ff414db8-7e3d-4a01-99f8-029fe15a4d55": "Wohnung A2 · 2 Zimmer · Neubau Sunside Living"
+});
+
+const PROJECT_LOCATION_BY_IMMOWELT_ID = Object.freeze({
+  "4fed09f2-bcef-4e96-ba56-810037b569c0": "Kindlebildstraße, Wollmatingen, Konstanz (78467)",
+  "aebb3257-3317-4452-bc9c-a5dbc5ed3838": "Kindlebildstraße, Wollmatingen, Konstanz (78467)",
+  "484fee8a-e3f0-4f06-8d26-d740c290b320": "Kindlebildstraße, Wollmatingen, Konstanz (78467)",
+  "4ac199b6-606e-470b-bb7e-d8646d47ea80": "Kindlebildstraße, Wollmatingen, Konstanz (78467)",
+  "bb241b38-d292-4047-98fd-4352b841bc5a": "Kindlebildstraße, Wollmatingen, Konstanz (78467)",
+  "ff414db8-7e3d-4a01-99f8-029fe15a4d55": "Kindlebildstraße, Wollmatingen, Konstanz (78467)"
+});
+
 function escapeHtml(s) {
   return String(s ?? "")
     .replace(/&/g, "&amp;")
@@ -1625,14 +1643,22 @@ async function enrichGalleryFromSparkasse(page, listing) {
     function dedupe(items) {
       return [...new Set(items.map((x) => String(x || "").trim()).filter(Boolean))];
     }
+    const knownFactLabels = new Set([
+      "Kaufpreis","Käuferprovision","Nettokaltmiete","Tiefgaragen Stellplatz (Kaufpreis)","Garagen Stellplatz (Kaufpreis)",
+      "Garagen Stellplatz (Kaufpreis)","PLZ","Ort","Wohnfläche","Grundstücksfläche",
+      "Anzahl Zimmer","Anzahl Balkone","Anzahl Terrassen","Parkplatztyp",
+      "Anzahl Tiefgaragen Stellplätze","Zustand","Boden","Energieausweistyp",
+      "Energiestandard","Effizienzklasse","Ausstellungsdatum des Energieausweises",
+      "Energieausweis gültig bis","Gebäudeart","Heizung","Befeuerung","Endenergiebedarf"
+    ]);
     function valueAfter(label, pools) {
       for (const pool of pools) {
         const idx = pool.findIndex((line) => line === label);
-        if (idx >= 0) {
-          for (let j = idx + 1; j < Math.min(pool.length, idx + 4); j++) {
-            const value = pool[j];
-            if (value && value !== "Keine Angabe" && value !== label && !/^(Mehr anzeigen)$/i.test(value)) return value;
-          }
+        if (idx < 0) continue;
+        for (let j = idx + 1; j < Math.min(pool.length, idx + 4); j++) {
+          const value = pool[j];
+          if (knownFactLabels.has(value)) break;
+          if (value && value !== "Keine Angabe" && value !== label && !/^(Mehr anzeigen)$/i.test(value)) return value;
         }
       }
       return "";
@@ -1683,11 +1709,17 @@ async function enrichGalleryFromSparkasse(page, listing) {
     listing.images = mediaUrls.slice(0, 80);
     if (!listing.main_image_url) listing.main_image_url = listing.images[0];
   }
+  const listingKey = String(listing.id || "").toLowerCase();
   if (media.sourceTitle && mo.source_title !== true) listing.source_title = media.sourceTitle;
-  if (media.sourceTitle && mo.title !== true) listing.title = media.sourceTitle;
+  if (mo.title !== true) {
+    listing.title = PROJECT_DISPLAY_TITLE_BY_IMMOWELT_ID[listingKey] || media.sourceTitle || listing.title;
+  }
+  if (mo.location !== true && PROJECT_LOCATION_BY_IMMOWELT_ID[listingKey]) {
+    listing.location = PROJECT_LOCATION_BY_IMMOWELT_ID[listingKey];
+  }
   if (mo.reference_number !== true) {
     listing.reference_number =
-      PROJECT_REFERENCE_BY_IMMOWELT_ID[String(listing.id || "").toLowerCase()] ||
+      PROJECT_REFERENCE_BY_IMMOWELT_ID[listingKey] ||
       media.titleRef ||
       listing.reference_number ||
       null;
