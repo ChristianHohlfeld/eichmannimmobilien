@@ -587,7 +587,7 @@ function renderExposeHtml(listing) {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="${p}css/styles.css?v=widerruf-accept-v1">
+  <link rel="stylesheet" href="${p}css/styles.css?v=expose-lightbox-v2">
   <script type="application/ld+json">
 ${JSON.stringify(schema, null, 2)}
   </script>
@@ -790,7 +790,7 @@ ${JSON.stringify(schema, null, 2)}
   </nav>
 
   <script src="${p}js/analytics.js" defer></script>
-  <script src="${p}js/main.js?v=expose-lightbox-v1" defer></script>
+  <script src="${p}js/main.js?v=expose-lightbox-v2" defer></script>
 </body>
 </html>
 `;

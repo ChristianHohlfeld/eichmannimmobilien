@@ -267,7 +267,7 @@
   }
 
 
-  /* Exposé lightbox (Klick auf Bild öffnet Großansicht) */
+  /* Exposé lightbox v2 — Close fixed am Viewport */
   (function exposeLightbox() {
     var roots = [];
     var g = document.getElementById("expose-gallery");

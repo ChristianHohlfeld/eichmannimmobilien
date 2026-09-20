@@ -1,4 +1,4 @@
-/* expose-lightbox-v1 */
+/* expose-lightbox-v2 */
 /* sticky-icons-neutral-v1 + flyer-session-once */
 /* cta-script-caveat v1 */
 /* Immobilien Eichmann – Design Brief v1
@@ -1681,7 +1681,9 @@ a.listing-card:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: 3.25rem 1rem 1.5rem;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
   background: rgba(15, 39, 68, 0.82);
 }
 .lb-dialog {
@@ -1707,24 +1709,29 @@ a.listing-card:focus-visible {
 }
 .lb-close,
 .lb-nav {
-  position: absolute;
+  position: fixed;
+  z-index: 1002;
   border: 0;
-  background: rgba(255,255,255,0.92);
+  background: rgba(255,255,255,0.95);
   color: var(--primary);
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 999px;
-  font-size: 1.35rem;
+  font-size: 1.4rem;
   line-height: 1;
   cursor: pointer;
   display: grid;
   place-items: center;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.28);
 }
-.lb-close { top: -0.35rem; right: -0.35rem; }
+/* Close always on viewport — visible while scrolling the image */
+.lb-close {
+  top: max(0.75rem, env(safe-area-inset-top));
+  right: max(0.75rem, env(safe-area-inset-right));
+}
 .lb-nav { top: 50%; transform: translateY(-50%); }
-.lb-prev { left: -0.25rem; }
-.lb-next { right: -0.25rem; }
+.lb-prev { left: max(0.5rem, env(safe-area-inset-left)); }
+.lb-next { right: max(0.5rem, env(safe-area-inset-right)); }
 .lb-close:hover,
 .lb-nav:hover { background: #fff; }
 .lb-caption {
@@ -1734,9 +1741,12 @@ a.listing-card:focus-visible {
   font-size: 0.9rem;
 }
 @media (max-width: 700px) {
-  .lb-prev { left: 0.15rem; }
-  .lb-next { right: 0.15rem; }
-  .lb-close { top: 0.15rem; right: 0.15rem; }
+  .lb-close {
+    top: max(0.5rem, env(safe-area-inset-top));
+    right: max(0.5rem, env(safe-area-inset-right));
+  }
+  .lb-prev { left: max(0.25rem, env(safe-area-inset-left)); }
+  .lb-next { right: max(0.25rem, env(safe-area-inset-right)); }
 }
 
 /* Footer Widerruf-CTA (BI-Parität: prominenter Button) */
