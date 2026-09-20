@@ -25,6 +25,13 @@ jobs:
         run: |
           set -euo pipefail
           payload='{"anrede":"Herr","vorname":"Technischer","name":"Test","strasse":"Teststraße 1","plz":"78462","ort":"Konstanz","phone":"000000000","email":"technical-test@example.com","anliegen":"Exposé-Anfrage","objekt":"TECHNISCHER TEST – bitte ignorieren","objekt_url":"https://immobilieneichmann.de/","_subject":"TECHNISCHER TEST Exposé-Formular – bitte ignorieren","_template":"table","_captcha":"false"}'
-          response="$(curl --fail-with-body -sS -X POST             -H 'Content-Type: application/json'             -H 'Accept: application/json'             --data "$payload"             'https://formsubmit.co/ajax/info@immobilien-eichmann.com')"
+          response="$(curl --fail-with-body -sS -X POST \
+            -H 'Content-Type: application/json' \
+            -H 'Accept: application/json' \
+            -H 'Origin: https://immobilieneichmann.de' \
+            -H 'Referer: https://immobilieneichmann.de/objekt/penthouse-konigsbau-c6b1d820.html' \
+            -H 'User-Agent: Mozilla/5.0' \
+            --data "$payload" \
+            'https://formsubmit.co/ajax/info@immobilien-eichmann.com')"
           echo "$response"
           RESPONSE="$response" node -e 'const r=JSON.parse(process.env.RESPONSE); if (!(r.success===true || r.success==="true")) { console.error(r); process.exit(1); }'
