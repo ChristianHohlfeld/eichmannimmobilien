@@ -7,6 +7,7 @@ on:
       - '**/*.html'
       - 'assets/logo.*'
       - 'scripts/test-layout-regression.mjs'
+      - 'scripts/test-expose-form.mjs'
       - 'scripts/test-legal-baseline.mjs'
       - '.github/workflows/layout-regression.yml'
       - 'package.json'
@@ -18,6 +19,7 @@ on:
       - '**/*.html'
       - 'assets/logo.*'
       - 'scripts/test-layout-regression.mjs'
+      - 'scripts/test-expose-form.mjs'
       - '.github/workflows/layout-regression.yml'
       - 'package.json'
       - 'package-lock.json'
@@ -36,6 +38,8 @@ jobs:
         run: node scripts/test-legal-baseline.mjs
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
+      - name: Exposé inquiry flow
+        run: node scripts/test-expose-form.mjs
       - name: Layout regression hard gate (Desktop + Mobile)
         env:
           STRICT: "1"
