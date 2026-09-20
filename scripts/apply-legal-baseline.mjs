@@ -37,7 +37,7 @@ function replaceDataConsent(s, prefix) {
 }
 
 function ensurePrivacyAck(s, prefix) {
-  if (!s.includes('class="legal-request-note"') || s.includes('name="privacy_ack"')) return s;
+  if (!s.includes('legal-request-note') || s.includes('name="privacy_ack"')) return s;
   const ack =
     '<div class="form-group form-consent privacy-ack">' +
     '<label class="consent-label" for="privacy-ack">' +
