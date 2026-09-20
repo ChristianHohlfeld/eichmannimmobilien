@@ -23,8 +23,8 @@
   var y = document.getElementById("y");
   if (y) y.textContent = String(new Date().getFullYear());
 
-  /* FormSubmit → info@immobilien-eichmann.com */
-  var FORM_ENDPOINT = "https://formsubmit.co/ajax/info@immobilien-eichmann.com";
+  /* Eigenes, getrenntes Customer-Forms-Gateway → Amazon SES → Helmut */
+  var FORM_BASE = "https://forms.digitalisierungsplanung.de/v1/immobilieneichmann";
   var MAILTO_TO = "info@immobilien-eichmann.com";
 
   function valueOf(form, name) {
@@ -123,10 +123,7 @@
       var payload = {
         email: valueOf(form, "email"),
         phone: valueOf(form, "phone"),
-        anliegen: anliegen,
-        _subject: anliegen + " – Immobilien Eichmann (Webformular)",
-        _template: "table",
-        _captcha: "false"
+        anliegen: anliegen
       };
 
       if (isExpose) {
@@ -143,7 +140,9 @@
         payload.message = valueOf(form, "message");
       }
 
-      fetch(FORM_ENDPOINT, {
+      var formEndpoint = FORM_BASE + (isExpose ? "/expose" : "/contact");
+
+      fetch(formEndpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -152,18 +151,14 @@
         body: JSON.stringify(payload)
       })
         .then(function (res) {
-          return res.json().then(function (data) {
+          return res.json().catch(function () { return {}; }).then(function (data) {
             return { ok: res.ok, data: data };
           });
         })
         .then(function (result) {
-          /* FormSubmit: success true, or first-time activation message */
-          if (result.ok && result.data && (result.data.success === "true" || result.data.success === true)) {
+          if (result.ok && result.data && result.data.success === true) {
             show(success, true);
             form.reset();
-          } else if (result.ok && result.data && /Activ/i.test(JSON.stringify(result.data))) {
-            show(success, true);
-            if (success) success.textContent = "Bitte einmal die Bestätigung in info@immobilien-eichmann.com öffnen (erster Formularversand), danach kommen Anfragen direkt an.";
           } else {
             show(error, true);
           }
