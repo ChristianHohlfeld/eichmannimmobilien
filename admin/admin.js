@@ -19,6 +19,8 @@ const EDITABLE_FIELDS = [
   "living_area",
   "location",
   "status",
+  "active",
+  "detail_page",
 ];
 
 let config = null;
@@ -221,10 +223,13 @@ function renderList() {
           : L.missing_on_immowelt
             ? '<span class="badge warn">fehlt Immowelt</span>'
             : '<span class="badge">Immowelt</span>';
+      const publicBadge = L.active === false
+        ? ' <span class="badge warn">inaktiv</span>'
+        : ' <span class="badge ok">öffentlich</span>';
       return `<tr>
         <td>
           <strong>${esc(L.title || "–")}</strong>
-          <div>${srcBadge}${hasManual ? ' <span class="badge manual">manuell</span>' : ""}</div>
+          <div>${srcBadge}${publicBadge}${hasManual ? ' <span class="badge manual">manuell</span>' : ""}</div>
           <div class="mono muted">${esc(shortId(L.id))}</div>
         </td>
         <td>${esc(L.location || "–")}</td>
@@ -275,6 +280,8 @@ function openDetail(id) {
   $("edit-location").value = L.location || "";
   $("edit-short").value = L.short_description || "";
   $("edit-desc").value = L.description || "";
+  $("edit-active").checked = L.active !== false;
+  $("edit-detail-page").checked = L.detail_page !== false;
   $("detail-title").textContent = L.title || "Objekt";
   const link = $("link-local");
   if (L.local_url) {
@@ -392,6 +399,7 @@ function utf8ToBase64(str) {
 function ensureSotMeta() {
   listingsData.sot = "local";
   listingsData.listing_count = (listingsData.listings || []).length;
+  listingsData.active_listing_count = (listingsData.listings || []).filter((L) => L.active !== false).length;
 }
 
 function slugifyTitle(title, id) {
@@ -532,6 +540,8 @@ async function saveEdit(ev) {
     location: $("edit-location").value.trim() || null,
     short_description: $("edit-short").value.trim() || null,
     description: $("edit-desc").value.trim() || null,
+    active: $("edit-active").checked,
+    detail_page: $("edit-detail-page").checked,
   };
 
   const changed = [];
@@ -652,6 +662,8 @@ async function createListing(ev) {
     immowelt_id: immowelt ? immowelt.immowelt_id : null,
     sync_policy: "independent",
     missing_on_immowelt: false,
+    active: true,
+    detail_page: true,
     manual_overrides: {
       title: true,
       price: true,
@@ -660,6 +672,8 @@ async function createListing(ev) {
       living_area: true,
       status: true,
       short_description: true,
+      active: true,
+      detail_page: true,
       updated_at: new Date().toISOString(),
     },
   };
