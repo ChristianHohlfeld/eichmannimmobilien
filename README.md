@@ -251,6 +251,8 @@ Typische Felder eines Listings:
 - `immowelt_id`
 - `sync_policy`
 - `missing_on_immowelt`
+- `active` – steuert, ob ein Objekt öffentlich erscheint; `false` behält es intern, veröffentlicht es aber nicht
+- `detail_page` – `false` erlaubt einen öffentlichen Kontakt-Teaser ohne erfundene Exposé-Inhalte; nur `true` erzeugt Detailseite und Sitemap-Eintrag
 - optional `manual_overrides`
 
 Die HTML-Seiten unter `objekt/`, die Karten auf Start-/Projektseite und die Objekt-URLs in `sitemap.xml` werden daraus erzeugt.
@@ -1117,3 +1119,8 @@ Logoänderungen immer gemeinsam mit `scripts/test-logo-consistency.mjs` prüfen.
 8. **Analytics niemals vor Consent laden.**
 9. **Objekt-Templateänderungen immer zentral im Generator durchführen.**
 10. **Nach Änderungen Tests und Pages-Deployment prüfen.**
+
+
+### Objektstandort statt Objektadresse
+
+Exakte Objektadressen werden öffentlich nicht ausgegeben. Angebotskarten, Exposé-Fakten, Beschreibungen und die öffentliche `data/listings.json` werden auf Stadtteil/Ort reduziert. Die Geschäftsadresse von Immobilien Eichmann in Footer/Impressum bleibt davon unberührt.
