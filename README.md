@@ -6,9 +6,9 @@ Statische Website für **Immobilien Eichmann / Helmut Eichmann** in Konstanz.
 - Repository: `ChristianHohlfeld/eichmannimmobilien`
 - Branch für Produktion: `main`
 - Hosting: **GitHub Pages**
-- Anwendungsserver: **keiner**
+- Formular-Backend: **eigener, getrennter Gateway-Dienst auf dem bestehenden VPS**
 - eigene Datenbank: **keine**
-- produktiver Node-/PHP-/Python-Prozess: **keiner**
+- produktiver Node-Prozess für Formulare: **`dp-forms.service` auf `forms.digitalisierungsplanung.de`**
 
 Stand dieser Dokumentation: **20.09.2026**.
 
@@ -16,7 +16,7 @@ Stand dieser Dokumentation: **20.09.2026**.
 
 ## 1. Architektur in einem Satz
 
-Die öffentliche Website besteht ausschließlich aus statischen HTML-, CSS-, JavaScript-, JSON- und Bilddateien auf GitHub Pages. Alles, was dynamisch wirkt, läuft entweder **im Browser**, über **GitHub API / GitHub Actions** oder über klar benannte Drittanbieter wie **FormSubmit**, **Immowelt** und – nach Consent – **Google Analytics**.
+Die öffentliche Website selbst besteht aus statischen HTML-, CSS-, JavaScript-, JSON- und Bilddateien auf GitHub Pages. Kontakt- und Exposé-Anfragen gehen an einen **eigenen, technisch getrennten Formular-Gateway-Dienst** unter `forms.digitalisierungsplanung.de`; weitere dynamische Abläufe laufen im Browser, über GitHub API / GitHub Actions oder über klar benannte Dienste wie Immowelt, Amazon SES und – nach Consent – Google Analytics.
 
 ```text
 Besucher
@@ -27,7 +27,7 @@ GitHub Pages / immobilieneichmann.de
   +--> HTML + CSS + Vanilla JavaScript
   |
   +--> Kontakt-/Exposé-Anfrage
-  |      Browser -> FormSubmit -> info@immobilien-eichmann.com
+  |      Browser -> forms.digitalisierungsplanung.de -> Amazon SES -> info@immobilien-eichmann.com
   |
   +--> Analytics nur nach Consent
   |      Browser -> Google Analytics 4
@@ -56,7 +56,7 @@ GitHub Actions Cron
          -> HTML / Sitemap neu rendern
 ```
 
-Es gibt **keinen eigenen Server**, auf dem eine Webanwendung dauerhaft läuft. GitHub-Actions-Runner sind nur kurzlebige Build-/Automationsmaschinen und gehören nicht zum produktiven Request-Pfad eines normalen Seitenaufrufs.
+Die Website-Dateien selbst laufen weiterhin ohne Application Server auf GitHub Pages. Für Formulare existiert bewusst ein kleiner separater Node-Dienst auf dem vorhandenen `digitalisierungsplanung.de`-VPS. Er hat eigene Runtime/Env, keine gemeinsame Produkt-DB oder Session und speichert keine Formularinhalte in einer eigenen Datenbank. GitHub-Actions-Runner bleiben kurzlebige Build-/Automationsmaschinen.
 
 ---
 
@@ -90,7 +90,7 @@ Für Objektseiten unter `/objekt/` wird über `window.__eichmannJsBase` sicherge
 
 ## 3. Node-/Build-Stack
 
-Node wird **nicht auf dem Produktionsserver** benötigt, weil es keinen Produktionsserver gibt. Node wird nur lokal und in GitHub Actions für Generierung, Scraping, Bildverarbeitung und Tests verwendet.
+Dieses Repository benötigt Node lokal und in GitHub Actions für Generierung, Scraping, Bildverarbeitung und Tests. Der separate Formular-Gateway läuft serverseitig als Node-Dienst im Repository `ChristianHohlfeld/digitalisierungsplanung.de`; er ist nicht Teil des statischen GitHub-Pages-Deployments dieses Repositories.
 
 `package.json` verlangt Node **>= 20**.
 
@@ -130,9 +130,9 @@ npx playwright install chromium
 
 ### Haben wir einen eigenen Server?
 
-**Nein.**
+**Für die statische Website nein; für Formulare ja.**
 
-Es gibt keinen eigenen VPS, keinen Apache/Nginx, keinen Express-Server, kein PHP-FPM, keinen Application Container und keine selbst betriebene Datenbank für diese Website.
+GitHub Pages liefert die Website aus. Kontakt- und Exposé-POSTs gehen an den vorhandenen VPS unter `forms.digitalisierungsplanung.de`. Dort terminiert Nginx TLS und routet ausschließlich die Formularpfade an `dp-forms.service` auf Loopback-Port `8791`. Es gibt weiterhin keine eigene Formular-Datenbank.
 
 ### Wo liegt die Website?
 
@@ -159,7 +159,7 @@ Die DNS-Konfiguration selbst liegt **außerhalb dieses Repositories** beim jewei
 1. DNS löst `immobilieneichmann.de` auf GitHub Pages auf.
 2. GitHub Pages liefert fertige statische Dateien aus.
 3. Der Browser führt `cookie-consent.js` und `main.js` aus.
-4. Es findet **kein Request an einen eigenen Backend-Server** statt.
+4. Nur beim Absenden eines Kontakt-/Exposé-Formulars wird `forms.digitalisierungsplanung.de` aufgerufen.
 5. Drittanbieter werden nur für die jeweils beschriebenen Funktionen aufgerufen.
 
 ---
@@ -406,10 +406,9 @@ Zusätzlich zu den sichtbaren Feldern werden Objektkontext und Mail-Metadaten mi
 - `anliegen = Exposé-Anfrage`
 - `objekt`
 - `objekt_url`
-- `_subject`
-- `_template = table`
-- `_captcha = false`
-- ein clientseitiges Honeypot-Feld `botcheck`
+- ein Honeypot-Feld `botcheck`
+
+Mail-Betreff und Empfänger werden serverseitig festgelegt; der Browser darf sie nicht frei bestimmen.
 
 ### Validierung
 
@@ -430,15 +429,11 @@ Regressionstest:
 npm run test:expose-form
 ```
 
-Der Test startet Chromium, lädt eine generierte Exposé-Seite, prüft **Feldsatz, Reihenfolge, Required-Status, Payload und Success-UI** und mockt nur den externen FormSubmit-Transport.
+Der Test startet Chromium, lädt eine generierte Exposé-Seite, prüft **Feldsatz, Reihenfolge, Required-Status, Payload und Success-UI** und mockt ausschließlich die Netzwerkgrenze zum eigenen Formular-Gateway.
 
-### Warum kein automatischer echter Mailtest in GitHub Actions?
+### Serverseitige Trust-Grenze
 
-FormSubmit akzeptiert reguläre Browser-AJAX-Requests, blockiert aber automatisierte Requests aus GitHub-hosted Runnern mit Anti-Bot-/Rate-Limit-Verhalten; bei den realen Cloud-Runner-Probes wurde HTTP 403 beobachtet.
-
-Deshalb ist ein GitHub-Runner kein verlässlicher Test für tatsächliche Endkunden-Browserzustellung.
-
-Der stabile CI-Test prüft unseren kompletten Browsercode bis zur externen Transportgrenze. Ein echter Zustellungstest muss bei Bedarf aus einem normalen Browser auf der Produktionsdomain durchgeführt und im Zielpostfach kontrolliert werden.
+Zusätzlich zur Browservalidierung validiert der Gateway die Pflichtfelder nochmals serverseitig. Er erzwingt Tenant, erlaubte Origins, feste Empfänger, feste Exposé-URL-Domain, Requestgrößen und Rate-Limits. Erfolg wird erst gemeldet, nachdem Amazon SES den Versand angenommen hat.
 
 ---
 
@@ -470,85 +465,33 @@ Auch hier:
 
 ## 11. Wie E-Mails tatsächlich verschickt werden
 
-Es gibt **keinen eigenen SMTP-Server** und keine Mailbibliothek im Repository.
-
-Der produktive Browsercode verwendet:
+Produktiver Pfad:
 
 ```text
-https://formsubmit.co/ajax/info@immobilien-eichmann.com
-```
-
-### Normaler JavaScript-Pfad
-
-`js/main.js` ruft per `fetch()` auf:
-
-```text
-Browser
+Browser auf immobilieneichmann.de
   -> HTTPS JSON POST
-  -> FormSubmit
-  -> E-Mail an info@immobilien-eichmann.com
+  -> https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/{contact|expose}
+  -> Nginx
+  -> dp-forms.service (127.0.0.1:8791)
+  -> Amazon SES
+  -> info@immobilien-eichmann.com
 ```
 
-Erwartete Antwort:
+Der Gateway ist vom Hauptprodukt `digitalisierungsplanung.de` getrennt: eigener systemd-Dienst, eigener Linux-User, eigene Environment-Datei, eigener Loopback-Port, keine gemeinsame Account-Datenbank und keine Produktsession.
+
+Bei Erfolg antwortet er mit:
 
 ```json
-{ "success": true }
+{ "success": true, "requestId": "…" }
 ```
 
-Bei Erfolg:
+Bei Fehler zeigt die Website die bestehende Fehlerbox und den Mailto-Fallback. Die HTML-Formulare besitzen zusätzlich ein normales `action` auf denselben Gateway und `method="POST"` als einfachen No-JavaScript-Fallback.
 
-- Erfolgsbox wird eingeblendet
-- Formular wird zurückgesetzt
+### Speicherung und Logs
 
-Bei Fehler:
+Kontakt-/Exposé-Eingaben werden nicht in dieses GitHub-Repository, Local Storage, Session Storage oder eine eigene Formular-Datenbank geschrieben. Der Gateway verarbeitet sie im Arbeitsspeicher für Validierung und Mailversand. Seine technischen Logs enthalten Request-ID, Tenant, Flow, Status und Dauer, aber keine Formularinhalte oder Kontaktdaten. Danach liegt die Anfrage als E-Mail im Zielpostfach `info@immobilien-eichmann.com`, abhängig von dessen Aufbewahrungseinstellungen.
 
-- Fehlerbox wird eingeblendet
-- Nutzer kann über den Mailto-Fallback sein lokales Mailprogramm öffnen
-
-### Fallback ohne JavaScript
-
-Die HTML-Formulare besitzen zusätzlich ein normales `action="https://formsubmit.co/..."` und `method="POST"`.
-
-Wenn die JavaScript-Abfanglogik nicht läuft, kann der Browser damit weiterhin klassisch an FormSubmit posten.
-
-### Aktivierung
-
-FormSubmit verlangt bei einer neu verwendeten Empfängeradresse eine einmalige Bestätigung per E-Mail.
-
-### Wo werden Anfrage-Daten gespeichert?
-
-**Nicht in unserer eigenen Website und nicht in `data/listings.json`.**
-
-Unsere Codebasis schreibt Kontakt-/Exposé-Anfragen:
-
-- nicht ins GitHub-Repository
-- nicht in Local Storage
-- nicht in Session Storage
-- nicht in eine eigene Datenbank
-
-FormSubmit verarbeitet die Anfrage als externer Form-Backend-Anbieter und dokumentiert für sein Submission-Archiv eine Aufbewahrung von **30 Tagen**.
-
-Danach existiert die Anfrage außerdem als E-Mail im Zielpostfach, abhängig von den dortigen Mailbox-/Retention-Einstellungen.
-
-### Wo liegt das Zielpostfach?
-
-Empfänger:
-
-```text
-info@immobilien-eichmann.com
-```
-
-Die konkrete Mailbox-/MX-Infrastruktur dieser Adresse wird **nicht in diesem Repository konfiguriert**. Sie gehört zum externen E-Mail-/DNS-Provider der Domain `immobilien-eichmann.com`.
-
-Wichtig: Website-Domain und Mail-Domain sind verschieden:
-
-```text
-Website: immobilieneichmann.de
-E-Mail:  immobilien-eichmann.com
-```
-
-GitHub Pages hostet die Website, **nicht das E-Mail-Postfach**.
-
+GitHub Pages hostet die Website, **nicht das E-Mail-Postfach**. Der Versand erfolgt über Amazon SES; die konkrete Mailbox-/MX-Infrastruktur von `immobilien-eichmann.com` wird weiterhin nicht in diesem Repository konfiguriert.
 ---
 
 ## 12. Datenschutz- und Consent-Runtime
@@ -938,9 +881,7 @@ npm run test:expose-form
 
 ### Exposé-Flow-Test
 
-`scripts/test-expose-form.mjs` prüft mit echtem Chromium unseren kompletten Browserflow, wobei nur der externe FormSubmit-Endpunkt kontrolliert gemockt wird.
-
-Das verhindert, dass externe Anti-Bot-Systeme einen CI-Build zufällig rot machen.
+`scripts/test-expose-form.mjs` prüft mit echtem Chromium unseren kompletten Browserflow und mockt kontrolliert nur die Netzwerkgrenze zum eigenen Formular-Gateway. Feldsatz, Validierung, Payload und Success-UI bleiben dadurch deterministisch testbar.
 
 ---
 
@@ -989,7 +930,8 @@ Wichtig: `robots.txt` ist **keine Zugriffskontrolle**.
 | GitHub Pages | jeder Seitenaufruf | statisches Hosting/CDN | normale HTTP-Verbindungsdaten |
 | GitHub REST API | nur Admin-Nutzung | Listings/Bilder lesen und schreiben, Workflows dispatchen | Repo-Daten + PAT im Request |
 | GitHub Actions | Cron, Push, Admin-Dispatch | Scrape, Render, Tests, Bildverarbeitung | Repo-/Build-Daten |
-| FormSubmit | Kontakt-/Exposé-Submit | Form-Backend und E-Mail-Weiterleitung | vom Nutzer eingegebene Formulardaten |
+| eigenes Formular-Gateway (`forms.digitalisierungsplanung.de`) | Kontakt-/Exposé-Submit | serverseitige Validierung und Mail-Übergabe | vom Nutzer eingegebene Formulardaten |
+| Amazon SES | nach erfolgreicher Gateway-Validierung | transaktionaler E-Mail-Versand | Formulardaten im Mailinhalt + Empfänger/Reply-To |
 | Immowelt | automatischer Import / externe Links | öffentliche Objektquelle | öffentliche Objektdaten |
 | Google Analytics 4 | nur nach Analytics-Consent | Statistik | Analytics-/Browserdaten nach Google-Konfiguration |
 | Google Maps | nur nach Nutzer-Klick | externe Kartenansicht | erst nach Öffnen von Google |
@@ -997,7 +939,6 @@ Wichtig: `robots.txt` ist **keine Zugriffskontrolle**.
 
 Nicht vorhanden:
 
-- eigener Backend-Server
 - eigene SQL-/NoSQL-Datenbank
 - WordPress
 - PHP
@@ -1017,8 +958,8 @@ Nicht vorhanden:
 | Immobilien-Stammdaten | `data/listings.json` im Git-Repo |
 | Objektbilder | `assets/listings/` im Git-Repo |
 | generierte Exposés | `objekt/*.html` im Git-Repo |
-| Kontakt-/Exposé-Eingaben | nicht im eigenen Repo; Transport über FormSubmit |
-| FormSubmit Submission-Archiv | bei FormSubmit, laut deren Doku 30 Tage |
+| Kontakt-/Exposé-Eingaben | nicht im Repo/Browser-Speicher; flüchtige Verarbeitung im eigenen Formular-Gateway, danach E-Mail-Versand über Amazon SES |
+| Formular-Gateway-Logs | nur technische Metadaten ohne Formularinhalte/Kontaktdaten |
 | zugestellte Anfragen | Ziel-Mailbox `info@immobilien-eichmann.com` |
 | Analytics-Daten | Google Analytics, nur nach Consent |
 | Consent-Auswahl | Browser-`localStorage` |
@@ -1056,7 +997,7 @@ Der Fallback `admin_save_listings` kann jedoch die komplette JSON aus dem Browse
 
 Die Browservalidierung verhindert normale leere Submits.
 
-Da Client-Code grundsätzlich manipulierbar ist, ist das keine serverseitige Trust-Grenze. FormSubmit ist der externe Backend-Dienst und übernimmt den tatsächlichen Empfang.
+Da Client-Code grundsätzlich manipulierbar ist, validiert `dp-forms.service` dieselben Pflichtfelder serverseitig. Der Gateway erzwingt feste Tenant-/Origin-/Empfängerregeln, Body- und Rate-Limits und akzeptiert für Exposés nur Objekt-URLs der Eichmann-Domain.
 
 ---
 
@@ -1156,8 +1097,7 @@ Logoänderungen immer gemeinsam mit `scripts/test-logo-consistency.mjs` prüfen.
 - GitHub Pages: https://docs.github.com/pages
 - GitHub REST API: https://docs.github.com/rest
 - GitHub Actions: https://docs.github.com/actions
-- FormSubmit: https://formsubmit.co/documentation
-- FormSubmit AJAX: https://formsubmit.co/ajax-documentation
+- Amazon SES: https://docs.aws.amazon.com/ses/
 - Immowelt: https://www.immowelt.de/
 - Google Analytics: https://developers.google.com/analytics
 - Playwright: https://playwright.dev/
@@ -1170,10 +1110,10 @@ Logoänderungen immer gemeinsam mit `scripts/test-logo-consistency.mjs` prüfen.
 1. **`data/listings.json` ist die Single Source of Truth.**
 2. **Immowelt ist nur Inbound und wird nie beschrieben.**
 3. **Generierte HTML-Seiten nicht als Primärdaten behandeln.**
-4. **Kein eigenes Backend erfinden, solange GitHub Pages + GitHub Actions ausreichend sind.**
+4. **Öffentliche Website statisch halten; serverseitige Logik nur im getrennten `dp-forms`-Gateway.**
 5. **Keine Secrets in statische Dateien oder ins Repo.**
 6. **Admin-PAT nur in der Browser-Sitzung.**
-7. **FormSubmit ist externer Mailtransport; Anfragen gehören nicht ins Git-Repo.**
+7. **Formularanfragen laufen ausschließlich über den eigenen Gateway und Amazon SES; sie gehören nicht ins Git-Repo.**
 8. **Analytics niemals vor Consent laden.**
 9. **Objekt-Templateänderungen immer zentral im Generator durchführen.**
 10. **Nach Änderungen Tests und Pages-Deployment prüfen.**
