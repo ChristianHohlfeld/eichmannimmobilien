@@ -1,81 +1,113 @@
-# Exposé Admin
+# Exposé Admin – aktuelle Architektur
 
-Einfaches Admin für Helmut: Exposés anlegen, bearbeiten, löschen, Texte/Fotos nachpflegen, optional Immowelt importieren.
+Live: **https://immobilieneichmann.de/admin/**
 
-**Live:** [https://immobilieneichmann.de/admin/](https://immobilieneichmann.de/admin/)  
-(alternativ GitHub-Pages-URL `/admin/`)
+Das Admin ist eine **statische Browseranwendung** auf GitHub Pages. Es gibt dafür keinen eigenen Backend-Server und keine eigene Datenbank.
 
-## Single Source of Truth (SoT)
+## Single Source of Truth
 
-**SoT = unsere Exposés** in `data/listings.json` + dieses Admin.
+`data/listings.json` ist die kanonische Datenquelle.
 
-| Rolle | Bedeutung |
-|-------|-----------|
-| `data/listings.json` + Admin | **maßgeblich** – Insert / Update / Delete |
-| Immowelt | **optionaler Inbound-Import** (nur lesen) |
-| Immowelt-Konto | wird **niemals** beschrieben |
+Immowelt ist ausschließlich ein optionaler **Inbound-Import**. Die Anwendung schreibt niemals in das Immowelt-Konto.
 
-Nach jedem Speichern/Löschen/Anlegen läuft automatisch **Render-only** (`objekt/*.html`, Karten, Sitemap) über `admin-save.yml` bzw. `sync-immowelt.yml` mit `force_from_json=true`.
+## Login und Schreibrecht
 
-## Für Helmut
+Der aktuelle Modus ist:
 
-1. `/admin/` öffnen  
-2. Freigeschaltete E-Mail + Passwort eingeben (von Chris)  
-3. Objekte anlegen / bearbeiten / löschen, Fotos, optional Immowelt-Import  
-
-Kein GitHub-Token, kein Extra-Setup auf dem Rechner.
-
-## Was das Admin kann
-
-| Funktion | Wirkung |
-|----------|---------|
-| + Neues Objekt | Lokaler SoT-Eintrag (eigene id/slug); optional Immowelt-URL/UUID nur zum Vorfüllen |
-| Bearbeiten / Speichern | Schreibt `data/listings.json`, setzt `manual_overrides`, **Auto-Render** |
-| Löschen | Entfernt aus JSON; Render löscht `objekt/{slug}.html` und orphan Assets |
-| Fotos | Upload nach `assets/listings/`, Eintrag in Liste |
-| Immowelt-Import | Liest Profil, **merged inbound**; fehlende IDs → `missing_on_immowelt` (kein Auto-Delete) |
-| Nur rendern | Erzeugt HTML/Karten/Sitemap neu aus SoT-JSON |
-
-## Immowelt-Sync-Policy
-
-- Neue Immowelt-IDs → Insert-Kandidaten  
-- Bestehende → unlocked Felder mergen; `manual_overrides` und `source: local` sind autoritativ  
-- Auf Immowelt verschwunden → **kein** Löschen lokal (Flag `missing_on_immowelt: true`)  
-- Ausnahme nur bei `sync_policy: "mirror"` **und** gesetzter `immowelt_id`  
-- Default: `sync_policy: "independent"` – Unabhängigkeit von Immowelt  
-
-## Absolute Regel: Immowelt
-
-Das Immowelt-Konto wird **niemals** bearbeitet – weder Texte noch Fotos noch Status dort.  
-Sync = Import/Lesen in diese Website. Sonst nichts.
-
-## Sicherheit (bewusst einfach)
-
-- Passwort-Gate (SHA-256 in `admin/config.json`) – hält Zufallsbesucher draußen, kein Bank-Niveau.
-- Schreib-Token liegt **versiegelt** (AES-GCM, aus Passwort abgeleitet) in `config.json`, Klartext nur nach Login im `sessionStorage`.
-- Klartext-Passwort und Roh-Token **nie** committen.
-- `robots.txt` und `noindex` für `/admin/`.
-
-## Passwort / Token rotieren (nur coder/Chris, nicht Helmut)
-
-```bash
-# Neues Passwort wählen, Hash + Versiegelung neu erzeugen:
-node admin/seal-token.mjs --password 'NEUES-PASSWORT'
-# Optional Repo-Secret für Action-Fallback aktualisieren:
-gh secret set ADMIN_DISPATCH_TOKEN --body "$(gh auth token)"
+```text
+password_plus_session_pat
 ```
 
-Siehe Skript `admin/seal-token.mjs`.
+Benötigt werden:
 
-## Lokal testen
+1. freigeschaltete E-Mail
+2. Admin-Passwort
+3. GitHub Fine-Grained PAT für die aktuelle Browser-Sitzung
 
-```bash
-# beliebiger Static Server im Repo-Root
-npx serve -p 5500
-# → http://localhost:5500/admin/
+Der PAT wird nur in `sessionStorage` gehalten und beim Logout gelöscht.
+
+Der Passwort-Hash und die Allowlist liegen in der öffentlich ausgelieferten `admin/config.json`. Deshalb ist der Passwortdialog nur ein UI-Gate; die echte Autorisierung für Schreibzugriffe kommt von GitHub über den PAT.
+
+Der aktuelle Config-Stand enthält **keinen versiegelten oder Klartext-GitHub-Token**.
+
+## Speichern
+
+Normaler Pfad:
+
+```text
+Browser
+ -> GitHub Contents API
+ -> data/listings.json mit aktuellem SHA
+ -> Commit
+ -> repository_dispatch admin_apply_render
+ -> admin-save.yml
+ -> Render-only
+ -> generierte HTML/Karten/Sitemap
+ -> Commit
+ -> GitHub Pages
 ```
 
-## Workflows
+Fallback bei fehlgeschlagenem Contents-API-Save:
 
-- `sync-immowelt.yml` – Cron + manueller Immowelt-Import / Render-only  
-- `admin-save.yml` – Admin Apply: speichert JSON (optional) + **render-only** + Commit aller Outputs (`GITHUB_TOKEN`)
+```text
+repository_dispatch admin_save_listings
+ -> komplette JSON aus Browser-Payload schreiben
+ -> Render
+ -> Commit
+```
+
+Daher ist das System nicht für gleichzeitiges Multi-User-Editieren desselben Datensatzes gedacht.
+
+## Funktionen
+
+- neues lokales Objekt anlegen
+- bestehende Objekte bearbeiten
+- manuelle Felder mit `manual_overrides` gegen Immowelt-Überschreiben schützen
+- Objekt löschen
+- Bilder hochladen
+- Bilder aus Listing entfernen
+- lokale Seite öffnen
+- Immowelt-Inbound-Sync starten
+- Render-only starten
+
+## Bilder
+
+Uploads gehen direkt über die GitHub Contents API nach:
+
+```text
+assets/listings/
+```
+
+Maximal ca. 4,5 MB pro Upload. Erlaubt: JPG/JPEG, PNG, WebP.
+
+Danach wird die Bildreferenz in `data/listings.json` gespeichert und der Render gestartet.
+
+## Immowelt
+
+Default:
+
+```text
+sync_policy = independent
+```
+
+- lokale Objekte bleiben lokal
+- manuelle Overrides gewinnen
+- fehlende Immowelt-Objekte werden standardmäßig nur mit `missing_on_immowelt` markiert
+- `mirror` ist die explizite Ausnahme für Auto-Entfernung
+- keine Schreiboperation zu Immowelt
+
+## Token-Permissions
+
+Der PAT muss mindestens die für die verwendeten GitHub-API-Schreiboperationen notwendigen Repository-Rechte besitzen. Für den direkten Contents-Pfad ist `Contents: Read and write` erforderlich. Workflow-/Dispatch-Funktionen können abhängig vom Fine-Grained-Token zusätzliche Actions-Berechtigungen benötigen.
+
+PAT niemals committen.
+
+## Optionales Legacy-Seal-Tool
+
+`admin/seal-token.mjs` kann technisch weiterhin einen Token mit PBKDF2 + AES-256-GCM versiegeln.
+
+Das ist aktuell **nicht der aktive Modus** und sollte nicht mit dem derzeitigen Sitzungs-PAT-Verfahren verwechselt werden.
+
+## Weitere Details
+
+Die vollständige Architektur-, Daten-, Mail-, Workflow- und Drittanbieter-Dokumentation steht im Root-`README.md`.
