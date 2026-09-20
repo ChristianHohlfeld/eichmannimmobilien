@@ -659,35 +659,49 @@ ${JSON.stringify(schema, null, 2)}
               <input type="hidden" name="_subject" value="${escapeHtml(anfrageSubject)} – Immobilien Eichmann">
               <input type="hidden" name="_captcha" value="false">
               <input type="hidden" name="_template" value="table">
+              <input type="hidden" name="anliegen" value="Exposé-Anfrage">
               <input type="hidden" name="objekt" value="${escapeHtml(title)}">
               <input type="hidden" name="objekt_url" value="${escapeHtml(canonical)}">
               <input type="checkbox" name="botcheck" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+
               <div class="form-group">
-                <label for="name">Name *</label>
-                <input type="text" id="name" name="name" required autocomplete="name">
-              </div>
-              <div class="form-group">
-                <label for="email">E-Mail *</label>
-                <input type="email" id="email" name="email" required autocomplete="email">
-              </div>
-              <div class="form-group">
-                <label for="phone">Telefon</label>
-                <input type="tel" id="phone" name="phone" autocomplete="tel">
-              </div>
-              <div class="form-group">
-                <label for="subject">Betreff</label>
-                <select id="subject" name="anliegen">
-                  <option value="Exposé-Anfrage" selected>Exposé-Anfrage</option>
-                  <option value="Besichtigung">Besichtigung</option>
-                  <option value="Vermittlung / Kauf">Vermittlung / Kauf</option>
-                  <option value="Allgemeine Anfrage">Allgemeine Anfrage</option>
+                <label for="anrede">Anrede *</label>
+                <select id="anrede" name="anrede" required autocomplete="honorific-prefix">
+                  <option value="">Bitte wählen</option>
+                  <option value="Herr">Herr</option>
+                  <option value="Frau">Frau</option>
+                  <option value="Familie">Familie</option>
                 </select>
               </div>
               <div class="form-group">
-                <label for="message">Ihre Nachricht *</label>
-                <textarea id="message" name="message" required rows="5">${escapeHtml(
-                  `Guten Tag,\nich interessiere mich für: ${title}${listing.location ? ` (${listing.location})` : ""}.\nBitte senden Sie mir das Exposé / weitere Informationen.\n\nMit freundlichen Grüßen`
-                )}</textarea>
+                <label for="vorname">Vorname *</label>
+                <input type="text" id="vorname" name="vorname" required autocomplete="given-name" placeholder="Ihr Vorname">
+              </div>
+              <div class="form-group">
+                <label for="name">Name *</label>
+                <input type="text" id="name" name="name" required autocomplete="family-name" placeholder="Ihr Name">
+              </div>
+              <div class="form-group">
+                <label for="strasse">Straße und Hausnummer *</label>
+                <input type="text" id="strasse" name="strasse" required autocomplete="street-address" placeholder="Ihre Straße und Hausnummer">
+              </div>
+              <div class="form-row expose-address-row">
+                <div class="form-group">
+                  <label for="plz">PLZ *</label>
+                  <input type="text" id="plz" name="plz" required autocomplete="postal-code" inputmode="numeric" placeholder="Ihre PLZ">
+                </div>
+                <div class="form-group">
+                  <label for="ort">Ort *</label>
+                  <input type="text" id="ort" name="ort" required autocomplete="address-level2" placeholder="Ihr Ort">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="phone">Telefonnummer</label>
+                <input type="tel" id="phone" name="phone" autocomplete="tel" placeholder="Ihre Telefonnummer">
+              </div>
+              <div class="form-group">
+                <label for="email">E-Mail-Adresse *</label>
+                <input type="email" id="email" name="email" required autocomplete="email" placeholder="Ihre E-Mail-Adresse">
               </div>
               <p class="form-note legal-request-note">Informationen zur Verarbeitung Ihrer Angaben finden Sie in der <a href="${p}datenschutz.html">Datenschutzerklärung</a>. Durch das Absenden kommt kein Maklervertrag zustande.</p>
               <button type="submit" class="btn btn-accent" id="contact-submit">Exposé anfragen</button>

@@ -1,6 +1,11 @@
 name: Sync Immowelt Listings
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/sync-immowelt.mjs'
+      - '.github/workflows/sync-immowelt.yml'
   schedule:
     # Every 3 hours (UTC). Soft-fails on DataDome keep last good list.
     - cron: "0 */3 * * *"
@@ -36,17 +41,17 @@ jobs:
         run: npm ci || npm install
 
       - name: Install Playwright Chromium
-        if: ${{ inputs.force_from_json != true }}
+        if: ${{ github.event_name != 'push' && inputs.force_from_json != true }}
         run: npx playwright install chromium --with-deps
 
       - name: Sync listings from Immowelt
-        if: ${{ inputs.force_from_json != true }}
+        if: ${{ github.event_name != 'push' && inputs.force_from_json != true }}
         env:
           IMMOWELT_PROFILE_URL: https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d
         run: node scripts/sync-immowelt.mjs
 
       - name: Render only from canonical JSON
-        if: ${{ inputs.force_from_json == true }}
+        if: ${{ github.event_name == 'push' || inputs.force_from_json == true }}
         run: node scripts/sync-immowelt.mjs --render-only
 
       - name: Commit & push if changed

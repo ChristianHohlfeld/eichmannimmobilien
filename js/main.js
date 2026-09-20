@@ -27,21 +27,44 @@
   var FORM_ENDPOINT = "https://formsubmit.co/ajax/info@immobilien-eichmann.com";
   var MAILTO_TO = "info@immobilien-eichmann.com";
 
+  function valueOf(form, name) {
+    var el = form.querySelector('[name="' + name + '"]');
+    return el && typeof el.value === "string" ? el.value.trim() : "";
+  }
+
   function buildMailto(form) {
-    var name = (form.querySelector('[name="name"]') || {}).value || "";
-    var email = (form.querySelector('[name="email"]') || {}).value || "";
-    var phone = (form.querySelector('[name="phone"]') || {}).value || "";
-    var anliegen = (form.querySelector('[name="anliegen"]') || {}).value || "Anfrage";
-    var message = (form.querySelector('[name="message"]') || {}).value || "";
-    var body =
-      "Name: " + name + "\n" +
-      "E-Mail: " + email + "\n" +
-      "Telefon: " + phone + "\n\n" +
-      message;
+    var isExpose = form.classList.contains("expose-form") || !!form.dataset.exposeTitle;
+    var anliegen = valueOf(form, "anliegen") || (isExpose ? "Exposé-Anfrage" : "Anfrage");
+    var lines = [];
+
+    if (isExpose) {
+      lines.push(
+        "Anrede: " + valueOf(form, "anrede"),
+        "Vorname: " + valueOf(form, "vorname"),
+        "Name: " + valueOf(form, "name"),
+        "Straße / Hausnummer: " + valueOf(form, "strasse"),
+        "PLZ: " + valueOf(form, "plz"),
+        "Ort: " + valueOf(form, "ort"),
+        "Telefon: " + valueOf(form, "phone"),
+        "E-Mail: " + valueOf(form, "email"),
+        "",
+        "Objekt: " + (valueOf(form, "objekt") || form.dataset.exposeTitle || ""),
+        "Objekt-URL: " + valueOf(form, "objekt_url")
+      );
+    } else {
+      lines.push(
+        "Name: " + valueOf(form, "name"),
+        "E-Mail: " + valueOf(form, "email"),
+        "Telefon: " + valueOf(form, "phone"),
+        "",
+        valueOf(form, "message")
+      );
+    }
+
     return (
       "mailto:" + MAILTO_TO +
       "?subject=" + encodeURIComponent(anliegen + " – Immobilien Eichmann") +
-      "&body=" + encodeURIComponent(body)
+      "&body=" + encodeURIComponent(lines.join("\n"))
     );
   }
 
@@ -50,6 +73,7 @@
     var success = document.getElementById("form-success");
     var error = document.getElementById("form-error");
     var submitBtn = document.getElementById("contact-submit");
+    var submitLabel = submitBtn ? submitBtn.textContent : "";
     var mailtoBtn = document.getElementById("mailto-fallback");
 
     function show(el, on) {
@@ -74,7 +98,7 @@
       show(success, false);
       show(error, false);
 
-      ["name", "email", "message"].forEach(function (fieldName) {
+      ["anrede", "vorname", "name", "strasse", "plz", "ort", "phone", "email", "message"].forEach(function (fieldName) {
         var field = form.querySelector('[name="' + fieldName + '"]');
         if (field && typeof field.value === "string") field.value = field.value.trim();
       });
@@ -94,17 +118,30 @@
         submitBtn.textContent = "Wird gesendet …";
       }
 
-      var anliegen = (form.querySelector('[name="anliegen"]') || {}).value || "Anfrage";
+      var isExpose = form.classList.contains("expose-form") || !!form.dataset.exposeTitle;
+      var anliegen = valueOf(form, "anliegen") || (isExpose ? "Exposé-Anfrage" : "Anfrage");
       var payload = {
-        name: (form.querySelector('[name="name"]') || {}).value || "",
-        email: (form.querySelector('[name="email"]') || {}).value || "",
-        phone: (form.querySelector('[name="phone"]') || {}).value || "",
+        email: valueOf(form, "email"),
+        phone: valueOf(form, "phone"),
         anliegen: anliegen,
-        message: (form.querySelector('[name="message"]') || {}).value || "",
         _subject: anliegen + " – Immobilien Eichmann (Webformular)",
         _template: "table",
         _captcha: "false"
       };
+
+      if (isExpose) {
+        payload.anrede = valueOf(form, "anrede");
+        payload.vorname = valueOf(form, "vorname");
+        payload.name = valueOf(form, "name");
+        payload.strasse = valueOf(form, "strasse");
+        payload.plz = valueOf(form, "plz");
+        payload.ort = valueOf(form, "ort");
+        payload.objekt = valueOf(form, "objekt") || form.dataset.exposeTitle || "";
+        payload.objekt_url = valueOf(form, "objekt_url");
+      } else {
+        payload.name = valueOf(form, "name");
+        payload.message = valueOf(form, "message");
+      }
 
       fetch(FORM_ENDPOINT, {
         method: "POST",
@@ -137,7 +174,7 @@
         .finally(function () {
           if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.textContent = "Nachricht senden";
+            submitBtn.textContent = submitLabel || "Senden";
           }
         });
     });
