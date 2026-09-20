@@ -784,7 +784,7 @@ ${JSON.stringify(schema, null, 2)}
   </nav>
 
   <script src="${p}js/analytics.js" defer></script>
-  <script src="${p}js/main.js" defer></script>
+  <script src="${p}js/main.js?v=expose-lightbox-v1" defer></script>
 </body>
 </html>
 `;
