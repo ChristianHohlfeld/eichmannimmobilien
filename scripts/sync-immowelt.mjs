@@ -232,6 +232,18 @@ const LISTING_PROSE_HEADINGS = [
 ];
 
 function paragraphizeListingText(value, stripHeading = "") {
+  const original = String(value || "").replace(/\r/g, "").trim();
+  if (
+    /\n{2,}/.test(original) &&
+    repeatedListingStartIndex(original) < 0
+  ) {
+    return original
+      .replace(/[ \t]+/g, " ")
+      .replace(/[ \t]*\n[ \t]*/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
   let text = dedupeRepeatedListingText(value);
   if (!text) return "";
 
@@ -1608,12 +1620,14 @@ async function renderExposePages(data) {
   }
 }
 
-function todayStamp() {
-  return new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+function todayStamp(sourceDate = null) {
+  const parsed = sourceDate ? new Date(sourceDate) : null;
+  const date = parsed && !Number.isNaN(parsed.getTime()) ? parsed : new Date();
+  return date.toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
 }
 
 async function updateSitemap(data) {
-  const lastmod = todayStamp();
+  const lastmod = todayStamp(data.scraped_at);
   const staticUrls = STATIC_SITEMAP_PATHS.map((u) => {
     const loc = u.loc === "/" ? `${SITE_ORIGIN}/` : `${SITE_ORIGIN}${u.loc}`;
     return `  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod><changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority></url>`;
