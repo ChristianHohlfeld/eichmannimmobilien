@@ -135,6 +135,226 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
+function flattenListingProse(value) {
+  return String(value || "")
+    .replace(/\r/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/\s+([,.;:!?])/g, "$1")
+    .replace(/([.!?])(?=[A-ZÄÖÜ])/g, "$1 ")
+    .replace(/A\+(?=[A-Za-zÄÖÜäöüß])/g, "A+ ")
+    .trim();
+}
+
+function repeatedListingStartIndex(value) {
+  const text = flattenListingProse(value);
+
+  if (text.length >= 120) {
+    const probe = text.slice(0, Math.min(96, Math.floor(text.length / 2))).trim();
+    if (probe.length >= 60) {
+      const second = text.indexOf(probe, probe.length);
+      if (second >= 70 && text.length - second >= second * 0.65) return second;
+    }
+  }
+
+  const tokens = [...text.matchAll(/[\p{L}\p{N}]+/gu)].map((m) => ({
+    word: m[0].toLowerCase(),
+    index: m.index,
+  }));
+  if (tokens.length < 18) return -1;
+
+  const n = Math.min(12, Math.max(8, Math.floor(tokens.length / 15)));
+  for (let j = n; j <= tokens.length - n; j++) {
+    if (tokens[j].index < 70) continue;
+    let same = true;
+    for (let k = 0; k < n; k++) {
+      if (tokens[k].word !== tokens[j + k].word) {
+        same = false;
+        break;
+      }
+    }
+    if (!same) continue;
+    if ((tokens.length - j) >= j * 0.7) return tokens[j].index;
+  }
+  return -1;
+}
+
+function dedupeRepeatedListingText(value) {
+  let text = flattenListingProse(value);
+  if (!text) return "";
+
+  for (let pass = 0; pass < 4; pass++) {
+    let changed = false;
+
+    for (const match of text.matchAll(/…/g)) {
+      const before = text.slice(0, match.index).trim();
+      const after = text.slice(match.index + 1).trim();
+      const beforeWords = (before.match(/[\p{L}\p{N}]+/gu) || [])
+        .slice(0, 10)
+        .map((word) => word.toLowerCase());
+      const afterWords = (after.match(/[\p{L}\p{N}]+/gu) || [])
+        .slice(0, 10)
+        .map((word) => word.toLowerCase());
+
+      let common = 0;
+      for (let i = 0; i < Math.min(beforeWords.length, afterWords.length); i++) {
+        if (beforeWords[i] === afterWords[i]) common++;
+        else break;
+      }
+
+      if (common >= 7 && after.length >= before.length * 0.8) {
+        text = after;
+        changed = true;
+        break;
+      }
+    }
+
+    if (changed) continue;
+
+    const repeatedAt = repeatedListingStartIndex(text);
+    if (repeatedAt > 0) {
+      text = text.slice(repeatedAt).trim();
+      changed = true;
+    }
+
+    if (!changed) break;
+  }
+
+  return text;
+}
+
+const LISTING_PROSE_HEADINGS = [
+  "Besichtigungstermine",
+  "Raumaufteilung",
+  "Stichworte",
+  "Sonstiges",
+  "Wichtige Eckdaten",
+  "Wohnkomfort & Ausstattung",
+];
+
+function paragraphizeListingText(value, stripHeading = "") {
+  let text = dedupeRepeatedListingText(value);
+  if (!text) return "";
+
+  if (stripHeading) {
+    text = text.replace(new RegExp("^" + escapeRegExp(stripHeading) + "\\s*", "i"), "");
+  }
+
+  for (const heading of LISTING_PROSE_HEADINGS) {
+    text = text.replace(
+      new RegExp("\\s*" + escapeRegExp(heading) + ":?\\s*", "g"),
+      `\n\n${heading}:\n`
+    );
+  }
+
+  text = text
+    .replace(
+      /([a-zäöüß0-9²])(?=(?:Baujahr|Sanierung|Heizung|Wohnfläche|Bezugsfrei|TV|Zustand|Heizungsart):)/g,
+      "$1\n"
+    )
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  const paragraphs = [];
+
+  for (const block of text.split(/\n{2,}/).map((part) => part.trim()).filter(Boolean)) {
+    if (block.includes("\n")) {
+      paragraphs.push(block.replace(/\n{2,}/g, "\n").trim());
+      continue;
+    }
+
+    const sentences = block
+      .split(/(?<=[.!?])\s+(?=[A-ZÄÖÜ0-9])/u)
+      .map((sentence) => sentence.trim())
+      .filter(Boolean);
+
+    if (sentences.length <= 1) {
+      paragraphs.push(block);
+      continue;
+    }
+
+    let chunk = "";
+    let count = 0;
+
+    for (const sentence of sentences) {
+      const next = chunk ? `${chunk} ${sentence}` : sentence;
+      if (chunk && (count >= 3 || next.length > 430)) {
+        paragraphs.push(chunk);
+        chunk = sentence;
+        count = 1;
+      } else {
+        chunk = next;
+        count++;
+      }
+    }
+
+    if (chunk) paragraphs.push(chunk);
+  }
+
+  return paragraphs.join("\n\n");
+}
+
+function cleanListingLocationText(value) {
+  const cleaned = dedupeRepeatedListingText(value)
+    .replace(/^Straße nicht freigegeben.*?(?:OpenStreetMap contributors)\s*/i, "")
+    .replace(/^Vollständige Adresse beim Anbieter\s*/i, "")
+    .replace(/^Auf Karte anzeigen\s*/i, "")
+    .trim();
+
+  return paragraphizeListingText(cleaned, "Lage");
+}
+
+function fingerprintHash(value) {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+function contentFingerprint(value) {
+  const words = (
+    flattenListingProse(value).toLowerCase().match(/[\p{L}\p{N}]+/gu) || []
+  ).filter(Boolean);
+
+  if (words.length < 3) return [];
+
+  const hashes = new Set();
+  for (let i = 0; i <= words.length - 3; i++) {
+    hashes.add(fingerprintHash(words.slice(i, i + 3).join(" ")));
+  }
+
+  return [...hashes].sort().slice(0, 64);
+}
+
+function normalizeListingTextFields(listing) {
+  if (!listing || typeof listing !== "object") return listing;
+
+  const sourceDescription = String(listing.description || "");
+  if (
+    sourceDescription &&
+    (!Array.isArray(listing.source_description_fingerprint) ||
+      !listing.source_description_fingerprint.length)
+  ) {
+    listing.source_description_fingerprint = contentFingerprint(sourceDescription);
+  }
+
+  if (listing.description) {
+    listing.description =
+      paragraphizeListingText(listing.description, "Objektbeschreibung") || null;
+  }
+  if (listing.location_description) {
+    listing.location_description =
+      cleanListingLocationText(listing.location_description) || null;
+  }
+  if (listing.additional_information) {
+    listing.additional_information =
+      paragraphizeListingText(listing.additional_information, "Weitere Informationen") || null;
+  }
+
+  return listing;
+}
+
 function exposeIdFromUrl(url) {
   if (!url) return null;
   const m = String(url).match(/\/expose\/([a-f0-9-]{36})/i);
@@ -351,6 +571,12 @@ function normalizeListing(raw, index, prev = null) {
     // Enriched fields (prefer incoming, else keep previous)
     description:
       (raw.description || (prev && prev.description) || "").trim() || null,
+    source_description_fingerprint:
+      Array.isArray(raw.source_description_fingerprint)
+        ? raw.source_description_fingerprint
+        : prev && Array.isArray(prev.source_description_fingerprint)
+          ? prev.source_description_fingerprint
+          : [],
     source_title:
       (raw.source_title || (prev && prev.source_title) || "").trim() || null,
     reference_number:
@@ -1263,6 +1489,7 @@ function serializeListing(L) {
     status: L.status,
     short_description: L.short_description,
     description: L.description || null,
+    source_description_fingerprint: L.source_description_fingerprint || [],
     source_title: L.source_title || null,
     reference_number: L.reference_number || null,
     location_description: L.location_description || null,
@@ -1341,7 +1568,7 @@ function applyLocalAuthoritative(listing, prev) {
 
 async function writeCanonical(data) {
   await mkdir(path.dirname(DATA_PATH), { recursive: true });
-  data.listings = data.listings.map(sanitizeListingForPublic);
+  data.listings = data.listings.map(normalizeListingTextFields).map(sanitizeListingForPublic);
   const out = {
     // Single Source of Truth = Immowelt. This file is a generated local mirror for rendering.
     sot: "immowelt",
@@ -1636,7 +1863,8 @@ async function enrichFromExposePage(page, listing) {
 
   const mo = listing.manual_overrides || {};
   if (detail.description && mo.description !== true) {
-    listing.description = detail.description.slice(0, 15000);
+    listing.source_description_fingerprint = contentFingerprint(detail.description);
+    listing.description = paragraphizeListingText(detail.description, "Objektbeschreibung").slice(0, 15000);
   }
   if (detail.images?.length && mo.images !== true) {
     listing.images = detail.images.slice(0, 80);
@@ -1901,10 +2129,19 @@ async function enrichGalleryFromSparkasse(page, listing) {
   if (mo.living_area !== true && media.facts?.Wohnfläche) listing.living_area = media.facts.Wohnfläche;
   if (mo.plot_area !== true && media.facts?.Grundstücksfläche) listing.plot_area = media.facts.Grundstücksfläche;
   if (mo.type !== true && PROJECT_TYPE_BY_IMMOWELT_ID[listingKey]) listing.type = PROJECT_TYPE_BY_IMMOWELT_ID[listingKey];
-  if (media.description && mo.description !== true) listing.description = media.description.slice(0, 15000);
-  if (media.locationDescription && mo.location_description !== true) listing.location_description = media.locationDescription.slice(0, 10000);
-  if (Array.isArray(media.amenities) && media.amenities.length && mo.amenities !== true) listing.amenities = media.amenities.slice(0, 40);
-  if (media.additionalInformation && mo.additional_information !== true) listing.additional_information = media.additionalInformation.slice(0, 10000);
+  if (media.description && mo.description !== true) {
+    listing.source_description_fingerprint = contentFingerprint(media.description);
+    listing.description = paragraphizeListingText(media.description, "Objektbeschreibung").slice(0, 15000);
+  }
+  if (media.locationDescription && mo.location_description !== true) {
+    listing.location_description = cleanListingLocationText(media.locationDescription).slice(0, 10000);
+  }
+  if (Array.isArray(media.amenities) && media.amenities.length && mo.amenities !== true) {
+    listing.amenities = media.amenities.slice(0, 40);
+  }
+  if (media.additionalInformation && mo.additional_information !== true) {
+    listing.additional_information = paragraphizeListingText(media.additionalInformation, "Weitere Informationen").slice(0, 10000);
+  }
   if (media.facts && Object.keys(media.facts).length && mo.facts !== true) {
     // Mirror data is authoritative for the currently published detail page.
     // Replace provider-derived facts instead of merging stale keys from older
