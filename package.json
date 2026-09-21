@@ -11,11 +11,12 @@
     "test:layout": "node scripts/test-layout-regression.mjs",
     "build:share": "node scripts/build-share-card.mjs",
     "test:share": "node scripts/test-share-card.mjs",
-    "test": "npm run test:share && npm run test:logo && npm run test:jsonld && npm run test:legal && npm run test:layout",
+    "test": "npm run test:share && npm run test:logo && npm run test:jsonld && npm run test:legal && npm run test:content && npm run test:layout",
     "test:strict": "npm run test:legal && STRICT=1 npm run test:logo && STRICT=1 npm run test:layout",
     "test:jsonld": "node scripts/test-jsonld.mjs",
     "test:legal": "node scripts/test-legal-baseline.mjs",
-    "test:expose-form": "node scripts/test-expose-form.mjs"
+    "test:expose-form": "node scripts/test-expose-form.mjs",
+    "test:content": "node scripts/test-listing-content.mjs"
   },
   "engines": {
     "node": ">=20"
