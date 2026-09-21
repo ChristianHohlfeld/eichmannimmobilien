@@ -237,7 +237,14 @@ function paragraphizeListingText(value, stripHeading = "") {
     /\n{2,}/.test(original) &&
     repeatedListingStartIndex(original) < 0
   ) {
-    return original
+    let preserved = original;
+    if (stripHeading) {
+      preserved = preserved.replace(
+        new RegExp("^" + escapeRegExp(stripHeading) + "\\s*", "i"),
+        ""
+      );
+    }
+    return preserved
       .replace(/[ \t]+/g, " ")
       .replace(/[ \t]*\n[ \t]*/g, "\n")
       .replace(/\n{3,}/g, "\n\n")
@@ -252,10 +259,20 @@ function paragraphizeListingText(value, stripHeading = "") {
   }
 
   for (const heading of LISTING_PROSE_HEADINGS) {
-    text = text.replace(
-      new RegExp("\\s*" + escapeRegExp(heading) + ":?\\s*", "g"),
-      `\n\n${heading}:\n`
-    );
+    const safe = escapeRegExp(heading);
+    text = text
+      .replace(
+        new RegExp("(^|[.!?]\\s+)" + safe + ":?\\s*", "g"),
+        (_, prefix) => `${prefix}\n\n${heading}:\n`
+      )
+      .replace(
+        new RegExp(safe + "(?=[A-ZÄÖÜ])", "g"),
+        `\n\n${heading}:\n`
+      )
+      .replace(
+        new RegExp("([a-zäöüß0-9])" + safe + ":\\s*", "g"),
+        (_, prefix) => `${prefix}\n\n${heading}:\n`
+      );
   }
 
   text = text
@@ -306,8 +323,11 @@ function paragraphizeListingText(value, stripHeading = "") {
 }
 
 function cleanListingLocationText(value) {
-  const cleaned = dedupeRepeatedListingText(value)
-    .replace(/^Straße nicht freigegeben.*?(?:OpenStreetMap contributors)\s*/i, "")
+  const cleaned = String(value || "")
+    .replace(
+      /^Straße nicht freigegeben[\s\S]*?(?:OpenStreetMap contributors)\s*/i,
+      ""
+    )
     .replace(/^Vollständige Adresse beim Anbieter\s*/i, "")
     .replace(/^Auf Karte anzeigen\s*/i, "")
     .trim();
@@ -488,7 +508,9 @@ function redactPrivateAddressText(value) {
     .replace(/Radolfzeller\s+(?:Straße|Strasse)(?:\s*91)?/gi, "Konstanz-Wollmatingen")
     .replace(/Allensteiner\s+(?:Straße|Strasse)(?:\s*\d+[a-z]?)?/gi, "Konstanz-Wollmatingen")
     .replace(/\b[A-ZÄÖÜ][A-Za-zÄÖÜäöüß.-]*(?:[- ][A-ZÄÖÜ][A-Za-zÄÖÜäöüß.-]*)*\s+(?:Straße|Strasse|Str\.|Weg|Platz|Allee)\s*\d+[a-z]?\b/g, "Konstanz")
-    .replace(/\s{2,}/g, " ")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/[ \t]*\n[ \t]*/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
