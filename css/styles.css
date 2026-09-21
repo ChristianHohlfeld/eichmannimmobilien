@@ -1919,3 +1919,15 @@ a.listing-card:focus-visible {
   font-size: 1.05rem;
   letter-spacing: .02em;
 }
+
+/* expose-prose-readability-v1 */
+.expose-description.prose {
+  max-width: 72ch;
+  font-size: 1.02rem;
+  line-height: 1.72;
+}
+.expose-description.prose p {
+  margin: 0 0 1.15rem;
+  color: var(--slate);
+}
+.expose-description.prose p:last-child { margin-bottom: 0; }
