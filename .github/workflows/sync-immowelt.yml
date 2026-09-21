@@ -54,6 +54,9 @@ jobs:
         if: ${{ inputs.force_from_json == true }}
         run: node scripts/sync-immowelt.mjs --render-only
 
+      - name: Listing content integrity
+        run: node scripts/test-listing-content.mjs
+
       - name: Verify published listing detail completeness
         run: |
           node --input-type=module <<'NODE'
