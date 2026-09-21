@@ -47,6 +47,8 @@ jobs:
           node --check admin/admin.js
       - name: Render listings from mirrored data
         run: node scripts/sync-immowelt.mjs --render-only
+      - name: Listing content integrity
+        run: node scripts/test-listing-content.mjs
       - name: Published listing count must match visibility state
         run: |
           node --input-type=module <<'NODE'
