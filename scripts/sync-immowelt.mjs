@@ -234,7 +234,7 @@ const LISTING_PROSE_HEADINGS = [
 function paragraphizeListingText(value, stripHeading = "") {
   const original = String(value || "").replace(/\r/g, "").trim();
   if (
-    /\n{2,}/.test(original) &&
+    /\n/.test(original) &&
     repeatedListingStartIndex(original) < 0
   ) {
     let preserved = original;
