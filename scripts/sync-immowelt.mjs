@@ -20,9 +20,10 @@
  * and exit 0 so CI does not wipe the site.
  */
 
-import { readFile, writeFile, mkdir, readdir, unlink, copyFile, access, rm } from "node:fs/promises";
+import { readFile, writeFile, mkdir, readdir, unlink, copyFile, access, rm, rename } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { validateIncomingSnapshot, stabilizeListingsAgainstPrevious } from "./lib/listing-safety.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -33,6 +34,7 @@ const PROFILE_URL =
 
 const SITE_ORIGIN = "https://immobilieneichmann.de";
 const DATA_PATH = path.join(ROOT, "data", "listings.json");
+const SYNC_STATUS_PATH = path.join(ROOT, "data", "immowelt-sync-status.json");
 const IMAGES_DIR = path.join(ROOT, "assets", "listings");
 const OBJEKT_DIR = path.join(ROOT, "objekt");
 const PARTIAL_PATH = path.join(ROOT, "partials", "listings-grid.html");
@@ -1541,7 +1543,7 @@ function serializeListing(L) {
     active: L.active !== false,
     detail_page: L.detail_page !== false,
     site_hidden: L.site_hidden === true,
-    // SoT metadata (local Admin owns the record; Immowelt is optional inbound)
+    // SoT metadata: Immowelt owns listing content and publication state.
     source: L.source || (L.immowelt_id || looksLikeImmoweltId(L.id) ? "immowelt" : "local"),
     immowelt_id: L.immowelt_id || (looksLikeImmoweltId(L.id) ? L.id : null),
     sync_policy: L.sync_policy || "independent",
@@ -1600,6 +1602,37 @@ function applyLocalAuthoritative(listing, prev) {
   return listing;
 }
 
+async function atomicWriteJson(filePath, value) {
+  await mkdir(path.dirname(filePath), { recursive: true });
+  const tmp = `${filePath}.tmp-${process.pid}`;
+  await writeFile(tmp, JSON.stringify(value, null, 2) + "\n", "utf8");
+  await rename(tmp, filePath);
+}
+
+async function writeSyncStatus({ state, previous = null, data = null, reason = null, assessment = null }) {
+  const previousPublic = Array.isArray(previous?.listings)
+    ? previous.listings.filter(isPublicListing).length
+    : Number(previous?.active_listing_count || 0);
+  const currentPublic = Array.isArray(data?.listings)
+    ? data.listings.filter(isPublicListing).length
+    : null;
+  const payload = {
+    source: "immowelt",
+    state,
+    last_attempt_at: new Date().toISOString(),
+    last_valid_at: state === "current"
+      ? (data?.scraped_at || new Date().toISOString())
+      : (previous?.scraped_at || null),
+    last_valid_count: state === "current" ? currentPublic : previousPublic,
+    attempted_count: assessment?.count ?? null,
+    overlap_count: assessment?.overlap_count ?? null,
+    overlap_ratio: assessment?.overlap_ratio ?? null,
+    reason: reason ? String(reason).slice(0, 500) : null,
+  };
+  if (!dryRun) await atomicWriteJson(SYNC_STATUS_PATH, payload);
+  return payload;
+}
+
 async function writeCanonical(data) {
   await mkdir(path.dirname(DATA_PATH), { recursive: true });
   data.listings = data.listings.map(normalizeListingTextFields).map(sanitizeListingForPublic);
@@ -1613,8 +1646,7 @@ async function writeCanonical(data) {
     active_listing_count: data.listings.filter(isPublicListing).length,
     listings: data.listings.map(serializeListing),
   };
-  const json = JSON.stringify(out, null, 2) + "\n";
-  if (!dryRun) await writeFile(DATA_PATH, json, "utf8");
+  if (!dryRun) await atomicWriteJson(DATA_PATH, out);
   return out;
 }
 
@@ -2622,6 +2654,10 @@ async function main() {
   } else {
     try {
       const scraped = await scrapeImmowelt();
+      const assessment = validateIncomingSnapshot(scraped.listings, previous);
+      console.log(
+        `Immowelt snapshot accepted: ${assessment.count} offers; previous ${assessment.previous_count}; overlap ${assessment.overlap_count}.`
+      );
       data = {
         source: scraped.source,
         scraped_at: scraped.scraped_at,
@@ -2633,23 +2669,43 @@ async function main() {
       } catch (enrichErr) {
         console.warn("Enrichment pass failed (keeping card-level data):", enrichErr.message || enrichErr);
       }
+      const stabilized = stabilizeListingsAgainstPrevious(data.listings, previous);
+      data.listings = stabilized.listings;
+      if (stabilized.warnings.length) {
+        console.warn(
+          `Last-known-good preserved ${stabilized.warnings.length} suspicious field changes:\n` +
+          stabilized.warnings.join("\n")
+        );
+      }
+      data._snapshot_assessment = assessment;
     } catch (err) {
       const hard = process.env.IMMOWELT_HARD_FAIL === "1" || forceScrape;
       console.error(`Scrape failed (${hard ? "hard-fail" : "soft-fail"}):`, err.message || err);
       if (previous) {
         console.error("Keeping last good data/listings.json – site unchanged.");
+        await writeSyncStatus({
+          state: "rejected",
+          previous,
+          reason: err.message || err,
+        });
         if (hard) throw err;
         process.exit(0);
       }
       console.error("No previous JSON available. Exiting without changes.");
+      await writeSyncStatus({
+        state: "rejected",
+        previous: null,
+        reason: err.message || err,
+      });
       if (hard) throw err;
       process.exit(0);
     }
   }
 
   if (!data.listings.length) {
-    console.error("Empty listings – refusing to wipe site (soft-fail).");
-    process.exit(0);
+    const err = new Error("Empty listings – refusing to overwrite last-known-good.");
+    await writeSyncStatus({ state: "rejected", previous, reason: err.message });
+    throw err;
   }
 
   data.listings.forEach((L, i) => {
@@ -2674,6 +2730,13 @@ async function main() {
   // Re-write canonical after gallery_bases / floor_plan_bases assigned
   await writeCanonical(data);
   await renderIntoPages(data);
+  await writeSyncStatus({
+    state: "current",
+    previous,
+    data,
+    assessment: data._snapshot_assessment || null,
+  });
+  delete data._snapshot_assessment;
 
   console.log(`Done. ${data.listing_count} listings → JSON + cards + objekt/*.html + sitemap.`);
 }
