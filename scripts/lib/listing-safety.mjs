@@ -27,21 +27,6 @@ function parseGermanNumber(value) {
   return Number.isFinite(num) ? num : null;
 }
 
-function wordSet(value) {
-  return new Set(
-    (String(value || "").toLowerCase().match(/[\p{L}\p{N}]+/gu) || [])
-      .filter((word) => word.length >= 4)
-  );
-}
-
-function overlapRatio(a, b) {
-  const left = wordSet(a);
-  const right = wordSet(b);
-  if (!left.size || !right.size) return 1;
-  let overlap = 0;
-  for (const word of left) if (right.has(word)) overlap++;
-  return overlap / Math.min(left.size, right.size);
-}
 
 export function validateIncomingSnapshot(rawListings, previousData = null) {
   if (!Array.isArray(rawListings) || rawListings.length === 0) {
@@ -111,88 +96,58 @@ export function validateIncomingSnapshot(rawListings, previousData = null) {
   };
 }
 
-export function stabilizeListingsAgainstPrevious(listings, previousData = null) {
-  if (!Array.isArray(listings)) return { listings: [], warnings: [] };
+export function validateNoDestructiveOverwrite(listings, previousData = null) {
+  if (!Array.isArray(listings) || listings.length === 0) {
+    throw new Error("Immowelt snapshot rejected: empty final listing set");
+  }
+
   const previous = new Map(
     (Array.isArray(previousData?.listings) ? previousData.listings : [])
       .map((item) => [listingId(item), item])
       .filter(([id]) => id)
   );
-  const warnings = [];
+  if (!previous.size) return { checked: 0 };
 
-  const preserve = (item, prev, field, reason) => {
-    if (prev?.[field] == null) return;
-    item[field] = Array.isArray(prev[field])
-      ? [...prev[field]]
-      : prev[field] && typeof prev[field] === "object"
-        ? { ...prev[field] }
-        : prev[field];
-    warnings.push(`${listingId(item).slice(0, 8)}:${field} kept from last-known-good (${reason})`);
-  };
+  const requiredIfPreviouslyPresent = [
+    "title",
+    "price",
+    "location",
+    "rooms",
+    "living_area",
+    "description",
+    "location_description",
+    "additional_information",
+  ];
+  const losses = [];
+  let checked = 0;
 
   for (const item of listings) {
-    const prev = previous.get(listingId(item));
+    const id = listingId(item);
+    const prev = previous.get(id);
     if (!prev) continue;
+    checked++;
 
-    for (const field of ["title", "price", "location", "rooms", "living_area", "description", "location_description", "additional_information"]) {
-      const incoming = item[field];
-      if ((incoming == null || String(incoming).trim() === "") && prev[field] != null && String(prev[field]).trim() !== "") {
-        preserve(item, prev, field, "incoming field empty");
+    for (const field of requiredIfPreviouslyPresent) {
+      if (hasText(prev[field]) && !hasText(item[field])) {
+        losses.push(`${id.slice(0, 8)}:${field}`);
       }
     }
 
-    if (!hasText(item.title, 5) || /^immobilie$/i.test(String(item.title || "").trim())) {
-      preserve(item, prev, "title", "implausible title");
-    }
-
-    const numericRules = [
-      ["price", 0.5, 1.5],
-      ["living_area", 0.7, 1.3],
-      ["plot_area", 0.55, 1.8],
-    ];
-    for (const [field, minRatio, maxRatio] of numericRules) {
-      const before = parseGermanNumber(prev[field]);
-      const after = parseGermanNumber(item[field]);
-      if (before > 0 && after > 0) {
-        const ratio = after / before;
-        if (ratio < minRatio || ratio > maxRatio) {
-          preserve(item, prev, field, `numeric jump x${ratio.toFixed(2)}`);
-        }
-      }
-    }
-
-    const beforeRooms = parseGermanNumber(prev.rooms);
-    const afterRooms = parseGermanNumber(item.rooms);
-    if (beforeRooms > 0 && afterRooms > 0 && Math.abs(afterRooms - beforeRooms) > 2) {
-      preserve(item, prev, "rooms", "implausible room-count jump");
-    }
-
-    for (const field of ["description", "location_description", "additional_information"]) {
-      const before = String(prev[field] || "").trim();
-      const after = String(item[field] || "").trim();
-      if (before.length >= 160 && after.length > 0 && after.length < Math.max(80, before.length * 0.4)) {
-        preserve(item, prev, field, "sudden text truncation");
-        continue;
-      }
-      if (before.length >= 180 && after.length >= 100 && overlapRatio(before, after) < 0.08) {
-        preserve(item, prev, field, "content no longer maps to same object");
-      }
-    }
-
-    const oldImages = Array.isArray(prev.images) ? prev.images : [];
-    const newImages = Array.isArray(item.images) ? item.images : [];
-    if (oldImages.length >= 4 && newImages.length > 0 && newImages.length < Math.max(2, Math.floor(oldImages.length * 0.3))) {
-      preserve(item, prev, "images", "gallery collapsed unexpectedly");
-      if (Array.isArray(prev.gallery_bases)) preserve(item, prev, "gallery_bases", "gallery collapsed unexpectedly");
-      if (prev.main_image_url) preserve(item, prev, "main_image_url", "gallery collapsed unexpectedly");
-    }
+    const oldImages = Array.isArray(prev.images) ? prev.images.length : 0;
+    const newImages = Array.isArray(item.images) ? item.images.length : 0;
+    if (oldImages > 0 && newImages === 0) losses.push(`${id.slice(0, 8)}:images`);
 
     const oldFacts = prev.facts && typeof prev.facts === "object" ? Object.keys(prev.facts).length : 0;
     const newFacts = item.facts && typeof item.facts === "object" ? Object.keys(item.facts).length : 0;
-    if (oldFacts >= 5 && newFacts > 0 && newFacts < Math.ceil(oldFacts * 0.4)) {
-      preserve(item, prev, "facts", "facts collapsed unexpectedly");
-    }
+    if (oldFacts > 0 && newFacts === 0) losses.push(`${id.slice(0, 8)}:facts`);
   }
 
-  return { listings, warnings };
+  if (losses.length) {
+    throw new Error(
+      `Immowelt snapshot rejected: would erase existing source data (${losses.slice(0, 12).join(", ")}${losses.length > 12 ? ", …" : ""})`
+    );
+  }
+
+  return { checked };
 }
+
