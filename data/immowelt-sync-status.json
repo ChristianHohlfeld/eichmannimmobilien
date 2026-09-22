@@ -1,11 +1,11 @@
 {
   "source": "immowelt",
   "state": "rejected",
-  "last_attempt_at": "2026-09-22T06:31:11.619Z",
+  "last_attempt_at": "2026-09-22T06:33:36.720Z",
   "last_valid_at": "2026-09-20T18:49:02.890Z",
   "last_valid_count": 13,
   "attempted_count": null,
   "overlap_count": null,
   "overlap_ratio": null,
-  "reason": "Immowelt profile unavailable: https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d?app=1: HTTP 403 | https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d: HTTP 403 | https://www.immowelt.at/profil/3b18336c6a2e401da38e9cc20268270d?app=1: no expose links | https://www.immowelt.at/profil/3b18336c6a2e401da38e9cc20268270d: HTTP 403"
+  "reason": "Immowelt profile unavailable: https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d?app=1: HTTP 403 | https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d: HTTP 403 | https://www.immowelt.at/profil/3b18336c6a2e401da38e9cc20268270d?app=1: HTTP 403 | https://www.immowelt.at/profil/3b18336c6a2e401da38e9cc20268270d: HTTP 403"
 }
