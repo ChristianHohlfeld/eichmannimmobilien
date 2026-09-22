@@ -2375,6 +2375,33 @@ async function scrapeImmowelt() {
           console.warn("Homepage module probe failed:", moduleErr.message || moduleErr);
         }
       }
+      try {
+        const searchUrl =
+          "https://www.immowelt.de/suche/kaufen/immobilien/baden-wurttemberg/konstanz-78462/ad08de6010";
+        const searchResp = await fetch(searchUrl, {
+          headers: {
+            "user-agent":
+              "Mozilla/5.0 (compatible; ImmobilienEichmannSync/1.0; +https://immobilieneichmann.de)",
+            accept: "text/html,application/xhtml+xml",
+          },
+          redirect: "follow",
+        });
+        const searchText = await searchResp.text();
+        const ids = [...new Set(
+          [...searchText.matchAll(/\/expose\/([a-f0-9-]{36})/gi)].map((m) => m[1].toLowerCase())
+        )];
+        const providerAt = searchText.indexOf("Immobilien Eichmann");
+        const providerSnippet =
+          providerAt >= 0
+            ? searchText.slice(Math.max(0, providerAt - 1200), providerAt + 3500).replace(/\s+/g, " ")
+            : "";
+        console.log(
+          `Public search probe: HTTP ${searchResp.status} · bytes ${searchText.length} · expose UUIDs ${ids.length} · Eichmann ${providerAt >= 0 ? "yes" : "no"} · IDs ${ids.slice(0, 20).join(",")}`
+        );
+        console.log(`Public search Eichmann snippet: ${providerSnippet.slice(0, 4500)}`);
+      } catch (searchErr) {
+        console.warn("Public search probe failed:", searchErr.message || searchErr);
+      }
       throw new Error(`Immowelt profile unavailable: ${profileErrors.join(" | ")}`);
     }
 
