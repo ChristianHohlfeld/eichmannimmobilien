@@ -2362,6 +2362,15 @@ async function scrapeImmowelt() {
           console.log(
             `Homepage module probe: HTTP ${moduleResp.status} · ${moduleText.slice(0, 500).replace(/\s+/g, " ")}`
           );
+          const jsResp = await fetch(
+            "https://homepagemodul.immowelt.de/_scripts/iwag/homepagemodul/homepagemodul.pack.js"
+          );
+          const jsText = await jsResp.text();
+          const apiHints = [...jsText.matchAll(/.{0,180}(?:\/list\/api\/|guid|suche).{0,220}/gi)]
+            .slice(0, 12)
+            .map((m) => m[0].replace(/\s+/g, " "))
+            .join(" || ");
+          console.log(`Homepage module JS hints: HTTP ${jsResp.status} · ${apiHints.slice(0, 4000)}`);
         } catch (moduleErr) {
           console.warn("Homepage module probe failed:", moduleErr.message || moduleErr);
         }
