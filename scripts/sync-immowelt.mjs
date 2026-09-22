@@ -2522,8 +2522,21 @@ async function main() {
       try {
         data.listings = await enrichListings(data.listings);
       } catch (enrichErr) {
-        console.warn("Enrichment pass failed (keeping card-level data):", enrichErr.message || enrichErr);
+        console.warn("Enrichment pass failed:", enrichErr.message || enrichErr);
       }
+
+      // All-or-nothing: never publish a partially read Immowelt snapshot.
+      const incomplete = data.listings.filter((item) =>
+        String(item.description || "").trim().length < 80 ||
+        !Array.isArray(item.images) ||
+        item.images.length < 2
+      );
+      if (incomplete.length) {
+        throw new Error(
+          `Immowelt snapshot incomplete for ${incomplete.map((item) => shortId(item.id)).join(", ")} – keeping last-known-good`
+        );
+      }
+
       data._snapshot_assessment = assessment;
     } catch (err) {
       const hard = process.env.IMMOWELT_HARD_FAIL === "1" || forceScrape;
