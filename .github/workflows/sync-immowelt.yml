@@ -46,7 +46,9 @@ jobs:
         run: npx playwright install chromium --with-deps
 
       - name: Safety contract
-        run: node scripts/test-listing-safety.mjs
+        run: |
+          node scripts/test-listing-safety.mjs
+          node scripts/test-immowelt-reconcile.mjs
 
       - name: Full sync from Immowelt
         if: ${{ inputs.force_from_json != true }}
