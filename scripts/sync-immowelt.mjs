@@ -1227,7 +1227,18 @@ async function loadJson(filePath) {
   const raw = JSON.parse(await readFile(filePath, "utf8"));
   const list = Array.isArray(raw) ? raw : raw.listings || [];
   const listings = list
-    .map((item, i) => normalizeListing(item, i))
+    .map((item, i) => {
+      const listing = normalizeListing(item, i);
+      if (!listing) return null;
+
+      // Reading the persisted mirror must be lossless. Fresh Immowelt scrapes
+      // mark every currently present profile offer active; render-only must not
+      // silently reactivate records that the stored snapshot marks inactive.
+      if (typeof item.active === "boolean") listing.active = item.active;
+      if (typeof item.detail_page === "boolean") listing.detail_page = item.detail_page;
+      listing.site_hidden = item.site_hidden === true;
+      return listing;
+    })
     .filter(Boolean);
 
   const seen = new Set();
