@@ -26,7 +26,7 @@ permissions:
 
 concurrency:
   group: sync-immowelt
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   sync:
