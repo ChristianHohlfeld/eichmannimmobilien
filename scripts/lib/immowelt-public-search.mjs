@@ -32,12 +32,28 @@ async function collectPage(page){
 }
 
 export async function scrapeEichmannFromImmoweltSearch(page){
+  const serpRequests=[];
+  const onRequest=(req)=>{
+    if(!/serp-bff\/search/i.test(req.url()))return;
+    serpRequests.push({method:req.method(),url:req.url(),postData:req.postData(),headers:req.headers()});
+    console.log("IMMOWELT_SERP_REQUEST "+JSON.stringify(serpRequests[serpRequests.length-1]));
+  };
+  page.on("request",onRequest);
   const response=await page.goto(IMMO_PUBLIC_SEARCH,{waitUntil:"domcontentloaded",timeout:60000});
   if(!response||response.status()>=400)throw new Error(`Immowelt search HTTP ${response?.status()||"none"}`);
   await page.waitForTimeout(1800);
   const byId=new Map();
   const collect=async()=>{for(const x of await collectPage(page))if(x?.id)byId.set(x.id,x);};
   await collect();
+  const page2=page.locator('button[aria-label="zu seite 2"],button').filter({hasText:/^\s*2\s*$/}).last();
+  if((await page2.count().catch(()=>0))>0&&await page2.isVisible().catch(()=>false)){
+    await page2.click({timeout:7000}).catch(()=>{});
+    await page.waitForTimeout(1800);
+    console.log("IMMOWELT_SERP_CAPTURED "+JSON.stringify(serpRequests));
+    // Restore the canonical first page before deterministic fallback attempts.
+    await page.goto(IMMO_PUBLIC_SEARCH,{waitUntil:"domcontentloaded",timeout:60000});
+    await page.waitForTimeout(900);
+  }
   // Direct server-side page URLs are safer than clicking Immowelt's SPA pagination:
   // the latter redirects to /classified-search, which can render empty on hosted runners.
   for(let n=2;n<=20;n++){
