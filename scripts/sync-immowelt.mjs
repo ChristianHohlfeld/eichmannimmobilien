@@ -2346,6 +2346,26 @@ async function scrapeImmowelt() {
     }
 
     if (!loadedProfile) {
+      const profileGuid = (PROFILE_URL.match(/\/profil\/([a-f0-9]{32})/i) || [])[1];
+      if (profileGuid) {
+        try {
+          const moduleUrl =
+            `https://homepagemodul.immowelt.de/list/api/suche/?callback=iwSync&guid=${profileGuid}`;
+          const moduleResp = await fetch(moduleUrl, {
+            headers: {
+              "user-agent":
+                "Mozilla/5.0 (compatible; ImmobilienEichmannSync/1.0; +https://immobilieneichmann.de)",
+              accept: "application/javascript,text/javascript,*/*;q=0.8",
+            },
+          });
+          const moduleText = await moduleResp.text();
+          console.log(
+            `Homepage module probe: HTTP ${moduleResp.status} · ${moduleText.slice(0, 500).replace(/\s+/g, " ")}`
+          );
+        } catch (moduleErr) {
+          console.warn("Homepage module probe failed:", moduleErr.message || moduleErr);
+        }
+      }
       throw new Error(`Immowelt profile unavailable: ${profileErrors.join(" | ")}`);
     }
 
