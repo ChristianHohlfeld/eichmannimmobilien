@@ -49,6 +49,13 @@ export async function scrapeEichmannFromImmoweltSearch(page){
     if(n>3&&byId.size===before)break;
   }
   const listings=[...byId.values()];
-  if(!listings.length)throw new Error("Immowelt search returned no Immobilien Eichmann offers");
+  if(!listings.length){
+    const diag=await page.evaluate(()=>({
+      exposeLinks:document.querySelectorAll('a[href*="/expose/"]').length,
+      providerMentions:(String(document.body?.innerText||"").match(/Immobilien\s+Eichmann/gi)||[]).length,
+      textSample:String(document.body?.innerText||"").slice(0,1200)
+    }));
+    throw new Error(`Immowelt search returned no Immobilien Eichmann offers; diagnostic ${JSON.stringify(diag)}`);
+  }
   return {source:IMMO_PUBLIC_SEARCH,discovery:"official_immowelt_search",scraped_at:new Date().toISOString(),listings};
 }
