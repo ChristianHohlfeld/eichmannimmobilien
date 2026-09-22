@@ -48,6 +48,7 @@ jobs:
         if: ${{ inputs.force_from_json != true }}
         env:
           IMMOWELT_PROFILE_URL: https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d
+          IMMOWELT_HARD_FAIL: "1"
         run: node scripts/sync-immowelt.mjs
 
       - name: Render only from canonical JSON
