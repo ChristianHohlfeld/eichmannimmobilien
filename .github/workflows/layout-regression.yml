@@ -7,6 +7,7 @@ on:
       - '**/*.html'
       - 'assets/logo.*'
       - 'scripts/test-layout-regression.mjs'
+      - 'scripts/test-listing-content.mjs'
       - 'scripts/test-expose-form.mjs'
       - 'scripts/test-legal-baseline.mjs'
       - 'scripts/sync-immowelt.mjs'
@@ -21,6 +22,7 @@ on:
       - '**/*.html'
       - 'assets/logo.*'
       - 'scripts/test-layout-regression.mjs'
+      - 'scripts/test-listing-content.mjs'
       - 'scripts/test-expose-form.mjs'
       - 'scripts/sync-immowelt.mjs'
       - 'admin/**'
@@ -63,8 +65,8 @@ jobs:
           }
           console.log(`Published cards OK: ${actual}`);
           NODE
-      - name: Commit rendered listing output on feature branches
-        if: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
+      - name: Commit rendered listing output
+        if: ${{ github.event_name == 'push' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
