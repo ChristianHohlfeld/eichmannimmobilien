@@ -6,6 +6,6 @@
   "attempted_count": null,
   "overlap_count": null,
   "overlap_ratio": null,
-  "reason": "Immowelt search returned no Immobilien Eichmann offers",
+  "reason": "Immowelt search returned no Immobilien Eichmann offers; diagnostic {\"exposeLinks\":31,\"providerMentions\":0,\"textSample\":\"Konstanz, Baden-Württemberg\\nFilter\\n378 Immobilien kaufen in Konstanz (alle Postleitzahlen), Konstanz\\nRelevanz\\nHerr Marcus Stolz\\n1 / 11\\nNeu\\nD\\n463.000 € 5.033 €/m²\\nAb 1.591 €/Monat finanzieren\\nWohnung zum Kauf\\n3 Zimmer\\n·\\n92 m²\\nPetershausen, Konstanz (78467)\\nHerr Manuel Palmitesta\\n1 / 13\\nF\\n829.000 € 5.300 €/m²\\nAb 2.849 €/Monat finanzieren\\nReihenendhaus zum Kauf",
   "policy": "fail_closed_last_known_good"
 }
