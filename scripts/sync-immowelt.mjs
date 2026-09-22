@@ -23,7 +23,9 @@
 import { readFile, writeFile, mkdir, readdir, unlink, copyFile, access, rm, rename } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateIncomingSnapshot } from "./lib/listing-safety.mjs";
+import { validateIncomingSnapshot, validateNoDestructiveOverwrite } from "./lib/listing-safety.mjs";
+import { scrapeEichmannFromImmoweltSearch } from "./lib/immowelt-public-search.mjs";
+import { reconcileMissingImmoweltOffers } from "./lib/immowelt-reconcile.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -1702,17 +1704,55 @@ async function renderIntoPages(data) {
  *   Only sync_policy:"mirror" + immowelt_id may auto-remove
  * Immowelt account is NEVER written to.
  */
-function mergeListings(scrapedList, previousData) {
-  const merged = scrapedList
-    .map((raw, index) => normalizeListing(raw, index))
-    .filter(Boolean);
+function mergeListings(scrapedList, previousData, { confirmedInactiveIds = [] } = {}) {
+  const prevList = Array.isArray(previousData?.listings) ? previousData.listings : [];
+  const prevById = new Map(prevList.map((item) => [String(item.immowelt_id || item.id || "").toLowerCase(), item]));
+  const inactive = new Set((confirmedInactiveIds || []).map((id) => String(id).toLowerCase()));
+  const seen = new Set();
+  const merged = [];
 
-  const previousCount = Array.isArray(previousData?.listings)
-    ? previousData.listings.length
-    : 0;
-  console.log(
-    `Immowelt authority: ${merged.length} current profile offers; previous mirror ${previousCount}. Full snapshot replacement.`
-  );
+  scrapedList.forEach((raw, index) => {
+    const id = String(raw.id || exposeIdFromUrl(raw.expose_url) || exposeIdFromUrl(raw.url) || "").toLowerCase();
+    if (!id) return;
+    const prev = prevById.get(id) || null;
+    const listing = normalizeListing(raw, index, prev);
+    if (!listing) return;
+    listing.active = true;
+    listing.detail_page = true;
+    listing.site_hidden = prev?.site_hidden === true;
+    listing.source = "immowelt";
+    listing.immowelt_id = id;
+    listing.sync_policy = "mirror";
+    listing.missing_on_immowelt = false;
+    delete listing.manual_overrides;
+    seen.add(id);
+    merged.push(listing);
+  });
+
+  for (const prev of prevList) {
+    const id = String(prev.immowelt_id || prev.id || "").toLowerCase();
+    if (!id || seen.has(id)) continue;
+    const kept = normalizeListing(prev, merged.length, prev);
+    if (!kept) continue;
+    kept.source = "immowelt";
+    kept.immowelt_id = id;
+    kept.sync_policy = "mirror";
+    kept.site_hidden = prev.site_hidden === true;
+    kept.detail_page = prev.detail_page !== false;
+    if (inactive.has(id)) {
+      kept.active = false;
+      kept.missing_on_immowelt = true;
+    } else {
+      // Already-inactive history is retained. An active object can reach here only
+      // if the reconciliation gate has explicitly resolved it; otherwise the run fails.
+      kept.active = prev.active !== false;
+      kept.missing_on_immowelt = prev.missing_on_immowelt === true;
+    }
+    delete kept.manual_overrides;
+    merged.push(kept);
+  }
+
+  console.log(`Immowelt authority: ${scrapedList.length} current offers; ${inactive.size} confirmed inactive; ${merged.length} records retained.`);
   return merged;
 }
 
@@ -2228,7 +2268,31 @@ async function enrichListings(listings) {
  * Live scrape via Playwright. Immowelt often fronts DataDome –
  * failures are expected; caller soft-fails.
  */
-async function scrapeImmowelt() {
+async function probeCurrentImmoweltOffer(page, id) {
+  const url = `https://www.immowelt.de/expose/${id}?app=1`;
+  try {
+    const resp = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
+    const status = resp?.status() || 0;
+    if (status === 404 || status === 410) return { state: "inactive", reason: `HTTP ${status}` };
+    if (!resp || status >= 400) return { state: "unknown", reason: `HTTP ${status || "none"}` };
+    await page.waitForTimeout(800);
+    const text = await page.evaluate(() => String(document.body?.innerText || "").replace(/\s+/g, " ").trim());
+    if (/datadome|captcha|access denied|bitte aktivieren sie javascript/i.test(text)) {
+      return { state: "unknown", reason: "source protection page" };
+    }
+    if (/anzeige.{0,50}(?:nicht mehr|deaktiviert|gelöscht)|objekt.{0,50}(?:nicht mehr verfügbar|nicht verfügbar)|angebot.{0,50}(?:nicht mehr verfügbar|beendet)/i.test(text)) {
+      return { state: "inactive", reason: "Immowelt marks offer unavailable" };
+    }
+    if (!/Immobilien\s+Eichmann/i.test(text)) {
+      return { state: "unknown", reason: "provider identity not verifiable" };
+    }
+    return { state: "active", reason: "active Immowelt expose" };
+  } catch (err) {
+    return { state: "unknown", reason: err?.message || String(err) };
+  }
+}
+
+async function scrapeImmowelt(previousData = null) {
   const { chromium } = await import("playwright");
   const browser = await chromium.launch({
     headless: true,
@@ -2305,7 +2369,18 @@ async function scrapeImmowelt() {
     }
 
     if (!loadedProfile) {
-      throw new Error(`Immowelt profile unavailable: ${profileErrors.join(" | ")}`);
+      console.warn(`Immowelt profile unavailable: ${profileErrors.join(" | ")}`);
+      const fallback = await scrapeEichmannFromImmoweltSearch(page);
+      fallback.confirmed_inactive_ids = await reconcileMissingImmoweltOffers(
+        fallback.listings,
+        previousData,
+        async (id) => {
+          const result = await probeCurrentImmoweltOffer(page, id);
+          console.log(`Missing-offer check ${id.slice(0, 8)}: ${result.state} · ${result.reason}`);
+          return result;
+        }
+      );
+      return fallback;
     }
 
     const extractCurrentPage = async () => page.evaluate(() => {
@@ -2462,11 +2537,22 @@ async function scrapeImmowelt() {
       throw new Error(`Profile count mismatch: expected ${expectedCount}, scraped ${raw.length}`);
     }
 
-    console.log(`Scraped ${raw.length} listings from profile (${loadedProfile})`);
+    const confirmed_inactive_ids = await reconcileMissingImmoweltOffers(
+      raw,
+      previousData,
+      async (id) => {
+        const result = await probeCurrentImmoweltOffer(page, id);
+        console.log(`Missing-offer check ${id.slice(0, 8)}: ${result.state} · ${result.reason}`);
+        return result;
+      }
+    );
+    console.log(`Scraped ${raw.length} listings from profile (${loadedProfile}); confirmed inactive ${confirmed_inactive_ids.length}.`);
     return {
       source: loadedProfile,
+      discovery: "immowelt_profile",
       scraped_at: new Date().toISOString(),
       listings: raw,
+      confirmed_inactive_ids,
     };
   } finally {
     await browser.close();
@@ -2521,13 +2607,13 @@ async function main() {
     };
   } else {
     try {
-      const scraped = await scrapeImmowelt();
-      const assessment = validateIncomingSnapshot(scraped.listings);
+      const scraped = await scrapeImmowelt(previous);
+      const assessment = validateIncomingSnapshot(scraped.listings, previous);
       console.log(`Immowelt snapshot accepted: ${assessment.count} complete offers.`);
       data = {
         source: scraped.source,
         scraped_at: scraped.scraped_at,
-        listings: mergeListings(scraped.listings, previous),
+        listings: mergeListings(scraped.listings, previous, { confirmedInactiveIds: scraped.confirmed_inactive_ids || [] }),
       };
       // Enrich from detail pages (separate browser session)
       try {
@@ -2538,9 +2624,11 @@ async function main() {
 
       // All-or-nothing: never publish a partially read Immowelt snapshot.
       const incomplete = data.listings.filter((item) =>
-        String(item.description || "").trim().length < 80 ||
-        !Array.isArray(item.images) ||
-        item.images.length < 2
+        item.active !== false && (
+          String(item.description || "").trim().length < 80 ||
+          !Array.isArray(item.images) ||
+          item.images.length < 2
+        )
       );
       if (incomplete.length) {
         throw new Error(
@@ -2548,6 +2636,8 @@ async function main() {
         );
       }
 
+      const safe = validateNoDestructiveOverwrite(data.listings, previous);
+      console.log(`Final LKG guard: ${safe.checked} existing records checked; no destructive/inconsistent overwrite.`);
       data._snapshot_assessment = assessment;
     } catch (err) {
       const hard = process.env.IMMOWELT_HARD_FAIL === "1" || forceScrape;
