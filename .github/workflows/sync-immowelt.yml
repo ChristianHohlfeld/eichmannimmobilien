@@ -6,6 +6,10 @@ on:
     paths:
       - 'scripts/sync-immowelt.mjs'
       - 'scripts/lib/listing-safety.mjs'
+      - 'scripts/lib/immowelt-public-search.mjs'
+      - 'scripts/lib/immowelt-reconcile.mjs'
+      - 'scripts/test-listing-safety.mjs'
+      - 'scripts/test-immowelt-reconcile.mjs'
       - '.github/workflows/sync-immowelt.yml'
   schedule:
     # Four checks/hour, offset from the top of the hour. Invalid/unavailable source keeps LKG unchanged.
