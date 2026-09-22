@@ -9,26 +9,23 @@
   const set=(text,state="unknown",title="")=>{
     for(const node of nodes){node.textContent=text;node.dataset.state=state;if(title)node.title=title;else node.removeAttribute("title");}
   };
-  const staticUrl="data/immowelt-sync-status.json?ts="+Date.now();
-  const runsUrl="https://api.github.com/repos/ChristianHohlfeld/eichmannimmobilien/actions/workflows/sync-immowelt.yml/runs?branch=main&per_page=1";
-  Promise.allSettled([
-    fetch(staticUrl,{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("status unavailable");return r.json();}),
-    fetch(runsUrl,{cache:"no-store",headers:{Accept:"application/vnd.github+json"}}).then(r=>{if(!r.ok)throw new Error("run unavailable");return r.json();})
-  ]).then(([sr,rr])=>{
-    const status=sr.status==="fulfilled"?sr.value:{};
-    const run=rr.status==="fulfilled"?rr.value?.workflow_runs?.[0]:null;
-    const checked=run?.run_started_at||run?.created_at||null;
-    const valid=status.last_valid_at||null;
-    if(run?.status==="queued"||run?.status==="in_progress"){
-      set(`Immowelt · Prüfung läuft · letzter gültiger Stand ${fmt(valid)}`,"checking");return;
-    }
-    if(run?.conclusion==="failure"||status.state==="rejected"){
-      set(`Immowelt · Prüfung ${fmt(checked)} fehlgeschlagen · letzter gültiger Stand ${fmt(valid)} ⚠`,"rejected",status.reason||"Abruf verworfen; Last Known Good bleibt unverändert.");return;
-    }
-    if(run?.conclusion==="success"){
-      set(`Immowelt · geprüft ${fmt(checked)} · letzter übernommener Stand ${fmt(valid)} · aktuell`,"current");return;
-    }
-    if(status.state==="current"){set(`Immowelt · letzter gültiger Stand ${fmt(valid)} · aktuell`,"current");return;}
-    set(`Immowelt · letzter gültiger Stand ${fmt(valid)}`,"stale",status.reason||"");
-  }).catch(()=>set("Immowelt · Datenstatus derzeit nicht abrufbar","unknown"));
+  fetch("data/immowelt-sync-status.json?ts="+Date.now(),{cache:"no-store"})
+    .then(r=>{if(!r.ok)throw new Error("status unavailable");return r.json();})
+    .then(status=>{
+      const valid=status.last_valid_at||null;
+      if(status.state==="current"){
+        set(`Immowelt · letzter übernommener API-Stand ${fmt(valid)} · aktuell`,"current");
+        return;
+      }
+      if(status.state==="awaiting_api_key"){
+        set(`Immowelt · offizielle API-Freischaltung ausstehend · letzter gültiger Stand ${fmt(valid)} ⚠`,"stale",status.reason||"");
+        return;
+      }
+      if(status.state==="rejected"){
+        set(`Immowelt · neuer API-Abruf verworfen · letzter gültiger Stand ${fmt(valid)} ⚠`,"rejected",status.reason||"Abruf verworfen; Last Known Good bleibt unverändert.");
+        return;
+      }
+      set(`Immowelt · letzter gültiger Stand ${fmt(valid)}`,"stale",status.reason||"");
+    })
+    .catch(()=>set("Immowelt · Datenstatus derzeit nicht abrufbar","unknown"));
 })();
