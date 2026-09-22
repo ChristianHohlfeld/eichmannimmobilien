@@ -6,6 +6,6 @@
   "attempted_count": null,
   "overlap_count": null,
   "overlap_ratio": null,
-  "reason": "Immowelt search returned no Immobilien Eichmann offers; diagnostic {\"exposeLinks\":0,\"providerMentions\":0,\"controls\":[],\"textSample\":\"\"}",
+  "reason": "Immowelt search returned no Immobilien Eichmann offers; diagnostic {\"exposeLinks\":31,\"providerMentions\":0,\"controls\":[{\"text\":\"\",\"aria\":\"Gehe zur nächsten Folie\",\"rel\":null,\"href\":null},{\"text\":\"\",\"aria\":\"Gehe zur nächsten Folie\",\"rel\":null,\"href\":null},{\"text\":\"\",\"aria\":\"Gehe zur nächsten Folie\",\"rel\":null,\"href\":null},{\"text\":\"\",\"aria\":\"Gehe zur nächsten Folie\",\"rel\":null,\"href\":null},{\"text\":\"\",\"aria\":\"Gehe zur nächsten Folie\",\"rel\":null,\"href\":null},{\"text\":\"\",\"aria\":\"Gehe zur nächsten Folie",
   "policy": "fail_closed_last_known_good"
 }
