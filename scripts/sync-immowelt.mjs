@@ -2276,17 +2276,34 @@ async function scrapeImmowelt() {
     args: ["--disable-blink-features=AutomationControlled"],
   });
   try {
+    // Use the same Immowelt app/mobile context that already works for
+    // expose reads. The desktop profile route is blocked by DataDome on
+    // GitHub-hosted runners (HTTP 403), while the app surface is intended
+    // for programmatic/mobile clients and serves the same Immowelt data.
     const context = await browser.newContext({
       userAgent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1",
       locale: "de-DE",
-      viewport: { width: 1365, height: 900 },
+      viewport: { width: 390, height: 844 },
+      isMobile: true,
+      hasTouch: true,
     });
+    await context.addCookies([{
+      name: "aviv_client",
+      value: "ios",
+      domain: ".immowelt.de",
+      path: "/",
+      secure: true,
+    }]);
     const page = await context.newPage();
     page.setDefaultTimeout(60000);
 
+    const withAppSurface = (url) =>
+      url + (url.includes("?") ? "&app=1" : "?app=1");
     const profileCandidates = [...new Set([
+      withAppSurface(PROFILE_URL),
       PROFILE_URL,
+      withAppSurface(PROFILE_URL.replace("www.immowelt.de", "www.immowelt.at")),
       PROFILE_URL.replace("www.immowelt.de", "www.immowelt.at"),
     ])];
     let loadedProfile = null;
@@ -2555,12 +2572,15 @@ async function main() {
         console.warn("Enrichment pass failed (keeping card-level data):", enrichErr.message || enrichErr);
       }
     } catch (err) {
-      console.error("Scrape failed (soft-fail):", err.message || err);
+      const hard = process.env.IMMOWELT_HARD_FAIL === "1" || forceScrape;
+      console.error(`Scrape failed (${hard ? "hard-fail" : "soft-fail"}):`, err.message || err);
       if (previous) {
         console.error("Keeping last good data/listings.json – site unchanged.");
+        if (hard) throw err;
         process.exit(0);
       }
       console.error("No previous JSON available. Exiting without changes.");
+      if (hard) throw err;
       process.exit(0);
     }
   }
