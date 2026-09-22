@@ -37,6 +37,17 @@ assert.ok(impressum.includes("Industrie- und Handelskammer Hochrhein-Bodensee"),
 const datenschutz = await readFile(path.join(ROOT, "datenschutz.html"), "utf8");
 for (const needle of ["GitHub Pages","forms.digitalisierungsplanung.de","Amazon Simple Email Service","Google Analytics","Local Storage","Landesbeauftragte"]) assert.ok(datenschutz.includes(needle), "Datenschutz missing " + needle);
 assert.ok(!datenschutz.includes("FormSubmit"), "Datenschutz: retired FormSubmit reference");
+const immoweltAttribution = "Immobilien-Daten bereitgestellt von immowelt.de";
+for (const rel of ["index.html", "projekte.html"]) {
+  const s = await readFile(path.join(ROOT, rel), "utf8");
+  assert.ok(s.includes(immoweltAttribution), rel + ": required Immowelt API attribution missing");
+  assert.ok(/href="https:\/\/www\.immowelt\.de\/?"/.test(s), rel + ": Immowelt attribution must link to immowelt.de");
+}
+for (const file of html.filter((p) => p.includes(path.sep + "objekt" + path.sep))) {
+  const s = await readFile(file, "utf8");
+  assert.ok(s.includes(immoweltAttribution), file + ": required Immowelt API attribution missing");
+}
+
 const kontakt = await readFile(path.join(ROOT, "kontakt.html"), "utf8");
 assert.ok(kontakt.includes("Durch das Absenden kommt kein Maklervertrag zustande."), "Kontakt: no-contract notice missing");
 assert.ok(kontakt.includes('action="https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/contact"'), "Kontakt: own form gateway missing");
