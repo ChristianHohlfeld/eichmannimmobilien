@@ -1,11 +1,11 @@
 {
   "source": "immowelt",
   "state": "rejected",
-  "last_attempt_at": "2026-09-22T06:42:45.224Z",
   "last_valid_at": "2026-09-20T18:49:02.890Z",
   "last_valid_count": 11,
   "attempted_count": null,
   "overlap_count": null,
   "overlap_ratio": null,
-  "reason": "Immowelt search returned no Immobilien Eichmann offers"
+  "reason": "Immowelt search returned no Immobilien Eichmann offers",
+  "policy": "fail_closed_last_known_good"
 }
