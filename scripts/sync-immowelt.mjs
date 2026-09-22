@@ -2725,9 +2725,9 @@ async function main() {
     return;
   }
 
-  await writeCanonical(data);
+  // Do not touch canonical JSON until every source/validation/image step has completed.
+  // If anything above fails, the repository's last-known-good listing snapshot stays intact.
   await syncImages(data, { skipDownload: false });
-  // Re-write canonical after gallery_bases / floor_plan_bases assigned
   await writeCanonical(data);
   await renderIntoPages(data);
   await writeSyncStatus({
