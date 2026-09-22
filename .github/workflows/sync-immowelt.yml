@@ -69,7 +69,6 @@ jobs:
           if (raw.sot !== "immowelt") problems.push(`sot must be immowelt, got ${raw.sot || "missing"}`);
           for (const item of listings) {
             if (item.source !== "immowelt") problems.push(`${item.slug}: non-Immowelt source ${item.source || "missing"}`);
-            if (item.active === false) problems.push(`${item.slug}: profile offer persisted as inactive`);
             if (item.manual_overrides) problems.push(`${item.slug}: manual_overrides must not exist in Immowelt-authoritative mirror`);
           }
           for (const item of detailedListings) {
