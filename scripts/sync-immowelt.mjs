@@ -23,7 +23,7 @@
 import { readFile, writeFile, mkdir, readdir, unlink, copyFile, access, rm, rename } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateIncomingSnapshot, validateNoDestructiveOverwrite } from "./lib/listing-safety.mjs";
+import { validateIncomingSnapshot } from "./lib/listing-safety.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -2494,6 +2494,9 @@ async function scrapeImmowelt() {
       const m = t.match(/Immobilien\s+zum\s+Verkauf\s*\((\d+)\)/i);
       return m ? Number(m[1]) : null;
     });
+    if (!Number.isInteger(expectedCount) || expectedCount <= 0) {
+      throw new Error("Immowelt profile count unavailable – refusing to replace last-known-good");
+    }
 
     const byId = new Map();
     const collectCurrentPage = async () => {
@@ -2537,7 +2540,7 @@ async function scrapeImmowelt() {
     if (!raw.length) {
       throw new Error("No expose links found on profile page");
     }
-    if (expectedCount && raw.length !== expectedCount) {
+    if (raw.length !== expectedCount) {
       throw new Error(`Profile count mismatch: expected ${expectedCount}, scraped ${raw.length}`);
     }
 
@@ -2601,10 +2604,8 @@ async function main() {
   } else {
     try {
       const scraped = await scrapeImmowelt();
-      const assessment = validateIncomingSnapshot(scraped.listings, previous);
-      console.log(
-        `Immowelt snapshot accepted: ${assessment.count} offers; previous ${assessment.previous_count}; overlap ${assessment.overlap_count}.`
-      );
+      const assessment = validateIncomingSnapshot(scraped.listings);
+      console.log(`Immowelt snapshot accepted: ${assessment.count} complete offers.`);
       data = {
         source: scraped.source,
         scraped_at: scraped.scraped_at,
@@ -2616,8 +2617,6 @@ async function main() {
       } catch (enrichErr) {
         console.warn("Enrichment pass failed (keeping card-level data):", enrichErr.message || enrichErr);
       }
-      const finalCheck = validateNoDestructiveOverwrite(data.listings, previous);
-      console.log(`Immowelt final snapshot safe: ${finalCheck.checked} existing offers checked for destructive field loss.`);
       data._snapshot_assessment = assessment;
     } catch (err) {
       const hard = process.env.IMMOWELT_HARD_FAIL === "1" || forceScrape;
