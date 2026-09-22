@@ -188,34 +188,30 @@ async function ensureListings() {
 
 async function loadImmoweltHealth() {
   const line=$("immowelt-health-line"), detail=$("immowelt-health-detail"), card=$("immowelt-health");
-  if(!line||!detail||!card||!config)return;
+  if(!line||!detail||!card)return;
   const fmt=(iso)=>{
     if(!iso)return "unbekannt";
     const d=new Date(iso);if(Number.isNaN(d.getTime()))return "unbekannt";
     return new Intl.DateTimeFormat("de-DE",{timeZone:"Europe/Berlin",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}).format(d).replace(",","");
   };
-  let status={},run=null;
+  let status={};
   try{
     const res=await fetch("../data/immowelt-sync-status.json?t="+Date.now(),{cache:"no-store"});
     if(res.ok)status=await res.json();
   }catch{}
-  try{
-    const wf=config.workflow_file||"sync-immowelt.yml";
-    const runs=await ghFetch(`/actions/workflows/${encodeURIComponent(wf)}/runs?branch=${encodeURIComponent(config.branch||"main")}&per_page=1`);
-    run=runs?.workflow_runs?.[0]||null;
-  }catch(e){console.warn("Immowelt run status unavailable:",e);}
-  const checked=run?.run_started_at||run?.created_at||null;
-  const failed=run?.conclusion==="failure"||status.state==="rejected";
-  const running=run?.status==="in_progress"||run?.status==="queued";
-  if(running){
-    line.innerHTML=`<span class="badge warn">läuft</span> Immowelt-Prüfung läuft · letzter gültiger Stand ${esc(fmt(status.last_valid_at||listingsData?.scraped_at))}`;
-    detail.textContent="Bis zur vollständigen Prüfung bleibt der letzte gültige Objektstand unverändert.";
-  }else if(failed){
-    line.innerHTML=`<span class="badge miss">LKG aktiv</span> Prüfung ${esc(fmt(checked))} fehlgeschlagen · Objektdaten unverändert`;
+  const valid=status.last_valid_at||listingsData?.scraped_at||null;
+  if(status.state==="current"){
+    line.innerHTML=`<span class="badge ok">OK</span> offizieller Immowelt-API-Stand ${esc(fmt(valid))}`;
+    detail.textContent="Immowelt ist Single Source of Truth; nur vollständig validierte API-Snapshots werden atomar übernommen.";
+  }else if(status.state==="awaiting_api_key"){
+    line.innerHTML=`<span class="badge warn">API-Key fehlt</span> letzter gültiger Stand ${esc(fmt(valid))}`;
+    detail.textContent=status.reason||"Offizielle Immowelt-API ist vorbereitet; Freischaltung/API-Key fehlt noch.";
+  }else if(status.state==="rejected"){
+    line.innerHTML=`<span class="badge miss">LKG aktiv</span> API-Abruf verworfen · letzter gültiger Stand ${esc(fmt(valid))}`;
     detail.textContent=status.reason||"Unsicherer Abruf wurde verworfen. Last Known Good bleibt online.";
   }else{
-    line.innerHTML=`<span class="badge ok">OK</span> Immowelt geprüft ${esc(fmt(checked))} · letzter übernommener Stand ${esc(fmt(status.last_valid_at||listingsData?.scraped_at))}`;
-    detail.textContent="Immowelt ist Single Source of Truth. Unvollständige oder unplausible Abrufe werden nicht übernommen.";
+    line.innerHTML=`<span class="badge warn">Status offen</span> letzter gültiger Stand ${esc(fmt(valid))}`;
+    detail.textContent=status.reason||"Kein bestätigter aktueller Immowelt-API-Snapshot.";
   }
 }
 
