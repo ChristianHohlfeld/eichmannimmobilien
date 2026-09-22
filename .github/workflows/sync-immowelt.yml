@@ -48,6 +48,22 @@ jobs:
           grep -q "GetEstateExposeByEstateGuid" /tmp/EstateExpose.wsdl
           echo "Official Immowelt SOAP API WSDL reachable."
 
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          for path in ["/tmp/EstateService.wsdl", "/tmp/EstateExpose.wsdl"]:
+              root = ET.parse(path).getroot()
+              print("\nSCHEMA", path)
+              for el in root.iter():
+                  name = el.attrib.get("name", "")
+                  if name in {
+                      "GetListCustomerProjects", "GetListCustomerProjectsResponse",
+                      "EstateServiceListResponse", "ListAuthenticationHeader",
+                      "GetEstateExposeByEstateGuid", "GetEstateExposeByEstateGuidResponse",
+                      "ExposeServiceResponse", "ExposeAuthenticationHeader",
+                  }:
+                      print(ET.tostring(el, encoding="unicode")[:12000])
+          PY
+
       - name: Render current last-known-good snapshot
         run: node scripts/sync-immowelt.mjs --render-only
 
