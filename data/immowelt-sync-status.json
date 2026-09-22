@@ -1,11 +1,9 @@
 {
   "source": "immowelt",
-  "state": "rejected",
+  "mode": "official_api",
+  "state": "awaiting_api_key",
   "last_valid_at": "2026-09-20T18:49:02.890Z",
   "last_valid_count": 11,
-  "attempted_count": null,
-  "overlap_count": null,
-  "overlap_ratio": null,
-  "reason": "Immowelt search returned no Immobilien Eichmann offers; diagnostic {\"exposeLinks\":31,\"providerMentions\":0,\"controls\":[{\"text\":\"\",\"aria\":\"Gehe zur nächsten Folie\",\"rel\":null,\"href\":null},{\"text\":\"\",\"aria\":\"Gehe zur nächsten Folie\",\"rel\":null,\"href\":null},{\"text\":\"\",\"aria\":\"Gehe zur nächsten Folie\",\"rel\":null,\"href\":null},{\"text\":\"\",\"aria\":\"Gehe zur nächsten Folie\",\"rel\":null,\"href\":null},{\"text\":\"\",\"aria\":\"Gehe zur nächsten Folie\",\"rel\":null,\"href\":null},{\"text\":\"\",\"aria\":\"Gehe zur nächsten Folie",
-  "policy": "fail_closed_last_known_good"
+  "reason": "Offizielle immowelt.de-API technisch erreichbar; accountgebundener API-Key ist noch nicht im Deployment hinterlegt. Last Known Good bleibt unverändert.",
+  "policy": "atomic_snapshot_last_known_good"
 }
