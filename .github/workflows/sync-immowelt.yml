@@ -57,7 +57,9 @@ jobs:
                   name = el.attrib.get("name", "")
                   if name in {
                       "GetListCustomerProjects", "GetListCustomerProjectsResponse",
-                      "EstateServiceListResponse", "ListAuthenticationHeader",
+                      "EstateServiceListResponse", "EstatePropertyListEstateProperty",
+                      "ArrayOfEstateParameter", "EstateParameter", "ListAuthenticationHeader",
+                      "ApiAuthenticationHeaderBase",
                       "GetEstateExposeByEstateGuid", "GetEstateExposeByEstateGuidResponse",
                       "ExposeServiceResponse", "ExposeAuthenticationHeader",
                   }:
