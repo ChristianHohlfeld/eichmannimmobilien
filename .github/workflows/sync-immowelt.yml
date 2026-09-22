@@ -5,9 +5,10 @@ on:
     branches: [main]
     paths:
       - 'scripts/sync-immowelt.mjs'
+      - 'scripts/lib/listing-safety.mjs'
       - '.github/workflows/sync-immowelt.yml'
   schedule:
-    # Every 3 hours (UTC). Soft-fails on DataDome keep last good list.
+    # Every 3 hours (UTC). Invalid/unavailable source keeps last-known-good unchanged.
     - cron: "0 */3 * * *"
   workflow_dispatch:
     inputs:
@@ -111,7 +112,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/listings.json assets/listings partials/listings-grid.html index.html projekte.html objekt sitemap.xml
+          git add data/listings.json data/immowelt-sync-status.json assets/listings partials/listings-grid.html index.html projekte.html objekt sitemap.xml
           if git diff --staged --quiet; then
             echo "No listing changes."
           else
@@ -119,6 +120,23 @@ jobs:
             # Other site-only commits may land while the enrichment job is
             # downloading galleries. Rebase generated output onto current main
             # instead of losing a successful 10+ minute sync at push time.
+            git pull --rebase origin main
+            git push
+          fi
+
+      - name: Persist Immowelt sync status
+        if: ${{ always() }}
+        run: |
+          if [ ! -f data/immowelt-sync-status.json ]; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/immowelt-sync-status.json
+          if git diff --staged --quiet; then
+            echo "Sync status unchanged."
+          else
+            git commit -m "chore: record Immowelt sync status"
             git pull --rebase origin main
             git push
           fi
