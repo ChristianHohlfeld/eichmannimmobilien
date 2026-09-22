@@ -1931,3 +1931,15 @@ a.listing-card:focus-visible {
   color: var(--slate);
 }
 .expose-description.prose p:last-child { margin-bottom: 0; }
+
+/* immowelt-sync-status-v1 */
+.immowelt-sync-status {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+.immowelt-sync-status[data-state="current"] { color: var(--ok, #1f6b3a); }
+.immowelt-sync-status[data-state="rejected"] { color: var(--warn, #8a5a00); }
+.immowelt-sync-status[data-state="stale"],
+.immowelt-sync-status[data-state="unknown"] { color: var(--slate); }
