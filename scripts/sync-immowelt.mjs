@@ -2437,6 +2437,37 @@ async function scrapeImmowelt() {
             .filter((href) => /(?:page|seite|p=|offset|cursor)/i.test(href))
         )].slice(0, 50);
         console.log(`Public search pagination hrefs: ${JSON.stringify(hrefs)}`);
+        const ufrnMatch = searchText.match(
+          /window\["__UFRN_FETCHER__"\]=JSON\.parse\("((?:\\\\.|[^"\\\\])*)"\);/s
+        );
+        if (ufrnMatch) {
+          try {
+            const decoded = JSON.parse('"' + ufrnMatch[1] + '"');
+            const ufrn = JSON.parse(decoded);
+            const serp = ufrn?.data?.["classified-serp-init-data"]?.pageProps || null;
+            const summary = {
+              rootKeys: Object.keys(ufrn || {}),
+              dataKeys: Object.keys(ufrn?.data || {}),
+              pagePropsKeys: Object.keys(serp || {}),
+            };
+            const sampleArrays = [];
+            for (const [key, value] of Object.entries(serp || {})) {
+              if (Array.isArray(value) && value.length) {
+                sampleArrays.push({
+                  key,
+                  length: value.length,
+                  sample: value.slice(0, 2),
+                });
+              }
+            }
+            console.log(`Public search UFRN summary: ${JSON.stringify(summary)}`);
+            console.log(`Public search UFRN arrays: ${JSON.stringify(sampleArrays).slice(0, 12000)}`);
+          } catch (ufrnErr) {
+            console.warn("Public search UFRN parse failed:", ufrnErr.message || ufrnErr);
+          }
+        } else {
+          console.warn("Public search UFRN payload not found.");
+        }
       } catch (searchErr) {
         console.warn("Public search probe failed:", searchErr.message || searchErr);
       }
