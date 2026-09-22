@@ -8,8 +8,8 @@ on:
       - 'scripts/lib/listing-safety.mjs'
       - '.github/workflows/sync-immowelt.yml'
   schedule:
-    # Every 3 hours (UTC). Invalid/unavailable source keeps last-known-good unchanged.
-    - cron: "0 */3 * * *"
+    # Four checks/hour, offset from the top of the hour. Invalid/unavailable source keeps LKG unchanged.
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:
     inputs:
       force_from_json:
@@ -44,6 +44,9 @@ jobs:
       - name: Install Playwright Chromium
         if: ${{ inputs.force_from_json != true }}
         run: npx playwright install chromium --with-deps
+
+      - name: Safety contract
+        run: node scripts/test-listing-safety.mjs
 
       - name: Full sync from Immowelt
         if: ${{ inputs.force_from_json != true }}
