@@ -2399,6 +2399,12 @@ async function scrapeImmowelt() {
           `Public search probe: HTTP ${searchResp.status} · bytes ${searchText.length} · expose UUIDs ${ids.length} · Eichmann ${providerAt >= 0 ? "yes" : "no"} · IDs ${ids.slice(0, 20).join(",")}`
         );
         console.log(`Public search Eichmann snippet: ${providerSnippet.slice(0, 4500)}`);
+        const hrefs = [...new Set(
+          [...searchText.matchAll(/href=["']([^"']+)["']/gi)]
+            .map((m) => m[1].replace(/&amp;/g, "&"))
+            .filter((href) => /(?:page|seite|p=|offset|cursor)/i.test(href))
+        )].slice(0, 50);
+        console.log(`Public search pagination hrefs: ${JSON.stringify(hrefs)}`);
       } catch (searchErr) {
         console.warn("Public search probe failed:", searchErr.message || searchErr);
       }
