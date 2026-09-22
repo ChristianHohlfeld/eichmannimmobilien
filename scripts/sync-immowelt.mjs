@@ -23,7 +23,7 @@
 import { readFile, writeFile, mkdir, readdir, unlink, copyFile, access, rm, rename } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateIncomingSnapshot, stabilizeListingsAgainstPrevious } from "./lib/listing-safety.mjs";
+import { validateIncomingSnapshot, validateNoDestructiveOverwrite } from "./lib/listing-safety.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -572,126 +572,64 @@ function badgeFor(listing) {
   return { text: t, className: "listing-badge" };
 }
 
-function normalizeListing(raw, index, prev = null) {
+function normalizeListing(raw, index) {
   const id =
     raw.id ||
     exposeIdFromUrl(raw.expose_url) ||
     exposeIdFromUrl(raw.url) ||
-    (prev && prev.id) ||
     null;
   if (!id) return null;
 
   const expose_url =
     raw.expose_url ||
     raw.url ||
-    (prev && prev.expose_url) ||
     `https://www.immowelt.de/expose/${id}`;
 
+  const text = (value) => String(value || "").trim() || null;
   const base = {
     id,
-    title: (raw.title || (prev && prev.title) || "Immobilie").trim(),
-    price: (raw.price || (prev && prev.price) || "").trim() || null,
-    location: (raw.location || (prev && prev.location) || "").trim() || null,
-    rooms: (raw.rooms || (prev && prev.rooms) || "").trim() || null,
-    living_area: (raw.living_area || raw.livingArea || (prev && prev.living_area) || "").trim() || null,
-    plot_area: raw.plot_area ?? raw.plotArea ?? (prev && prev.plot_area) ?? null,
-    type: (raw.type || (prev && prev.type) || "").trim() || null,
-    status: (raw.status || (prev && prev.status) || "Kauf").trim() || "Kauf",
-    short_description:
-      (raw.short_description || raw.shortDescription || (prev && prev.short_description) || "").trim() ||
-      null,
+    title: text(raw.title) || "Immobilie",
+    price: text(raw.price),
+    location: text(raw.location),
+    rooms: text(raw.rooms),
+    living_area: text(raw.living_area || raw.livingArea),
+    plot_area: raw.plot_area ?? raw.plotArea ?? null,
+    type: text(raw.type),
+    status: text(raw.status) || "Kauf",
+    short_description: text(raw.short_description || raw.shortDescription),
     expose_url,
-    main_image_url:
-      raw.main_image_url || raw.mainImageUrl || raw.image || (prev && prev.main_image_url) || null,
-    image_base: raw.image_base || (prev && prev.image_base) || imageBase(index, id),
-    // Enriched fields (prefer incoming, else keep previous)
-    description:
-      (raw.description || (prev && prev.description) || "").trim() || null,
-    source_description_fingerprint:
-      Array.isArray(raw.source_description_fingerprint)
-        ? raw.source_description_fingerprint
-        : prev && Array.isArray(prev.source_description_fingerprint)
-          ? prev.source_description_fingerprint
-          : [],
-    source_title:
-      (raw.source_title || (prev && prev.source_title) || "").trim() || null,
-    reference_number:
-      (raw.reference_number || (prev && prev.reference_number) || "").trim() || null,
-    location_description:
-      (raw.location_description || (prev && prev.location_description) || "").trim() || null,
-    amenities: Array.isArray(raw.amenities)
-      ? raw.amenities.filter(Boolean)
-      : prev && Array.isArray(prev.amenities)
-        ? prev.amenities
-        : [],
-    additional_information:
-      (raw.additional_information || (prev && prev.additional_information) || "").trim() || null,
-    images: Array.isArray(raw.images)
-      ? raw.images.filter(Boolean)
-      : prev && Array.isArray(prev.images)
-        ? prev.images
-        : [],
-    floor_plans: Array.isArray(raw.floor_plans)
-      ? raw.floor_plans.filter(Boolean)
-      : prev && Array.isArray(prev.floor_plans)
-        ? prev.floor_plans
-        : [],
-    gallery_bases: Array.isArray(raw.gallery_bases)
-      ? raw.gallery_bases
-      : prev && Array.isArray(prev.gallery_bases)
-        ? prev.gallery_bases
-        : [],
-    floor_plan_bases: Array.isArray(raw.floor_plan_bases)
-      ? raw.floor_plan_bases
-      : prev && Array.isArray(prev.floor_plan_bases)
-        ? prev.floor_plan_bases
-        : [],
-    facts:
-      raw.facts && typeof raw.facts === "object"
-        ? raw.facts
-        : prev && prev.facts
-          ? prev.facts
-          : null,
-    enriched_at: raw.enriched_at || (prev && prev.enriched_at) || null,
-    active:
-      typeof raw.active === "boolean"
-        ? raw.active
-        : prev && typeof prev.active === "boolean"
-          ? prev.active
-          : true,
-    detail_page:
-      typeof raw.detail_page === "boolean"
-        ? raw.detail_page
-        : prev && typeof prev.detail_page === "boolean"
-          ? prev.detail_page
-          : true,
-    // Local presentation-only override. Object content/status still comes from Immowelt.
-    site_hidden: prev?.site_hidden === true,
+    main_image_url: raw.main_image_url || raw.mainImageUrl || raw.image || null,
+    image_base: raw.image_base || imageBase(index, id),
+    description: text(raw.description),
+    source_description_fingerprint: Array.isArray(raw.source_description_fingerprint)
+      ? raw.source_description_fingerprint
+      : [],
+    source_title: text(raw.source_title),
+    reference_number: text(raw.reference_number),
+    location_description: text(raw.location_description),
+    amenities: Array.isArray(raw.amenities) ? raw.amenities.filter(Boolean) : [],
+    additional_information: text(raw.additional_information),
+    images: Array.isArray(raw.images) ? raw.images.filter(Boolean) : [],
+    floor_plans: Array.isArray(raw.floor_plans) ? raw.floor_plans.filter(Boolean) : [],
+    gallery_bases: Array.isArray(raw.gallery_bases) ? raw.gallery_bases : [],
+    floor_plan_bases: Array.isArray(raw.floor_plan_bases) ? raw.floor_plan_bases : [],
+    facts: raw.facts && typeof raw.facts === "object" ? raw.facts : null,
+    enriched_at: raw.enriched_at || null,
+    active: true,
+    detail_page: true,
+    site_hidden: false,
   };
-  if (base.detail_page === false && !base.main_image_url && !base.images.length && !base.gallery_bases.length) {
+
+  if (!base.main_image_url && !base.images.length && !base.gallery_bases.length) {
     base.image_base = null;
   }
 
-  base.slug = makeSlug({ ...base, slug: raw.slug || (prev && prev.slug) });
+  base.slug = makeSlug({ ...base, slug: raw.slug || null });
   base.local_url = localExposePath(base);
-  base.source = raw.source || (prev && prev.source) || "immowelt";
-  base.immowelt_id =
-    raw.immowelt_id ||
-    (prev && prev.immowelt_id) ||
-    (looksLikeImmoweltId(id) ? id : null);
-  base.sync_policy = raw.sync_policy || (prev && prev.sync_policy) || "independent";
-  base.missing_on_immowelt =
-    raw.missing_on_immowelt === true ||
-    (prev && prev.missing_on_immowelt === true) ||
-    false;
-  // Immowelt is the single source of truth for offer content and publication state.
-  // Preserve persisted active/detail flags while loading the local mirror.
-  // A successful full Immowelt sync explicitly sets current profile offers active
-  // and drops offers that are no longer present.
   base.source = "immowelt";
+  base.immowelt_id = id;
   base.sync_policy = "mirror";
   base.missing_on_immowelt = false;
-  delete base.manual_overrides;
   return base;
 }
 
@@ -1754,37 +1692,15 @@ async function renderIntoPages(data) {
  * Immowelt account is NEVER written to.
  */
 function mergeListings(scrapedList, previousData) {
-  const prevList = previousData?.listings || [];
-  const prevByImmowelt = new Map();
-  for (const item of prevList) {
-    const key = listingImmoweltKey(item);
-    if (key) prevByImmowelt.set(key, item);
-  }
+  const merged = scrapedList
+    .map((raw, index) => normalizeListing(raw, index))
+    .filter(Boolean);
 
-  const merged = [];
-  scrapedList.forEach((raw, index) => {
-    const id = raw.id || exposeIdFromUrl(raw.expose_url) || exposeIdFromUrl(raw.url);
-    if (!id) return;
-
-    const key = String(id).toLowerCase();
-    const prev = prevByImmowelt.get(key) || null;
-    const listing = normalizeListing(raw, index, prev);
-    if (!listing) return;
-
-    // Presence on the current Immowelt profile means public/active here.
-    listing.active = true;
-    listing.detail_page = true;
-    listing.site_hidden = prev?.site_hidden === true;
-    listing.source = "immowelt";
-    listing.immowelt_id = id;
-    listing.sync_policy = "mirror";
-    listing.missing_on_immowelt = false;
-    delete listing.manual_overrides;
-    merged.push(listing);
-  });
-
+  const previousCount = Array.isArray(previousData?.listings)
+    ? previousData.listings.length
+    : 0;
   console.log(
-    `Immowelt authority: ${merged.length} current profile offers mirrored; ${Math.max(0, prevList.length - merged.length)} stale/local records dropped.`
+    `Immowelt authority: ${merged.length} current profile offers; previous mirror ${previousCount}. Full snapshot replacement.`
   );
   return merged;
 }
@@ -2700,14 +2616,8 @@ async function main() {
       } catch (enrichErr) {
         console.warn("Enrichment pass failed (keeping card-level data):", enrichErr.message || enrichErr);
       }
-      const stabilized = stabilizeListingsAgainstPrevious(data.listings, previous);
-      data.listings = stabilized.listings;
-      if (stabilized.warnings.length) {
-        console.warn(
-          `Last-known-good preserved ${stabilized.warnings.length} suspicious field changes:\n` +
-          stabilized.warnings.join("\n")
-        );
-      }
+      const finalCheck = validateNoDestructiveOverwrite(data.listings, previous);
+      console.log(`Immowelt final snapshot safe: ${finalCheck.checked} existing offers checked for destructive field loss.`);
       data._snapshot_assessment = assessment;
     } catch (err) {
       const hard = process.env.IMMOWELT_HARD_FAIL === "1" || forceScrape;
