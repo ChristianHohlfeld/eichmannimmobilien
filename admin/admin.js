@@ -186,6 +186,39 @@ async function ensureListings() {
   await loadListingsLocal();
 }
 
+async function loadImmoweltHealth() {
+  const line=$("immowelt-health-line"), detail=$("immowelt-health-detail"), card=$("immowelt-health");
+  if(!line||!detail||!card||!config)return;
+  const fmt=(iso)=>{
+    if(!iso)return "unbekannt";
+    const d=new Date(iso);if(Number.isNaN(d.getTime()))return "unbekannt";
+    return new Intl.DateTimeFormat("de-DE",{timeZone:"Europe/Berlin",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}).format(d).replace(",","");
+  };
+  let status={},run=null;
+  try{
+    const res=await fetch("../data/immowelt-sync-status.json?t="+Date.now(),{cache:"no-store"});
+    if(res.ok)status=await res.json();
+  }catch{}
+  try{
+    const wf=config.workflow_file||"sync-immowelt.yml";
+    const runs=await ghFetch(`/actions/workflows/${encodeURIComponent(wf)}/runs?branch=${encodeURIComponent(config.branch||"main")}&per_page=1`);
+    run=runs?.workflow_runs?.[0]||null;
+  }catch(e){console.warn("Immowelt run status unavailable:",e);}
+  const checked=run?.run_started_at||run?.created_at||null;
+  const failed=run?.conclusion==="failure"||status.state==="rejected";
+  const running=run?.status==="in_progress"||run?.status==="queued";
+  if(running){
+    line.innerHTML=`<span class="badge warn">läuft</span> Immowelt-Prüfung läuft · letzter gültiger Stand ${esc(fmt(status.last_valid_at||listingsData?.scraped_at))}`;
+    detail.textContent="Bis zur vollständigen Prüfung bleibt der letzte gültige Objektstand unverändert.";
+  }else if(failed){
+    line.innerHTML=`<span class="badge miss">LKG aktiv</span> Prüfung ${esc(fmt(checked))} fehlgeschlagen · Objektdaten unverändert`;
+    detail.textContent=status.reason||"Unsicherer Abruf wurde verworfen. Last Known Good bleibt online.";
+  }else{
+    line.innerHTML=`<span class="badge ok">OK</span> Immowelt geprüft ${esc(fmt(checked))} · letzter übernommener Stand ${esc(fmt(status.last_valid_at||listingsData?.scraped_at))}`;
+    detail.textContent="Immowelt ist Single Source of Truth. Unvollständige oder unplausible Abrufe werden nicht übernommen.";
+  }
+}
+
 function esc(s) {
   return String(s ?? "")
     .replace(/&/g, "&amp;")
@@ -243,17 +276,38 @@ function renderList() {
 }
 
 async function toggleSiteHidden(id) {
-  const L = findListing(id);
-  if (!L) return;
-  const nextHidden = L.site_hidden !== true;
-  L.site_hidden = nextHidden;
-  try {
-    await persistListings(`Admin: ${shortId(L.id)} ${nextHidden ? "ausgeblendet" : "eingeblendet"}`);
-    toast(nextHidden ? "Objekt auf Website ausgeblendet" : "Objekt wieder eingeblendet", "ok");
+  if(!getPat())throw new Error("Schreib-Token fehlt – bitte neu einloggen.");
+  const visible=findListing(id);
+  if(!visible)return;
+  const nextHidden=visible.site_hidden!==true;
+  try{
+    // Fresh HEAD immediately before the only allowed local mutation.
+    await loadListingsFromGithub();
+    const fresh=findListing(id);
+    if(!fresh)throw new Error("Objekt ist im aktuellen Immowelt-Spiegel nicht mehr vorhanden.");
+    fresh.site_hidden=nextHidden;
+    ensureSotMeta();
+    const path=config.listings_path||"data/listings.json";
+    const result=await ghFetch(`/contents/${path}`,{
+      method:"PUT",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        message:`Admin: ${shortId(id)} ${nextHidden?"ausgeblendet":"eingeblendet"}`,
+        content:utf8ToBase64(JSON.stringify(listingsData,null,2)+"\n"),
+        sha:listingsSha,
+        branch:config.branch||"main"
+      })
+    });
+    listingsSha=result.content?.sha||listingsSha;
+    await dispatchApplyRender(`Admin: ${shortId(id)} Sichtbarkeit`);
+    toast(nextHidden?"Objekt auf Website ausgeblendet":"Objekt wieder eingeblendet","ok");
     renderList();
-  } catch (e) {
-    L.site_hidden = !nextHidden;
-    toast(e.message, "error");
+    await loadImmoweltHealth();
+  }catch(e){
+    // Never write a stale browser snapshot as fallback.
+    await ensureListings().catch(()=>{});
+    renderList();
+    toast("Nicht gespeichert: "+e.message,"error");
   }
 }
 
@@ -782,6 +836,7 @@ async function enterApp() {
   try {
     await ensureListings();
     renderList();
+    await loadImmoweltHealth();
   } catch (e) {
     toast(e.message, "error");
     $("listings-tbody").innerHTML = `<tr><td colspan="6"><div class="err-box">${esc(e.message)}</div></td></tr>`;
@@ -892,16 +947,17 @@ function bind() {
     try {
       await ensureListings();
       renderList();
+      await loadImmoweltHealth();
       toast("Liste aktualisiert", "ok");
     } catch (e) {
       toast(e.message, "error");
     }
   });
 
-  $("form-edit").addEventListener("submit", saveEdit);
+  // Immowelt owns object facts; legacy edit form is intentionally not writable.
 
   const btnDelete = $("btn-delete");
-  if (btnDelete) btnDelete.addEventListener("click", () => deleteCurrentListing());
+  if (btnDelete) btnDelete.disabled = true;
 
   const btnNew = $("btn-new");
   if (btnNew) {
@@ -918,7 +974,7 @@ function bind() {
     });
   }
   const formCreate = $("form-create");
-  if (formCreate) formCreate.addEventListener("submit", createListing);
+  if (formCreate) formCreate.addEventListener("submit", (e) => { e.preventDefault(); toast("Objektdaten ausschließlich in Immowelt pflegen.", "error"); });
 
   const syncFull = async () => {
     try {
@@ -939,6 +995,7 @@ function bind() {
   $("btn-sync-render").addEventListener("click", syncRender);
   $("btn-sync-render-2").addEventListener("click", syncRender);
 
+  $("photo-input").disabled = true;
   $("photo-input").addEventListener("change", async (e) => {
     const file = e.target.files && e.target.files[0];
     e.target.value = "";
