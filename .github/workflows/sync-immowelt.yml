@@ -1,37 +1,26 @@
-name: Sync Immowelt Listings
+name: Immowelt Official API
 
 on:
   push:
     branches: [main]
     paths:
       - 'scripts/sync-immowelt.mjs'
-      - 'scripts/lib/listing-safety.mjs'
-      - 'scripts/lib/immowelt-public-search.mjs'
-      - 'scripts/lib/immowelt-reconcile.mjs'
-      - 'scripts/test-listing-safety.mjs'
-      - 'scripts/test-immowelt-reconcile.mjs'
+      - 'scripts/lib/immowelt-official-api.mjs'
+      - 'scripts/test-legal-baseline.mjs'
       - '.github/workflows/sync-immowelt.yml'
-  schedule:
-    # Four checks/hour, offset from the top of the hour. Invalid/unavailable source keeps LKG unchanged.
-    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:
-    inputs:
-      force_from_json:
-        description: "Skip scrape and only re-render from data/listings.json"
-        type: boolean
-        default: false
 
 permissions:
   contents: write
 
 concurrency:
-  group: sync-immowelt
+  group: immowelt-official-api
   cancel-in-progress: false
 
 jobs:
-  sync:
+  validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,114 +32,40 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci || npm install
+        run: npm ci
 
-      - name: Install Playwright Chromium
-        if: ${{ inputs.force_from_json != true }}
-        run: npx playwright install chromium --with-deps
-
-      - name: Safety contract
+      - name: Verify official Immowelt API endpoints
+        shell: bash
         run: |
-          node scripts/test-listing-safety.mjs
-          node scripts/test-immowelt-reconcile.mjs
+          set -euo pipefail
+          for service in EstateService EstateExpose; do
+            url="https://api.immowelt.de/WebServices/${service}.asmx?WSDL"
+            echo "Checking ${url}"
+            curl --fail --silent --show-error --location --max-time 20 "${url}" -o "/tmp/${service}.wsdl"
+            test -s "/tmp/${service}.wsdl"
+          done
+          grep -q "GetListCustomerProjects" /tmp/EstateService.wsdl
+          grep -q "GetEstateExposeByEstateGuid" /tmp/EstateExpose.wsdl
+          echo "Official Immowelt SOAP API WSDL reachable."
 
-      - name: Full sync from Immowelt
-        if: ${{ inputs.force_from_json != true }}
-        env:
-          IMMOWELT_PROFILE_URL: https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d
-          IMMOWELT_HARD_FAIL: "1"
-        run: node scripts/sync-immowelt.mjs
-
-      - name: Render only from canonical JSON
-        if: ${{ inputs.force_from_json == true }}
+      - name: Render current last-known-good snapshot
         run: node scripts/sync-immowelt.mjs --render-only
+
+      - name: Legal baseline
+        run: node scripts/test-legal-baseline.mjs
 
       - name: Listing content integrity
         run: node scripts/test-listing-content.mjs
 
-      - name: Verify published listing detail completeness
-        run: |
-          node --input-type=module <<'NODE'
-          import { readFile, readdir } from "node:fs/promises";
-          const raw = JSON.parse(await readFile("data/listings.json", "utf8"));
-          const listings = Array.isArray(raw) ? raw : raw.listings || [];
-          const publicListings = listings.filter((item) => item.active !== false);
-          const detailedListings = publicListings.filter((item) => item.detail_page !== false);
-          const problems = [];
-          if (raw.sot !== "immowelt") problems.push(`sot must be immowelt, got ${raw.sot || "missing"}`);
-          for (const item of listings) {
-            if (item.source !== "immowelt") problems.push(`${item.slug}: non-Immowelt source ${item.source || "missing"}`);
-            if (item.manual_overrides) problems.push(`${item.slug}: manual_overrides must not exist in Immowelt-authoritative mirror`);
-          }
-          for (const item of detailedListings) {
-            const description = String(item.description || "").trim();
-            if (!description) problems.push(`${item.slug}: missing description`);
-            if (description.length < 80) problems.push(`${item.slug}: description is only a teaser`);
-            if (/…$/.test(description)) problems.push(`${item.slug}: description still ends in collapsed teaser ellipsis`);
-            if (!Array.isArray(item.gallery_bases) || item.gallery_bases.length < 2) problems.push(`${item.slug}: gallery has <2 images`);
-          }
-          const forbiddenObjectAddresses = [
-            /Jacob-Burckhardt-(?:Straße|Strasse|Str\.)\s*40/i,
-            /Kindlebild(?:straße|strasse)\s*13/i,
-            /Radolfzeller\s+(?:Straße|Strasse)\s*91/i,
-            /Allensteiner\s+(?:Straße|Strasse)\s*\d+/i,
-            /\b[A-ZÄÖÜ][A-Za-zÄÖÜäöüß.-]*(?:[- ][A-ZÄÖÜ][A-Za-zÄÖÜäöüß.-]*)*\s+(?:Straße|Strasse|Str\.|Weg|Platz|Allee)\s*\d+[a-z]?\b/i
-          ];
-          for (const item of publicListings) {
-            const blob = JSON.stringify(item);
-            if (forbiddenObjectAddresses.some((re) => re.test(blob))) {
-              problems.push(`${item.slug}: exact object address leaked into public data`);
-            }
-          }
-          for (const name of await readdir("objekt")) {
-            if (!name.endsWith(".html")) continue;
-            const html = await readFile("objekt/" + name, "utf8");
-            if (html.includes("Ausführliche Objektbeschreibung folgt mit dem nächsten Immowelt-Abgleich") ||
-                html.includes("Die ausführliche Objektbeschreibung stellen wir Ihnen gerne auf Anfrage zu")) {
-              problems.push(name + ": synthetic description fallback");
-            }
-          }
-          if (problems.length) {
-            console.error("Refusing to publish incomplete Exposés:\n" + problems.join("\n"));
-            process.exit(1);
-          }
-          console.log(`Detail quality OK: ${detailedListings.length} detailed public listings; ${publicListings.length} active offers.`);
-          NODE
-
-      - name: Commit & push if changed
+      - name: Commit generated legal/render changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/listings.json data/immowelt-sync-status.json assets/listings partials/listings-grid.html index.html projekte.html objekt sitemap.xml
+          git add index.html projekte.html partials/listings-grid.html objekt sitemap.xml
           if git diff --staged --quiet; then
-            echo "No listing changes."
+            echo "Generated output already current."
           else
-            git commit -m "chore: sync Immowelt listings ($(date -u +%Y-%m-%d))"
-            # Other site-only commits may land while the enrichment job is
-            # downloading galleries. Rebase generated output onto current main
-            # instead of losing a successful 10+ minute sync at push time.
-            git pull --rebase origin main
-            git push
-          fi
-
-      - name: Persist rejected Immowelt sync status
-        if: ${{ always() }}
-        run: |
-          if [ ! -f data/immowelt-sync-status.json ]; then
-            exit 0
-          fi
-          STATE="$(node -p "require('./data/immowelt-sync-status.json').state || ''")"
-          if [ "$STATE" != "rejected" ]; then
-            echo "Current status is committed only together with a validated listing snapshot."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/immowelt-sync-status.json
-          if git diff --staged --quiet; then
-            echo "Rejected sync status unchanged."
-          else
-            git commit -m "chore: record rejected Immowelt sync status"
+            git commit -m "chore: render Immowelt attribution"
             git pull --rebase origin main
             git push
           fi
