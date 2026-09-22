@@ -1148,6 +1148,7 @@ ${JSON.stringify(schema, null, 2)}
               <a class="btn btn-outline btn-sm" href="${escapeHtml(listing.expose_url)}" target="_blank" rel="noopener noreferrer">Exposé auf Immowelt</a>
             </div>
             <p class="expose-disclaimer">Angaben ohne Gewähr. Maßgeblich sind die aktuellen Unterlagen und das Immowelt-Exposé.</p>
+            <p class="immowelt-attribution"><a href="https://www.immowelt.de/" target="_blank" rel="noopener noreferrer">Immobilien-Daten bereitgestellt von immowelt.de</a></p>
           </div>
         </aside>
       </div>
