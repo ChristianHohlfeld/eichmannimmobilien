@@ -38,38 +38,31 @@ export async function scrapeEichmannFromImmoweltSearch(page){
   const byId=new Map();
   const collect=async()=>{for(const x of await collectPage(page))if(x?.id)byId.set(x.id,x);};
   await collect();
-  let noGrowth=0;
+  // Direct server-side page URLs are safer than clicking Immowelt's SPA pagination:
+  // the latter redirects to /classified-search, which can render empty on hosted runners.
   for(let n=2;n<=20;n++){
-    const before=byId.size;
-    const beforeUrl=page.url();
-
-    // Immowelt renders real numeric pagination buttons (1,2,3,…).
-    // Use the exact requested page number first; generic "next" controls can
-    // belong to unrelated carousels and must never drive discovery.
-    let control=page.locator("button,a").filter({hasText:new RegExp(`^\\s*${n}\\s*$`)}).last();
-    let usable=(await control.count().catch(()=>0))>0 && await control.isVisible().catch(()=>false);
-
-    if(!usable){
-      control=page.locator(
-        'a[aria-label*="Nächste Seite"],button[aria-label*="Nächste Seite"],a[aria-label*="Next page"],button[aria-label*="Next page"],a[rel="next"]'
-      ).last();
-      usable=(await control.count().catch(()=>0))>0 && await control.isVisible().catch(()=>false);
+    const pageUrl=IMMO_PUBLIC_SEARCH+(IMMO_PUBLIC_SEARCH.includes("?")?"&":"?")+"page="+n;
+    const resp=await page.goto(pageUrl,{waitUntil:"domcontentloaded",timeout:60000});
+    if(!resp||resp.status()>=400){
+      console.warn(`Immowelt search page ${n} HTTP ${resp?.status()||"none"}; stopping pagination.`);
+      break;
     }
-    if(!usable)break;
-
-    await control.click({timeout:7000});
-    await page.waitForTimeout(1300);
-    await page.waitForSelector('a[href*="/expose/"]',{timeout:12000}).catch(()=>{});
+    await page.waitForTimeout(1600);
+    const exposeCount=await page.locator('a[href*="/expose/"]').count().catch(()=>0);
+    const bodyText=await page.locator("body").innerText().catch(()=>"");
+    if(!exposeCount||!bodyText.trim()){
+      console.warn(`Immowelt search page ${n} empty; stopping pagination.`);
+      break;
+    }
+    const before=byId.size;
     await collect();
+    console.log(`Immowelt search page ${n}: Eichmann ${before}->${byId.size}; exposeLinks=${exposeCount}; url=${page.url()}`);
 
-    const grew=byId.size>before;
-    const afterUrl=page.url();
-    console.log(`Immowelt search page ${n}: Eichmann ${before}->${byId.size}; ${beforeUrl} -> ${afterUrl}`);
-    noGrowth=grew?0:noGrowth+1;
-
-    // Continue through the pagination even when one page has no Eichmann offer.
-    // Stop only if the numeric control failed to move twice in a row.
-    if(noGrowth>=2 && afterUrl===beforeUrl)break;
+    // The public result count is ~30/page; when a requested page resolves back to
+    // the first/last result set, stop after detecting no new expose universe twice.
+    const totalText=bodyText.match(/([\d.]+)\s+Immobilien kaufen/i);
+    const total=totalText?Number(totalText[1].replace(/\./g,"")):null;
+    if(total&&n>=Math.ceil(total/30)+1)break;
   }
   const listings=[...byId.values()];
   if(!listings.length){
