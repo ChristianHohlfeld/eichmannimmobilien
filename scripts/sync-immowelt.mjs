@@ -1506,6 +1506,21 @@ function serializeListing(L) {
   return out;
 }
 
+function semanticListingSnapshot(listings) {
+  return (listings || []).map((item) => {
+    const out = serializeListing(item);
+    // Enrichment bookkeeping is not an object-data change.
+    delete out.enriched_at;
+    return out;
+  }).sort((a, b) => String(a.id).localeCompare(String(b.id)));
+}
+
+function semanticListingsChanged(previousData, nextListings) {
+  if (!Array.isArray(previousData?.listings)) return true;
+  return JSON.stringify(semanticListingSnapshot(previousData.listings)) !==
+    JSON.stringify(semanticListingSnapshot(nextListings));
+}
+
 function looksLikeImmoweltId(id) {
   return typeof id === "string" && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id);
 }
@@ -1561,24 +1576,26 @@ async function atomicWriteJson(filePath, value) {
 }
 
 async function writeSyncStatus({ state, previous = null, data = null, reason = null, assessment = null }) {
-  const previousPublic = Array.isArray(previous?.listings)
-    ? previous.listings.filter(isPublicListing).length
+  const previousActive = Array.isArray(previous?.listings)
+    ? previous.listings.filter((item) => item && item.active !== false).length
     : Number(previous?.active_listing_count || 0);
-  const currentPublic = Array.isArray(data?.listings)
-    ? data.listings.filter(isPublicListing).length
+  const currentActive = Array.isArray(data?.listings)
+    ? data.listings.filter((item) => item && item.active !== false).length
     : null;
   const payload = {
     source: "immowelt",
     state,
-    last_attempt_at: new Date().toISOString(),
+    // The newest real check time comes from GitHub Actions. Keep this file stable
+    // so unchanged 15-minute checks do not create artificial repository commits.
     last_valid_at: state === "current"
-      ? (data?.scraped_at || new Date().toISOString())
+      ? (data?.scraped_at || previous?.scraped_at || null)
       : (previous?.scraped_at || null),
-    last_valid_count: state === "current" ? currentPublic : previousPublic,
+    last_valid_count: state === "current" ? currentActive : previousActive,
     attempted_count: assessment?.count ?? null,
     overlap_count: assessment?.overlap_count ?? null,
     overlap_ratio: assessment?.overlap_ratio ?? null,
     reason: reason ? String(reason).slice(0, 500) : null,
+    policy: "fail_closed_last_known_good",
   };
   if (!dryRun) await atomicWriteJson(SYNC_STATUS_PATH, payload);
   return payload;
@@ -2679,6 +2696,11 @@ async function main() {
     L.local_url = localExposePath(L);
   });
   data.listing_count = data.listings.length;
+  data._semantic_changed = semanticListingsChanged(previous, data.listings);
+  if (!data._semantic_changed && previous?.scraped_at) {
+    data.scraped_at = previous.scraped_at;
+    console.log("Immowelt check OK; no object-data change. Keeping last canonical data timestamp.");
+  }
 
   if (dryRun) {
     console.log(JSON.stringify({ ...data, listings: data.listings.map(serializeListing) }, null, 2));
@@ -2686,11 +2708,15 @@ async function main() {
     return;
   }
 
-  // Do not touch canonical JSON until every source/validation/image step has completed.
-  // If anything above fails, the repository's last-known-good listing snapshot stays intact.
-  await syncImages(data, { skipDownload: false });
-  await writeCanonical(data);
-  await renderIntoPages(data);
+  // Do not touch canonical object data until every source/validation step has completed.
+  if (data._semantic_changed !== false) {
+    await syncImages(data, { skipDownload: false });
+    await writeCanonical(data);
+    await renderIntoPages(data);
+    console.log(`Accepted Immowelt object changes: ${data.listing_count} records rendered atomically.`);
+  } else {
+    console.log("Validated Immowelt snapshot is semantically unchanged; no canonical object write.");
+  }
   await writeSyncStatus({
     state: "current",
     previous,
@@ -2698,8 +2724,9 @@ async function main() {
     assessment: data._snapshot_assessment || null,
   });
   delete data._snapshot_assessment;
+  delete data._semantic_changed;
 
-  console.log(`Done. ${data.listing_count} listings → JSON + cards + objekt/*.html + sitemap.`);
+  console.log(`Done. ${data.listing_count} Immowelt records validated.`);
 }
 
 main().catch((err) => {
