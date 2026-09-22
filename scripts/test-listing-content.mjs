@@ -88,6 +88,46 @@ function wordSet(value) {
 const problems = [];
 let checked = 0;
 
+// Loose mirror regression gate: exact published count, rough object mapping.
+// This intentionally avoids brittle full-text equality. Immowelt remains the SoT;
+// the rendered site only needs to represent the same set of current objects.
+const expectedPublic = listings.filter(
+  (item) => item.active !== false && item.site_hidden !== true
+);
+if (Number.isFinite(Number(data.listing_count)) && Number(data.listing_count) !== listings.length) {
+  problems.push(`listing_count mismatch: metadata ${data.listing_count}, actual ${listings.length}`);
+}
+if (
+  Number.isFinite(Number(data.active_listing_count)) &&
+  Number(data.active_listing_count) !== expectedPublic.length
+) {
+  problems.push(
+    `active_listing_count mismatch: metadata ${data.active_listing_count}, actual ${expectedPublic.length}`
+  );
+}
+
+const gridHtml = await readFile(path.join(ROOT, "partials/listings-grid.html"), "utf8");
+const renderedCardCount = (gridHtml.match(/<(?:a|article) class="listing-card\b/g) || []).length;
+if (renderedCardCount !== expectedPublic.length) {
+  problems.push(
+    `published card count mismatch: expected ${expectedPublic.length}, rendered ${renderedCardCount}`
+  );
+}
+
+const mappedObjects = expectedPublic.filter((item) => {
+  const localUrl = String(item.local_url || "");
+  if (!localUrl || !gridHtml.includes(localUrl)) return false;
+  const id = String(item.immowelt_id || item.id || "").toLowerCase();
+  const exposeUrl = String(item.expose_url || "").toLowerCase();
+  return !id || exposeUrl.includes(id);
+}).length;
+const mappedRatio = expectedPublic.length ? mappedObjects / expectedPublic.length : 1;
+if (mappedRatio < 0.8) {
+  problems.push(
+    `published objects only roughly map to Immowelt mirror (${mappedObjects}/${expectedPublic.length})`
+  );
+}
+
 for (const item of listings) {
   if (item.active === false || item.site_hidden === true || item.detail_page === false) continue;
   checked++;
