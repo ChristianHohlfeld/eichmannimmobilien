@@ -101,8 +101,8 @@ for (const full of await htmlFiles()) {
       <p>Immobilien Eichmann<br>Helmut Eichmann<br>Einzelunternehmen<br>Jacob-Burckhardt-Str. 40<br>78464 Konstanz<br>Deutschland</p>
 
       <h2>Kontakt</h2>
-      <p>Mobil: <a href="tel:+491705225568">0170 5225568</a><br>
-      Telefon: <a href="tel:+4975319228848">07531 9228848</a><br>
+      <p>Mobil: <a href="tel:+491705225568">+49 170 522 5568</a><br>
+      Telefon: <a href="tel:+4975319228848">+49 7531 9228848</a><br>
       E-Mail: <a href="mailto:info@immobilien-eichmann.com">info@immobilien-eichmann.com</a><br>
       Internet: <a href="https://immobilieneichmann.de">immobilieneichmann.de</a></p>
 
@@ -127,8 +127,8 @@ for (const full of await htmlFiles()) {
   let s = await read("datenschutz.html");
   const inner = `      <h2>1. Verantwortlicher</h2>
       <p>Immobilien Eichmann<br>Helmut Eichmann<br>Einzelunternehmen<br>Jacob-Burckhardt-Str. 40<br>78464 Konstanz<br>
-      Mobil: <a href="tel:+491705225568">0170 5225568</a><br>
-      Telefon: <a href="tel:+4975319228848">07531 9228848</a><br>
+      Mobil: <a href="tel:+491705225568">+49 170 522 5568</a><br>
+      Telefon: <a href="tel:+4975319228848">+49 7531 9228848</a><br>
       E-Mail: <a href="mailto:info@immobilien-eichmann.com">info@immobilien-eichmann.com</a></p>
 
       <h2>2. Bereitstellung der Website / GitHub Pages</h2>
@@ -177,7 +177,7 @@ for (const full of await htmlFiles()) {
           <p>Sie haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen einen im Fernabsatz oder außerhalb von Geschäftsräumen geschlossenen Verbrauchervertrag über Maklerdienstleistungen zu widerrufen, soweit Ihnen gesetzlich ein Widerrufsrecht zusteht.</p>
           <p>Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsabschlusses.</p>
           <p>Um Ihr Widerrufsrecht auszuüben, müssen Sie uns mittels einer eindeutigen Erklärung, zum Beispiel per Brief oder E-Mail, über Ihren Entschluss informieren:</p>
-          <p><strong>Immobilien Eichmann</strong><br>Helmut Eichmann<br>Jacob-Burckhardt-Str. 40<br>78464 Konstanz<br>E-Mail: <a href="mailto:info@immobilien-eichmann.com">info@immobilien-eichmann.com</a><br>Telefon: <a href="tel:+491705225568">0170 5225568</a></p>
+          <p><strong>Immobilien Eichmann</strong><br>Helmut Eichmann<br>Jacob-Burckhardt-Str. 40<br>78464 Konstanz<br>E-Mail: <a href="mailto:info@immobilien-eichmann.com">info@immobilien-eichmann.com</a><br>Telefon: <a href="tel:+491705225568">+49 170 522 5568</a></p>
           <p>Zur Wahrung der Widerrufsfrist reicht es aus, dass Sie die Mitteilung über die Ausübung des Widerrufsrechts vor Ablauf der Frist absenden. Ein Muster finden Sie unter <a href="vertrag-widerrufen.html">Vertrag widerrufen</a>; seine Verwendung ist nicht vorgeschrieben.</p>
           <h3>Folgen des Widerrufs</h3>
           <p>Wenn Sie den Vertrag widerrufen, erstatten wir Ihnen alle Zahlungen, die wir von Ihnen aufgrund dieses Vertrags erhalten haben, unverzüglich und spätestens binnen vierzehn Tagen ab dem Tag, an dem Ihre Widerrufserklärung bei uns eingegangen ist. Für die Rückzahlung verwenden wir grundsätzlich dasselbe Zahlungsmittel, das Sie bei der ursprünglichen Transaktion eingesetzt haben, sofern nicht ausdrücklich etwas anderes vereinbart wurde.</p>

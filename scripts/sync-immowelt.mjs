@@ -363,6 +363,14 @@ function contentFingerprint(value) {
   return [...hashes].sort().slice(0, 64);
 }
 
+function normalizeContactPhoneDisplay(value) {
+  return String(value || "")
+    .replace(/\b0170\s+522\s+55\s+68\b/g, "+49 170 522 55 68")
+    .replace(/\b0170\s+522\s+5568\b/g, "+49 170 522 5568")
+    .replace(/\b0170\s+5225568\b/g, "+49 170 522 5568")
+    .replace(/\b07531\s+9228848\b/g, "+49 7531 9228848");
+}
+
 function normalizeListingTextFields(listing) {
   if (!listing || typeof listing !== "object") return listing;
 
@@ -701,7 +709,7 @@ function renderCard(listing) {
             <div class="listing-meta">
               ${meta}
             </div>
-            <p class="listing-desc">${escapeHtml(listing.short_description || "")}</p>
+            <p class="listing-desc">${escapeHtml(normalizeContactPhoneDisplay(listing.short_description || ""))}</p>
             <div class="listing-actions">
               ${detailed
                 ? '<span class="btn btn-primary btn-sm">Exposé ansehen</span>'
@@ -817,7 +825,7 @@ function renderExposeHtml(listing) {
   ]
     .filter(Boolean)
     .join(" · ");
-  const metaDesc = (
+  const metaDesc = normalizeContactPhoneDisplay(
     listing.description ||
     listing.short_description ||
     `${title} in ${listing.location || "Konstanz"} – ${descBits}. Exposé anfragen bei Immobilien Eichmann.`
@@ -929,7 +937,7 @@ function renderExposeHtml(listing) {
     .split(/\n{2,}/)
     .map((para) => para.trim())
     .filter(Boolean)
-    .map((para) => `<p>${escapeHtml(para).replace(/\n/g, "<br>")}</p>`)
+    .map((para) => `<p>${escapeHtml(normalizeContactPhoneDisplay(para)).replace(/\n/g, "<br>")}</p>`)
     .join("\n          ");
 
   const descriptionHtml = proseHtml(listing.description);
@@ -1143,7 +1151,7 @@ ${JSON.stringify(schema, null, 2)}
               </div>
             </form>
             <div class="expose-secondary-actions">
-              <a class="btn btn-outline btn-sm" href="tel:+491705225568">Anrufen 0170 5225568</a>
+              <a class="btn btn-outline btn-sm" href="tel:+491705225568">Anrufen +49 170 522 5568</a>
               <a class="btn btn-outline btn-sm" href="${p}kontakt.html?objekt=${encodeURIComponent(listing.slug)}#contact-form">Zum Kontaktformular</a>
               <a class="btn btn-outline btn-sm" href="${escapeHtml(listing.expose_url)}" target="_blank" rel="noopener noreferrer">Exposé auf Immowelt</a>
             </div>
@@ -1161,8 +1169,8 @@ ${JSON.stringify(schema, null, 2)}
         <div class="footer-brand">
           <p class="footer-name">Immobilien Eichmann</p>
           <p>Helmut Eichmann<br>Jacob-Burckhardt-Str. 40<br>78464 Konstanz</p>
-          <p><a href="tel:+491705225568">0170 5225568</a><br>
-          <a href="tel:+4975319228848">07531 9228848</a><br>
+          <p><a href="tel:+491705225568">+49 170 522 5568</a><br>
+          <a href="tel:+4975319228848">+49 7531 9228848</a><br>
           <a href="mailto:info@immobilien-eichmann.com">info@immobilien-eichmann.com</a></p>
           <p class="footer-hours">Termine nach Vereinbarung</p>
         </div>
