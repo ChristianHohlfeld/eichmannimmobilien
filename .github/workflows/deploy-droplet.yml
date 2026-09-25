@@ -1,0 +1,90 @@
+name: Deploy to Droplet
+
+# Live hosting is DigitalOcean droplet eichmann-web (NOT GitHub Pages).
+# After Immowelt sync / admin render commits to main, this ships static files to the droplet.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**.html"
+      - "css/**"
+      - "js/**"
+      - "assets/**"
+      - "data/**"
+      - "objekt/**"
+      - "partials/**"
+      - "admin/**"
+      - "sitemap.xml"
+      - "robots.txt"
+      - "llms.txt"
+      - ".nojekyll"
+      - ".github/workflows/deploy-droplet.yml"
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "Immowelt Official API"
+      - "Admin Apply (Save + Render)"
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: deploy-eichmann-droplet
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: >
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Setup SSH
+        env:
+          DEPLOY_KEY: ${{ secrets.EICHMANN_DEPLOY_KEY }}
+          DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.EICHMANN_DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          test -n "${DEPLOY_KEY:-}" || { echo "Missing secret EICHMANN_DEPLOY_KEY"; exit 1; }
+          test -n "${DEPLOY_HOST:-}" || { echo "Missing secret EICHMANN_DEPLOY_HOST"; exit 1; }
+          test -n "${DEPLOY_USER:-}" || { echo "Missing secret EICHMANN_DEPLOY_USER"; exit 1; }
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/eichmann_deploy
+          chmod 600 ~/.ssh/eichmann_deploy
+          ssh-keyscan -T 10 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Rsync static site to droplet
+        env:
+          DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.EICHMANN_DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.EICHMANN_DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          DEST_PATH="${DEPLOY_PATH:-/var/www/immobilieneichmann.de}"
+          COMMIT="$(git rev-parse --short HEAD)"
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='scripts/' \
+            --exclude='node_modules/' \
+            --exclude='package.json' \
+            --exclude='package-lock.json' \
+            --exclude='README.md' \
+            --exclude='.gitignore' \
+            ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEST_PATH}/"
+          ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "chown -R www-data:www-data '${DEST_PATH}' && echo \"DEPLOYED_COMMIT=${COMMIT}\" > /root/.eichmann-deploy-ref && nginx -t && systemctl reload nginx && echo OK ${COMMIT}"
