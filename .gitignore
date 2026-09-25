@@ -2,7 +2,11 @@ node_modules/
 .DS_Store
 *.log
 assets/listings/._tmp-*
-
 # layout/visual test artifacts
 test-results/
-
+# SQLite SoT (never commit; lives on droplet at /var/lib/eichmann/listings.db)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+var/

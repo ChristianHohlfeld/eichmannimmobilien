@@ -2,9 +2,9 @@
  * Exposé Admin – password gate only for Helmut.
  * GitHub write token: session-only PAT at login (not stored in public config.json).
  * Legacy: optional github_token_sealed still unlockable if present.
- * Single Source of Truth = Immowelt.
+ * Immowelt admin = visibility only. Eigen CRUD = /admin/eigen/ (SQLite SoT).
  * This admin can only control website visibility (site_hidden) and trigger sync/render.
- * Object content, price, status and availability are never authored here.
+ * Object content for Immowelt rows is never authored here. Eigen listings use /admin/eigen/.
  */
 
 const STORAGE_AUTH = "ei_admin_auth";
@@ -673,89 +673,8 @@ async function deleteCurrentListing() {
 
 async function createListing(ev) {
   ev.preventDefault();
-  const title = $("create-title").value.trim();
-  if (!title) return;
-  const msg = $("create-msg");
-  msg.textContent = "Lege an …";
-
-  const immowelt = parseImmoweltRef($("create-immowelt").value);
-  const id = crypto.randomUUID();
-  if ((listingsData.listings || []).some((L) => L.id === id)) {
-    msg.textContent = "ID-Kollision – bitte erneut versuchen.";
-    return;
-  }
-  if (
-    immowelt &&
-    (listingsData.listings || []).some(
-      (L) => L.immowelt_id === immowelt.immowelt_id || L.id === immowelt.immowelt_id
-    )
-  ) {
-    msg.textContent = "Objekt mit dieser Immowelt-ID existiert bereits.";
-    return;
-  }
-
-  const slug = slugifyTitle(title, id);
-  const listing = {
-    id,
-    slug,
-    local_url: `objekt/${slug}.html`,
-    title,
-    price: $("create-price").value.trim() || null,
-    location: $("create-location").value.trim() || null,
-    rooms: $("create-rooms").value.trim() || null,
-    living_area: $("create-living").value.trim() || null,
-    plot_area: null,
-    type: null,
-    status: $("create-status").value.trim() || "Kauf",
-    short_description: $("create-short").value.trim() || null,
-    description: null,
-    facts: null,
-    expose_url: immowelt ? immowelt.expose_url : null,
-    main_image_url: null,
-    images: [],
-    floor_plans: [],
-    image_base: `admin-${shortId(id)}`,
-    gallery_bases: [],
-    floor_plan_bases: [],
-    enriched_at: null,
-    source: "local",
-    immowelt_id: immowelt ? immowelt.immowelt_id : null,
-    sync_policy: "independent",
-    missing_on_immowelt: false,
-    active: true,
-    detail_page: true,
-    manual_overrides: {
-      title: true,
-      price: true,
-      location: true,
-      rooms: true,
-      living_area: true,
-      status: true,
-      short_description: true,
-      active: true,
-      detail_page: true,
-      updated_at: new Date().toISOString(),
-    },
-  };
-
-  listingsData.listings = listingsData.listings || [];
-  listingsData.listings.unshift(listing);
-  ensureSotMeta();
-
-  try {
-    await persistListings(`Admin: neu angelegt ${shortId(id)} (${slug})`);
-    msg.textContent = "Angelegt. Auto-Render läuft.";
-    toast("Neues Objekt gespeichert + Render", "ok");
-    $("card-create").style.display = "none";
-    $("form-create").reset();
-    $("create-status").value = "Kauf";
-    renderList();
-    openDetail(id);
-  } catch (e) {
-    listingsData.listings = listingsData.listings.filter((L) => L.id !== id);
-    msg.textContent = e.message;
-    toast(e.message, "error");
-  }
+  toast("Lokales Anlegen ist deaktiviert. Bitte Eigen-Inserate nutzen.", "err");
+  window.location.href = "eigen/";
 }
 
 async function triggerWorkflow(forceFromJson) {

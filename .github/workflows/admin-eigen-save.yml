@@ -1,0 +1,116 @@
+name: Admin Eigen Save
+
+# Eigen-Inserate CRUD → SSH upsert into droplet SQLite SoT → publish static site.
+# Immowelt account is never touched.
+
+on:
+  repository_dispatch:
+    types: [admin_eigen_save]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "upsert | delete | list"
+        required: true
+        default: list
+        type: choice
+        options: [upsert, delete, list]
+      listing_json:
+        description: "Listing JSON (upsert/delete)"
+        required: false
+        default: "{}"
+
+concurrency:
+  group: admin-eigen-save
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Resolve payload
+        id: payload
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ev = context.payload;
+            let action = 'list';
+            let listing = {};
+            let message = '';
+            if (context.eventName === 'repository_dispatch') {
+              const p = ev.client_payload || {};
+              action = p.action || 'upsert';
+              listing = p.listing || {};
+              message = p.message || '';
+            } else {
+              action = ev.inputs.action || 'list';
+              try { listing = JSON.parse(ev.inputs.listing_json || '{}'); } catch(e) {
+                core.setFailed('listing_json is not valid JSON');
+                return;
+              }
+            }
+            core.setOutput('action', action);
+            core.setOutput('message', message);
+            const fs = require('fs');
+            fs.writeFileSync('listing-payload.json', JSON.stringify({ action, listing }, null, 2));
+
+      - name: Setup SSH
+        env:
+          DEPLOY_KEY: ${{ secrets.EICHMANN_DEPLOY_KEY }}
+          DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.EICHMANN_DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          test -n "${DEPLOY_KEY:-}" || { echo "Missing EICHMANN_DEPLOY_KEY"; exit 1; }
+          test -n "${DEPLOY_HOST:-}" || { echo "Missing EICHMANN_DEPLOY_HOST"; exit 1; }
+          test -n "${DEPLOY_USER:-}" || { echo "Missing EICHMANN_DEPLOY_USER"; exit 1; }
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/eichmann_deploy
+          chmod 600 ~/.ssh/eichmann_deploy
+          ssh-keyscan -T 10 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Upload payload + run eigen-upsert on droplet
+        env:
+          DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.EICHMANN_DEPLOY_USER }}
+          ACTION: ${{ steps.payload.outputs.action }}
+        run: |
+          set -euo pipefail
+          SSH=(ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+          SCP=(scp -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+          APP=/var/lib/eichmann/app
+          SITE=/var/www/immobilieneichmann.de
+          DB=/var/lib/eichmann/listings.db
+          "${SCP[@]}" listing-payload.json "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/eichmann-eigen-payload.json"
+          "${SSH[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" bash -s <<REMOTE
+          set -euo pipefail
+          export EICHMANN_DB_PATH='${DB}'
+          export EICHMANN_SITE_ROOT='${SITE}'
+          cd '${APP}'
+          if [ ! -d node_modules/better-sqlite3 ]; then
+            echo "better-sqlite3 missing on droplet app – run deploy/setup first"
+            exit 1
+          fi
+          ACTION='${ACTION}'
+          if [ "\$ACTION" = "list" ]; then
+            node scripts/eigen-upsert.mjs --list --skip-publish
+          elif [ "\$ACTION" = "delete" ]; then
+            ID=\$(python3 -c "import json;print(json.load(open('/tmp/eichmann-eigen-payload.json'))['listing'].get('id',''))")
+            test -n "\$ID"
+            node scripts/eigen-upsert.mjs --delete "\$ID"
+          else
+            node scripts/eigen-upsert.mjs --file /tmp/eichmann-eigen-payload.json
+          fi
+          # Mirror export into webroot is handled by publish; also keep app copy if present
+          if [ -f '${SITE}/data/listings.json' ] && [ -d '${APP}/data' ]; then
+            cp -f '${SITE}/data/listings.json' '${APP}/data/listings.json' || true
+          fi
+          echo "Eigen action \${ACTION} done"
+          REMOTE
+
+      - name: Summary
+        run: |
+          echo "Eigen action=${{ steps.payload.outputs.action }} message=${{ steps.payload.outputs.message }}"

@@ -113,3 +113,15 @@ Das ist aktuell **nicht der aktive Modus** und sollte nicht mit dem derzeitigen 
 ## Weitere Details
 
 Die vollständige Architektur-, Daten-, Mail-, Workflow- und Drittanbieter-Dokumentation steht im Root-`README.md`.
+
+## Eigen-Inserate (`/admin/eigen/`)
+
+Separate CRUD for **own** listings (`origin=eigen`) stored in the droplet SQLite SoT.
+
+- URL: `/admin/eigen/`
+- Auth: same allowlist email + password + session GitHub PAT as Immowelt admin
+- Save path: browser → `repository_dispatch` `admin_eigen_save` → SSH upsert on droplet → `publish-from-db`
+- Immowelt admin remains **visibility-only** (`site_hidden`); legacy “create local listing into Immowelt JSON” is disabled
+- Public badge: **„nur bei uns“**
+- Immowelt sync cannot wipe eigen rows (see `npm run test:eigen-survives`)
+

@@ -28,7 +28,9 @@ import { scrapeEichmannFromImmoweltSearch } from "./lib/immowelt-public-search.m
 import { reconcileMissingImmoweltOffers } from "./lib/immowelt-reconcile.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, "..");
+const ROOT = process.env.EICHMANN_SITE_ROOT
+  ? path.resolve(process.env.EICHMANN_SITE_ROOT)
+  : path.resolve(__dirname, "..");
 
 const PROFILE_URL =
   process.env.IMMOWELT_PROFILE_URL ||
@@ -571,6 +573,10 @@ function hasPublicDetail(listing) {
 }
 
 function badgeFor(listing) {
+  const origin = String(listing?.origin || listing?.source || "").toLowerCase();
+  if (origin === "eigen" || origin === "local") {
+    return { text: "nur bei uns", className: "listing-badge eigen" };
+  }
   const blob = `${listing.title || ""} ${listing.short_description || ""}`.toLowerCase();
   if (blob.includes("provisionsfrei")) {
     return { text: "Provisionsfrei", className: "listing-badge accent" };
@@ -1615,7 +1621,7 @@ async function writeCanonical(data) {
   data.listings = data.listings.map(normalizeListingTextFields).map(sanitizeListingForPublic);
   const out = {
     // Single Source of Truth = Immowelt. This file is a generated local mirror for rendering.
-    sot: "immowelt",
+    sot: process.env.EICHMANN_SOT || "sqlite",
     source: data.source || PROFILE_URL,
     immowelt_profile: data.immowelt_profile || PROFILE_URL,
     scraped_at: data.scraped_at,
@@ -1731,7 +1737,12 @@ async function renderIntoPages(data) {
  * Immowelt account is NEVER written to.
  */
 function mergeListings(scrapedList, previousData, { confirmedInactiveIds = [] } = {}) {
-  const prevList = Array.isArray(previousData?.listings) ? previousData.listings : [];
+  const prevListAll = Array.isArray(previousData?.listings) ? previousData.listings : [];
+  // Immowelt merge must ignore eigen/local SoT rows (they live in SQLite origin=eigen).
+  const prevList = prevListAll.filter((item) => {
+    const origin = String(item?.origin || item?.source || "immowelt").toLowerCase();
+    return origin !== "eigen" && origin !== "local";
+  });
   const prevById = new Map(prevList.map((item) => [String(item.immowelt_id || item.id || "").toLowerCase(), item]));
   const inactive = new Set((confirmedInactiveIds || []).map((id) => String(id).toLowerCase()));
   const seen = new Set();
@@ -1747,6 +1758,7 @@ function mergeListings(scrapedList, previousData, { confirmedInactiveIds = [] } 
     listing.detail_page = true;
     listing.site_hidden = prev?.site_hidden === true;
     listing.source = "immowelt";
+    listing.origin = "immowelt";
     listing.immowelt_id = id;
     listing.sync_policy = "mirror";
     listing.missing_on_immowelt = false;
@@ -1761,6 +1773,7 @@ function mergeListings(scrapedList, previousData, { confirmedInactiveIds = [] } 
     const kept = normalizeListing(prev, merged.length, prev);
     if (!kept) continue;
     kept.source = "immowelt";
+    kept.origin = "immowelt";
     kept.immowelt_id = id;
     kept.sync_policy = "mirror";
     kept.site_hidden = prev.site_hidden === true;
@@ -2585,6 +2598,72 @@ async function scrapeImmowelt(previousData = null) {
   }
 }
 
+
+/**
+ * Publish path used by SQLite SoT: write listings.json export + render HTML/partials/sitemap.
+ * Does not scrape Immowelt. Safe to call with a document that includes origin=eigen rows.
+ */
+export async function publishListingsDocument(doc, { siteRoot = ROOT, knownSlugs = null } = {}) {
+  if (siteRoot && siteRoot !== ROOT) {
+    console.warn(`publishListingsDocument: siteRoot=${siteRoot} (module ROOT=${ROOT}). Prefer EICHMANN_SITE_ROOT before import.`);
+  }
+  const data = {
+    source: doc.source || PROFILE_URL,
+    immowelt_profile: doc.immowelt_profile || doc.source || PROFILE_URL,
+    scraped_at: doc.scraped_at || doc.exported_at || new Date().toISOString(),
+    listings: Array.isArray(doc.listings) ? doc.listings.map((L) => ({ ...L })) : [],
+  };
+  data.listings.forEach((L, i) => {
+    if (!(L.detail_page === false && !L.main_image_url && !(L.images || []).length)) {
+      L.image_base = L.image_base || imageBase(i, L.id);
+    }
+    L.slug = makeSlug(L);
+    L.local_url = localExposePath(L);
+    if (!L.origin) {
+      const src = String(L.source || "").toLowerCase();
+      L.origin = src === "eigen" || src === "local" ? "eigen" : "immowelt";
+    }
+  });
+  data.listing_count = data.listings.length;
+
+  // Export artifact (not SoT)
+  process.env.EICHMANN_SOT = "sqlite";
+  await writeCanonical(data);
+  await renderIntoPages(data);
+  await cleanupOrphanImages(data);
+  if (knownSlugs) {
+    console.log(`Known slugs from DB: ${knownSlugs.length}`);
+  }
+  return data;
+}
+
+async function persistImmoweltToSqlite(immoweltListings, meta = {}) {
+  const { openDb, upsertImmoweltBatch, exportListingsDocument, setMeta, countByOrigin } = await import("./lib/db.mjs");
+  const db = openDb();
+  const keepIds = immoweltListings
+    .filter((L) => L.active !== false && L.missing_on_immowelt !== true)
+    .map((L) => L.immowelt_id || L.id);
+  const results = upsertImmoweltBatch(db, immoweltListings, {
+    deactivateMissing: true,
+    keepImmoweltIds: keepIds,
+  });
+  if (meta.scraped_at) setMeta(db, "immowelt_scraped_at", meta.scraped_at);
+  if (meta.source || meta.immowelt_profile) {
+    setMeta(db, "immowelt_profile", meta.immowelt_profile || meta.source);
+  }
+  const counts = countByOrigin(db);
+  const doc = exportListingsDocument(db, {
+    profileUrl: meta.immowelt_profile || meta.source,
+    scrapedAt: meta.scraped_at,
+  });
+  db.close();
+  console.log(
+    `SQLite Immowelt upsert: ${results.length} ops; counts immowelt=${counts.immowelt} eigen=${counts.eigen}`
+  );
+  return doc;
+}
+
+
 async function main() {
   console.log("Immowelt sync – root:", ROOT);
 
@@ -2600,17 +2679,31 @@ async function main() {
   let data;
 
   if (renderOnly) {
+    // Prefer SQLite SoT when present; fall back to listings.json mirror.
+    try {
+      const { openDb, exportListingsDocument, allSlugs } = await import("./lib/db.mjs");
+      const db = openDb();
+      const doc = exportListingsDocument(db);
+      const slugs = allSlugs(db);
+      db.close();
+      if (doc.listings?.length) {
+        await publishListingsDocument(doc, { knownSlugs: slugs });
+        console.log("Render-only done (SQLite SoT → JSON export + HTML).");
+        return;
+      }
+    } catch (e) {
+      console.warn("SQLite render-only unavailable, falling back to JSON:", e.message || e);
+    }
     if (!previous) {
       console.error("No data/listings.json – cannot --render-only");
       process.exit(1);
     }
     data = previous;
-    // Persist normalized slug/local_url/gallery + SoT fields
+    process.env.EICHMANN_SOT = process.env.EICHMANN_SOT || "sqlite";
     await writeCanonical(data);
     await renderIntoPages(data);
-    // Drop orphan objekt/*.html (via renderExposePages) and unused managed images
     await cleanupOrphanImages(data);
-    console.log("Render-only done (SoT JSON → HTML/grids/sitemap + orphan cleanup).");
+    console.log("Render-only done (JSON mirror → HTML/grids/sitemap + orphan cleanup).");
     return;
   }
 
@@ -2717,15 +2810,19 @@ async function main() {
     return;
   }
 
-  // Do not touch canonical object data until every source/validation step has completed.
+  // Immowelt-only SQLite upsert (never touches origin=eigen), then publish full union.
   if (data._semantic_changed !== false) {
     await syncImages(data, { skipDownload: false });
-    await writeCanonical(data);
-    await renderIntoPages(data);
-    console.log(`Accepted Immowelt object changes: ${data.listing_count} records rendered atomically.`);
   } else {
-    console.log("Validated Immowelt snapshot is semantically unchanged; no canonical object write.");
+    console.log("Validated Immowelt snapshot is semantically unchanged; still refreshing SQLite + publish.");
   }
+  const doc = await persistImmoweltToSqlite(data.listings, {
+    scraped_at: data.scraped_at,
+    source: data.source,
+    immowelt_profile: data.immowelt_profile || data.source,
+  });
+  await publishListingsDocument(doc);
+  console.log(`Accepted Immowelt sync into SQLite SoT: ${doc.listing_count} total records published.`);
   await writeSyncStatus({
     state: "current",
     previous,
@@ -2738,8 +2835,11 @@ async function main() {
   console.log(`Done. ${data.listing_count} Immowelt records validated.`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  const hard = process.env.IMMOWELT_HARD_FAIL === "1" || forceScrape;
-  process.exit(hard ? 1 : 0);
-});
+const isDirectRun = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+if (isDirectRun) {
+  main().catch((err) => {
+    console.error(err);
+    const hard = process.env.IMMOWELT_HARD_FAIL === "1" || forceScrape;
+    process.exit(hard ? 1 : 0);
+  });
+}

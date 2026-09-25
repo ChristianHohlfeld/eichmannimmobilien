@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Eigen-Inserate Admin – Immobilien Eichmann</title>
+  <link rel="stylesheet" href="../admin.css" />
+</head>
+<body>
+  <header class="app-header hidden" id="app-header">
+    <div>
+      <h1>Eigen-Inserate</h1>
+      <div class="sub">nur bei uns · SQLite-SoT auf dem Droplet</div>
+    </div>
+    <div class="actions">
+      <a class="btn btn-ghost btn-sm" href="../">Immowelt-Admin</a>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-logout">Abmelden</button>
+    </div>
+  </header>
+
+  <div class="sot-banner hidden" id="sot-banner" role="status">
+    <strong>Eigen-Inserate:</strong> Speichern schreibt per GitHub Action + SSH in
+    <code>/var/lib/eichmann/listings.db</code> (origin=eigen) und publiziert die statische Site.
+    Immowelt-Profil bleibt unberührt. Immowelt-Sync darf Eigen-Zeilen nicht löschen.
+  </div>
+
+  <main class="wrap">
+    <section id="view-gate" class="card gate-card">
+      <h2 style="margin-top:0;font-family:var(--font-display);color:var(--primary)">Anmeldung</h2>
+      <p class="hint">Gleiche Freigabe wie Immowelt-Admin: E-Mail + Passwort + Sitzungs-PAT
+        (Actions write für <code>admin_eigen_save</code>).</p>
+      <form id="form-login">
+        <label for="email">E-Mail</label>
+        <input type="email" id="email" autocomplete="username" required autofocus />
+        <label for="password">Passwort</label>
+        <input type="password" id="password" autocomplete="current-password" required />
+        <label for="pat-login">GitHub-Token (diese Sitzung)</label>
+        <input type="password" id="pat-login" autocomplete="off" required
+          placeholder="github_pat_… (actions:write)" />
+        <div class="btn-row">
+          <button type="submit" class="btn btn-primary">Einloggen</button>
+        </div>
+        <p id="login-error" class="err-box hidden"></p>
+      </form>
+    </section>
+
+    <section id="view-list" class="hidden">
+      <div class="toolbar">
+        <h2>Eigen-Inserate <span class="muted" id="list-count"></span></h2>
+        <div class="btn-row" style="margin:0">
+          <button type="button" class="btn btn-primary btn-sm" id="btn-new">+ Neu</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-reload">Neu laden</button>
+        </div>
+      </div>
+
+      <div class="card hidden" id="card-editor" style="margin-bottom:16px">
+        <h3 style="margin-top:0;color:var(--primary)" id="editor-heading">Neues Eigen-Inserat</h3>
+        <p class="hint">Badge auf der Website: <strong>nur bei uns</strong>. Kein Immowelt-Schreiben.</p>
+        <form id="form-eigen">
+          <input type="hidden" id="f-id" />
+          <div class="form-grid">
+            <div class="full">
+              <label for="f-title">Titel *</label>
+              <input type="text" id="f-title" required placeholder="z. B. Eigentumswohnung Konstanz" />
+            </div>
+            <div>
+              <label for="f-slug">Slug</label>
+              <input type="text" id="f-slug" placeholder="auto" />
+            </div>
+            <div>
+              <label for="f-price">Preis</label>
+              <input type="text" id="f-price" placeholder="450.000 €" />
+            </div>
+            <div>
+              <label for="f-status">Status</label>
+              <input type="text" id="f-status" value="Kauf" />
+            </div>
+            <div>
+              <label for="f-rooms">Zimmer</label>
+              <input type="text" id="f-rooms" />
+            </div>
+            <div>
+              <label for="f-living">Wohnfläche</label>
+              <input type="text" id="f-living" />
+            </div>
+            <div class="full">
+              <label for="f-location">Ort</label>
+              <input type="text" id="f-location" placeholder="Konstanz" />
+            </div>
+            <div class="full">
+              <label for="f-type">Typ</label>
+              <input type="text" id="f-type" placeholder="Wohnung" />
+            </div>
+            <div class="full">
+              <label for="f-short">Kurzbeschreibung</label>
+              <textarea id="f-short" rows="2"></textarea>
+            </div>
+            <div class="full">
+              <label for="f-description">Beschreibung</label>
+              <textarea id="f-description" rows="6"></textarea>
+            </div>
+            <div class="full">
+              <label for="f-image">Hauptbild-URL</label>
+              <input type="url" id="f-image" placeholder="https://…" />
+            </div>
+            <div>
+              <label><input type="checkbox" id="f-active" checked /> aktiv</label>
+            </div>
+            <div>
+              <label><input type="checkbox" id="f-site-hidden" /> auf Website ausblenden</label>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button type="submit" class="btn btn-primary">Speichern &amp; publizieren</button>
+            <button type="button" class="btn btn-outline" id="btn-cancel">Abbrechen</button>
+            <button type="button" class="btn btn-outline" id="btn-delete" style="display:none;color:var(--err)">Löschen</button>
+          </div>
+          <p id="form-msg" class="hint"></p>
+        </form>
+      </div>
+
+      <div class="card table-wrap" style="padding:0;overflow:hidden">
+        <table class="listings">
+          <thead>
+            <tr>
+              <th>Titel</th>
+              <th>Ort</th>
+              <th>Preis</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="listings-tbody">
+            <tr><td colspan="5" class="muted">Lade …</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="eigen.js"></script>
+</body>
+</html>

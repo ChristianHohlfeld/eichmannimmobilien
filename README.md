@@ -1,3 +1,16 @@
+## Listings SoT (SQLite)
+
+- **Source of truth:** SQLite on the droplet at `/var/lib/eichmann/listings.db` (not in git, not in the web root).
+- **Origins:** `immowelt` (inbound sync only) and `eigen` (own listings via `/admin/eigen/`).
+- Immowelt sync **upserts/deactivates only `origin=immowelt`** and never deletes `origin=eigen`.
+- Immowelt profile/account is **read-only** (no writes).
+- `data/listings.json` is an **export/backup** with `"sot": "sqlite"`, not the SoT.
+- Publish: `node scripts/publish-from-db.mjs` writes JSON export + HTML from the DB.
+- Eigen admin: https://immobilieneichmann.de/admin/eigen/ (same password + session PAT gate).
+- Badge for eigen listings: **„nur bei uns“**.
+- Node on droplet: **20.x** + `better-sqlite3`. App tooling lives in `/var/lib/eichmann/app`.
+
+
 # Immobilien Eichmann – technische Architektur und Betrieb
 
 Statische Website für **Immobilien Eichmann / Helmut Eichmann** in Konstanz.

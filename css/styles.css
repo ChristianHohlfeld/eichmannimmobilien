@@ -551,6 +551,13 @@ a.listing-card:focus-visible {
   background: rgba(232, 217, 192, 0.96);
   color: var(--primary);
 }
+
+.listing-badge.eigen {
+  background: var(--primary, #1a3a4a);
+  color: #fff;
+  border: 1px solid transparent;
+}
+
 .listing-body {
   padding: 18px 18px 16px;
   display: flex;

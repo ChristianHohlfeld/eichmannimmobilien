@@ -65,6 +65,58 @@ jobs:
           chmod 600 ~/.ssh/eichmann_deploy
           ssh-keyscan -T 10 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 
+
+
+      - name: Sync SQLite app tooling to droplet
+        env:
+          DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.EICHMANN_DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.EICHMANN_DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          SSH=(ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+          RSYNC_SSH="ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          APP=/var/lib/eichmann/app
+          DBDIR=/var/lib/eichmann
+          SITE="${DEPLOY_PATH:-/var/www/immobilieneichmann.de}"
+          "${SSH[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p '${DBDIR}' '${APP}/data' && chmod 755 '${DBDIR}'"
+          rsync -az -e "${RSYNC_SSH}" \
+            --delete \
+            --exclude node_modules/ \
+            --exclude .git/ \
+            --exclude var/ \
+            --exclude '**/*.db' \
+            ./package.json ./package-lock.json ./scripts \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${APP}/"
+          if [ -f ./data/listings.json ]; then
+            rsync -az -e "${RSYNC_SSH}" ./data/listings.json \
+              "${DEPLOY_USER}@${DEPLOY_HOST}:${APP}/data/listings.json"
+          fi
+          "${SSH[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            APP="${APP}" DB="${DBDIR}/listings.db" SITE="${SITE}" \
+            bash -s <<'REMOTE'
+          set -euo pipefail
+          cd "$APP"
+          if ! command -v node >/dev/null 2>&1; then
+            curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+            apt-get install -y nodejs build-essential python3
+          fi
+          node -v
+          if [ ! -d node_modules/better-sqlite3 ]; then
+            npm ci --omit=dev || npm install --omit=dev
+          fi
+          export EICHMANN_DB_PATH="$DB"
+          export EICHMANN_SITE_ROOT="$SITE"
+          if [ ! -f "$DB" ]; then
+            node scripts/db-migrate.mjs --bootstrap --json "$APP/data/listings.json"
+          else
+            node scripts/db-migrate.mjs
+          fi
+          node scripts/publish-from-db.mjs
+          chown -R www-data:www-data "$SITE" || true
+          echo "SQLite SoT ready at $DB"
+          REMOTE
+
       - name: Rsync static site to droplet
         env:
           DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}

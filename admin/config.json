@@ -6,11 +6,15 @@
   "assets_prefix": "assets/listings",
   "workflow_file": "sync-immowelt.yml",
   "admin_save_workflow": "admin-save.yml",
-  "note": "Login: Allowlist-E-Mail + Passwort. Schreibzugriff: GitHub-PAT nur in der Browser-Sitzung (nicht in config.json). Fine-grained PAT mit contents:write. Helmut: info@immobilien-eichmann.com. Immowelt-Konto bleibt unberührt. Kein Klartext-Passwort committen.",
+  "note": "Login: Allowlist-E-Mail + Passwort + session PAT. Immowelt-Admin: nur site_hidden. Eigen-CRUD: /admin/eigen/ via admin_eigen_save → SSH SQLite. Immowelt-Konto read-only. SoT=/var/lib/eichmann/listings.db",
   "admin_emails": [
     "chris.hohlfeld@gmail.com",
     "chris.hohlfeld@googlemail.com",
     "info@immobilien-eichmann.com"
   ],
-  "auth_mode": "password_plus_session_pat"
+  "auth_mode": "password_plus_session_pat",
+  "eigen_admin_path": "admin/eigen/",
+  "eigen_dispatch_event": "admin_eigen_save",
+  "admin_eigen_workflow": "admin-eigen-save.yml",
+  "sot": "sqlite"
 }

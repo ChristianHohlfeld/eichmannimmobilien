@@ -17,12 +17,13 @@
       <button type="button" class="btn btn-ghost btn-sm" id="btn-sync-full" title="Optionaler Immowelt-Import (nur Lesen, nie Schreiben)">Immowelt-Import</button>
       <button type="button" class="btn btn-ghost btn-sm" id="btn-sync-render" title="Nur HTML aus JSON neu erzeugen">Nur rendern</button>
       <button type="button" class="btn btn-ghost btn-sm" id="btn-settings" title="Erweitert">Erweitert</button>
+      <a class="btn btn-ghost btn-sm" href="eigen/">Eigen-Inserate</a>
       <button type="button" class="btn btn-ghost btn-sm" id="btn-logout">Abmelden</button>
     </div>
   </header>
 
   <div class="sot-banner hidden" id="sot-banner" role="status">
-    <strong>Single Source of Truth:</strong> Immowelt. Titel, Preis, Status, Referenznummer und Objektdaten kommen ausschließlich von dort.
+    <strong>Immowelt-Spiegel:</strong> Sichtbarkeit nur. Eigen-Inserate unter <a href="eigen/">/admin/eigen/</a>. SoT = SQLite. Titel, Preis, Status, Referenznummer und Objektdaten kommen ausschließlich von dort.
     Dieses Admin steuert nur, ob ein Immowelt-Objekt auf unserer Website sichtbar ist.
   </div>
 
@@ -70,51 +71,6 @@
         <div class="btn-row" style="margin:0">
           <button type="button" class="btn btn-outline btn-sm" id="btn-reload">Neu laden</button>
         </div>
-      </div>
-      <div class="card hidden" id="card-create" style="margin-bottom:16px;display:none" aria-hidden="true">
-        <h3 style="margin-top:0;color:var(--primary)">Neues Objekt (lokal)</h3>
-        <p class="hint">SoT-Eintrag ohne Immowelt. Optional Immowelt-URL/UUID nur zum Vorfüllen – danach gehört das Exposé uns.</p>
-        <form id="form-create">
-          <div class="form-grid">
-            <div class="full">
-              <label for="create-title">Titel *</label>
-              <input type="text" id="create-title" required placeholder="z. B. Eigentumswohnung Konstanz" />
-            </div>
-            <div>
-              <label for="create-price">Preis</label>
-              <input type="text" id="create-price" placeholder="z. B. 450.000 €" />
-            </div>
-            <div>
-              <label for="create-status">Status</label>
-              <input type="text" id="create-status" value="Kauf" />
-            </div>
-            <div>
-              <label for="create-rooms">Zimmer</label>
-              <input type="text" id="create-rooms" />
-            </div>
-            <div>
-              <label for="create-living">Wohnfläche</label>
-              <input type="text" id="create-living" />
-            </div>
-            <div class="full">
-              <label for="create-location">Öffentlicher Standort</label>
-              <input type="text" id="create-location" placeholder="Konstanz" />
-            </div>
-            <div class="full">
-              <label for="create-immowelt">Optional: Immowelt-URL oder UUID (nur Import/Vorfüllung)</label>
-              <input type="text" id="create-immowelt" placeholder="https://www.immowelt.de/expose/… oder UUID" />
-            </div>
-            <div class="full">
-              <label for="create-short">Kurzbeschreibung</label>
-              <textarea id="create-short"></textarea>
-            </div>
-          </div>
-          <div class="btn-row">
-            <button type="submit" class="btn btn-primary">Anlegen &amp; speichern</button>
-            <button type="button" class="btn btn-outline" id="btn-create-cancel">Abbrechen</button>
-          </div>
-          <p id="create-msg" class="hint"></p>
-        </form>
       </div>
       <div class="card" id="immowelt-health" style="margin-bottom:16px">
         <strong>Immowelt-Datenstatus</strong>
