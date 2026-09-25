@@ -4,42 +4,36 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Exposé Admin – Immobilien Eichmann</title>
-<link rel="stylesheet" href="admin.css" />
+  <title>Admin – Immobilien Eichmann</title>
+  <link rel="stylesheet" href="admin.css?v=unified-1" />
 </head>
 <body>
   <header class="app-header hidden" id="app-header">
     <div>
-      <h1>Exposé Admin</h1>
-      <div class="sub">Immobilien Eichmann · für Helmut</div>
+      <h1>Admin</h1>
+      <div class="sub">Immobilien Eichmann · Immowelt + Eigen-Inserate</div>
     </div>
     <div class="actions">
-      <button type="button" class="btn btn-ghost btn-sm" id="btn-sync-full" title="Optionaler Immowelt-Import (nur Lesen, nie Schreiben)">Immowelt-Import</button>
-      <button type="button" class="btn btn-ghost btn-sm" id="btn-sync-render" title="Nur HTML aus JSON neu erzeugen">Nur rendern</button>
-      <button type="button" class="btn btn-ghost btn-sm" id="btn-settings" title="Erweitert">Erweitert</button>
-      <a class="btn btn-ghost btn-sm" href="eigen/">Eigen-Inserate</a>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-publish" title="Statische Site aus SQLite neu erzeugen">Neu publizieren</button>
       <button type="button" class="btn btn-ghost btn-sm" id="btn-logout">Abmelden</button>
     </div>
   </header>
 
   <div class="sot-banner hidden" id="sot-banner" role="status">
-    <strong>Immowelt-Spiegel:</strong> Sichtbarkeit nur. Eigen-Inserate unter <a href="eigen/">/admin/eigen/</a>. SoT = SQLite. Titel, Preis, Status, Referenznummer und Objektdaten kommen ausschließlich von dort.
-    Dieses Admin steuert nur, ob ein Immowelt-Objekt auf unserer Website sichtbar ist.
+    <strong>SoT = SQLite</strong> auf dem Droplet.
+    Immowelt-Tab: Sichtbarkeit &amp; Sync-Status (kein Schreiben ins Immowelt-Konto).
+    Eigen-Tab: volles CRUD — Speichern nur mit Admin-Passwort (kein GitHub-Token).
   </div>
 
   <main class="wrap">
     <section id="view-gate" class="card gate-card">
       <h2 style="margin-top:0;font-family:var(--font-display);color:var(--primary)">Anmeldung</h2>
-      <p class="hint">Freigeschaltete E-Mail + Passwort. Für Speichern: einmalig GitHub-PAT für diese Sitzung (fine-grained, Contents write). Der Token wird <strong>nicht</strong> auf der Website gespeichert.</p>
+      <p class="hint">Freigeschaltete E-Mail + Passwort. Speichern läuft über die Server-API auf dem Droplet — <strong>kein GitHub-PAT</strong>.</p>
       <form id="form-login">
         <label for="email">E-Mail</label>
         <input type="email" id="email" autocomplete="username" required autofocus placeholder="chris.hohlfeld@gmail.com" />
         <label for="password">Passwort</label>
         <input type="password" id="password" autocomplete="current-password" required />
-        <label for="pat-login">GitHub-Token (diese Sitzung)</label>
-        <input type="password" id="pat-login" autocomplete="off" required
-          placeholder="github_pat_… (fine-grained, contents:write)" />
-        <p class="hint" style="margin-top:0.35rem">Nicht ins Repo legen. Nach Abmelden weg. Bei Leak: Token bei GitHub widerrufen.</p>
         <div class="btn-row">
           <button type="submit" class="btn btn-primary">Einloggen</button>
         </div>
@@ -47,154 +41,145 @@
       </form>
     </section>
 
-    <section id="view-setup" class="card setup-card hidden">
-      <h2 style="margin-top:0;font-family:var(--font-display);color:var(--primary)">Erweitert</h2>
-      <div class="ok-box">
-        Härte-Modus: kein Token in config.json. Schreibzugriff nur über Sitzungs-PAT beim Login oder hier.
-      </div>
-      <p class="hint">Nur für Notfälle / Rotation – optional ein Sitzungs-Token setzen (nicht persistent).</p>
-      <form id="form-pat">
-        <label for="pat">Sitzungs-Token (optional)</label>
-        <input type="password" id="pat" autocomplete="off" placeholder="github_pat_… / gho_…" />
-        <div class="btn-row">
-          <button type="submit" class="btn btn-outline">Für diese Sitzung setzen</button>
-          <button type="button" class="btn btn-outline" id="btn-clear-pat">Löschen</button>
-        </div>
-        <p id="pat-msg" class="hint"></p>
-      </form>
-      <p class="hint" style="margin-top:16px"><a href="#" id="link-skip-setup">← Zurück zur Liste</a></p>
-    </section>
+    <section id="view-app" class="hidden">
+      <nav class="tabs" role="tablist" aria-label="Admin-Bereiche">
+        <button type="button" class="tab active" role="tab" aria-selected="true" data-tab="immowelt" id="tab-immowelt">Immowelt</button>
+        <button type="button" class="tab" role="tab" aria-selected="false" data-tab="eigen" id="tab-eigen">Eigen-Inserate</button>
+      </nav>
 
-    <section id="view-list" class="hidden">
-      <div class="toolbar">
-        <h2>Objekte <span class="muted" id="list-count"></span></h2>
-        <div class="btn-row" style="margin:0">
-          <button type="button" class="btn btn-outline btn-sm" id="btn-reload">Neu laden</button>
-        </div>
-      </div>
-      <div class="card" id="immowelt-health" style="margin-bottom:16px">
-        <strong>Immowelt-Datenstatus</strong>
-        <p class="hint" id="immowelt-health-line">Prüfe letzten Lauf …</p>
-        <p class="hint" id="immowelt-health-detail"></p>
-      </div>
-      <div class="card" style="margin-bottom:16px">
-        <strong>Immowelt-Abgleich</strong>
-        <p class="hint" style="margin:4px 0 12px">Liest den aktuellen Immowelt-Bestand vollständig ein.
-          Was dort vorhanden ist, wird übernommen. Fehlt ein bisher aktives Objekt, wird es erst nach separater Immowelt-Bestätigung deaktiviert; bei Unsicherheit bleibt der letzte gültige Stand online.
-          Ein lokales <strong>Ausblenden</strong> bleibt als reine Website-Einstellung erhalten.</p>
-        <div class="btn-row" style="margin:0">
-          <button type="button" class="btn btn-accent btn-sm" id="btn-sync-full-2">Immowelt-Import starten</button>
-          <button type="button" class="btn btn-outline btn-sm" id="btn-sync-render-2">Nur HTML neu erzeugen</button>
-        </div>
-      </div>
-      <div class="card table-wrap" style="padding:0;overflow:hidden">
-        <table class="listings">
-          <thead>
-            <tr>
-              <th>Titel</th>
-              <th>Ort</th>
-              <th>Preis</th>
-              <th>Status</th>
-              <th>Text</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="listings-tbody">
-            <tr><td colspan="6" class="muted">Lade …</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="hint">Objektdaten werden ausschließlich in Immowelt gepflegt. Hier ist nur Ein-/Ausblenden auf unserer Website möglich. Unsichere Abrufe überschreiben niemals den letzten gültigen Stand.</p>
-    </section>
-
-    <section id="view-detail" class="hidden">
-      <div class="toolbar">
-        <h2 id="detail-title">Objekt bearbeiten</h2>
-        <div class="btn-row" style="margin:0">
-          <button type="button" class="btn btn-outline btn-sm" id="btn-back">← Zur Liste</button>
-          <a class="btn btn-outline btn-sm" id="link-local" href="#" target="_blank" rel="noopener">Öffentliche Seite</a>
-        </div>
-      </div>
-      <div class="card">
-        <form id="form-edit">
-          <input type="hidden" id="edit-id" />
-          <div class="form-grid">
-            <div class="full">
-              <label for="edit-title">Titel</label>
-              <input type="text" id="edit-title" />
-            </div>
-            <div>
-              <label for="edit-price">Preis</label>
-              <input type="text" id="edit-price" placeholder="z. B. 199.000 €" />
-            </div>
-            <div>
-              <label for="edit-status">Status</label>
-              <input type="text" id="edit-status" placeholder="Kauf / Miete / …" />
-            </div>
-            <div>
-              <label>Veröffentlichung</label>
-              <label style="display:flex;align-items:center;gap:8px;font-weight:500;margin-top:10px">
-                <input type="checkbox" id="edit-active" checked />
-                Öffentlich aktiv
-              </label>
-            </div>
-            <div>
-              <label>Detailseite</label>
-              <label style="display:flex;align-items:center;gap:8px;font-weight:500;margin-top:10px">
-                <input type="checkbox" id="edit-detail-page" checked />
-                Exposé-Seite erzeugen
-              </label>
-            </div>
-            <div>
-              <label for="edit-rooms">Zimmer</label>
-              <input type="text" id="edit-rooms" />
-            </div>
-            <div>
-              <label for="edit-living">Wohnfläche</label>
-              <input type="text" id="edit-living" placeholder="z. B. 85 m²" />
-            </div>
-            <div class="full">
-              <label for="edit-location">Öffentlicher Standort</label>
-              <input type="text" id="edit-location" />
-            </div>
-            <div class="full">
-              <label for="edit-short">Kurzbeschreibung (Karten-Text)</label>
-              <textarea id="edit-short"></textarea>
-            </div>
-            <div class="full">
-              <label for="edit-desc">Beschreibung (Exposé)</label>
-              <textarea id="edit-desc" class="tall"></textarea>
-            </div>
+      <!-- Immowelt panel -->
+      <div id="panel-immowelt" class="tab-panel" role="tabpanel">
+        <div class="toolbar">
+          <h2>Immowelt-Spiegel <span class="muted" id="immowelt-count"></span></h2>
+          <div class="btn-row" style="margin:0">
+            <button type="button" class="btn btn-outline btn-sm" id="btn-reload-immowelt">Neu laden</button>
           </div>
-          <p class="hint">Gespeicherte Felder werden als <code>manual_overrides</code> markiert und vom Immowelt-Import nicht überschrieben.
-            Nach jedem Speichern/Löschen läuft automatisch Render (SoT → HTML).</p>
-          <div class="btn-row">
-            <button type="submit" class="btn btn-primary" id="btn-save">Speichern</button>
-            <button type="button" class="btn btn-danger" id="btn-delete">Objekt löschen</button>
-            <label style="display:inline-flex;align-items:center;gap:8px;font-weight:500;margin:0;color:var(--slate)">
-              <input type="checkbox" id="save-and-render" checked disabled />
-              Auto-Render aktiv
-            </label>
-          </div>
-          <p id="save-msg" class="hint"></p>
-        </form>
+        </div>
+        <div class="card" id="immowelt-health" style="margin-bottom:16px">
+          <strong>Immowelt-Datenstatus</strong>
+          <p class="hint" id="immowelt-health-line">Prüfe …</p>
+          <p class="hint" id="immowelt-health-detail"></p>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <strong>Hinweis</strong>
+          <p class="hint" style="margin:4px 0 0">Objektdaten ausschließlich in Immowelt pflegen. Hier nur Ein-/Ausblenden auf unserer Website.
+            Immowelt-Import läuft über den geplanten GitHub-Workflow (read-only). Eigen-Inserate im Tab „Eigen-Inserate“.</p>
+        </div>
+        <div class="card table-wrap" style="padding:0;overflow:hidden">
+          <table class="listings">
+            <thead>
+              <tr>
+                <th>Titel</th>
+                <th>Ort</th>
+                <th>Preis</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="immowelt-tbody">
+              <tr><td colspan="5" class="muted">Lade …</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div class="card">
-        <h3 style="margin-top:0;color:var(--primary)">Fotos</h3>
-        <p class="hint">Upload nach <code>assets/listings/</code>. Entfernen nimmt nur aus der Liste (Datei bleibt ggf. liegen).</p>
-        <div class="btn-row" style="margin-top:8px">
-          <label class="btn btn-outline btn-sm" style="cursor:pointer;margin:0">
-            Foto hochladen
-            <input type="file" id="photo-input" accept="image/jpeg,image/png,image/webp" hidden />
-          </label>
+      <!-- Eigen panel -->
+      <div id="panel-eigen" class="tab-panel hidden" role="tabpanel">
+        <div class="toolbar">
+          <h2>Eigen-Inserate <span class="muted" id="eigen-count"></span></h2>
+          <div class="btn-row" style="margin:0">
+            <button type="button" class="btn btn-primary btn-sm" id="btn-new-eigen">+ Neu</button>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-reload-eigen">Neu laden</button>
+          </div>
         </div>
-        <div class="photo-grid" id="photo-grid"></div>
+
+        <div class="card hidden" id="card-editor" style="margin-bottom:16px">
+          <h3 style="margin-top:0;color:var(--primary)" id="editor-heading">Neues Eigen-Inserat</h3>
+          <p class="hint">Badge auf der Website: <strong>nur bei uns</strong>. Kein Immowelt-Schreiben. Speichern → SQLite + Publish.</p>
+          <form id="form-eigen">
+            <input type="hidden" id="f-id" />
+            <div class="form-grid">
+              <div class="full">
+                <label for="f-title">Titel *</label>
+                <input type="text" id="f-title" required placeholder="z. B. Eigentumswohnung Konstanz" />
+              </div>
+              <div>
+                <label for="f-slug">Slug</label>
+                <input type="text" id="f-slug" placeholder="auto" />
+              </div>
+              <div>
+                <label for="f-price">Preis</label>
+                <input type="text" id="f-price" placeholder="450.000 €" />
+              </div>
+              <div>
+                <label for="f-status">Status</label>
+                <input type="text" id="f-status" value="Kauf" />
+              </div>
+              <div>
+                <label for="f-rooms">Zimmer</label>
+                <input type="text" id="f-rooms" />
+              </div>
+              <div>
+                <label for="f-living">Wohnfläche</label>
+                <input type="text" id="f-living" />
+              </div>
+              <div class="full">
+                <label for="f-location">Ort</label>
+                <input type="text" id="f-location" placeholder="Konstanz" />
+              </div>
+              <div class="full">
+                <label for="f-type">Typ</label>
+                <input type="text" id="f-type" placeholder="Wohnung" />
+              </div>
+              <div class="full">
+                <label for="f-short">Kurzbeschreibung</label>
+                <textarea id="f-short" rows="2"></textarea>
+              </div>
+              <div class="full">
+                <label for="f-description">Beschreibung</label>
+                <textarea id="f-description" rows="6"></textarea>
+              </div>
+              <div class="full">
+                <label for="f-image">Hauptbild-URL</label>
+                <input type="url" id="f-image" placeholder="https://…" />
+              </div>
+              <div>
+                <label><input type="checkbox" id="f-active" checked /> aktiv</label>
+              </div>
+              <div>
+                <label><input type="checkbox" id="f-site-hidden" /> auf Website ausblenden</label>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button type="submit" class="btn btn-primary">Speichern &amp; publizieren</button>
+              <button type="button" class="btn btn-outline" id="btn-cancel">Abbrechen</button>
+              <button type="button" class="btn btn-outline" id="btn-delete" style="display:none;color:var(--err)">Löschen</button>
+            </div>
+            <p id="form-msg" class="hint"></p>
+          </form>
+        </div>
+
+        <div class="card table-wrap" style="padding:0;overflow:hidden">
+          <table class="listings">
+            <thead>
+              <tr>
+                <th>Titel</th>
+                <th>Ort</th>
+                <th>Preis</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="eigen-tbody">
+              <tr><td colspan="5" class="muted">Lade …</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   </main>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="admin.js?v=sessionEmail-fix-1" type="module"></script>
+  <script src="admin.js?v=unified-1" type="module"></script>
 </body>
 </html>

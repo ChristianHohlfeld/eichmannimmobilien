@@ -1,218 +1,25 @@
 /**
- * Exposé Admin – password gate only for Helmut.
- * GitHub write token: session-only PAT at login (not stored in public config.json).
- * Legacy: optional github_token_sealed still unlockable if present.
- * Immowelt admin = visibility only. Eigen CRUD = /admin/eigen/ (SQLite SoT).
- * This admin can only control website visibility (site_hidden) and trigger sync/render.
- * Object content for Immowelt rows is never authored here. Eigen listings use /admin/eigen/.
+ * Unified Admin – Immowelt visibility + Eigen CRUD.
+ * Auth: email + password → HttpOnly session cookie via /admin/api/
+ * No GitHub PAT. Immowelt account is never written.
  */
-
-const STORAGE_AUTH = "ei_admin_auth";
-const STORAGE_PAT = "ei_admin_github_pat"; // session only after unlock / optional override
-
-const EDITABLE_FIELDS = [
-  "title",
-  "short_description",
-  "description",
-  "price",
-  "rooms",
-  "living_area",
-  "location",
-  "status",
-  "active",
-  "detail_page",
-];
+const API = "/admin/api";
 
 let config = null;
-let listingsData = null;
-let listingsSha = null;
-let currentId = null;
-let sessionPassword = null; // kept in memory for re-seal tools only; not persisted
-let sessionEmail = null;
+let immoweltListings = [];
+let eigenListings = [];
+let activeTab = "immowelt";
 
 const $ = (id) => document.getElementById(id);
 
 function toast(msg, type = "") {
   const el = $("toast");
+  if (!el) return;
   el.textContent = msg;
   el.className = "toast" + (type ? " " + type : "");
   el.classList.remove("hidden");
   clearTimeout(toast._t);
   toast._t = setTimeout(() => el.classList.add("hidden"), 4500);
-}
-
-async function sha256Hex(text) {
-  const data = new TextEncoder().encode(text);
-  const buf = await crypto.subtle.digest("SHA-256", data);
-  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-function b64ToBytes(b64) {
-  const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-
-function bytesToB64(bytes) {
-  let bin = "";
-  bytes.forEach((b) => (bin += String.fromCharCode(b)));
-  return btoa(bin);
-}
-
-/** Unlock github_token_sealed from config using the admin password. */
-async function unsealToken(password) {
-  const sealedB64 = config.github_token_sealed;
-  if (!sealedB64) throw new Error("Kein versiegelter Token in config.json");
-  const buf = b64ToBytes(sealedB64);
-  const version = buf[0];
-  if (version !== 1) throw new Error("Unbekanntes Token-Format");
-  const salt = buf.slice(1, 17);
-  const iv = buf.slice(17, 29);
-  const tag = buf.slice(29, 45);
-  const data = buf.slice(45);
-  const iterations = (config.kdf && config.kdf.iterations) || 120000;
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
-    false,
-    ["deriveKey"]
-  );
-  const key = await crypto.subtle.deriveKey(
-    { name: "PBKDF2", salt, iterations, hash: "SHA-256" },
-    keyMaterial,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["decrypt"]
-  );
-  const cipher = new Uint8Array(data.length + tag.length);
-  cipher.set(data, 0);
-  cipher.set(tag, data.length);
-  try {
-    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipher);
-    return new TextDecoder().decode(plain);
-  } catch {
-    throw new Error("Token konnte nicht entsiegelt werden (Passwort/Config).");
-  }
-}
-
-function showView(name) {
-  ["gate", "setup", "list", "detail"].forEach((v) => {
-    const el = $(`view-${v}`);
-    if (el) el.classList.toggle("hidden", v !== name);
-  });
-  const inApp = name !== "gate";
-  $("app-header").classList.toggle("hidden", !inApp);
-  const banner = $("sot-banner");
-  if (banner) banner.classList.toggle("hidden", !inApp);
-}
-
-function isAuthed() {
-  return sessionStorage.getItem(STORAGE_AUTH) === "1";
-}
-
-function getPat() {
-  return sessionStorage.getItem(STORAGE_PAT) || "";
-}
-
-function setPatSession(token) {
-  if (token) sessionStorage.setItem(STORAGE_PAT, token);
-  else sessionStorage.removeItem(STORAGE_PAT);
-}
-
-function repoApi(path) {
-  const [owner, repo] = config.repo.split("/");
-  return `https://api.github.com/repos/${owner}/${repo}${path}`;
-}
-
-async function ghFetch(path, options = {}) {
-  const pat = getPat();
-  if (!pat) throw new Error("Kein Schreib-Token freigeschaltet – bitte neu einloggen.");
-  const headers = {
-    Accept: "application/vnd.github+json",
-    Authorization: `Bearer ${pat}`,
-    "X-GitHub-Api-Version": "2022-11-28",
-    ...(options.headers || {}),
-  };
-  const res = await fetch(repoApi(path), { ...options, headers });
-  if (!res.ok) {
-    let detail = "";
-    try {
-      const j = await res.json();
-      detail = j.message || JSON.stringify(j);
-    } catch {
-      detail = await res.text();
-    }
-    throw new Error(`GitHub API ${res.status}: ${detail}`);
-  }
-  if (res.status === 204) return null;
-  const ct = res.headers.get("content-type") || "";
-  if (ct.includes("application/json")) return res.json();
-  return res.text();
-}
-
-async function loadConfig() {
-  const res = await fetch("config.json", { cache: "no-store" });
-  if (!res.ok) throw new Error("config.json nicht ladbar");
-  config = await res.json();
-}
-
-async function loadListingsLocal() {
-  const res = await fetch("../data/listings.json", { cache: "no-store" });
-  if (!res.ok) throw new Error("listings.json nicht ladbar");
-  listingsData = await res.json();
-  listingsSha = null;
-}
-
-async function loadListingsFromGithub() {
-  const path = config.listings_path || "data/listings.json";
-  const meta = await ghFetch(`/contents/${path}?ref=${encodeURIComponent(config.branch || "main")}`);
-  listingsSha = meta.sha;
-  const raw = decodeURIComponent(escape(atob(meta.content.replace(/\n/g, ""))));
-  listingsData = JSON.parse(raw);
-}
-
-async function ensureListings() {
-  if (getPat()) {
-    try {
-      await loadListingsFromGithub();
-      return;
-    } catch (e) {
-      console.warn("GitHub load failed, fallback local:", e);
-      toast("GitHub-Laden fehlgeschlagen – lokale Datei. " + e.message, "error");
-    }
-  }
-  await loadListingsLocal();
-}
-
-async function loadImmoweltHealth() {
-  const line=$("immowelt-health-line"), detail=$("immowelt-health-detail"), card=$("immowelt-health");
-  if(!line||!detail||!card)return;
-  const fmt=(iso)=>{
-    if(!iso)return "unbekannt";
-    const d=new Date(iso);if(Number.isNaN(d.getTime()))return "unbekannt";
-    return new Intl.DateTimeFormat("de-DE",{timeZone:"Europe/Berlin",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}).format(d).replace(",","");
-  };
-  let status={};
-  try{
-    const res=await fetch("../data/immowelt-sync-status.json?t="+Date.now(),{cache:"no-store"});
-    if(res.ok)status=await res.json();
-  }catch{}
-  const valid=status.last_valid_at||listingsData?.scraped_at||null;
-  if(status.state==="current"){
-    line.innerHTML=`<span class="badge ok">OK</span> offizieller Immowelt-API-Stand ${esc(fmt(valid))}`;
-    detail.textContent="Immowelt ist Single Source of Truth; nur vollständig validierte API-Snapshots werden atomar übernommen.";
-  }else if(status.state==="awaiting_api_key"){
-    line.innerHTML=`<span class="badge warn">API-Key fehlt</span> letzter gültiger Stand ${esc(fmt(valid))}`;
-    detail.textContent=status.reason||"Offizielle Immowelt-API ist vorbereitet; Freischaltung/API-Key fehlt noch.";
-  }else if(status.state==="rejected"){
-    line.innerHTML=`<span class="badge miss">LKG aktiv</span> API-Abruf verworfen · letzter gültiger Stand ${esc(fmt(valid))}`;
-    detail.textContent=status.reason||"Unsicherer Abruf wurde verworfen. Last Known Good bleibt online.";
-  }else{
-    line.innerHTML=`<span class="badge warn">Status offen</span> letzter gültiger Stand ${esc(fmt(valid))}`;
-    detail.textContent=status.reason||"Kein bestätigter aktueller Immowelt-API-Snapshot.";
-  }
 }
 
 function esc(s) {
@@ -223,29 +30,199 @@ function esc(s) {
     .replace(/"/g, "&quot;");
 }
 
+function normalizeEmail(v) {
+  return String(v || "").trim().toLowerCase();
+}
+
+async function api(path, options = {}) {
+  const opts = {
+    credentials: "same-origin",
+    ...options,
+    headers: {
+      Accept: "application/json",
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(options.headers || {}),
+    },
+  };
+  const res = await fetch(`${API}${path}`, opts);
+  let data = null;
+  const text = await res.text();
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { ok: false, error: text.slice(0, 200) };
+    }
+  }
+  if (!res.ok) {
+    const err = new Error((data && data.error) || `HTTP ${res.status}`);
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
+
+function showGate(on) {
+  $("view-gate").classList.toggle("hidden", !on);
+  $("view-app").classList.toggle("hidden", on);
+  $("app-header").classList.toggle("hidden", on);
+  $("sot-banner").classList.toggle("hidden", on);
+}
+
+function setTab(name) {
+  activeTab = name === "eigen" ? "eigen" : "immowelt";
+  document.querySelectorAll(".tab").forEach((btn) => {
+    const on = btn.getAttribute("data-tab") === activeTab;
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-selected", on ? "true" : "false");
+  });
+  $("panel-immowelt").classList.toggle("hidden", activeTab !== "immowelt");
+  $("panel-eigen").classList.toggle("hidden", activeTab !== "eigen");
+  if (location.hash.replace(/^#/, "") !== activeTab) {
+    history.replaceState(null, "", `#${activeTab}`);
+  }
+}
+
+function tabFromHash() {
+  const h = (location.hash || "").replace(/^#/, "").toLowerCase();
+  return h === "eigen" ? "eigen" : "immowelt";
+}
+
+function slugify(title, id) {
+  const base = String(title || "objekt")
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+  const short = String(id || crypto.randomUUID()).replace(/-/g, "").slice(0, 8);
+  return `${base || "objekt"}-${short}`;
+}
+
 function shortId(id) {
   return String(id || "").slice(0, 8);
 }
 
-function findListing(id) {
-  return (listingsData?.listings || []).find((L) => L.id === id) || null;
+async function loadConfig() {
+  const res = await fetch("config.json", { cache: "no-store" });
+  if (!res.ok) throw new Error("config.json fehlt");
+  config = await res.json();
 }
 
-function renderList() {
-  const tbody = $("listings-tbody");
-  const list = listingsData?.listings || [];
-  $("list-count").textContent = `(${list.length})`;
-  if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="muted">Keine Objekte</td></tr>`;
+async function login(ev) {
+  ev.preventDefault();
+  const err = $("login-error");
+  err.classList.add("hidden");
+  try {
+    const email = normalizeEmail($("email").value);
+    const password = $("password").value;
+    // Client-side gate mirrors server (UX only); real auth is cookie from API
+    const allowed = (config.admin_emails || []).map(normalizeEmail);
+    if (allowed.length && !allowed.includes(email)) {
+      throw new Error("E-Mail nicht freigeschaltet");
+    }
+    await api("/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    $("password").value = "";
+    showGate(false);
+    setTab(tabFromHash());
+    await reloadAll();
+  } catch (e) {
+    err.textContent = e.message || String(e);
+    err.classList.remove("hidden");
+  }
+}
+
+async function logout() {
+  try {
+    await api("/logout", { method: "POST", body: "{}" });
+  } catch {
+    /* ignore */
+  }
+  showGate(true);
+}
+
+async function ensureSession() {
+  try {
+    const me = await api("/me");
+    return me && me.authenticated;
+  } catch {
+    return false;
+  }
+}
+
+async function loadImmoweltHealth() {
+  const line = $("immowelt-health-line");
+  const detail = $("immowelt-health-detail");
+  if (!line || !detail) return;
+  const fmt = (iso) => {
+    if (!iso) return "unbekannt";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "unbekannt";
+    return new Intl.DateTimeFormat("de-DE", {
+      timeZone: "Europe/Berlin",
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+      .format(d)
+      .replace(",", "");
+  };
+  let status = {};
+  try {
+    const st = await api("/status");
+    status = st.immowelt_sync || {};
+  } catch {
+    try {
+      const res = await fetch("../data/immowelt-sync-status.json?t=" + Date.now(), {
+        cache: "no-store",
+      });
+      if (res.ok) status = await res.json();
+    } catch {
+      /* ignore */
+    }
+  }
+  const valid = status.last_valid_at || null;
+  if (status.state === "current") {
+    line.innerHTML = `<span class="badge ok">OK</span> offizieller Immowelt-API-Stand ${esc(fmt(valid))}`;
+    detail.textContent =
+      "Immowelt ist fachliche Quelle; nur validierte Snapshots werden übernommen. Hier nur Sichtbarkeit.";
+  } else if (status.state === "awaiting_api_key") {
+    line.innerHTML = `<span class="badge warn">API-Key fehlt</span> letzter gültiger Stand ${esc(fmt(valid))}`;
+    detail.textContent = status.reason || "Offizielle Immowelt-API vorbereitet; Key fehlt noch.";
+  } else if (status.state === "rejected") {
+    line.innerHTML = `<span class="badge miss">LKG aktiv</span> Abruf verworfen · ${esc(fmt(valid))}`;
+    detail.textContent = status.reason || "Unsicherer Abruf verworfen. Last Known Good bleibt online.";
+  } else {
+    line.innerHTML = `<span class="badge warn">Status offen</span> letzter Stand ${esc(fmt(valid))}`;
+    detail.textContent = status.reason || "Kein bestätigter aktueller Immowelt-API-Snapshot.";
+  }
+}
+
+function renderImmowelt() {
+  const tbody = $("immowelt-tbody");
+  $("immowelt-count").textContent = `(${immoweltListings.length})`;
+  if (!immoweltListings.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="muted">Keine Immowelt-Objekte im Spiegel.</td></tr>`;
     return;
   }
-  tbody.innerHTML = list
+  tbody.innerHTML = immoweltListings
     .map((L) => {
       const local = L.local_url ? `../${L.local_url}` : "#";
-      const ref = String(L.reference_number || L.facts?.Referenznummer || "").trim().toUpperCase();
-      const visibilityBadge = L.site_hidden === true
-        ? ' <span class="badge warn">auf Website ausgeblendet</span>'
-        : ' <span class="badge ok">öffentlich</span>';
+      const ref = String(L.reference_number || L.facts?.Referenznummer || "")
+        .trim()
+        .toUpperCase();
+      const visibilityBadge =
+        L.site_hidden === true
+          ? ' <span class="badge warn">ausgeblendet</span>'
+          : ' <span class="badge ok">öffentlich</span>';
       const toggleLabel = L.site_hidden === true ? "Einblenden" : "Ausblenden";
       const toggleClass = L.site_hidden === true ? "btn-primary" : "btn-outline";
       return `<tr>
@@ -257,670 +234,234 @@ function renderList() {
         <td>${esc(L.location || "–")}</td>
         <td>${esc(L.price || "–")}</td>
         <td><span class="badge">${esc(L.status || "–")}</span></td>
-        <td>${L.description ? '<span class="badge ok">ja</span>' : '<span class="badge miss">fehlt</span>'}</td>
         <td>
           <button type="button" class="btn ${toggleClass} btn-sm" data-toggle-hidden="${esc(L.id)}">${toggleLabel}</button>
-          ${L.site_hidden === true ? "" : `<a class="btn btn-outline btn-sm" href="${esc(local)}" target="_blank" rel="noopener">Seite</a>`}
+          ${
+            L.site_hidden === true
+              ? ""
+              : `<a class="btn btn-outline btn-sm" href="${esc(local)}" target="_blank" rel="noopener">Seite</a>`
+          }
         </td>
       </tr>`;
     })
     .join("");
-
   tbody.querySelectorAll("[data-toggle-hidden]").forEach((btn) => {
-    btn.addEventListener("click", () => toggleSiteHidden(btn.getAttribute("data-toggle-hidden")));
+    btn.addEventListener("click", () =>
+      toggleVisibility(btn.getAttribute("data-toggle-hidden"), "immowelt")
+    );
   });
 }
 
-async function toggleSiteHidden(id) {
-  if(!getPat())throw new Error("Schreib-Token fehlt – bitte neu einloggen.");
-  const visible=findListing(id);
-  if(!visible)return;
-  const nextHidden=visible.site_hidden!==true;
-  try{
-    // Fresh HEAD immediately before the only allowed local mutation.
-    await loadListingsFromGithub();
-    const fresh=findListing(id);
-    if(!fresh)throw new Error("Objekt ist im aktuellen Immowelt-Spiegel nicht mehr vorhanden.");
-    fresh.site_hidden=nextHidden;
-    ensureSotMeta();
-    const path=config.listings_path||"data/listings.json";
-    const result=await ghFetch(`/contents/${path}`,{
-      method:"PUT",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        message:`Admin: ${shortId(id)} ${nextHidden?"ausgeblendet":"eingeblendet"}`,
-        content:utf8ToBase64(JSON.stringify(listingsData,null,2)+"\n"),
-        sha:listingsSha,
-        branch:config.branch||"main"
-      })
-    });
-    listingsSha=result.content?.sha||listingsSha;
-    await dispatchApplyRender(`Admin: ${shortId(id)} Sichtbarkeit`);
-    toast(nextHidden?"Objekt auf Website ausgeblendet":"Objekt wieder eingeblendet","ok");
-    renderList();
-    await loadImmoweltHealth();
-  }catch(e){
-    // Never write a stale browser snapshot as fallback.
-    await ensureListings().catch(()=>{});
-    renderList();
-    toast("Nicht gespeichert: "+e.message,"error");
-  }
-}
-
-function resolveAssetUrl(baseOrPath) {
-  if (!baseOrPath) return null;
-  const s = String(baseOrPath);
-  if (s.startsWith("http") || s.startsWith("data:") || s.startsWith("blob:")) return s;
-  if (s.startsWith("../") || s.startsWith("/")) return s;
-  if (s.startsWith("assets/")) {
-    if (/\.(jpg|jpeg|png|webp)$/i.test(s)) return `../${s}`;
-    return `../${s}.webp`;
-  }
-  // short gallery base e.g. 01-c6b1d820
-  if (!s.includes("/")) return `../assets/listings/${s}.webp`;
-  if (/\.(jpg|jpeg|png|webp)$/i.test(s)) return `../${s}`;
-  return `../${s}.webp`;
-}
-
-function openDetail(id) {
-  const L = findListing(id);
-  if (!L) {
-    toast("Objekt nicht gefunden", "error");
+function renderEigen() {
+  const tbody = $("eigen-tbody");
+  $("eigen-count").textContent = `(${eigenListings.length})`;
+  if (!eigenListings.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="muted">Keine Eigen-Inserate. Lege eines an.</td></tr>`;
     return;
   }
-  currentId = id;
-  $("edit-id").value = id;
-  $("edit-title").value = L.title || "";
-  $("edit-price").value = L.price || "";
-  $("edit-status").value = L.status || "";
-  $("edit-rooms").value = L.rooms || "";
-  $("edit-living").value = L.living_area || "";
-  $("edit-location").value = L.location || "";
-  $("edit-short").value = L.short_description || "";
-  $("edit-desc").value = L.description || "";
-  $("edit-active").checked = L.active !== false;
-  $("edit-detail-page").checked = L.detail_page !== false;
-  $("detail-title").textContent = L.title || "Objekt";
-  const link = $("link-local");
-  if (L.local_url) {
-    link.href = `../${L.local_url}`;
-    link.classList.remove("hidden");
-  } else {
-    link.classList.add("hidden");
-  }
-  $("save-msg").textContent = "";
-  renderPhotos(L);
-  showView("detail");
-}
-
-function photoEntries(L) {
-  const entries = [];
-  const images = Array.isArray(L.images) ? L.images : [];
-  const bases = Array.isArray(L.gallery_bases) ? L.gallery_bases : [];
-
-  if (images.length) {
-    images.forEach((src, i) => {
-      entries.push({
-        key: `img-${i}`,
-        display: resolveAssetUrl(src),
-        label: src,
-        remove: () => {
-          L.images = L.images.filter((_, j) => j !== i);
-        },
-      });
-    });
-    return entries;
-  }
-
-  // Prefer gallery_bases / image_base (canonical local assets)
-  const baseList = bases.length ? bases : L.image_base ? [L.image_base] : [];
-  baseList.forEach((b, i) => {
-    entries.push({
-      key: `base-${i}`,
-      display: resolveAssetUrl(b),
-      label: b,
-      remove: () => {
-        if (Array.isArray(L.gallery_bases)) {
-          L.gallery_bases = L.gallery_bases.filter((_, j) => j !== i);
-        }
-        if (L.image_base === b) L.image_base = (L.gallery_bases && L.gallery_bases[0]) || null;
-      },
-    });
-  });
-
-  if (!entries.length && L.main_image_url) {
-    entries.push({
-      key: "main",
-      display: resolveAssetUrl(L.main_image_url),
-      label: L.main_image_url,
-      remove: () => {
-        L.main_image_url = null;
-      },
-    });
-  }
-  return entries;
-}
-
-function renderPhotos(L) {
-  const grid = $("photo-grid");
-  const items = photoEntries(L);
-  if (!items.length) {
-    grid.innerHTML = `<p class="muted">Keine Fotos – Sync oder Upload.</p>`;
-    return;
-  }
-  grid.innerHTML = items
-    .map(
-      (it, idx) => `<div class="photo-card">
-        <img src="${esc(it.display)}" alt="" loading="lazy"
-          onerror="this.onerror=null;this.src=this.src.replace('.webp','.jpg')" />
-        <button type="button" class="btn btn-danger btn-sm remove" data-rm-idx="${idx}">Entfernen</button>
-        <div class="meta">${esc(String(it.label || "").slice(0, 64))}</div>
-      </div>`
-    )
+  tbody.innerHTML = eigenListings
+    .map((L) => {
+      const local = L.local_url ? `../${L.local_url}` : "#";
+      return `<tr>
+        <td>
+          <strong>${esc(L.title || "–")}</strong>
+          <div><span class="badge ok">nur bei uns</span>
+          ${L.site_hidden ? ' <span class="badge warn">ausgeblendet</span>' : ""}
+          ${L.active === false ? ' <span class="badge warn">inaktiv</span>' : ""}</div>
+          <div class="mono muted">${esc(L.id)}</div>
+        </td>
+        <td>${esc(L.location || "–")}</td>
+        <td>${esc(L.price || "–")}</td>
+        <td>${esc(L.status || "–")}</td>
+        <td>
+          <button type="button" class="btn btn-outline btn-sm" data-edit="${esc(L.id)}">Bearbeiten</button>
+          ${
+            L.local_url && L.site_hidden !== true && L.active !== false
+              ? `<a class="btn btn-outline btn-sm" href="${esc(local)}" target="_blank" rel="noopener">Seite</a>`
+              : ""
+          }
+        </td>
+      </tr>`;
+    })
     .join("");
-
-  grid.querySelectorAll("[data-rm-idx]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const idx = Number(btn.getAttribute("data-rm-idx"));
-      if (!confirm("Foto aus der Liste entfernen? (Datei bleibt im Repo, falls ungenutzt)")) return;
-      const fresh = photoEntries(L);
-      if (!fresh[idx]) return;
-      fresh[idx].remove();
-      markOverrides(L, ["images", "gallery_bases", "image_base", "main_image_url"]);
-      try {
-        await persistListings(`Admin: Foto entfernt bei ${shortId(L.id)}`);
-        renderPhotos(L);
-        toast("Foto entfernt und gespeichert", "ok");
-      } catch (e) {
-        toast(e.message, "error");
-      }
-    });
+  tbody.querySelectorAll("[data-edit]").forEach((btn) => {
+    btn.addEventListener("click", () => openEditor(btn.getAttribute("data-edit")));
   });
 }
 
-function markOverrides(L, fields) {
-  const mo = { ...(L.manual_overrides || {}) };
-  for (const f of fields) {
-    if (f) mo[f] = true;
+async function reloadImmowelt() {
+  const data = await api("/listings?origin=immowelt");
+  immoweltListings = data.listings || [];
+  renderImmowelt();
+  await loadImmoweltHealth();
+}
+
+async function reloadEigen() {
+  const data = await api("/listings?origin=eigen");
+  eigenListings = data.listings || [];
+  renderEigen();
+}
+
+async function reloadAll() {
+  await Promise.all([reloadImmowelt(), reloadEigen()]);
+}
+
+async function toggleVisibility(id) {
+  const L = immoweltListings.find((x) => x.id === id) || eigenListings.find((x) => x.id === id);
+  if (!L) return;
+  const nextHidden = L.site_hidden !== true;
+  try {
+    await api("/visibility", {
+      method: "POST",
+      body: JSON.stringify({ id, site_hidden: nextHidden }),
+    });
+    L.site_hidden = nextHidden;
+    toast(nextHidden ? "Auf Website ausgeblendet" : "Wieder eingeblendet", "ok");
+    renderImmowelt();
+    renderEigen();
+  } catch (e) {
+    toast(e.message || String(e), "err");
   }
-  mo.updated_at = new Date().toISOString();
-  L.manual_overrides = mo;
 }
 
-function utf8ToBase64(str) {
-  const bytes = new TextEncoder().encode(str);
-  let binary = "";
-  bytes.forEach((b) => (binary += String.fromCharCode(b)));
-  return btoa(binary);
+function openEditor(id) {
+  const L = id ? eigenListings.find((x) => x.id === id) : null;
+  $("card-editor").classList.remove("hidden");
+  $("editor-heading").textContent = L ? "Eigen-Inserat bearbeiten" : "Neues Eigen-Inserat";
+  $("btn-delete").style.display = L ? "" : "none";
+  $("f-id").value = L?.id || "";
+  $("f-title").value = L?.title || "";
+  $("f-slug").value = L?.slug || "";
+  $("f-price").value = L?.price || "";
+  $("f-status").value = L?.status || "Kauf";
+  $("f-rooms").value = L?.rooms || "";
+  $("f-living").value = L?.living_area || "";
+  $("f-location").value = L?.location || "";
+  $("f-type").value = L?.type || "";
+  $("f-short").value = L?.short_description || "";
+  $("f-description").value = L?.description || "";
+  $("f-image").value = L?.main_image_url || "";
+  $("f-active").checked = L?.active !== false;
+  $("f-site-hidden").checked = L?.site_hidden === true;
+  $("form-msg").textContent = "";
 }
 
-function ensureSotMeta() {
-  listingsData.sot = "immowelt";
-  listingsData.listing_count = (listingsData.listings || []).length;
-  listingsData.active_listing_count = (listingsData.listings || []).filter(
-    (L) => L.active !== false && L.site_hidden !== true
-  ).length;
+function closeEditor() {
+  $("card-editor").classList.add("hidden");
+  $("form-eigen").reset();
+  $("f-status").value = "Kauf";
+  $("f-active").checked = true;
+  $("btn-delete").style.display = "none";
 }
 
-function slugifyTitle(title, id) {
-  const base =
-    String(title || "objekt")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/ä/g, "ae")
-      .replace(/ö/g, "oe")
-      .replace(/ü/g, "ue")
-      .replace(/ß/g, "ss")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")
-      .slice(0, 48) || "objekt";
-  return `${base}-${shortId(id)}`;
-}
-
-function parseImmoweltRef(raw) {
-  const s = String(raw || "").trim();
-  if (!s) return null;
-  const m = s.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
-  if (!m) return null;
-  const uuid = m[1].toLowerCase();
+function buildListing() {
+  const id = $("f-id").value || crypto.randomUUID();
+  const title = $("f-title").value.trim();
+  if (!title) throw new Error("Titel fehlt");
+  const slug = ($("f-slug").value.trim() || slugify(title, id)).replace(/^\/+|\/+$/g, "");
+  const image = $("f-image").value.trim() || null;
   return {
-    immowelt_id: uuid,
-    expose_url: `https://www.immowelt.de/expose/${uuid}`,
+    id,
+    slug,
+    local_url: `objekt/${slug}.html`,
+    title,
+    price: $("f-price").value.trim() || null,
+    status: $("f-status").value.trim() || "Kauf",
+    location: $("f-location").value.trim() || null,
+    rooms: $("f-rooms").value.trim() || null,
+    living_area: $("f-living").value.trim() || null,
+    type: $("f-type").value.trim() || null,
+    short_description: $("f-short").value.trim() || null,
+    description: $("f-description").value.trim() || null,
+    main_image_url: image,
+    images: image ? [image] : [],
+    active: $("f-active").checked,
+    detail_page: true,
+    site_hidden: $("f-site-hidden").checked,
+    origin: "eigen",
+    source: "eigen",
+    sync_policy: "independent",
   };
 }
 
-/**
- * Persist listings.json then always trigger render-only apply.
- * Prefer Contents API + admin_apply_render; fallback admin_save_listings (JSON+render in one Action).
- */
-async function persistListings(message) {
-  if (!getPat()) throw new Error("Schreib-Token fehlt – bitte neu einloggen.");
-  const path = config.listings_path || "data/listings.json";
-  ensureSotMeta();
-  if (!listingsSha) {
-    const meta = await ghFetch(`/contents/${path}?ref=${encodeURIComponent(config.branch || "main")}`);
-    listingsSha = meta.sha;
-  }
-  const body = {
-    message,
-    content: utf8ToBase64(JSON.stringify(listingsData, null, 2) + "\n"),
-    sha: listingsSha,
-    branch: config.branch || "main",
-  };
-  let result;
-  try {
-    result = await ghFetch(`/contents/${path}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-  } catch (e) {
-    console.warn("Contents API failed, trying admin-save dispatch:", e);
-    await dispatchAdminSave(message, true);
-    await new Promise((r) => setTimeout(r, 2000));
-    try {
-      await loadListingsFromGithub();
-    } catch {
-      /* Action may still be running */
-    }
-    return { via: "dispatch_save" };
-  }
-  listingsSha = result.content?.sha || listingsSha;
-  try {
-    await dispatchApplyRender(message);
-  } catch (e) {
-    console.warn("admin_apply_render failed, fallback sync render:", e);
-    await triggerWorkflow(true);
-  }
-  return result;
-}
-
-async function dispatchAdminSave(message, triggerRender = true) {
-  const listingsPath = config.listings_path || "data/listings.json";
-  ensureSotMeta();
-  await ghFetch(`/dispatches`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      event_type: "admin_save_listings",
-      client_payload: {
-        message: message || "Admin: listings.json aktualisiert",
-        listings_json: JSON.stringify(listingsData),
-        path: listingsPath,
-        trigger_render: triggerRender !== false,
-      },
-    }),
-  });
-  toast("Speichern + Auto-Render über Admin-Action gestartet …", "ok");
-}
-
-/** After Contents API wrote JSON: run render-only and commit generated files. */
-async function dispatchApplyRender(message) {
-  const wf = config.admin_save_workflow || "admin-save.yml";
-  try {
-    await ghFetch(`/dispatches`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        event_type: "admin_apply_render",
-        client_payload: {
-          message: (message || "Admin") + " + render",
-          trigger_render: true,
-        },
-      }),
-    });
-  } catch (e) {
-    await ghFetch(`/actions/workflows/${wf}/dispatches`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ref: config.branch || "main",
-        inputs: { mode: "render_only" },
-      }),
-    });
-  }
-  toast("Auto-Render gestartet (objekt/*.html, Karten, Sitemap).", "ok");
-}
-
-async function saveEdit(ev) {
+async function onSubmit(ev) {
   ev.preventDefault();
-  const L = findListing($("edit-id").value);
-  if (!L) return;
-  const btn = $("btn-save");
-  btn.disabled = true;
-  $("save-msg").textContent = "Speichere …";
-
-  const next = {
-    title: $("edit-title").value.trim(),
-    price: $("edit-price").value.trim() || null,
-    status: $("edit-status").value.trim() || "Kauf",
-    rooms: $("edit-rooms").value.trim() || null,
-    living_area: $("edit-living").value.trim() || null,
-    location: $("edit-location").value.trim() || null,
-    short_description: $("edit-short").value.trim() || null,
-    description: $("edit-desc").value.trim() || null,
-    active: $("edit-active").checked,
-    detail_page: $("edit-detail-page").checked,
-  };
-
-  const changed = [];
-  for (const f of EDITABLE_FIELDS) {
-    const before = L[f] ?? null;
-    const after = next[f] ?? null;
-    if (String(before ?? "") !== String(after ?? "")) {
-      L[f] = after;
-      changed.push(f);
-    }
-  }
-
-  if (!changed.length) {
-    $("save-msg").textContent = "Keine Änderungen.";
-    btn.disabled = false;
-    return;
-  }
-
-  markOverrides(L, changed);
-
+  const msg = $("form-msg");
+  msg.textContent = "Speichere …";
   try {
-    await persistListings(`Admin: ${shortId(L.id)} – ${changed.join(", ")} aktualisiert`);
-    $("save-msg").textContent =
-      "Gespeichert in data/listings.json. Auto-Render läuft (öffentliche Seiten folgen).";
-    $("detail-title").textContent = L.title || "Objekt";
-    toast("Gespeichert + Render", "ok");
+    const listing = buildListing();
+    const res = await api("/eigen", {
+      method: "POST",
+      body: JSON.stringify({ listing }),
+    });
+    const saved = res.listing || listing;
+    const idx = eigenListings.findIndex((x) => x.id === saved.id);
+    if (idx >= 0) eigenListings[idx] = saved;
+    else eigenListings.unshift(saved);
+    renderEigen();
+    msg.textContent = "Gespeichert und publiziert.";
+    toast("Eigen-Inserat gespeichert", "ok");
+    $("f-id").value = saved.id;
+    $("btn-delete").style.display = "";
   } catch (e) {
-    $("save-msg").textContent = e.message;
-    toast(e.message, "error");
-  } finally {
-    btn.disabled = false;
+    msg.textContent = e.message || String(e);
+    toast(e.message || String(e), "err");
   }
 }
 
-async function deleteCurrentListing() {
-  const id = $("edit-id").value;
-  const L = findListing(id);
-  if (!L) return;
-  const label = L.title || shortId(id);
-  if (
-    !confirm(
-      `Objekt „${label}“ wirklich löschen?\n\nEntfernt aus SoT (listings.json), löscht objekt/${L.slug || "…"}.html und räumt verwaiste Assets beim Auto-Render auf.`
-    )
-  ) {
-    return;
-  }
-  const btn = $("btn-delete");
-  if (btn) btn.disabled = true;
-  listingsData.listings = (listingsData.listings || []).filter((x) => x.id !== id);
-  ensureSotMeta();
+async function onDelete() {
+  const id = $("f-id").value;
+  if (!id) return;
+  if (!confirm("Eigen-Inserat wirklich löschen?")) return;
+  $("form-msg").textContent = "Lösche …";
   try {
-    await persistListings(`Admin: gelöscht ${shortId(id)} (${L.slug || ""})`);
-    toast("Gelöscht + Auto-Render gestartet", "ok");
-    currentId = null;
-    showView("list");
-    renderList();
+    await api("/eigen/delete", {
+      method: "POST",
+      body: JSON.stringify({ id }),
+    });
+    eigenListings = eigenListings.filter((x) => x.id !== id);
+    renderEigen();
+    closeEditor();
+    toast("Eigen-Inserat gelöscht", "ok");
   } catch (e) {
-    toast(e.message, "error");
-    try {
-      await ensureListings();
-      renderList();
-    } catch {
-      /* ignore */
-    }
-  } finally {
-    if (btn) btn.disabled = false;
+    $("form-msg").textContent = e.message || String(e);
+    toast(e.message || String(e), "err");
   }
 }
 
-async function createListing(ev) {
-  ev.preventDefault();
-  toast("Lokales Anlegen ist deaktiviert. Bitte Eigen-Inserate nutzen.", "err");
-  window.location.href = "eigen/";
-}
-
-async function triggerWorkflow(forceFromJson) {
-  const file = config.workflow_file || "sync-immowelt.yml";
-  await ghFetch(`/actions/workflows/${file}/dispatches`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      ref: config.branch || "main",
-      inputs: { force_from_json: forceFromJson ? "true" : "false" },
-    }),
-  });
-  toast(
-    forceFromJson
-      ? "Render-Workflow gestartet (nur HTML aus SoT-JSON)."
-      : "Immowelt-Import gestartet (nur lesen/mergen – nie schreiben).",
-    "ok"
-  );
-}
-
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result).split(",")[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-async function uploadPhoto(file) {
-  const L = findListing(currentId);
-  if (!L) return;
-  if (!getPat()) throw new Error("Schreib-Token fehlt – bitte neu einloggen.");
-  if (file.size > 4.5 * 1024 * 1024) {
-    throw new Error("Bild zu groß (max. ca. 4,5 MB)");
-  }
-
-  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/jpeg/, "jpg");
-  const safeExt = ["jpg", "png", "webp"].includes(ext) ? ext : "jpg";
-  const prefix = config.assets_prefix || "assets/listings";
-  const stem = `admin-${shortId(L.id)}-${Date.now()}`;
-  const fname = `${stem}.${safeExt}`;
-  const path = `${prefix}/${fname}`;
-  const content = await fileToBase64(file);
-
-  toast("Lade hoch …");
-  await ghFetch(`/contents/${path}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message: `Admin: Foto ${fname} für ${shortId(L.id)}`,
-      content,
-      branch: config.branch || "main",
-    }),
-  });
-
-  // Mirror jpg as gallery base name (renderer uses assets/listings/{base}.webp|.jpg)
-  // For non-jpg uploads, still store stem; renderer may 404 webp until render copies – keep jpg path in images.
-  L.images = Array.isArray(L.images) ? L.images.slice() : [];
-  L.images.push(`${prefix}/${fname}`);
-  L.gallery_bases = Array.isArray(L.gallery_bases) ? L.gallery_bases.slice() : [];
-  L.gallery_bases.push(stem);
-  if (!L.main_image_url) L.main_image_url = `${prefix}/${fname}`;
-  if (!L.image_base) L.image_base = stem;
-
-  markOverrides(L, ["images", "gallery_bases", "main_image_url", "image_base"]);
-  await persistListings(`Admin: Foto-Liste aktualisiert ${shortId(L.id)}`);
-  renderPhotos(L);
-  toast("Foto hochgeladen und Liste gespeichert", "ok");
-}
-
-async function enterApp() {
-  showView("list");
+async function onPublish() {
   try {
-    await ensureListings();
-    renderList();
-    await loadImmoweltHealth();
+    toast("Publiziere …");
+    await api("/publish", { method: "POST", body: "{}" });
+    toast("Site aus SQLite publiziert", "ok");
+    await reloadAll();
   } catch (e) {
-    toast(e.message, "error");
-    $("listings-tbody").innerHTML = `<tr><td colspan="6"><div class="err-box">${esc(e.message)}</div></td></tr>`;
+    toast(e.message || String(e), "err");
   }
-}
-
-function normalizeEmail(e) {
-  return String(e || "").trim().toLowerCase();
-}
-
-function emailAllowed(email) {
-  const list = (config.admin_emails || []).map(normalizeEmail).filter(Boolean);
-  if (!list.length) return true; // legacy: password only
-  return list.includes(normalizeEmail(email));
-}
-
-async function handleLogin(password, email, sessionPat) {
-  if (!emailAllowed(email)) {
-    throw new Error("Diese E-Mail hat keinen Admin-Zugang.");
-  }
-  const hash = await sha256Hex(password);
-  if (hash !== (config.password_sha256 || "").toLowerCase()) {
-    throw new Error("Falsches Passwort.");
-  }
-  // Härte: kein github_token_sealed mehr in der öffentlichen config.json.
-  // Legacy: falls doch noch sealed vorhanden, mit Passwort entsiegeln.
-  let token = "";
-  if (config.github_token_sealed) {
-    token = await unsealToken(password);
-  }
-  const fromForm = String(sessionPat || "").trim();
-  if (fromForm) token = fromForm;
-  if (!token) {
-    throw new Error("GitHub-Token für diese Sitzung fehlt (Schreibrecht Contents).");
-  }
-  if (!/^gh[pousr]_|github_pat_/.test(token)) {
-    throw new Error("Token sieht nicht nach einem GitHub-PAT aus.");
-  }
-  setPatSession(token);
-  sessionPassword = password;
-  sessionEmail = normalizeEmail(email);
-  sessionStorage.setItem(STORAGE_AUTH, "1");
 }
 
 function bind() {
-  $("form-login").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const err = $("login-error");
-    err.classList.add("hidden");
-    try {
-      const patEl = $("pat-login");
-      await handleLogin($("password").value, $("email").value, patEl ? patEl.value : "");
-      if (patEl) patEl.value = "";
-      $("password").value = "";
-      await enterApp();
-    } catch (ex) {
-      err.textContent = ex.message || "Login fehlgeschlagen";
-      err.classList.remove("hidden");
-    }
+  $("form-login").addEventListener("submit", login);
+  $("btn-logout").addEventListener("click", logout);
+  $("btn-publish").addEventListener("click", onPublish);
+  $("btn-reload-immowelt").addEventListener("click", () =>
+    reloadImmowelt()
+      .then(() => toast("Immowelt-Liste aktualisiert", "ok"))
+      .catch((e) => toast(e.message || String(e), "err"))
+  );
+  $("btn-reload-eigen").addEventListener("click", () =>
+    reloadEigen()
+      .then(() => toast("Eigen-Liste aktualisiert", "ok"))
+      .catch((e) => toast(e.message || String(e), "err"))
+  );
+  $("btn-new-eigen").addEventListener("click", () => openEditor(null));
+  $("btn-cancel").addEventListener("click", closeEditor);
+  $("btn-delete").addEventListener("click", onDelete);
+  $("form-eigen").addEventListener("submit", onSubmit);
+  document.querySelectorAll(".tab").forEach((btn) => {
+    btn.addEventListener("click", () => setTab(btn.getAttribute("data-tab")));
   });
-
-  // Optional: override / rotate token (advanced) – not required for Helmut
-  const formPat = $("form-pat");
-  if (formPat) {
-    formPat.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const v = $("pat").value.trim();
-      if (!v) {
-        $("pat-msg").textContent = "Leer – abgebrochen.";
-        return;
-      }
-      setPatSession(v);
-      $("pat").value = "";
-      $("pat-msg").textContent =
-        "Token nur in dieser Sitzung aktiv. Für Dauerhaft: coder muss neu versiegeln.";
-      toast("Sitzungs-Token gesetzt", "ok");
-      await enterApp();
-    });
-  }
-  const clearPat = $("btn-clear-pat");
-  if (clearPat) {
-    clearPat.addEventListener("click", () => {
-      setPatSession("");
-      $("pat-msg").textContent = "Sitzungs-Token gelöscht. Bitte neu einloggen.";
-    });
-  }
-  const skip = $("link-skip-setup");
-  if (skip) {
-    skip.addEventListener("click", (e) => {
-      e.preventDefault();
-      enterApp();
-    });
-  }
-
-  $("btn-logout").addEventListener("click", () => {
-    sessionStorage.removeItem(STORAGE_AUTH);
-    setPatSession("");
-    sessionPassword = null;
-    showView("gate");
-  });
-
-  $("btn-settings").addEventListener("click", () => showView("setup"));
-  $("btn-back").addEventListener("click", () => {
-    showView("list");
-    renderList();
-  });
-  $("btn-reload").addEventListener("click", async () => {
-    try {
-      await ensureListings();
-      renderList();
-      await loadImmoweltHealth();
-      toast("Liste aktualisiert", "ok");
-    } catch (e) {
-      toast(e.message, "error");
-    }
-  });
-
-  // Immowelt owns object facts; legacy edit form is intentionally not writable.
-
-  const btnDelete = $("btn-delete");
-  if (btnDelete) btnDelete.disabled = true;
-
-  const btnNew = $("btn-new");
-  if (btnNew) {
-    btnNew.addEventListener("click", () => {
-      const card = $("card-create");
-      if (!card) return;
-      card.style.display = card.style.display === "none" || !card.style.display ? "block" : "none";
-    });
-  }
-  const btnCreateCancel = $("btn-create-cancel");
-  if (btnCreateCancel) {
-    btnCreateCancel.addEventListener("click", () => {
-      $("card-create").style.display = "none";
-    });
-  }
-  const formCreate = $("form-create");
-  if (formCreate) formCreate.addEventListener("submit", (e) => { e.preventDefault(); toast("Objektdaten ausschließlich in Immowelt pflegen.", "error"); });
-
-  const syncFull = async () => {
-    try {
-      await triggerWorkflow(false);
-    } catch (e) {
-      toast(e.message, "error");
-    }
-  };
-  const syncRender = async () => {
-    try {
-      await triggerWorkflow(true);
-    } catch (e) {
-      toast(e.message, "error");
-    }
-  };
-  $("btn-sync-full").addEventListener("click", syncFull);
-  $("btn-sync-full-2").addEventListener("click", syncFull);
-  $("btn-sync-render").addEventListener("click", syncRender);
-  $("btn-sync-render-2").addEventListener("click", syncRender);
-
-  $("photo-input").disabled = true;
-  $("photo-input").addEventListener("change", async (e) => {
-    const file = e.target.files && e.target.files[0];
-    e.target.value = "";
-    if (!file) return;
-    try {
-      await uploadPhoto(file);
-    } catch (err) {
-      toast(err.message, "error");
-    }
-  });
+  window.addEventListener("hashchange", () => setTab(tabFromHash()));
 }
 
 async function boot() {
@@ -931,14 +472,24 @@ async function boot() {
     document.body.innerHTML = `<p class="err-box" style="margin:2rem">Admin-Konfiguration fehlt: ${esc(e.message)}</p>`;
     return;
   }
-  // Re-auth each browser session: sealed token must be unlocked with password
-  if (isAuthed() && getPat()) {
-    await enterApp();
+  if (await ensureSession()) {
+    showGate(false);
+    setTab(tabFromHash());
+    try {
+      await reloadAll();
+    } catch (e) {
+      toast(e.message || String(e), "err");
+    }
   } else {
-    sessionStorage.removeItem(STORAGE_AUTH);
-    setPatSession("");
-    showView("gate");
+    showGate(true);
   }
 }
 
-boot();
+boot().catch((e) => {
+  console.error(e);
+  const err = $("login-error");
+  if (err) {
+    err.textContent = e.message || String(e);
+    err.classList.remove("hidden");
+  }
+});

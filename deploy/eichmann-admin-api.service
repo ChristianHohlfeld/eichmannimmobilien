@@ -1,0 +1,22 @@
+[Unit]
+Description=Eichmann Immobilien admin API (localhost)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/lib/eichmann/app
+Environment=NODE_ENV=production
+Environment=EICHMANN_DB_PATH=/var/lib/eichmann/listings.db
+Environment=EICHMANN_SITE_ROOT=/var/www/immobilieneichmann.de
+Environment=EICHMANN_ADMIN_CONFIG=/var/www/immobilieneichmann.de/admin/config.json
+Environment=EICHMANN_SESSION_SECRET_FILE=/var/lib/eichmann/admin-session.secret
+Environment=EICHMANN_ADMIN_API_HOST=127.0.0.1
+Environment=EICHMANN_ADMIN_API_PORT=3847
+ExecStart=/usr/bin/node /var/lib/eichmann/app/scripts/admin-api.mjs
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

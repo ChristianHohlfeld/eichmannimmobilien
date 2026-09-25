@@ -1,14 +1,15 @@
 ## Listings SoT (SQLite)
 
 - **Source of truth:** SQLite on the droplet at `/var/lib/eichmann/listings.db` (not in git, not in the web root).
-- **Origins:** `immowelt` (inbound sync only) and `eigen` (own listings via `/admin/eigen/`).
+- **Origins:** `immowelt` (inbound sync only) and `eigen` (own listings via unified `/admin/#eigen`).
 - Immowelt sync **upserts/deactivates only `origin=immowelt`** and never deletes `origin=eigen`.
 - Immowelt profile/account is **read-only** (no writes).
 - `data/listings.json` is an **export/backup** with `"sot": "sqlite"`, not the SoT.
 - Publish: `node scripts/publish-from-db.mjs` writes JSON export + HTML from the DB.
-- Eigen admin: https://immobilieneichmann.de/admin/eigen/ (same password + session PAT gate).
+- **Admin:** https://immobilieneichmann.de/admin/ — Immowelt visibility + Eigen CRUD. Auth = email + password → HttpOnly cookie via `/admin/api/` (localhost Node). **No GitHub PAT.**
 - Badge for eigen listings: **„nur bei uns“**.
-- Node on droplet: **20.x** + `better-sqlite3`. App tooling lives in `/var/lib/eichmann/app`.
+- Node on droplet: **20.x** + `better-sqlite3`. App tooling: `/var/lib/eichmann/app`. Admin API unit: `eichmann-admin-api.service`.
+- Stabschef note: `docs/STABSCHEF-admin-unified-2026-09-25.md`
 
 
 # Immobilien Eichmann – technische Architektur und Betrieb
@@ -565,77 +566,48 @@ URL:
 https://immobilieneichmann.de/admin/
 ```
 
-Das Admin ist **selbst ebenfalls nur statisches HTML/CSS/JavaScript auf GitHub Pages**.
+Unified UI (tabs: Immowelt | Eigen-Inserate). `/admin/eigen/` redirects to `/admin/#eigen`.
 
-Es gibt keinen Admin-Backend-Server und keine Server-Session.
+Details: `admin/README.md` and `docs/STABSCHEF-admin-unified-2026-09-25.md`.
 
-### Aktueller Login-Modus
+### Login-Modus
 
 `admin/config.json`:
 
 ```text
-auth_mode = password_plus_session_pat
+auth_mode = password_session
 ```
 
 Login benötigt:
 
 1. freigeschaltete E-Mail-Adresse
 2. Admin-Passwort
-3. GitHub Personal Access Token für diese Browser-Sitzung
 
-Die E-Mail-Allowlist und der SHA-256-Hash des Admin-Passworts liegen im öffentlichen statischen Config-File.
+**Kein GitHub-PAT.** Der Browser ruft `POST /admin/api/login` auf; nginx proxyt auf `127.0.0.1:3847`.
+Die API prüft Allowlist + `password_sha256` und setzt ein HttpOnly Secure SameSite=Strict Cookie.
 
-Das bedeutet bewusst:
-
-> Der Passwort-Check ist kein serverseitiger Sicherheitsperimeter.
-
-Die eigentliche Schreibberechtigung erzwingt **GitHub über den PAT**.
-
-### PAT
-
-Der GitHub-PAT wird beim Login in:
+### Speichern
 
 ```text
-sessionStorage["ei_admin_github_pat"]
+Browser → /admin/api/{eigen|visibility|publish}
+       → eichmann-admin-api (systemd)
+       → SQLite SoT → publish-from-db → /var/www/…
 ```
 
-gespeichert.
+Immowelt-Konto bleibt read-only. Immowelt-Import weiterhin über `sync-immowelt.yml`.
 
-Zusätzlich gibt es:
+### Entfernt (2026-09-25)
 
-```text
-sessionStorage["ei_admin_auth"]
-```
-
-für den UI-Loginzustand.
-
-Beim Logout wird der PAT aus dem Session Storage entfernt.
-
-Der aktuelle `admin/config.json` enthält **keinen Klartext-GitHub-Token und keinen versiegelten Token**.
-
-`admin/seal-token.mjs` unterstützt weiterhin ein optionales/Legacy-Verfahren mit:
-
-- PBKDF2 SHA-256
-- 120.000 Iterationen
-- AES-256-GCM
-
-Dieses Verfahren ist aktuell **nicht der aktive Login-Pfad**.
-
-### GitHub API
-
-Der Browser spricht direkt mit:
-
-```text
-https://api.github.com/repos/ChristianHohlfeld/eichmannimmobilien
-```
-
-Der PAT wird als Bearer Token gesendet.
-
-Es gibt keinen Proxy dazwischen.
+- Sitzungs-PAT / `sessionStorage` Token
+- `admin-eigen-save.yml` (`repository_dispatch` → SSH upsert)
+- Standalone Eigen-UI (nur Redirect)
 
 ---
 
-## 14. Admin-Speicherflow
+## 14. Admin-Speicherflow (Legacy / GitHub Contents — deprecated)
+
+> **Deprecated 2026-09-25:** Day-to-day CRUD uses `/admin/api/` on the droplet. The flows below describe the old PAT + Contents API path and may still apply to leftover `admin-save.yml` tooling.
+
 
 ### Objekt bearbeiten
 

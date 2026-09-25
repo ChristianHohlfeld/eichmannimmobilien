@@ -15,6 +15,10 @@ on:
       - "objekt/**"
       - "partials/**"
       - "admin/**"
+      - "scripts/**"
+      - "deploy/**"
+      - "package.json"
+      - "package-lock.json"
       - "sitemap.xml"
       - "robots.txt"
       - "llms.txt"
@@ -65,8 +69,6 @@ jobs:
           chmod 600 ~/.ssh/eichmann_deploy
           ssh-keyscan -T 10 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 
-
-
       - name: Rsync static site to droplet
         env:
           DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
@@ -81,10 +83,12 @@ jobs:
             --exclude='.git/' \
             --exclude='.github/' \
             --exclude='scripts/' \
+            --exclude='deploy/' \
             --exclude='node_modules/' \
             --exclude='package.json' \
             --exclude='package-lock.json' \
             --exclude='README.md' \
+            --exclude='docs/' \
             --exclude='.gitignore' \
             ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEST_PATH}/"
           ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
@@ -103,14 +107,14 @@ jobs:
           APP=/var/lib/eichmann/app
           DBDIR=/var/lib/eichmann
           SITE="${DEPLOY_PATH:-/var/www/immobilieneichmann.de}"
-          "${SSH[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p '${DBDIR}' '${APP}/data' && chmod 755 '${DBDIR}'"
+          "${SSH[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p '${DBDIR}' '${APP}/data' '${APP}/deploy' && chmod 755 '${DBDIR}'"
           rsync -az -e "${RSYNC_SSH}" \
             --delete \
             --exclude node_modules/ \
             --exclude .git/ \
             --exclude var/ \
             --exclude '**/*.db' \
-            ./package.json ./package-lock.json ./scripts \
+            ./package.json ./package-lock.json ./scripts ./deploy \
             "${DEPLOY_USER}@${DEPLOY_HOST}:${APP}/"
           if [ -f ./data/listings.json ]; then
             rsync -az -e "${RSYNC_SSH}" ./data/listings.json \
@@ -139,5 +143,6 @@ jobs:
           node scripts/publish-from-db.mjs
           chown -R www-data:www-data "$SITE" || true
           echo "SQLite SoT ready at $DB"
+          # Install/refresh localhost admin API + nginx proxy
+          bash "$APP/deploy/install-admin-api.sh"
           REMOTE
-

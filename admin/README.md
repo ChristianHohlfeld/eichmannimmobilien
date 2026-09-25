@@ -1,127 +1,67 @@
-# Exposé Admin – aktuelle Architektur
+# Admin – Immobilien Eichmann
 
 Live: **https://immobilieneichmann.de/admin/**
 
-Das Admin ist eine **statische Browseranwendung** auf GitHub Pages. Es gibt dafür keinen eigenen Backend-Server und keine eigene Datenbank.
+Ein einziges Admin mit Tabs:
 
-## Single Source of Truth
+| Tab | Zweck |
+|-----|--------|
+| **Immowelt** | Spiegel/Status + Website-Sichtbarkeit (`site_hidden`). Kein Schreiben ins Immowelt-Konto. |
+| **Eigen-Inserate** | Volles CRUD für `origin=eigen` in SQLite. |
 
-**Immowelt** ist die kanonische fachliche Datenquelle. `data/listings.json` ist nur der lokale Spiegel.
+`/admin/eigen/` leitet nach `/admin/#eigen` um.
 
-Das Admin darf Objektdaten nicht abweichend pflegen. Es steuert ausschließlich `site_hidden` (auf der eigenen Website aus-/einblenden) und kann Sync/Render auslösen.
-
-Immowelt ist ausschließlich ein optionaler **Inbound-Import**. Die Anwendung schreibt niemals in das Immowelt-Konto.
-
-## Login und Schreibrecht
-
-Der aktuelle Modus ist:
+## Auth (kein GitHub-PAT)
 
 ```text
-password_plus_session_pat
+E-Mail (Allowlist) + Passwort
+  → POST /admin/api/login
+  → HttpOnly Secure SameSite=Strict Cookie
 ```
 
-Benötigt werden:
+Passwort-Hash und E-Mail-Allowlist liegen in `admin/config.json` (wie bisher).
+Die **echte** Autorisierung für Schreibzugriffe prüft der Droplet-API-Prozess
+gegen denselben Hash und stellt die Session-Cookie aus.
 
-1. freigeschaltete E-Mail
-2. Admin-Passwort
-3. GitHub Fine-Grained PAT für die aktuelle Browser-Sitzung
-
-Der PAT wird nur in `sessionStorage` gehalten und beim Logout gelöscht.
-
-Der Passwort-Hash und die Allowlist liegen in der öffentlich ausgelieferten `admin/config.json`. Deshalb ist der Passwortdialog nur ein UI-Gate; die echte Autorisierung für Schreibzugriffe kommt von GitHub über den PAT.
-
-Der aktuelle Config-Stand enthält **keinen versiegelten oder Klartext-GitHub-Token**.
+`auth_mode`: `password_session`
 
 ## Speichern
 
-Normaler Pfad:
-
 ```text
 Browser
- -> GitHub Contents API
- -> data/listings.json mit aktuellem SHA
- -> Commit
- -> repository_dispatch admin_apply_render
- -> admin-save.yml
- -> Render-only
- -> generierte HTML/Karten/Sitemap
- -> Commit
- -> GitHub Pages
+  → POST /admin/api/eigen | /visibility | /publish
+  → nginx → 127.0.0.1:3847 (systemd: eichmann-admin-api)
+  → SQLite /var/lib/eichmann/listings.db
+  → publish-from-db → statische HTML/JSON unter /var/www/…
 ```
 
-Fallback bei fehlgeschlagenem Contents-API-Save:
+Kein `repository_dispatch`, kein PAT in `sessionStorage`/`localStorage`.
 
-```text
-repository_dispatch admin_save_listings
- -> komplette JSON aus Browser-Payload schreiben
- -> Render
- -> Commit
-```
+## API (localhost only)
 
-Daher ist das System nicht für gleichzeitiges Multi-User-Editieren desselben Datensatzes gedacht.
+| Methode | Pfad | Aktion |
+|---------|------|--------|
+| POST | `/admin/api/login` | Session-Cookie |
+| POST | `/admin/api/logout` | Cookie löschen |
+| GET | `/admin/api/me` | Session prüfen |
+| GET | `/admin/api/listings?origin=` | `immowelt` \| `eigen` \| `all` |
+| GET | `/admin/api/status` | Counts + Immowelt-Sync-Status |
+| POST | `/admin/api/eigen` | Eigen upsert + publish |
+| POST | `/admin/api/eigen/delete` | Eigen delete + publish |
+| POST | `/admin/api/visibility` | `site_hidden` + publish |
+| POST | `/admin/api/publish` | Nur publish-from-db |
+| GET | `/admin/api/health` | Liveness |
 
-## Funktionen
+## Entfernt
 
-- neues lokales Objekt anlegen
-- bestehende Objekte bearbeiten
-- manuelle Felder mit `manual_overrides` gegen Immowelt-Überschreiben schützen
-- Objekt löschen
-- Bilder hochladen
-- Bilder aus Listing entfernen
-- lokale Seite öffnen
-- Immowelt-Inbound-Sync starten
-- Render-only starten
+- `.github/workflows/admin-eigen-save.yml` (repository_dispatch + SSH upsert)
+- Sitzungs-PAT / GitHub Contents API als Speichern-Pfad für Admin-CRUD
+- Standalone Eigen-UI unter `/admin/eigen/` (nur Redirect)
 
-## Bilder
+Immowelt-Import bleibt der geplante GitHub-Workflow `sync-immowelt.yml` (read-only).
 
-Uploads gehen direkt über die GitHub Contents API nach:
+## Betrieb
 
-```text
-assets/listings/
-```
-
-Maximal ca. 4,5 MB pro Upload. Erlaubt: JPG/JPEG, PNG, WebP.
-
-Danach wird die Bildreferenz in `data/listings.json` gespeichert und der Render gestartet.
-
-## Immowelt
-
-Default:
-
-```text
-sync_policy = independent
-```
-
-- lokale Objekte bleiben lokal
-- manuelle Overrides gewinnen
-- fehlende Immowelt-Objekte werden standardmäßig nur mit `missing_on_immowelt` markiert
-- `mirror` ist die explizite Ausnahme für Auto-Entfernung
-- keine Schreiboperation zu Immowelt
-
-## Token-Permissions
-
-Der PAT muss mindestens die für die verwendeten GitHub-API-Schreiboperationen notwendigen Repository-Rechte besitzen. Für den direkten Contents-Pfad ist `Contents: Read and write` erforderlich. Workflow-/Dispatch-Funktionen können abhängig vom Fine-Grained-Token zusätzliche Actions-Berechtigungen benötigen.
-
-PAT niemals committen.
-
-## Optionales Legacy-Seal-Tool
-
-`admin/seal-token.mjs` kann technisch weiterhin einen Token mit PBKDF2 + AES-256-GCM versiegeln.
-
-Das ist aktuell **nicht der aktive Modus** und sollte nicht mit dem derzeitigen Sitzungs-PAT-Verfahren verwechselt werden.
-
-## Weitere Details
-
-Die vollständige Architektur-, Daten-, Mail-, Workflow- und Drittanbieter-Dokumentation steht im Root-`README.md`.
-
-## Eigen-Inserate (`/admin/eigen/`)
-
-Separate CRUD for **own** listings (`origin=eigen`) stored in the droplet SQLite SoT.
-
-- URL: `/admin/eigen/`
-- Auth: same allowlist email + password + session GitHub PAT as Immowelt admin
-- Save path: browser → `repository_dispatch` `admin_eigen_save` → SSH upsert on droplet → `publish-from-db`
-- Immowelt admin remains **visibility-only** (`site_hidden`); legacy “create local listing into Immowelt JSON” is disabled
-- Public badge: **„nur bei uns“**
-- Immowelt sync cannot wipe eigen rows (see `npm run test:eigen-survives`)
-
+- Unit: `eichmann-admin-api.service`
+- Install: `deploy/install-admin-api.sh` (wird vom Deploy-to-Droplet-Workflow ausgeführt)
+- Secret: `/var/lib/eichmann/admin-session.secret` (auto-generiert, nicht im Repo)

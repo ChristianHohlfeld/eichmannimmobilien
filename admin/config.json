@@ -5,16 +5,13 @@
   "listings_path": "data/listings.json",
   "assets_prefix": "assets/listings",
   "workflow_file": "sync-immowelt.yml",
-  "admin_save_workflow": "admin-save.yml",
-  "note": "Login: Allowlist-E-Mail + Passwort + session PAT. Immowelt-Admin: nur site_hidden. Eigen-CRUD: /admin/eigen/ via admin_eigen_save → SSH SQLite. Immowelt-Konto read-only. SoT=/var/lib/eichmann/listings.db",
+  "note": "Login: Allowlist-E-Mail + Passwort → HttpOnly Session-Cookie via /admin/api/. Kein GitHub-PAT. Eigen-CRUD + Immowelt-Sichtbarkeit über Droplet-API → SQLite SoT. Immowelt-Konto read-only.",
   "admin_emails": [
     "chris.hohlfeld@gmail.com",
     "chris.hohlfeld@googlemail.com",
     "info@immobilien-eichmann.com"
   ],
-  "auth_mode": "password_plus_session_pat",
-  "eigen_admin_path": "admin/eigen/",
-  "eigen_dispatch_event": "admin_eigen_save",
-  "admin_eigen_workflow": "admin-eigen-save.yml",
+  "auth_mode": "password_session",
+  "admin_api": "/admin/api/",
   "sot": "sqlite"
 }
