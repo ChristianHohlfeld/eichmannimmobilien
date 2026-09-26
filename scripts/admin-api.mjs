@@ -57,6 +57,7 @@ import {
   previewVisibility,
   loadLiveListings,
 } from "./lib/publish-preview.mjs";
+import { publicImmoweltSyncReason } from "./lib/immowelt-public-reason.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const HOST = process.env.EICHMANN_ADMIN_API_HOST || "127.0.0.1";
@@ -457,6 +458,9 @@ async function handle(req, res) {
         const statusPath = path.join(SITE_ROOT, "data", "immowelt-sync-status.json");
         if (fs.existsSync(statusPath)) {
           sync = JSON.parse(fs.readFileSync(statusPath, "utf8"));
+          if (sync && sync.reason) {
+            sync = { ...sync, reason: publicImmoweltSyncReason(sync.reason, sync.state || "rejected") };
+          }
         }
       } catch {
         /* ignore */
@@ -531,16 +535,29 @@ async function handle(req, res) {
           sync: {
             exit_code: result.code,
             timed_out: result.timedOut === true,
-            log_tail: (result.out || result.err || "").split("\n").slice(-30).join("\n"),
+            // Never send raw Playwright/Node stderr to the Admin UI.
+            failed: result.timedOut === true || result.code !== 0,
+            public_error:
+              result.timedOut === true
+                ? publicImmoweltSyncReason("timeout", "rejected")
+                : result.code !== 0
+                  ? publicImmoweltSyncReason((result.err || result.out || "sync failed").split("\n").slice(-8).join("\n"), "rejected")
+                  : null,
           },
           ...preview,
           changes: changeSummaryFromPreview(preview),
           publish_pending: pendingRaw ? JSON.parse(pendingRaw) : null,
           requires_confirm: preview.has_changes,
           path: "immowelt_sync",
-          message: preview.has_changes
-            ? "Immowelt-Sync: bitte Ist (jetzt online) und Neu vergleichen."
-            : "Immowelt-Sync: keine sichtbaren Änderungen zur Website.",
+          message:
+            result.timedOut === true || result.code !== 0
+              ? publicImmoweltSyncReason(
+                  result.timedOut ? "timeout" : (result.err || result.out || "sync failed"),
+                  "rejected"
+                )
+              : preview.has_changes
+                ? "Immowelt-Sync: bitte Ist (jetzt online) und Neu vergleichen."
+                : "Immowelt-Sync: keine sichtbaren Änderungen zur Website.",
         });
       } finally {
         db.close();

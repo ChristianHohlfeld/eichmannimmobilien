@@ -26,6 +26,7 @@ import { fileURLToPath } from "node:url";
 import { validateIncomingSnapshot, validateNoDestructiveOverwrite } from "./lib/listing-safety.mjs";
 import { scrapeEichmannFromImmoweltSearch } from "./lib/immowelt-public-search.mjs";
 import { reconcileMissingImmoweltOffers } from "./lib/immowelt-reconcile.mjs";
+import { publicImmoweltSyncReason } from "./lib/immowelt-public-reason.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.EICHMANN_SITE_ROOT
@@ -1632,7 +1633,7 @@ async function writeSyncStatus({ state, previous = null, data = null, reason = n
     attempted_count: assessment?.count ?? null,
     overlap_count: assessment?.overlap_count ?? null,
     overlap_ratio: assessment?.overlap_ratio ?? null,
-    reason: reason ? String(reason).slice(0, 500) : null,
+    reason: reason ? publicImmoweltSyncReason(reason, state).slice(0, 500) : null,
     policy: "fail_closed_last_known_good",
   };
   if (!dryRun) await atomicWriteJson(SYNC_STATUS_PATH, payload);

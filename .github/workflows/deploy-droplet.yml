@@ -136,8 +136,14 @@ jobs:
             apt-get install -y nodejs build-essential python3
           fi
           node -v
-          if [ ! -d node_modules/better-sqlite3 ]; then
+          if [ ! -d node_modules/better-sqlite3 ] || [ ! -d node_modules/playwright ]; then
             npm ci --omit=dev || npm install --omit=dev
+          fi
+          # Immowelt Admin Sync (/immowelt/sync) launches Playwright as the
+          # admin-api user (root on eichmann-web). Keep Chromium present so
+          # Deploy does not regress browserType.launch after npm refreshes.
+          if [ -x node_modules/.bin/playwright ]; then
+            npx playwright install chromium || echo "WARN: playwright chromium install failed (non-fatal)"
           fi
           export EICHMANN_DB_PATH="$DB"
           export EICHMANN_SITE_ROOT="$SITE"

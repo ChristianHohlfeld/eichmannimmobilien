@@ -358,6 +358,36 @@ async function ensureSession() {
   }
 }
 
+
+/** Never show raw Node/Playwright stack traces in Immowelt-Stand. */
+function publicImmoweltReason(reason, state) {
+  const raw = String(reason || "").trim();
+  const rejected =
+    "Abruf fehlgeschlagen – technisches Problem, wird behoben. Last Known Good bleibt online.";
+  const network =
+    "Abruf fehlgeschlagen – Immowelt vorübergehend nicht erreichbar. Last Known Good bleibt online.";
+  const unsafe = "Unsicherer Abruf verworfen. Last Known Good bleibt online.";
+  const awaiting = "Immowelt-Zugang noch nicht eingerichtet; letzter bekannter Stand bleibt.";
+  const open = "Kein bestätigter aktueller Immowelt-Stand.";
+  if (!raw) {
+    if (state === "awaiting_api_key") return awaiting;
+    if (state === "rejected") return rejected;
+    return open;
+  }
+  if (
+    /playwright|browsertype\.launch|ms-playwright|chromium|executable doesn|npx playwright|\/root\/|\.cache|node_modules|Error:|at Object\.|at async |\.mjs:\d+/i.test(
+      raw
+    ) ||
+    (raw.includes("\n") && /at /.test(raw))
+  ) {
+    return rejected;
+  }
+  if (/datadome|net::|ECONN|ETIMEDOUT|timeout|HTTP 403|HTTP 429/i.test(raw)) return network;
+  if (/snapshot incomplete|Empty listings|keeping last|last-known-good/i.test(raw)) return unsafe;
+  if (/[\n\r\t`]|\/[a-z0-9._-]+\//i.test(raw) || raw.length > 400) return rejected;
+  return raw;
+}
+
 /* ---------- Lists ---------- */
 
 async function loadImmoweltHealth() {
@@ -407,13 +437,13 @@ async function loadImmoweltHealth() {
       "Immowelt ist fachliche Quelle; nur validierte Snapshots werden übernommen. Hier nur Sichtbarkeit.";
   } else if (status.state === "awaiting_api_key") {
     line.innerHTML = `<span class="badge warn">Zugang fehlt</span> letzter gültiger Stand ${esc(fmt(valid))}`;
-    detail.textContent = status.reason || "Immowelt-Zugang noch nicht eingerichtet; letzter bekannter Stand bleibt.";
+    detail.textContent = publicImmoweltReason(status.reason, "awaiting_api_key");
   } else if (status.state === "rejected") {
     line.innerHTML = `<span class="badge miss">LKG aktiv</span> Abruf verworfen · ${esc(fmt(valid))}`;
-    detail.textContent = status.reason || "Unsicherer Abruf verworfen. Last Known Good bleibt online.";
+    detail.textContent = publicImmoweltReason(status.reason, "rejected");
   } else {
     line.innerHTML = `<span class="badge warn">Status offen</span> letzter Stand ${esc(fmt(valid))}`;
-    detail.textContent = status.reason || "Kein bestätigter aktueller Immowelt-Stand.";
+    detail.textContent = publicImmoweltReason(status.reason, status.state || "open");
   }
   if (publishPending && publishPending.message) {
     detail.textContent =
@@ -893,6 +923,17 @@ async function onImmoweltSync() {
       method: "POST",
       body: JSON.stringify({}),
     });
+    if (syncRes.sync && syncRes.sync.failed) {
+      toast(
+        publicImmoweltReason(
+          syncRes.sync.public_error || syncRes.message,
+          "rejected"
+        ),
+        "err"
+      );
+      await reloadAll();
+      return;
+    }
     if (!syncRes.has_changes) {
       toast(syncRes.message || "Keine Immowelt-Änderungen", "ok");
       await reloadAll();
@@ -918,7 +959,7 @@ async function onImmoweltSync() {
     toast("Immowelt-Änderungen übernommen", "ok");
     await reloadAll();
   } catch (e) {
-    toast(e.message || String(e), "err");
+    toast(publicImmoweltReason(e.message || String(e), "rejected"), "err");
   }
 }
 

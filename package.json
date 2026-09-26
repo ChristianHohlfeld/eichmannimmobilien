@@ -21,6 +21,7 @@
     "db:bootstrap": "node scripts/db-migrate.mjs --bootstrap",
     "publish:db": "node scripts/publish-from-db.mjs",
     "test:eigen-survives": "node scripts/test-eigen-survives-sync.mjs",
+    "test:immowelt-reason": "node scripts/test-immowelt-public-reason.mjs",
     "admin-api": "node scripts/admin-api.mjs"
   },
   "engines": {
