@@ -2018,3 +2018,66 @@ a.listing-card:focus-visible {
 .immowelt-sync-status[data-state="rejected"] { color: var(--warn, #8a5a00); }
 .immowelt-sync-status[data-state="stale"],
 .immowelt-sync-status[data-state="unknown"] { color: var(--slate); }
+
+/* muster-widerruf-formular-v1 — scoped legal form layout (vertrag-widerrufen) */
+.muster-widerruf {
+  margin: 1.25rem 0 1.5rem;
+  padding: 1.15rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--white);
+}
+.muster-widerruf address.muster-empfaenger {
+  font-style: normal;
+  margin: 0.75rem 0 1rem;
+  padding: 0.85rem 1rem;
+  background: var(--cream, #f7f5f1);
+  border-left: 3px solid var(--primary);
+  color: var(--ink);
+  line-height: 1.55;
+}
+.muster-widerruf .muster-erkl {
+  margin: 0.85rem 0 1rem;
+  color: var(--ink);
+}
+.muster-felder {
+  margin: 0;
+  padding: 0;
+}
+.muster-feld {
+  margin: 0 0 0.95rem;
+}
+.muster-feld dt {
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 0.35rem;
+}
+.muster-feld dd.muster-line {
+  margin: 0;
+  min-height: 1.35rem;
+  border-bottom: 1px solid var(--border);
+}
+.muster-feld dd.muster-line-lg {
+  min-height: 2.6rem;
+}
+.muster-feld-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.muster-hinweis {
+  margin: 0.5rem 0 0;
+  font-size: 0.92rem;
+  color: var(--slate);
+}
+.muster-ctas {
+  margin-top: 1.25rem;
+}
+@media (max-width: 640px) {
+  .muster-feld-row {
+    grid-template-columns: 1fr;
+  }
+  .muster-widerruf {
+    padding: 1rem;
+  }
+}
