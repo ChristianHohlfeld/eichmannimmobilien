@@ -29,6 +29,27 @@ function toast(msg, type = "") {
   toast._t = setTimeout(() => el.classList.add("hidden"), 4500);
 }
 
+/** Durable status under Immowelt-Stand — stays until next Sync (not toast-only). */
+function setImmoweltSyncOutcome(msg, kind = "") {
+  const el = $("immowelt-sync-outcome");
+  if (!el) return;
+  if (!msg) {
+    el.textContent = "";
+    el.className = "sync-outcome hidden";
+    return;
+  }
+  el.textContent = msg;
+  el.className = "sync-outcome" + (kind ? " " + kind : "");
+}
+
+function setImmoweltSyncBusy(busy) {
+  const btn = $("btn-immowelt-sync");
+  if (!btn) return;
+  btn.disabled = !!busy;
+  btn.setAttribute("aria-busy", busy ? "true" : "false");
+  btn.textContent = busy ? "Sync läuft …" : "Immowelt Sync";
+}
+
 function esc(s) {
   return String(s ?? "")
     .replace(/&/g, "&amp;")
@@ -57,20 +78,49 @@ async function api(path, options = {}) {
   if (options.body instanceof FormData && opts.headers["Content-Type"]) {
     delete opts.headers["Content-Type"];
   }
-  const res = await fetch(`${API}${path}`, opts);
-  let data = null;
+  let res;
+  try {
+    res = await fetch(`${API}${path}`, opts);
+  } catch {
+    const err = new Error("Verbindung unterbrochen. Bitte erneut versuchen.");
+    err.status = 0;
+    err.network = true;
+    throw err;
+  }
   const text = await res.text();
+  let data = null;
   if (text) {
     try {
       data = JSON.parse(text);
     } catch {
-      data = { ok: false, error: text.slice(0, 200) };
+      const err = new Error("Ungültige Server-Antwort. Bitte erneut versuchen.");
+      err.status = res.status;
+      err.raw = text.slice(0, 200);
+      throw err;
     }
   }
-  if (!res.ok) {
-    const err = new Error((data && data.error) || `HTTP ${res.status}`);
+  const gatewayFail = res.status === 499 || res.status === 502 || res.status === 504;
+  if (!res.ok || gatewayFail) {
+    let msg = (data && (data.error || data.message)) || "";
+    if (!msg) {
+      if (res.status === 499) {
+        msg = "Die Anfrage wurde abgebrochen (Zeitüberschreitung). Bitte erneut versuchen.";
+      } else if (res.status === 502 || res.status === 504) {
+        msg = "Der Server hat nicht rechtzeitig geantwortet. Bitte erneut versuchen.";
+      } else if (!text) {
+        msg = "Leere Antwort vom Server. Bitte erneut versuchen.";
+      } else {
+        msg = `HTTP ${res.status}`;
+      }
+    }
+    const err = new Error(msg);
     err.status = res.status;
     err.data = data;
+    throw err;
+  }
+  if (data == null) {
+    const err = new Error("Leere Antwort vom Server. Bitte erneut versuchen.");
+    err.status = res.status;
     throw err;
   }
   return data;
@@ -912,38 +962,53 @@ async function onDelete() {
   }
 }
 
-/** Immowelt Sync path: sync SQLite, then same Abnahme (Ist/Neu) → Übernehmen publishes. */
+/** Immowelt Sync: never silent — Abnahme modal OR durable Immowelt-Stand status. */
 async function onImmoweltSync() {
+  setImmoweltSyncBusy(true);
+  setImmoweltSyncOutcome("Immowelt Sync läuft … bitte warten.", "progress");
+  toast("Immowelt wird synchronisiert …");
   try {
-    toast("Immowelt wird synchronisiert …");
     const syncRes = await api("/immowelt/sync", {
       method: "POST",
       body: JSON.stringify({}),
     });
-    if (syncRes.sync && syncRes.sync.failed) {
-      toast(
-        publicImmoweltReason(
-          syncRes.sync.public_error || syncRes.message,
-          "rejected"
-        ),
-        "err"
+    const syncMeta = syncRes.sync || {};
+    const failed =
+      syncRes.ok === false ||
+      syncMeta.failed === true ||
+      syncMeta.soft_fail === true ||
+      syncMeta.status_state === "rejected" ||
+      syncMeta.status_state === "awaiting_api_key";
+    if (failed) {
+      const msg = publicImmoweltReason(
+        syncMeta.public_error || syncRes.message,
+        syncMeta.status_state || "rejected"
       );
       await reloadAll();
+      setImmoweltSyncOutcome(msg, "err");
       return;
     }
     if (!syncRes.has_changes) {
-      toast("Keine Änderungen aus Immowelt.", "ok");
+      const msg =
+        syncRes.message ||
+        "Keine Änderungen — Website bleibt wie sie ist.";
       await reloadAll();
+      setImmoweltSyncOutcome(msg, "ok");
       return;
     }
+    setImmoweltSyncOutcome(
+      "Änderungen gefunden — bitte Ist und Neu prüfen, dann Übernehmen oder Abbrechen.",
+      "warn"
+    );
     const ok = await showAbnahme({
       ...syncRes,
       title: "Immowelt-Änderungen übernehmen?",
-      lead: "Ist = bisher online. Neu zeigt den Stand nach „Übernehmen“. Eigene Inserate bleiben erhalten.",
+      lead:
+        "Ist = bisher online. Neu zeigt den Stand nach „Übernehmen“. Eigene Inserate bleiben erhalten.",
     });
     if (!ok) {
-      toast("Abgebrochen – Website unverändert", "");
       await reloadAll();
+      setImmoweltSyncOutcome("Abgebrochen — Website bleibt wie sie ist.", "ok");
       return;
     }
     await api("/publish", {
@@ -953,10 +1018,13 @@ async function onImmoweltSync() {
         allow_empty: syncRes.empty_risk === true,
       }),
     });
-    toast("Immowelt-Änderungen übernommen", "ok");
     await reloadAll();
+    setImmoweltSyncOutcome("Immowelt-Änderungen übernommen — Website aktualisiert.", "ok");
   } catch (e) {
-    toast(publicImmoweltReason(e.message || String(e), "rejected"), "err");
+    const msg = publicImmoweltReason(e.message || String(e), "rejected");
+    setImmoweltSyncOutcome(msg, "err");
+  } finally {
+    setImmoweltSyncBusy(false);
   }
 }
 

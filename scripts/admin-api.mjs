@@ -527,20 +527,18 @@ async function handle(req, res) {
           syncStatus = {};
         }
         const logTail = `${result.err || ""}\n${result.out || ""}`;
-        const softFail =
+        const statusState = String(syncStatus.state || "");
+        // Soft-fail scrape exits 0 but writes status.json state=rejected — never "keine Änderungen".
+        const softFailLog =
           result.timedOut !== true &&
           result.code === 0 &&
-          /soft-fail|Keeping last good|last-known-good|snapshot incomplete|Unsicherer Abruf/i.test(
+          /soft-fail|Keeping last good|last-known-good|snapshot incomplete|Unsicherer Abruf|Target page|context closed/i.test(
             logTail
           );
-        const statusState = String(syncStatus.state || "");
-        const statusSoft =
-          softFail ||
-          (result.code === 0 &&
-            !preview.has_changes &&
-            (statusState === "rejected" || statusState === "awaiting_api_key") &&
-            /Scrape failed|soft-fail|Keeping last good|awaiting_api_key|API-Key/i.test(logTail));
+        const statusRejected =
+          statusState === "rejected" || statusState === "awaiting_api_key";
         const processFailed = result.timedOut === true || result.code !== 0;
+        const statusSoft = softFailLog || statusRejected;
         const failed = processFailed || statusSoft;
         const publicError = failed
           ? publicImmoweltSyncReason(
