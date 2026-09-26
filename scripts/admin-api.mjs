@@ -516,7 +516,42 @@ async function handle(req, res) {
       try {
         const doc = exportListingsDocument(db);
         const preview = previewImmoweltSync(SITE_ROOT, doc);
-        if (!getMeta(db, "publish_pending") && preview.has_changes) {
+        // Soft-fail scrape exits 0 but writes rejected/awaiting status — not "no changes".
+        let syncStatus = {};
+        try {
+          const statusPath = path.join(SITE_ROOT, "data", "immowelt-sync-status.json");
+          if (fs.existsSync(statusPath)) {
+            syncStatus = JSON.parse(fs.readFileSync(statusPath, "utf8")) || {};
+          }
+        } catch {
+          syncStatus = {};
+        }
+        const logTail = `${result.err || ""}\n${result.out || ""}`;
+        const softFail =
+          result.timedOut !== true &&
+          result.code === 0 &&
+          /soft-fail|Keeping last good|last-known-good|snapshot incomplete|Unsicherer Abruf/i.test(
+            logTail
+          );
+        const statusState = String(syncStatus.state || "");
+        const statusSoft =
+          softFail ||
+          (result.code === 0 &&
+            !preview.has_changes &&
+            (statusState === "rejected" || statusState === "awaiting_api_key") &&
+            /Scrape failed|soft-fail|Keeping last good|awaiting_api_key|API-Key/i.test(logTail));
+        const processFailed = result.timedOut === true || result.code !== 0;
+        const failed = processFailed || statusSoft;
+        const publicError = failed
+          ? publicImmoweltSyncReason(
+              result.timedOut === true
+                ? "timeout"
+                : syncStatus.reason ||
+                    (result.err || result.out || "sync failed").split("\n").slice(-8).join("\n"),
+              statusState === "awaiting_api_key" ? "awaiting_api_key" : "rejected"
+            )
+          : null;
+        if (!failed && !getMeta(db, "publish_pending") && preview.has_changes) {
           setMeta(
             db,
             "publish_pending",
@@ -531,33 +566,28 @@ async function handle(req, res) {
         }
         const pendingRaw = getMeta(db, "publish_pending");
         return send(res, 200, {
-          ok: result.code === 0 || preview.has_changes,
+          ok: !failed && (result.code === 0 || preview.has_changes),
           sync: {
             exit_code: result.code,
             timed_out: result.timedOut === true,
+            soft_fail: statusSoft === true,
+            status_state: statusState || null,
             // Never send raw Playwright/Node stderr to the Admin UI.
-            failed: result.timedOut === true || result.code !== 0,
-            public_error:
-              result.timedOut === true
-                ? publicImmoweltSyncReason("timeout", "rejected")
-                : result.code !== 0
-                  ? publicImmoweltSyncReason((result.err || result.out || "sync failed").split("\n").slice(-8).join("\n"), "rejected")
-                  : null,
+            failed,
+            public_error: publicError,
           },
           ...preview,
-          changes: changeSummaryFromPreview(preview),
+          // Failures must not open Abnahme as if there were listing diffs.
+          has_changes: failed ? false : preview.has_changes,
+          changes: failed ? [] : changeSummaryFromPreview(preview),
           publish_pending: pendingRaw ? JSON.parse(pendingRaw) : null,
-          requires_confirm: preview.has_changes,
+          requires_confirm: !failed && preview.has_changes,
           path: "immowelt_sync",
-          message:
-            result.timedOut === true || result.code !== 0
-              ? publicImmoweltSyncReason(
-                  result.timedOut ? "timeout" : (result.err || result.out || "sync failed"),
-                  "rejected"
-                )
-              : preview.has_changes
-                ? "Immowelt-Sync: bitte Ist (jetzt online) und Neu vergleichen."
-                : "Immowelt-Sync: keine sichtbaren Änderungen zur Website.",
+          message: failed
+            ? publicError
+            : preview.has_changes
+              ? "Immowelt-Sync: bitte Ist und Neu vergleichen, dann Übernehmen."
+              : "Keine Änderungen — Website bleibt wie sie ist.",
         });
       } finally {
         db.close();

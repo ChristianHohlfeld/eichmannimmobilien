@@ -579,3 +579,38 @@ table.listings tr:hover td { background: #fafaf8; }
   .abnahme-compare { grid-template-columns: 1fr; }
   .abnahme-side { max-height: 220px; }
 }
+
+/* Durable Immowelt Sync outcome under Immowelt-Stand (never toast-only) */
+.sync-outcome {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  border: 1px solid transparent;
+}
+.sync-outcome.hidden { display: none; }
+.sync-outcome.progress {
+  background: #eef3f8;
+  color: var(--primary);
+  border-color: #c5d4e4;
+}
+.sync-outcome.ok {
+  background: #e8f5e9;
+  color: #1b5e20;
+  border-color: #c8e6c9;
+}
+.sync-outcome.warn {
+  background: #fff8e1;
+  color: #6d4c00;
+  border-color: #ffe082;
+}
+.sync-outcome.err {
+  background: #fdecea;
+  color: #8a1f11;
+  border-color: #f5c6cb;
+}
+#btn-immowelt-sync:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
