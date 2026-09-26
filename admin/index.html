@@ -198,10 +198,11 @@
           <p class="hint" style="margin-top:0">
             Hier speichern Sie den aktuellen Stand von Inseraten, Eigen-Bildern und Einstellungen.
             Es werden die 14 neuesten Stände behalten. Das Anmelde-Geheimnis wird nie in einer Sicherung abgelegt.
+            Mit „Download“ laden Sie eine Sicherung als Archiv (.tar.gz) herunter — ohne Geheimnisse.
           </p>
           <p class="hint" id="sicherung-meta"></p>
         </div>
-        <div class="card table-wrap" style="padding:0;overflow:hidden">
+        <div class="card table-wrap" style="padding:0;overflow:hidden;margin-bottom:16px">
           <table class="listings">
             <thead>
               <tr>
@@ -214,6 +215,39 @@
             </thead>
             <tbody id="sicherung-tbody">
               <tr><td colspan="5" class="muted">Lade …</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <h3 style="margin-top:0">Server-Snapshots (DigitalOcean)</h3>
+          <p class="hint">
+            Wöchentliche Abbilder des ganzen Servers (wie bei Hetzner-Snapshots).
+            Wiederherstellen bitte in der DigitalOcean-Konsole — nicht mit einem Klick hier,
+            damit nichts versehentlich den laufenden Server überschreibt.
+          </p>
+          <p class="hint" id="do-sicherung-meta"></p>
+          <p id="do-sicherung-error" class="err-box hidden"></p>
+          <div class="warn-box" id="do-restore-warn" style="margin-bottom:12px">
+            <strong>Achtung:</strong> Ein Server-Wiederherstellen löscht alles auf der Festplatte,
+            was neuer ist als der Snapshot. Die Website ist währenddessen offline.
+          </div>
+          <ol class="hint" id="do-restore-steps" style="padding-left:1.2rem"></ol>
+        </div>
+        <div class="card table-wrap" style="padding:0;overflow:hidden">
+          <table class="listings">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>ID</th>
+                <th>Datum</th>
+                <th>Größe</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="do-sicherung-tbody">
+              <tr><td colspan="6" class="muted">Lade …</td></tr>
             </tbody>
           </table>
         </div>
@@ -260,6 +294,6 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="admin.js?v=sync-loading-5" type="module"></script>
+  <script src="admin.js?v=sicherung-do-1" type="module"></script>
 </body>
 </html>

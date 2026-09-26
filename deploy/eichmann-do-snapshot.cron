@@ -1,0 +1,5 @@
+# Eichmann DO droplet snapshot — weekly Sun 03:17 Europe/Berlin; retention in script (4).
+# Token: /var/lib/eichmann/secrets/do-api-token (server-only, never git)
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+17 3 * * 0 root /var/lib/eichmann/bin/eichmann-do-snapshot.sh >> /var/log/eichmann-do-snapshot.log 2>&1
