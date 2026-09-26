@@ -1,4 +1,5 @@
 /* expose-lightbox-v2 */
+/* expose-mobile-overflow-v1 */
 /* sticky-icons-neutral-v1 + flyer-session-once */
 /* cta-script-caveat v1 */
 /* Immobilien Eichmann – Design Brief v1
@@ -1535,6 +1536,12 @@ a.listing-card:focus-visible {
   grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
   gap: var(--space-4);
   align-items: start;
+  min-width: 0;
+  max-width: 100%;
+}
+.expose-main {
+  min-width: 0;
+  max-width: 100%;
 }
 .expose-gallery {
   background: var(--white);
@@ -1542,6 +1549,8 @@ a.listing-card:focus-visible {
   border-radius: var(--radius);
   overflow: hidden;
   margin-bottom: var(--space-3);
+  min-width: 0;
+  max-width: 100%;
 }
 .expose-gallery-stage {
   position: relative;
@@ -1561,6 +1570,7 @@ a.listing-card:focus-visible {
 .expose-gallery-stage picture,
 .expose-gallery-stage img {
   width: 100%;
+  max-width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
@@ -1577,6 +1587,8 @@ a.listing-card:focus-visible {
   padding: 0.55rem;
   overflow-x: auto;
   background: var(--off-white);
+  min-width: 0;
+  max-width: 100%;
 }
 .expose-thumb {
   flex: 0 0 72px;
@@ -1615,30 +1627,42 @@ a.listing-card:focus-visible {
   padding: 0;
   display: grid;
   gap: 0.55rem;
+  min-width: 0;
+  max-width: 100%;
 }
 .expose-facts li {
   display: grid;
-  grid-template-columns: minmax(7rem, 0.4fr) 1fr;
+  grid-template-columns: minmax(0, 0.42fr) minmax(0, 1fr);
   gap: 0.75rem;
   padding: 0.55rem 0.7rem;
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: 8px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .expose-fact-label {
   color: var(--slate);
   font-size: var(--fs-sm);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .expose-fact-value {
   font-weight: 600;
   color: var(--ink);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .expose-description p { margin: 0 0 0.85rem; color: var(--slate); }
 .expose-hint { font-size: var(--fs-sm); color: var(--slate); }
 .expose-floorplans {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   gap: var(--space-2);
+  min-width: 0;
 }
 .expose-floorplan {
   margin: 0;
@@ -1668,8 +1692,31 @@ a.listing-card:focus-visible {
   color: var(--slate);
 }
 @media (max-width: 900px) {
-  .expose-layout { grid-template-columns: 1fr; }
-  .expose-aside { position: static; }
+  .expose-layout { grid-template-columns: minmax(0, 1fr); }
+  .expose-aside { position: static; min-width: 0; max-width: 100%; }
+}
+/* Exposé mobile: no page-level horizontal scroll; specs wrap/stack */
+@media (max-width: 640px) {
+  .expose-layout,
+  .expose-main,
+  .expose-gallery,
+  .expose-section,
+  .expose-aside {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .expose-layout {
+    overflow-x: clip;
+  }
+  .expose-facts li {
+    grid-template-columns: 1fr;
+    gap: 0.2rem 0.75rem;
+  }
+  .expose-fact-label,
+  .expose-fact-value {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
 }
 
 
