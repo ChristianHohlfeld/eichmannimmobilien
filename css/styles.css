@@ -1,7 +1,7 @@
 /* expose-lightbox-v2 */
 /* listing-aspect-cls-v1 */
 /* expose-mobile-overflow-v1 */
-/* sticky-wa-v2 + sticky-icons-neutral-v1 + flyer-session-once */
+/* floating-wa-v1 + sticky-icons-neutral-v1 + flyer-session-once */
 /* cta-script-caveat v1 */
 /* Immobilien Eichmann – Design Brief v1
    Tokens: lake/night blue + sand-gold + neutrals. Calm premium local Makler. */
@@ -919,7 +919,7 @@ a.listing-card:focus-visible {
   color: var(--slate);
 }
 
-/* ——— Sticky bar: Kontakt | WhatsApp | Tippgeber | Bewertung ——— */
+/* ——— Sticky bar: Kontakt | Tippgeber | Bewertung ——— */
 .sticky-bar {
   position: fixed;
   left: 0;
@@ -927,7 +927,7 @@ a.listing-card:focus-visible {
   bottom: 0;
   z-index: 1300; /* above cookie-banner (1200) */
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -1002,6 +1002,45 @@ a.listing-card:focus-visible {
   color: #fff;
 }
 .sticky-item--secondary { background: transparent; }
+
+/* Freestanding WhatsApp CTA: stays above cookie consent on all viewports. */
+.floating-wa {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  bottom: calc(var(--sticky-h) + 1rem + env(safe-area-inset-bottom, 0px));
+  z-index: 1301;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #25d366;
+  color: #fff;
+  box-shadow: 0 5px 18px rgba(15, 23, 32, 0.28);
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.floating-wa:hover,
+.floating-wa:focus-visible {
+  color: #fff;
+  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(15, 23, 32, 0.34);
+}
+.floating-wa:focus-visible {
+  outline: 3px solid var(--accent-soft);
+  outline-offset: 3px;
+}
+.floating-wa__icon {
+  display: flex;
+  line-height: 0;
+}
+.floating-wa__icon svg {
+  display: block;
+  width: 28px;
+  height: 28px;
+}
 @media (min-width: 900px) {
   .sticky-bar {
     max-width: 540px;
