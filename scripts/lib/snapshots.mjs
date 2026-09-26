@@ -12,7 +12,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
 import { resolveDbPath, REPO_ROOT } from "./db.mjs";
@@ -74,6 +74,122 @@ export function berlinIso(date = new Date()) {
     off = "+02:00";
   }
   return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}${off}`;
+}
+
+/** Strict snapshot folder id: YYYYMMDD-HHMM or YYYYMMDD-HHMM-N */
+export function assertSafeSnapshotId(id) {
+  const s = String(id || "").trim();
+  if (!/^\d{8}-\d{4}(-\d+)?$/.test(s)) {
+    const err = new Error("Ungültige Sicherungs-ID");
+    err.status = 400;
+    throw err;
+  }
+  return s;
+}
+
+/** Resolve snapshot directory under SNAPSHOTS_ROOT; blocks path traversal. */
+export function resolveSnapshotDir(id) {
+  const safe = assertSafeSnapshotId(id);
+  const root = path.resolve(SNAPSHOTS_ROOT);
+  const dir = path.resolve(root, safe);
+  const rel = path.relative(root, dir);
+  if (rel.startsWith("..") || path.isAbsolute(rel)) {
+    const err = new Error("Ungültige Sicherungs-ID");
+    err.status = 400;
+    throw err;
+  }
+  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
+    const err = new Error(`Sicherung „${safe}“ nicht gefunden`);
+    err.status = 404;
+    throw err;
+  }
+  return dir;
+}
+
+const DOWNLOAD_EXCLUDES = [
+  "admin-session.secret",
+  ".env",
+  "credentials",
+  "*.pem",
+  "*secret*",
+  "*.key",
+];
+
+/**
+ * Stream a .tar.gz of the snapshot directory onto an HTTP ServerResponse.
+ * Excludes session secrets / env / credential files if somehow present.
+ * Returns a Promise that resolves when the stream finishes.
+ */
+export function streamSnapshotDownload(id, res) {
+  const safe = assertSafeSnapshotId(id);
+  const dir = resolveSnapshotDir(safe);
+  const parent = path.dirname(dir);
+  const base = path.basename(dir);
+  const filename = `eichmann-sicherung-${safe}.tar.gz`;
+
+  const args = ["-C", parent, "-czf", "-", "--ignore-failed-read"];
+  for (const ex of DOWNLOAD_EXCLUDES) {
+    args.push(`--exclude=${ex}`);
+  }
+  args.push(base);
+
+  res.writeHead(200, {
+    "Content-Type": "application/gzip",
+    "Content-Disposition": `attachment; filename="${filename}"`,
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+  });
+
+  const child = spawn("tar", args, {
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  return new Promise((resolve, reject) => {
+    let stderr = "";
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString("utf8");
+      if (stderr.length > 2000) stderr = stderr.slice(-2000);
+    });
+    child.stdout.pipe(res);
+    child.on("error", (e) => {
+      try {
+        if (!res.headersSent) {
+          res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+          res.end(JSON.stringify({ ok: false, error: "Archiv konnte nicht erzeugt werden" }));
+        } else {
+          res.destroy(e);
+        }
+      } catch {
+        /* ignore */
+      }
+      reject(e);
+    });
+    child.on("close", (code) => {
+      if (code !== 0 && !res.writableEnded) {
+        try {
+          res.destroy();
+        } catch {
+          /* ignore */
+        }
+        const err = new Error(
+          `Archiv fehlgeschlagen${stderr ? ": " + stderr.slice(0, 200) : ""}`
+        );
+        err.status = 500;
+        reject(err);
+        return;
+      }
+      resolve({ ok: true, id: safe, filename });
+    });
+    res.on("close", () => {
+      if (!child.killed) {
+        try {
+          child.kill("SIGTERM");
+        } catch {
+          /* ignore */
+        }
+      }
+    });
+  });
 }
 
 function readDeployCommit() {
@@ -211,13 +327,19 @@ export function listSnapshots() {
 }
 
 export function readManifest(id) {
-  const dir = path.join(SNAPSHOTS_ROOT, id);
+  let safe;
+  try {
+    safe = assertSafeSnapshotId(id);
+  } catch {
+    return null;
+  }
+  const dir = path.join(SNAPSHOTS_ROOT, safe);
   const manPath = path.join(dir, "manifest.json");
   if (!fs.existsSync(manPath)) {
     if (!fs.existsSync(dir)) return null;
     // Minimal fallback if legacy folder without manifest
     return {
-      id,
+      id: safe,
       created_at: null,
       timezone: TZ,
       deploy_commit: null,
@@ -336,9 +458,10 @@ export async function createSnapshot({ reason = "manual" } = {}) {
 
 /** Human-readable overwrite list for restore confirm UI (no secrets/hashes). */
 export function restoreOverwriteList(id) {
-  const man = readManifest(id);
+  const safeId = assertSafeSnapshotId(id);
+  const man = readManifest(safeId);
   if (!man) {
-    const err = new Error(`Sicherung „${id}“ nicht gefunden`);
+    const err = new Error(`Sicherung „${safeId}“ nicht gefunden`);
     err.status = 404;
     throw err;
   }
@@ -491,6 +614,7 @@ export function scheduleApiRestart() {
  * Does NOT include or overwrite admin-session.secret.
  */
 export async function restoreSnapshot(id, { confirmPhrase, scheduleRestart = true } = {}) {
+  const safeId = assertSafeSnapshotId(id);
   if (String(confirmPhrase || "").trim() !== RESTORE_PHRASE) {
     const err = new Error(
       `Bitte zur Bestätigung genau „${RESTORE_PHRASE}“ eingeben.`
@@ -498,13 +622,14 @@ export async function restoreSnapshot(id, { confirmPhrase, scheduleRestart = tru
     err.status = 400;
     throw err;
   }
-  const man = readManifest(id);
+  const man = readManifest(safeId);
   if (!man) {
-    const err = new Error(`Sicherung „${id}“ nicht gefunden`);
+    const err = new Error(`Sicherung „${safeId}“ nicht gefunden`);
     err.status = 404;
     throw err;
   }
-  const snapDir = path.join(SNAPSHOTS_ROOT, id);
+  const snapDir = resolveSnapshotDir(safeId);
+  id = safeId;
   const site = siteRoot();
   const dbPath = resolveDbPath();
   const stagingRoot = path.join(SNAPSHOTS_ROOT, `.__restore_${id}_${process.pid}`);

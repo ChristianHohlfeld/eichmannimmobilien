@@ -66,10 +66,13 @@ import {
   restoreSnapshot,
   restoreOverwriteList,
   formatBytes,
+  assertSafeSnapshotId,
+  streamSnapshotDownload,
   RESTORE_PHRASE,
   RETENTION,
   SNAPSHOTS_ROOT,
 } from "./lib/snapshots.mjs";
+import { listDoSnapshots } from "./lib/do-snapshots.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const HOST = process.env.EICHMANN_ADMIN_API_HOST || "127.0.0.1";
@@ -951,11 +954,33 @@ async function handle(req, res) {
 
     if (method === "GET" && p.startsWith("/snapshots/") && p.endsWith("/preview")) {
       const id = decodeURIComponent(p.slice("/snapshots/".length, -"/preview".length));
-      if (!id || id.includes("..") || id.includes("/")) {
+      try {
+        assertSafeSnapshotId(id);
+      } catch {
         return send(res, 400, { ok: false, error: "Ungültige Sicherungs-ID" });
       }
       const preview = restoreOverwriteList(id);
       return send(res, 200, { ok: true, ...preview });
+    }
+
+    if (method === "GET" && p.startsWith("/snapshots/") && p.endsWith("/download")) {
+      const id = decodeURIComponent(p.slice("/snapshots/".length, -"/download".length));
+      try {
+        assertSafeSnapshotId(id);
+      } catch {
+        return send(res, 400, { ok: false, error: "Ungültige Sicherungs-ID" });
+      }
+      try {
+        await streamSnapshotDownload(id, res);
+      } catch (e) {
+        if (!res.headersSent) {
+          return send(res, e.status || 500, {
+            ok: false,
+            error: e.message || "Download fehlgeschlagen",
+          });
+        }
+      }
+      return;
     }
 
     if (method === "POST" && p === "/snapshots") {
@@ -980,7 +1005,9 @@ async function handle(req, res) {
     if (method === "POST" && p === "/snapshots/restore") {
       const body = (await readBody(req)) || {};
       const id = String(body.id || "").trim();
-      if (!id || id.includes("..") || id.includes("/")) {
+      try {
+        assertSafeSnapshotId(id);
+      } catch {
         return send(res, 400, { ok: false, error: "Ungültige Sicherungs-ID" });
       }
       const phrase = String(body.confirm_phrase || body.confirmPhrase || "").trim();
@@ -1009,6 +1036,22 @@ async function handle(req, res) {
         message:
           "Sicherung zurückgespielt. Die Website wurde neu erzeugt; der Admin-Dienst startet neu.",
       });
+    }
+
+    // --- Server-Snapshots (DigitalOcean) — list only; restore via DO Console ---
+    if (method === "GET" && p === "/do-snapshots") {
+      try {
+        const result = await listDoSnapshots();
+        return send(res, 200, result);
+      } catch (e) {
+        const status = e.status || 503;
+        return send(res, status, {
+          ok: false,
+          error: e.message || "DigitalOcean-Snapshots nicht verfügbar",
+          code: e.code || "do_error",
+          restore_preferred: "console",
+        });
+      }
     }
 
     return send(res, 404, { ok: false, error: `Unknown route ${method} ${p}` });

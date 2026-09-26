@@ -9,6 +9,8 @@ let config = null;
 let immoweltListings = [];
 let eigenListings = [];
 let snapshotsList = [];
+let doSnapshotsList = [];
+let doSnapshotsMeta = null;
 let activeTab = "immowelt";
 let restoreTargetId = null;
 /** @type {{ base: string, url: string }[]} */
@@ -1356,6 +1358,7 @@ async function reloadSicherung() {
       ".";
   }
   renderSicherung();
+  await reloadDoSicherung();
 }
 
 function renderSicherung() {
@@ -1384,6 +1387,9 @@ function renderSicherung() {
         commit +
         "</code></td>" +
         '<td class="row-actions">' +
+        '<button type="button" class="btn btn-outline btn-sm" data-download-id="' +
+        esc(s.id) +
+        '">Download</button> ' +
         '<button type="button" class="btn btn-outline btn-sm" data-restore-id="' +
         esc(s.id) +
         '">Zurückspielen</button>' +
@@ -1392,9 +1398,137 @@ function renderSicherung() {
       );
     })
     .join("");
+  tb.querySelectorAll("[data-download-id]").forEach((btn) => {
+    btn.addEventListener("click", () => downloadSnapshot(btn.getAttribute("data-download-id")));
+  });
   tb.querySelectorAll("[data-restore-id]").forEach((btn) => {
     btn.addEventListener("click", () => openRestoreModal(btn.getAttribute("data-restore-id")));
   });
+}
+
+function downloadSnapshot(id) {
+  if (!id) return;
+  // Same-origin navigation keeps the session cookie; avoids JSON parse of binary.
+  const a = document.createElement("a");
+  a.href = API + "/snapshots/" + encodeURIComponent(id) + "/download";
+  a.download = "eichmann-sicherung-" + id + ".tar.gz";
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  toast("Download gestartet: " + id, "ok");
+}
+
+function formatDoBytes(gb) {
+  if (gb == null || gb === "") return "—";
+  const n = Number(gb);
+  if (!Number.isFinite(n)) return "—";
+  return n.toFixed(2) + " GB";
+}
+
+function renderDoSicherung() {
+  const tb = $("do-sicherung-tbody");
+  const meta = $("do-sicherung-meta");
+  const errEl = $("do-sicherung-error");
+  const stepsEl = $("do-restore-steps");
+  if (errEl) {
+    errEl.textContent = "";
+    errEl.classList.add("hidden");
+  }
+  if (!tb) return;
+
+  if (doSnapshotsMeta && doSnapshotsMeta.error) {
+    if (errEl) {
+      errEl.textContent = doSnapshotsMeta.error;
+      errEl.classList.remove("hidden");
+    }
+    if (meta) meta.textContent = "";
+    tb.innerHTML =
+      '<tr><td colspan="6" class="muted">Keine Server-Snapshots geladen.</td></tr>';
+    if (stepsEl) stepsEl.innerHTML = "";
+    return;
+  }
+
+  const droplet = doSnapshotsMeta && doSnapshotsMeta.droplet;
+  if (meta) {
+    meta.textContent = droplet
+      ? "Droplet „" +
+        (droplet.name || "—") +
+        "“ · ID " +
+        (droplet.id || "—") +
+        " · " +
+        doSnapshotsList.length +
+        " Snapshot(s). Wiederherstellen nur über die DO-Konsole."
+      : "";
+  }
+
+  const steps = (doSnapshotsMeta && doSnapshotsMeta.restore_steps_de) || [];
+  if (stepsEl) {
+    stepsEl.innerHTML = steps.map((s) => "<li>" + esc(s) + "</li>").join("");
+  }
+
+  if (!doSnapshotsList.length) {
+    tb.innerHTML =
+      '<tr><td colspan="6" class="muted">Noch kein Server-Snapshot vorhanden.</td></tr>';
+    return;
+  }
+
+  tb.innerHTML = doSnapshotsList
+    .map((s) => {
+      const rebuild =
+        s.console_rebuild_url ||
+        (doSnapshotsMeta && doSnapshotsMeta.console_rebuild_url) ||
+        "https://cloud.digitalocean.com/droplets";
+      const images =
+        s.console_images_url ||
+        "https://cloud.digitalocean.com/images?i=" + encodeURIComponent(String(s.id));
+      return (
+        "<tr>" +
+        "<td><code>" +
+        esc(s.name || "—") +
+        "</code></td>" +
+        "<td><code>" +
+        esc(String(s.id || "")) +
+        "</code></td>" +
+        "<td>" +
+        esc(formatSnapTime(s.created_at)) +
+        "</td>" +
+        "<td>" +
+        esc(formatDoBytes(s.size_gigabytes)) +
+        (s.min_disk_size != null ? " <span class=\"muted\">(min. " + esc(String(s.min_disk_size)) + " GB)</span>" : "") +
+        "</td>" +
+        "<td>" +
+        esc(s.status || "—") +
+        "</td>" +
+        '<td class="row-actions">' +
+        '<a class="btn btn-outline btn-sm" href="' +
+        esc(rebuild) +
+        '" target="_blank" rel="noopener noreferrer" title="Öffnet DigitalOcean: Einstellungen → Rebuild">In DO-Konsole wiederherstellen</a> ' +
+        '<a class="btn btn-outline btn-sm" href="' +
+        esc(images) +
+        '" target="_blank" rel="noopener noreferrer">Snapshot in DO</a>' +
+        "</td>" +
+        "</tr>"
+      );
+    })
+    .join("");
+}
+
+async function reloadDoSicherung() {
+  const tb = $("do-sicherung-tbody");
+  try {
+    const data = await api("/do-snapshots");
+    doSnapshotsList = data.snapshots || [];
+    doSnapshotsMeta = data;
+    renderDoSicherung();
+  } catch (e) {
+    doSnapshotsList = [];
+    doSnapshotsMeta = {
+      error: e.message || String(e),
+      code: e.code || e.data?.code,
+    };
+    renderDoSicherung();
+  }
 }
 
 async function onCreateSnapshot() {

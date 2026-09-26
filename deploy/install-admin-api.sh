@@ -60,6 +60,14 @@ fi
 touch /var/log/eichmann-snapshot.log
 chmod 644 /var/log/eichmann-snapshot.log || true
 
+# DO server snapshots: weekly Sun 03:17, retention 4 (script). Do not change schedule lightly.
+if [ -f "$APP/deploy/eichmann-do-snapshot.cron" ]; then
+  cp -f "$APP/deploy/eichmann-do-snapshot.cron" /etc/cron.d/eichmann-do-snapshot
+  chmod 644 /etc/cron.d/eichmann-do-snapshot
+fi
+touch /var/log/eichmann-do-snapshot.log
+chmod 644 /var/log/eichmann-do-snapshot.log || true
+
 systemctl daemon-reload
 systemctl enable eichmann-admin-api.service
 systemctl restart eichmann-admin-api.service
