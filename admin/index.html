@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Admin – Immobilien Eichmann</title>
-  <link rel="stylesheet" href="admin.css?v=sync-loading-5" />
+  <link rel="stylesheet" href="admin.css?v=immowelt-api-key-1" />
 </head>
 <body>
   <header class="app-header hidden" id="app-header">
@@ -52,6 +52,34 @@
       <div id="panel-immowelt" class="tab-panel" role="tabpanel">
         <div class="toolbar">
           <h2>Immowelt-Objekte <span class="muted" id="immowelt-count"></span></h2>
+        </div>
+        <div class="card" id="immowelt-credentials" style="margin-bottom:16px">
+          <strong>Immowelt-Zugang</strong>
+          <p class="hint" style="margin-top:6px">
+            Damit die Website aktuelle Inserate holen kann, brauchen wir die Immowelt-Kundennummer und den API-Schlüssel.
+            Den Schlüssel erhalten Sie von Immowelt per E-Mail an <a href="mailto:api@immowelt.de">api@immowelt.de</a> – bitte Ihre Kundennummer mit angeben.
+            Der Schlüssel wird nur auf dem Server gespeichert und nach dem Speichern nur verkürzt angezeigt.
+          </p>
+          <form id="form-immowelt-credentials" autocomplete="off">
+            <div class="form-grid">
+              <div>
+                <label for="iw-kundennummer">Kundennummer</label>
+                <input type="text" id="iw-kundennummer" name="kundennummer" inputmode="numeric" autocomplete="off" placeholder="z. B. 123456" />
+              </div>
+              <div>
+                <label for="iw-api-key">API-Schlüssel</label>
+                <input type="password" id="iw-api-key" name="api_key" autocomplete="new-password" placeholder="API-Schlüssel eintragen" />
+                <p class="hint" id="iw-api-key-status" style="margin:6px 0 0"></p>
+              </div>
+              <div class="full hidden" id="iw-replace-wrap">
+                <label><input type="checkbox" id="iw-replace-key" /> API-Schlüssel ersetzen</label>
+              </div>
+            </div>
+            <div class="btn-row" style="margin-top:12px">
+              <button type="submit" class="btn btn-primary" id="btn-iw-credentials-save">Speichern und synchronisieren</button>
+            </div>
+            <p id="iw-credentials-msg" class="hint" role="status"></p>
+          </form>
         </div>
         <div class="card" id="immowelt-health" style="margin-bottom:16px">
           <strong>Immowelt-Daten</strong>

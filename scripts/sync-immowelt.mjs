@@ -16,9 +16,10 @@
  *   node scripts/sync-immowelt.mjs --dry-run
  *   node scripts/sync-immowelt.mjs --skip-enrich
  *
- * Soft-fail / fail_closed: if live scrape fails (DataDome / network), keep
- * last good JSON (site unchanged) but exit non-zero so admin-api sets
- * sync.failed:true. Never exit 0 after writing state=rejected.
+ * Fail-closed: prefer official Immowelt SOAP API when API key is present
+ * (/var/lib/eichmann/secrets/immowelt-api.json). Without key → awaiting_api_key
+ * (no scrape success pretend). Scrape only with --force-scrape emergency.
+ * On failure keep last good JSON and exit non-zero (admin-api sync.failed).
  */
 
 import { readFile, writeFile, mkdir, readdir, unlink, copyFile, access, rm, rename } from "node:fs/promises";
@@ -28,6 +29,8 @@ import { validateIncomingSnapshot, validateNoDestructiveOverwrite } from "./lib/
 import { scrapeEichmannFromImmoweltSearch } from "./lib/immowelt-public-search.mjs";
 import { reconcileMissingImmoweltOffers } from "./lib/immowelt-reconcile.mjs";
 import { publicImmoweltSyncReason } from "./lib/immowelt-public-reason.mjs";
+import { hasImmoweltApiKey, readImmoweltCredentials } from "./lib/immowelt-secrets.mjs";
+import { fetchOfficialImmoweltListings } from "./lib/immowelt-official-api.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.EICHMANN_SITE_ROOT
@@ -1615,7 +1618,7 @@ async function atomicWriteJson(filePath, value) {
   await rename(tmp, filePath);
 }
 
-async function writeSyncStatus({ state, previous = null, data = null, reason = null, assessment = null }) {
+async function writeSyncStatus({ state, previous = null, data = null, reason = null, assessment = null, mode = null }) {
   const previousActive = Array.isArray(previous?.listings)
     ? previous.listings.filter((item) => item && item.active !== false).length
     : Number(previous?.active_listing_count || 0);
@@ -1624,6 +1627,7 @@ async function writeSyncStatus({ state, previous = null, data = null, reason = n
     : null;
   const payload = {
     source: "immowelt",
+    mode: mode || (state === "awaiting_api_key" ? "official_api" : null),
     state,
     // The newest real check time comes from GitHub Actions. Keep this file stable
     // so unchanged 15-minute checks do not create artificial repository commits.
@@ -1637,6 +1641,7 @@ async function writeSyncStatus({ state, previous = null, data = null, reason = n
     reason: reason ? publicImmoweltSyncReason(reason, state).slice(0, 500) : null,
     policy: "fail_closed_last_known_good",
   };
+  if (!payload.mode) delete payload.mode;
   if (!dryRun) await atomicWriteJson(SYNC_STATUS_PATH, payload);
   return payload;
 }
@@ -2773,20 +2778,49 @@ async function main() {
       listings: mergeListings(seeded.listings, previous),
     };
   } else {
+    const creds = readImmoweltCredentials();
+    const useOfficial = Boolean(creds?.api_key);
+    // When an API key is present, NEVER scrape (DataDome). Official SOAP only.
+    // Without a key: fail closed with awaiting_api_key unless --force-scrape (emergency).
+    if (!useOfficial && !forceScrape) {
+      const reason =
+        "Immowelt-Zugang fehlt. Bitte Kundennummer und API-Schlüssel im Admin unter Immowelt eintragen. Der letzte bekannte Stand bleibt online.";
+      console.error(reason);
+      await writeSyncStatus({
+        state: "awaiting_api_key",
+        mode: "official_api",
+        previous,
+        reason,
+      });
+      process.exit(1);
+    }
+
     try {
-      const scraped = await scrapeImmowelt(previous);
+      let scraped;
+      let syncMode;
+      if (useOfficial) {
+        console.log("Immowelt sync mode: official_api (SOAP)");
+        scraped = await fetchOfficialImmoweltListings(creds.api_key, previous);
+        syncMode = "official_api";
+      } else {
+        console.log("Immowelt sync mode: scrape (--force-scrape, no API key)");
+        scraped = await scrapeImmowelt(previous);
+        syncMode = "scrape";
+      }
       const assessment = validateIncomingSnapshot(scraped.listings, previous);
-      console.log(`Immowelt snapshot accepted: ${assessment.count} complete offers.`);
+      console.log(`Immowelt snapshot accepted: ${assessment.count} complete offers (${syncMode}).`);
       data = {
         source: scraped.source,
         scraped_at: scraped.scraped_at,
         listings: mergeListings(scraped.listings, previous, { confirmedInactiveIds: scraped.confirmed_inactive_ids || [] }),
       };
-      // Enrich from detail pages (separate browser session)
-      try {
-        data.listings = await enrichListings(data.listings);
-      } catch (enrichErr) {
-        console.warn("Enrichment pass failed:", enrichErr.message || enrichErr);
+      // Playwright enrich only for scrape path; official API already pulled exposés.
+      if (syncMode === "scrape") {
+        try {
+          data.listings = await enrichListings(data.listings);
+        } catch (enrichErr) {
+          console.warn("Enrichment pass failed:", enrichErr.message || enrichErr);
+        }
       }
 
       // All-or-nothing: never publish a partially read Immowelt snapshot.
@@ -2806,13 +2840,16 @@ async function main() {
       const safe = validateNoDestructiveOverwrite(data.listings, previous);
       console.log(`Final LKG guard: ${safe.checked} existing records checked; no destructive/inconsistent overwrite.`);
       data._snapshot_assessment = assessment;
+      data._sync_mode = syncMode;
     } catch (err) {
       const hard = process.env.IMMOWELT_HARD_FAIL === "1" || forceScrape;
-      console.error(`Scrape failed (${hard ? "hard-fail" : "soft-fail"}):`, err.message || err);
+      const syncMode = hasImmoweltApiKey() ? "official_api" : (forceScrape ? "scrape" : "official_api");
+      console.error(`Immowelt sync failed (${hard ? "hard-fail" : "fail-closed"}, mode=${syncMode}):`, err.message || err);
       if (previous) {
         console.error("Keeping last good data/listings.json – site unchanged.");
         await writeSyncStatus({
           state: "rejected",
+          mode: syncMode,
           previous,
           reason: err.message || err,
         });
@@ -2822,6 +2859,7 @@ async function main() {
       console.error("No previous JSON available. Exiting without changes.");
       await writeSyncStatus({
         state: "rejected",
+        mode: syncMode,
         previous: null,
         reason: err.message || err,
       });
@@ -2898,12 +2936,14 @@ async function main() {
   }
   await writeSyncStatus({
     state: "current",
+    mode: data._sync_mode || (hasImmoweltApiKey() ? "official_api" : "scrape"),
     previous,
     data,
     assessment: data._snapshot_assessment || null,
   });
   delete data._snapshot_assessment;
   delete data._semantic_changed;
+  delete data._sync_mode;
 
   console.log(`Done. ${data.listing_count} Immowelt records validated.`);
 }
