@@ -43,19 +43,21 @@ fi
 mkdir -p /var/lib/eichmann
 chmod 755 /var/lib/eichmann
 
+# Upload gallery lives on the droplet (not in git). Keep across rsync --delete.
+mkdir -p "$SITE/media/eigen"
+chown -R www-data:www-data "$SITE/media"
+chmod 775 "$SITE/media" "$SITE/media/eigen"
+chmod g+s "$SITE/media" "$SITE/media/eigen" || true
+
 systemctl daemon-reload
 systemctl enable eichmann-admin-api.service
 systemctl restart eichmann-admin-api.service
 sleep 1
 systemctl is-active eichmann-admin-api.service
 
-# Patch nginx via a separate Python file to avoid heredoc nesting issues
+# Patch nginx (idempotent): insert /admin/api/ if missing, ensure client_max_body_size 40m
 if [ -f "$NGINX_SITE" ]; then
-  if ! grep -q 'location /admin/api/' "$NGINX_SITE"; then
-    python3 "$APP/deploy/patch-nginx-admin-api.py"
-  else
-    echo "nginx: /admin/api/ already present"
-  fi
+  python3 "$APP/deploy/patch-nginx-admin-api.py"
 fi
 
 nginx -t
