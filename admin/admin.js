@@ -85,22 +85,12 @@ function fillSyncStatusNode(el, msg, kind) {
   }
 }
 
-/** Updates sticky header bar + Immowelt-Stand line. Never blank between states. */
+/** One Sync status channel: header bar + Immowelt-Stand line. Never also sticky-toast (avoids duplicate covering Abmelden). */
 function setImmoweltSyncOutcome(msg, kind = "") {
+  // Always dismiss any leftover sticky toast — bar is the durable UI.
+  clearStickyToast();
   fillSyncStatusNode($("immowelt-sync-bar"), msg, kind);
   fillSyncStatusNode($("immowelt-sync-outcome"), msg, kind);
-  if (!msg) {
-    clearStickyToast();
-    return;
-  }
-  if (kind === "progress") {
-    toast(msg, "warn", { sticky: true });
-  } else {
-    // Keep sticky toast until next Sync with the final result (no 4.5s vanish).
-    const t =
-      kind === "err" ? "error" : kind === "ok" ? "ok" : kind === "warn" ? "warn" : "";
-    toast(msg, t, { sticky: true });
-  }
 }
 
 function setImmoweltSyncBusy(busy) {
