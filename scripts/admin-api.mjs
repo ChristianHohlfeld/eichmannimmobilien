@@ -74,6 +74,11 @@ import {
   SNAPSHOTS_ROOT,
 } from "./lib/snapshots.mjs";
 import { listDoSnapshots } from "./lib/do-snapshots.mjs";
+import {
+  getImmoweltCredentialsStatus,
+  saveImmoweltCredentials,
+  hasImmoweltApiKey,
+} from "./lib/immowelt-secrets.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const HOST = process.env.EICHMANN_ADMIN_API_HOST || "127.0.0.1";
@@ -371,6 +376,127 @@ function routePath(url) {
   return { path: p, searchParams: u.searchParams };
 }
 
+
+async function runImmoweltSyncChild() {
+  const appRoot = fs.existsSync("/var/lib/eichmann/app/scripts/sync-immowelt.mjs")
+    ? "/var/lib/eichmann/app"
+    : path.resolve(__dirname, "..");
+  const script = path.join(appRoot, "scripts", "sync-immowelt.mjs");
+  if (!fs.existsSync(script)) {
+    const err = new Error("Immowelt-Sync ist hier nicht verfügbar.");
+    err.status = 500;
+    throw err;
+  }
+  const env = {
+    ...process.env,
+    EICHMANN_DB_PATH: resolveDbPath(),
+    EICHMANN_SITE_ROOT: SITE_ROOT,
+    EICHMANN_AUTO_PUBLISH: "0",
+  };
+  return await new Promise((resolve) => {
+    const child = spawn(process.execPath, [script], {
+      cwd: appRoot,
+      env,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let out = "";
+    let err = "";
+    const timer = setTimeout(() => {
+      try {
+        child.kill("SIGTERM");
+      } catch {
+        /* ignore */
+      }
+      resolve({ timedOut: true, out, err, code: -1 });
+    }, 240000);
+    child.stdout.on("data", (c) => {
+      out += c;
+      if (out.length > 200000) out = out.slice(-100000);
+    });
+    child.stderr.on("data", (c) => {
+      err += c;
+      if (err.length > 80000) err = err.slice(-40000);
+    });
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      resolve({ timedOut: false, out, err, code });
+    });
+  });
+}
+
+function buildImmoweltSyncResponse(db, result) {
+  const doc = exportListingsDocument(db);
+  const preview = previewImmoweltSync(SITE_ROOT, doc);
+  let syncStatus = {};
+  try {
+    const statusPath = path.join(SITE_ROOT, "data", "immowelt-sync-status.json");
+    if (fs.existsSync(statusPath)) {
+      syncStatus = JSON.parse(fs.readFileSync(statusPath, "utf8")) || {};
+    }
+  } catch {
+    syncStatus = {};
+  }
+  const logTail = `${result.err || ""}\n${result.out || ""}`;
+  const statusState = String(syncStatus.state || "");
+  const softFailLog =
+    result.timedOut !== true &&
+    result.code === 0 &&
+    /soft-fail|Keeping last good|last-known-good|snapshot incomplete|Unsicherer Abruf|Target page|context closed|awaiting_api_key|Immowelt-Zugang fehlt/i.test(
+      logTail
+    );
+  const statusRejected =
+    statusState === "rejected" || statusState === "awaiting_api_key";
+  const processFailed = result.timedOut === true || result.code !== 0;
+  const statusSoft = softFailLog || statusRejected;
+  const failed = processFailed || statusSoft;
+  const publicError = failed
+    ? publicImmoweltSyncReason(
+        result.timedOut === true
+          ? "timeout"
+          : syncStatus.reason ||
+              (result.err || result.out || "sync failed").split("\n").slice(-8).join("\n"),
+        statusState === "awaiting_api_key" ? "awaiting_api_key" : "rejected"
+      )
+    : null;
+  if (!failed && !getMeta(db, "publish_pending") && preview.has_changes) {
+    setMeta(
+      db,
+      "publish_pending",
+      JSON.stringify({
+        reason: "immowelt_sync",
+        at: new Date().toISOString(),
+        listing_count: doc.listing_count,
+        active_listing_count: doc.active_listing_count,
+        message: "Immowelt-Sync abgeschlossen – bitte Ist und Neu prüfen, dann Übernehmen.",
+      })
+    );
+  }
+  const pendingRaw = getMeta(db, "publish_pending");
+  return {
+    ok: !failed && (result.code === 0 || preview.has_changes),
+    sync: {
+      exit_code: result.code,
+      timed_out: result.timedOut === true,
+      soft_fail: statusSoft === true,
+      status_state: statusState || null,
+      mode: syncStatus.mode || (hasImmoweltApiKey() ? "official_api" : null),
+      failed,
+      public_error: publicError,
+    },
+    ...preview,
+    has_changes: failed ? false : preview.has_changes,
+    changes: failed ? [] : changeSummaryFromPreview(preview),
+    publish_pending: pendingRaw ? JSON.parse(pendingRaw) : null,
+    requires_confirm: !failed && preview.has_changes,
+    path: "immowelt_sync",
+    message: failed
+      ? publicError
+      : preview.has_changes
+        ? "Immowelt-Sync: bitte Ist und Neu vergleichen, dann Übernehmen."
+        : "Keine Änderungen — Website bleibt wie sie ist.",
+  };
+}
+
 async function handle(req, res) {
   const ip = clientIp(req);
   const method = req.method || "GET";
@@ -485,6 +611,7 @@ async function handle(req, res) {
         ok: true,
         counts,
         immowelt_sync: sync,
+        immowelt_credentials: getImmoweltCredentialsStatus(),
         sot: "sqlite",
         db: resolveDbPath(),
         site_root: SITE_ROOT,
@@ -494,118 +621,52 @@ async function handle(req, res) {
 
     // --- Immowelt Sync (updates SQLite only; live site needs Abnahme / Übernehmen) ---
     if (method === "POST" && p === "/immowelt/sync") {
-      const body = (await readBody(req)) || {};
-      const appRoot = fs.existsSync("/var/lib/eichmann/app/scripts/sync-immowelt.mjs")
-        ? "/var/lib/eichmann/app"
-        : path.resolve(__dirname, "..");
-      const script = path.join(appRoot, "scripts", "sync-immowelt.mjs");
-      if (!fs.existsSync(script)) {
-        return send(res, 500, { ok: false, error: "Immowelt-Sync ist hier nicht verfügbar." });
-      }
-      // Never auto-publish: sync writes SQLite; Chris must Übernehmen via /publish
-      const env = {
-        ...process.env,
-        EICHMANN_DB_PATH: resolveDbPath(),
-        EICHMANN_SITE_ROOT: SITE_ROOT,
-        EICHMANN_AUTO_PUBLISH: "0",
-      };
-      const result = await new Promise((resolve) => {
-        const child = spawn(process.execPath, [script], {
-          cwd: appRoot,
-          env,
-          stdio: ["ignore", "pipe", "pipe"],
-        });
-        let out = "";
-        let err = "";
-        const timer = setTimeout(() => {
-          try { child.kill("SIGTERM"); } catch { /* ignore */ }
-          resolve({ timedOut: true, out, err, code: -1 });
-        }, 240000);
-        child.stdout.on("data", (c) => { out += c; if (out.length > 200000) out = out.slice(-100000); });
-        child.stderr.on("data", (c) => { err += c; if (err.length > 80000) err = err.slice(-40000); });
-        child.on("close", (code) => {
-          clearTimeout(timer);
-          resolve({ timedOut: false, out, err, code });
-        });
-      });
+      await readBody(req); // consume body if any
+      const result = await runImmoweltSyncChild();
       const db = openApiDb();
       try {
-        const doc = exportListingsDocument(db);
-        const preview = previewImmoweltSync(SITE_ROOT, doc);
-        // Soft-fail scrape exits 0 but writes rejected/awaiting status — not "no changes".
-        let syncStatus = {};
-        try {
-          const statusPath = path.join(SITE_ROOT, "data", "immowelt-sync-status.json");
-          if (fs.existsSync(statusPath)) {
-            syncStatus = JSON.parse(fs.readFileSync(statusPath, "utf8")) || {};
-          }
-        } catch {
-          syncStatus = {};
-        }
-        const logTail = `${result.err || ""}\n${result.out || ""}`;
-        const statusState = String(syncStatus.state || "");
-        // Soft-fail scrape exits 0 but writes status.json state=rejected — never "keine Änderungen".
-        const softFailLog =
-          result.timedOut !== true &&
-          result.code === 0 &&
-          /soft-fail|Keeping last good|last-known-good|snapshot incomplete|Unsicherer Abruf|Target page|context closed/i.test(
-            logTail
-          );
-        const statusRejected =
-          statusState === "rejected" || statusState === "awaiting_api_key";
-        const processFailed = result.timedOut === true || result.code !== 0;
-        const statusSoft = softFailLog || statusRejected;
-        const failed = processFailed || statusSoft;
-        const publicError = failed
-          ? publicImmoweltSyncReason(
-              result.timedOut === true
-                ? "timeout"
-                : syncStatus.reason ||
-                    (result.err || result.out || "sync failed").split("\n").slice(-8).join("\n"),
-              statusState === "awaiting_api_key" ? "awaiting_api_key" : "rejected"
-            )
-          : null;
-        if (!failed && !getMeta(db, "publish_pending") && preview.has_changes) {
-          setMeta(
-            db,
-            "publish_pending",
-            JSON.stringify({
-              reason: "immowelt_sync",
-              at: new Date().toISOString(),
-              listing_count: doc.listing_count,
-              active_listing_count: doc.active_listing_count,
-              message: "Immowelt-Sync abgeschlossen – bitte Ist und Neu prüfen, dann Übernehmen.",
-            })
-          );
-        }
-        const pendingRaw = getMeta(db, "publish_pending");
-        return send(res, 200, {
-          ok: !failed && (result.code === 0 || preview.has_changes),
-          sync: {
-            exit_code: result.code,
-            timed_out: result.timedOut === true,
-            soft_fail: statusSoft === true,
-            status_state: statusState || null,
-            // Never send raw Playwright/Node stderr to the Admin UI.
-            failed,
-            public_error: publicError,
-          },
-          ...preview,
-          // Failures must not open Abnahme as if there were listing diffs.
-          has_changes: failed ? false : preview.has_changes,
-          changes: failed ? [] : changeSummaryFromPreview(preview),
-          publish_pending: pendingRaw ? JSON.parse(pendingRaw) : null,
-          requires_confirm: !failed && preview.has_changes,
-          path: "immowelt_sync",
-          message: failed
-            ? publicError
-            : preview.has_changes
-              ? "Immowelt-Sync: bitte Ist und Neu vergleichen, dann Übernehmen."
-              : "Keine Änderungen — Website bleibt wie sie ist.",
-        });
+        return send(res, 200, buildImmoweltSyncResponse(db, result));
       } finally {
         db.close();
       }
+    }
+
+    // --- Immowelt API credentials (Kundennummer + API-Key; droplet secrets only) ---
+    if (method === "GET" && p === "/immowelt/credentials") {
+      return send(res, 200, getImmoweltCredentialsStatus());
+    }
+
+    if ((method === "PUT" || method === "POST") && p === "/immowelt/credentials") {
+      const body = (await readBody(req)) || {};
+      const replaceKey = body.replace_key === true || body.replaceKey === true;
+      const statusBefore = getImmoweltCredentialsStatus();
+      const keep_existing_key = statusBefore.has_key && !replaceKey && !String(body.api_key || "").trim();
+      const saved = saveImmoweltCredentials({
+        kundennummer: body.kundennummer,
+        api_key: body.api_key,
+        keep_existing_key,
+      });
+      // Stabschef: after save, sync immediately via official API.
+      const trigger = body.trigger_sync !== false;
+      let syncPayload = null;
+      if (trigger) {
+        const result = await runImmoweltSyncChild();
+        const db = openApiDb();
+        try {
+          syncPayload = buildImmoweltSyncResponse(db, result);
+        } finally {
+          db.close();
+        }
+      }
+      return send(res, 200, {
+        ok: true,
+        credentials: saved,
+        // Never echo full key
+        message: trigger
+          ? "Zugang gespeichert. Synchronisation gestartet."
+          : "Zugang gespeichert.",
+        sync: syncPayload,
+      });
     }
 
     // --- Publish preview (no writes) ---

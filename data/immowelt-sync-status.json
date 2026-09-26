@@ -4,6 +4,6 @@
   "state": "awaiting_api_key",
   "last_valid_at": "2026-09-20T18:49:02.890Z",
   "last_valid_count": 11,
-  "reason": "Offizielle immowelt.de-API technisch erreichbar; accountgebundener API-Key ist noch nicht im Deployment hinterlegt. Last Known Good bleibt unverändert.",
-  "policy": "atomic_snapshot_last_known_good"
+  "reason": "Immowelt-Zugang fehlt. Bitte Kundennummer und API-Schlüssel im Admin unter Immowelt eintragen. Der letzte bekannte Stand bleibt online.",
+  "policy": "fail_closed_last_known_good"
 }

@@ -645,6 +645,111 @@ function publicImmoweltReason(reason, state) {
 
 /* ---------- Lists ---------- */
 
+async function loadImmoweltCredentials() {
+  const statusEl = $("iw-api-key-status");
+  const kn = $("iw-kundennummer");
+  const keyInput = $("iw-api-key");
+  const replaceWrap = $("iw-replace-wrap");
+  const replaceCb = $("iw-replace-key");
+  if (!statusEl || !kn) return;
+  try {
+    const st = await api("/immowelt/credentials");
+    kn.value = st.kundennummer || "";
+    if (st.has_key) {
+      statusEl.innerHTML = `<span class="badge ok">gesetzt</span> ${esc(st.masked_key || "••••")}`;
+      if (replaceWrap) replaceWrap.classList.remove("hidden");
+      if (keyInput) {
+        keyInput.value = "";
+        keyInput.placeholder = "Nur ausfüllen, um zu ersetzen";
+        keyInput.disabled = !(replaceCb && replaceCb.checked);
+      }
+    } else {
+      statusEl.innerHTML = `<span class="badge warn">fehlt</span> Bitte API-Schlüssel eintragen`;
+      if (replaceWrap) replaceWrap.classList.add("hidden");
+      if (keyInput) {
+        keyInput.disabled = false;
+        keyInput.placeholder = "API-Schlüssel eintragen";
+      }
+    }
+  } catch (e) {
+    statusEl.textContent = e.message || "Status konnte nicht geladen werden";
+  }
+}
+
+async function onSaveImmoweltCredentials(ev) {
+  ev.preventDefault();
+  const msg = $("iw-credentials-msg");
+  const btn = $("btn-iw-credentials-save");
+  const kn = ($("iw-kundennummer")?.value || "").trim();
+  const replaceCb = $("iw-replace-key");
+  const replace_key = Boolean(replaceCb && replaceCb.checked);
+  const api_key = ($("iw-api-key")?.value || "").trim();
+  if (!kn) {
+    if (msg) {
+      msg.classList.add("err-box");
+      msg.textContent = "Bitte die Kundennummer eintragen.";
+    }
+    return;
+  }
+  const statusBefore = await api("/immowelt/credentials").catch(() => ({ has_key: false }));
+  if (!statusBefore.has_key && !api_key) {
+    if (msg) {
+      msg.classList.add("err-box");
+      msg.textContent = "Bitte den API-Schlüssel eintragen.";
+    }
+    return;
+  }
+  if (statusBefore.has_key && replace_key && !api_key) {
+    if (msg) {
+      msg.classList.add("err-box");
+      msg.textContent = "Bitte den neuen API-Schlüssel eintragen oder „Ersetzen“ abwählen.";
+    }
+    return;
+  }
+  if (msg) {
+    msg.classList.remove("err-box");
+    msg.textContent = "Speichere Zugang und starte Synchronisation …";
+  }
+  if (btn) btn.disabled = true;
+  startImmoweltSyncLoading();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), SYNC_CLIENT_TIMEOUT_MS);
+  try {
+    const res = await api("/immowelt/credentials", {
+      method: "PUT",
+      body: JSON.stringify({
+        kundennummer: kn,
+        api_key,
+        replace_key,
+        trigger_sync: true,
+      }),
+      signal: ctrl.signal,
+    });
+    if ($("iw-api-key")) $("iw-api-key").value = "";
+    if (replaceCb) replaceCb.checked = false;
+    await loadImmoweltCredentials();
+    if (msg) msg.textContent = res.message || "Zugang gespeichert.";
+    if (res.sync) {
+      await applyImmoweltSyncSuccess(res.sync);
+    } else {
+      setImmoweltSyncOutcome(res.message || "Zugang gespeichert.", "ok");
+      await loadImmoweltHealth();
+    }
+  } catch (e) {
+    const errMsg = e.message || String(e);
+    if (msg) {
+      msg.classList.add("err-box");
+      msg.textContent = errMsg;
+    }
+    setImmoweltSyncOutcome(errMsg, "err");
+  } finally {
+    clearTimeout(timer);
+    clearImmoweltSyncLongWait();
+    setImmoweltSyncBusy(false);
+    if (btn) btn.disabled = false;
+  }
+}
+
 async function loadImmoweltHealth() {
   const line = $("immowelt-health-line");
   const detail = $("immowelt-health-detail");
@@ -821,6 +926,7 @@ async function reloadImmowelt() {
   immoweltListings = data.listings || [];
   renderImmowelt();
   await loadImmoweltHealth();
+  await loadImmoweltCredentials();
 }
 
 async function reloadEigen() {
@@ -1670,6 +1776,15 @@ function bind() {
   $("btn-logout").addEventListener("click", logout);
   const syncBtn = $("btn-immowelt-sync");
   if (syncBtn) syncBtn.addEventListener("click", onImmoweltSync);
+  const credForm = $("form-immowelt-credentials");
+  if (credForm) credForm.addEventListener("submit", onSaveImmoweltCredentials);
+  const replaceCb = $("iw-replace-key");
+  if (replaceCb) {
+    replaceCb.addEventListener("change", () => {
+      const keyInput = $("iw-api-key");
+      if (keyInput) keyInput.disabled = !replaceCb.checked;
+    });
+  }
   $("btn-new-eigen").addEventListener("click", () => openEditor(null));
   $("btn-cancel").addEventListener("click", closeEditor);
   $("btn-delete").addEventListener("click", onDelete);

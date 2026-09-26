@@ -6,7 +6,7 @@ Ein einziges Admin mit Tabs:
 
 | Tab | Zweck |
 |-----|--------|
-| **Immowelt** | Spiegel/Status + Website-Sichtbarkeit (`site_hidden`). Kein Schreiben ins Immowelt-Konto. |
+| **Immowelt** | Zugang (Kundennummer + API-Schlüssel, nur Server), Spiegel/Status + Website-Sichtbarkeit (`site_hidden`). Kein Schreiben ins Immowelt-Konto. |
 | **Eigen-Inserate** | Volles CRUD für `origin=eigen` in SQLite. |
 
 `/admin/eigen/` leitet nach `/admin/#eigen` um.

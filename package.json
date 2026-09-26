@@ -22,7 +22,9 @@
     "publish:db": "node scripts/publish-from-db.mjs",
     "test:eigen-survives": "node scripts/test-eigen-survives-sync.mjs",
     "test:immowelt-reason": "node scripts/test-immowelt-public-reason.mjs",
-    "admin-api": "node scripts/admin-api.mjs"
+    "admin-api": "node scripts/admin-api.mjs",
+    "test:immowelt-secrets": "node scripts/test-immowelt-secrets.mjs",
+    "test:immowelt-api": "node scripts/test-immowelt-official-api.mjs"
   },
   "engines": {
     "node": ">=20"
