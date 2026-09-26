@@ -22,7 +22,7 @@
  * On failure keep last good JSON and exit non-zero (admin-api sync.failed).
  */
 
-import { readFile, writeFile, mkdir, readdir, unlink, copyFile, access, rm, rename } from "node:fs/promises";
+import { readFile, writeFile, mkdir, readdir, unlink, copyFile, access, rm, rename, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateIncomingSnapshot, validateNoDestructiveOverwrite } from "./lib/listing-safety.mjs";
@@ -1928,26 +1928,74 @@ async function renderExposePages(data) {
   }
 }
 
-function todayStamp(sourceDate = null) {
+/** W3C lastmod in Europe/Berlin (date or datetime). Prefer real publish/mtime over stale scraped_at. */
+function sitemapLastmod(sourceDate = null, { withTime = true } = {}) {
   const parsed = sourceDate ? new Date(sourceDate) : null;
   const date = parsed && !Number.isNaN(parsed.getTime()) ? parsed : new Date();
-  return date.toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+  const datePart = date.toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+  if (!withTime) return datePart;
+  const timePart = date.toLocaleTimeString("en-GB", {
+    timeZone: "Europe/Berlin",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  const offsetPart = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Berlin",
+    timeZoneName: "longOffset",
+  })
+    .formatToParts(date)
+    .find((p) => p.type === "timeZoneName")?.value;
+  // "GMT+02:00" / "GMT+2" → "+02:00"
+  let offset = "+02:00";
+  const m = String(offsetPart || "").match(/GMT([+-])(\d{1,2})(?::?(\d{2}))?/i);
+  if (m) {
+    offset = `${m[1]}${String(m[2]).padStart(2, "0")}:${String(m[3] || "00").padStart(2, "0")}`;
+  }
+  return `${datePart}T${timePart}${offset}`;
+}
+
+/** @deprecated use sitemapLastmod — kept for any callers expecting YYYY-MM-DD */
+function todayStamp(sourceDate = null) {
+  return sitemapLastmod(sourceDate, { withTime: false });
+}
+
+async function fileLastmodOr(filePath, fallbackDate) {
+  try {
+    const st = await stat(filePath);
+    return sitemapLastmod(st.mtime);
+  } catch {
+    return sitemapLastmod(fallbackDate);
+  }
 }
 
 async function updateSitemap(data) {
-  const lastmod = todayStamp(data.scraped_at);
-  const staticUrls = STATIC_SITEMAP_PATHS.map((u) => {
-    const loc = u.loc === "/" ? `${SITE_ORIGIN}/` : `${SITE_ORIGIN}${u.loc}`;
-    return `  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod><changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority></url>`;
-  }).join("\n");
+  // Publish/render moment — never reuse a frozen scraped_at (e.g. 2026-09-20).
+  const publishAt = new Date();
+  const publishLastmod = sitemapLastmod(publishAt);
 
-  const objektUrls = data.listings
-    .filter(hasPublicDetail)
-    .map((L) => {
-      const loc = `${SITE_ORIGIN}/${L.local_url}`;
-      return `  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>`;
-    })
-    .join("\n");
+  const staticLines = [];
+  for (const u of STATIC_SITEMAP_PATHS) {
+    const loc = u.loc === "/" ? `${SITE_ORIGIN}/` : `${SITE_ORIGIN}${u.loc}`;
+    const rel = u.loc === "/" ? "index.html" : u.loc.replace(/^\//, "");
+    const lastmod = await fileLastmodOr(path.join(ROOT, rel), publishAt);
+    staticLines.push(
+      `  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod><changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority></url>`
+    );
+  }
+  const staticUrls = staticLines.join("\n");
+
+  const objektLines = [];
+  for (const L of data.listings.filter(hasPublicDetail)) {
+    const loc = `${SITE_ORIGIN}/${L.local_url}`;
+    // Exposé HTML is written in this publish pass → prefer file mtime, else publish time.
+    const lastmod = await fileLastmodOr(path.join(ROOT, L.local_url), publishAt);
+    objektLines.push(
+      `  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>`
+    );
+  }
+  const objektUrls = objektLines.join("\n");
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -1958,7 +2006,9 @@ ${SITEMAP_OBJEKT_END}
 </urlset>
 `;
   if (!dryRun) await writeFile(SITEMAP_PATH, xml, "utf8");
-  console.log(`Updated sitemap.xml (${data.listings.filter(hasPublicDetail).length} objekt URLs)`);
+  console.log(
+    `Updated sitemap.xml (${data.listings.filter(hasPublicDetail).length} objekt URLs, publish lastmod ${publishLastmod})`
+  );
 }
 
 async function renderIntoPages(data) {
