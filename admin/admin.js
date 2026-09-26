@@ -30,6 +30,19 @@ function toast(msg, type = "") {
 }
 
 /** Durable status under Immowelt-Stand — stays until next Sync (not toast-only). */
+const SYNC_LOADING_MSG =
+  "Immowelt-Sync läuft… Bitte warten. Das kann ein paar Minuten dauern.";
+const SYNC_LOADING_LONG_MSG =
+  "Immowelt-Sync läuft noch… Dauert länger als üblich — bitte weiter warten.";
+let syncLongWaitTimer = null;
+
+function clearImmoweltSyncLongWait() {
+  if (syncLongWaitTimer) {
+    clearTimeout(syncLongWaitTimer);
+    syncLongWaitTimer = null;
+  }
+}
+
 function setImmoweltSyncOutcome(msg, kind = "") {
   const el = $("immowelt-sync-outcome");
   if (!el) return;
@@ -38,8 +51,16 @@ function setImmoweltSyncOutcome(msg, kind = "") {
     el.className = "sync-outcome hidden";
     return;
   }
-  el.textContent = msg;
   el.className = "sync-outcome" + (kind ? " " + kind : "");
+  if (kind === "progress") {
+    el.innerHTML =
+      '<span class="sync-spinner" aria-hidden="true"></span>' +
+      '<span class="sync-outcome-text"></span>';
+    const text = el.querySelector(".sync-outcome-text");
+    if (text) text.textContent = msg;
+  } else {
+    el.textContent = msg;
+  }
 }
 
 function setImmoweltSyncBusy(busy) {
@@ -47,7 +68,17 @@ function setImmoweltSyncBusy(busy) {
   if (!btn) return;
   btn.disabled = !!busy;
   btn.setAttribute("aria-busy", busy ? "true" : "false");
-  btn.textContent = busy ? "Sync läuft …" : "Immowelt Sync";
+  btn.textContent = busy ? "Läuft …" : "Immowelt Sync";
+}
+
+function startImmoweltSyncLoading() {
+  clearImmoweltSyncLongWait();
+  setImmoweltSyncBusy(true);
+  setImmoweltSyncOutcome(SYNC_LOADING_MSG, "progress");
+  // Soft hint only — keep loading state; never invent a fake fail while request is open.
+  syncLongWaitTimer = setTimeout(() => {
+    setImmoweltSyncOutcome(SYNC_LOADING_LONG_MSG, "progress");
+  }, 150_000);
 }
 
 function esc(s) {
@@ -964,9 +995,8 @@ async function onDelete() {
 
 /** Immowelt Sync: never silent — Abnahme modal OR durable Immowelt-Stand status. */
 async function onImmoweltSync() {
-  setImmoweltSyncBusy(true);
-  setImmoweltSyncOutcome("Immowelt Sync läuft. Bitte warten.", "progress");
-  toast("Immowelt wird synchronisiert …");
+  startImmoweltSyncLoading();
+  toast("Immowelt-Sync läuft…");
   try {
     const syncRes = await api("/immowelt/sync", {
       method: "POST",
@@ -1024,6 +1054,7 @@ async function onImmoweltSync() {
     const msg = publicImmoweltReason(e.message || String(e), "rejected");
     setImmoweltSyncOutcome(msg, "err");
   } finally {
+    clearImmoweltSyncLongWait();
     setImmoweltSyncBusy(false);
   }
 }

@@ -591,9 +591,33 @@ table.listings tr:hover td { background: #fafaf8; }
 }
 .sync-outcome.hidden { display: none; }
 .sync-outcome.progress {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   background: #eef3f8;
   color: var(--primary);
   border-color: #c5d4e4;
+  animation: sync-outcome-pulse 1.6s ease-in-out infinite;
+}
+.sync-outcome.progress .sync-outcome-text {
+  flex: 1 1 auto;
+}
+.sync-spinner {
+  flex: 0 0 auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.2rem;
+  border: 2.5px solid #c5d4e4;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: sync-spin 0.75s linear infinite;
+}
+@keyframes sync-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes sync-outcome-pulse {
+  0%, 100% { border-color: #c5d4e4; }
+  50% { border-color: var(--primary); }
 }
 .sync-outcome.ok {
   background: #e8f5e9;
