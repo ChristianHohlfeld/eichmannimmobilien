@@ -16,8 +16,9 @@
  *   node scripts/sync-immowelt.mjs --dry-run
  *   node scripts/sync-immowelt.mjs --skip-enrich
  *
- * Soft-fail: if live scrape fails (DataDome / network), keep last good JSON
- * and exit 0 so CI does not wipe the site.
+ * Soft-fail / fail_closed: if live scrape fails (DataDome / network), keep
+ * last good JSON (site unchanged) but exit non-zero so admin-api sets
+ * sync.failed:true. Never exit 0 after writing state=rejected.
  */
 
 import { readFile, writeFile, mkdir, readdir, unlink, copyFile, access, rm, rename } from "node:fs/promises";
@@ -2816,7 +2817,7 @@ async function main() {
           reason: err.message || err,
         });
         if (hard) throw err;
-        process.exit(0);
+        process.exit(1);
       }
       console.error("No previous JSON available. Exiting without changes.");
       await writeSyncStatus({
@@ -2825,7 +2826,7 @@ async function main() {
         reason: err.message || err,
       });
       if (hard) throw err;
-      process.exit(0);
+      process.exit(1);
     }
   }
 
@@ -2911,7 +2912,8 @@ const isDirectRun = process.argv[1] && fileURLToPath(import.meta.url) === path.r
 if (isDirectRun) {
   main().catch((err) => {
     console.error(err);
-    const hard = process.env.IMMOWELT_HARD_FAIL === "1" || forceScrape;
-    process.exit(hard ? 1 : 0);
+    // Always non-zero: rejected/empty/LKG guards already wrote status; admin-api
+    // maps exit_code!==0 → sync.failed:true (never pretend "no changes").
+    process.exit(1);
   });
 }
