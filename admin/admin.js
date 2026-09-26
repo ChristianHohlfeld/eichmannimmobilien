@@ -527,11 +527,16 @@ function renderEigen() {
     .map((L) => {
       const local = L.local_url ? `../${L.local_url}` : "#";
       const nImg = (L.gallery_bases || L.images || []).length;
+      const visibilityBadge =
+        L.site_hidden === true
+          ? ' <span class="badge warn">ausgeblendet</span>'
+          : ' <span class="badge ok">öffentlich</span>';
+      const toggleLabel = L.site_hidden === true ? "Einblenden" : "Ausblenden";
+      const toggleClass = L.site_hidden === true ? "btn-primary" : "btn-outline";
       return `<tr>
         <td>
           <strong>${esc(L.title || "–")}</strong>
-          <div><span class="badge ok">nur bei uns</span>
-          ${L.site_hidden ? ' <span class="badge warn">ausgeblendet</span>' : ""}
+          <div><span class="badge ok">nur bei uns</span>${visibilityBadge}
           ${L.active === false ? ' <span class="badge warn">inaktiv</span>' : ""}
           ${nImg ? ` <span class="badge">${nImg} Fotos</span>` : ""}</div>
           <div class="mono muted">${esc(L.id)}</div>
@@ -540,6 +545,7 @@ function renderEigen() {
         <td>${esc(L.price || "–")}</td>
         <td>${esc(L.status || "–")}</td>
         <td>
+          <button type="button" class="btn ${toggleClass} btn-sm" data-toggle-hidden="${esc(L.id)}">${toggleLabel}</button>
           <button type="button" class="btn btn-outline btn-sm" data-edit="${esc(L.id)}">Bearbeiten</button>
           ${
             L.local_url && L.site_hidden !== true && L.active !== false
@@ -550,6 +556,11 @@ function renderEigen() {
       </tr>`;
     })
     .join("");
+  tbody.querySelectorAll("[data-toggle-hidden]").forEach((btn) => {
+    btn.addEventListener("click", () =>
+      toggleVisibility(btn.getAttribute("data-toggle-hidden"))
+    );
+  });
   tbody.querySelectorAll("[data-edit]").forEach((btn) => {
     btn.addEventListener("click", () => openEditor(btn.getAttribute("data-edit")));
   });
