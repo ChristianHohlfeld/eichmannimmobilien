@@ -614,6 +614,7 @@ function renderEigen() {
         <td>
           <button type="button" class="btn ${toggleClass} btn-sm" data-toggle-hidden="${esc(L.id)}" title="${toggleLabel} auf der Website">${toggleLabel}</button>
           <button type="button" class="btn btn-outline btn-sm" data-edit="${esc(L.id)}">Bearbeiten</button>
+          <button type="button" class="btn btn-outline btn-sm" data-delete="${esc(L.id)}" style="color:var(--err)" title="Eigen-Inserat löschen">Löschen</button>
           ${
             L.local_url && L.site_hidden !== true && L.active !== false
               ? `<a class="btn btn-outline btn-sm" href="${esc(local)}" target="_blank" rel="noopener">Seite</a>`
@@ -630,6 +631,9 @@ function renderEigen() {
   });
   tbody.querySelectorAll("[data-edit]").forEach((btn) => {
     btn.addEventListener("click", () => openEditor(btn.getAttribute("data-edit")));
+  });
+  tbody.querySelectorAll("[data-delete]").forEach((btn) => {
+    btn.addEventListener("click", () => deleteEigenListing(btn.getAttribute("data-delete")));
   });
 }
 
@@ -972,25 +976,31 @@ async function onSubmit(ev) {
   }
 }
 
-async function onDelete() {
-  const id = $("f-id").value;
+/** Eigen delete only — Immowelt never gets this. Always via Abnahme (confirmThenMutate). */
+async function deleteEigenListing(id) {
   if (!id) return;
-  $("form-msg").textContent = "Löschung wird geprüft …";
+  const editorOpen = !$("card-editor").classList.contains("hidden") && $("f-id").value === id;
+  if (editorOpen) $("form-msg").textContent = "Löschung wird geprüft …";
   try {
     const res = await confirmThenMutate("/eigen/delete", (confirm) => ({ id, confirm }));
     if (res.cancelled) {
-      $("form-msg").textContent = "Löschen abgebrochen. Die Website bleibt unverändert.";
+      if (editorOpen) $("form-msg").textContent = "Löschen abgebrochen. Die Website bleibt unverändert.";
+      toast("Löschen abgebrochen. Die Website bleibt unverändert.", "");
       return;
     }
     eigenListings = eigenListings.filter((x) => x.id !== id);
     renderEigen();
-    closeEditor();
+    if (editorOpen) closeEditor();
     toast("Eigen-Inserat gelöscht", "ok");
     await reloadAll();
   } catch (e) {
-    $("form-msg").textContent = e.message || String(e);
+    if (editorOpen) $("form-msg").textContent = e.message || String(e);
     toast(e.message || String(e), "err");
   }
+}
+
+async function onDelete() {
+  await deleteEigenListing($("f-id").value);
 }
 
 /** Immowelt Sync: never silent — Abnahme modal OR durable Immowelt-Stand status. */
