@@ -412,6 +412,79 @@ function exposeIdFromUrl(url) {
   return m ? m[1].toLowerCase() : null;
 }
 
+
+/** Soft-shorten for meta/OG: never cut mid-word or mid-sentence. */
+function softShorten(text, maxLen = 155) {
+  const t = String(text || "").replace(/\s+/g, " ").trim();
+  if (t.length <= maxLen) return t;
+  const window = t.slice(0, maxLen + 1);
+  const sentenceEnds = [". ", "! ", "? ", ".\n", "!\n", "?\n"];
+  let bestSentence = -1;
+  for (const end of sentenceEnds) {
+    const idx = window.lastIndexOf(end);
+    if (idx > bestSentence) bestSentence = idx;
+  }
+  if (bestSentence >= Math.floor(maxLen * 0.45)) {
+    return window.slice(0, bestSentence + 1).trim();
+  }
+  const sp = window.lastIndexOf(" ");
+  if (sp >= Math.floor(maxLen * 0.55)) {
+    return window.slice(0, sp).replace(/[,\s;:–—\-]+$/u, "").trim() + "…";
+  }
+  return t.slice(0, maxLen).replace(/\s+\S*$/, "").trim() + "…";
+}
+
+function parseNumberOfRooms(rooms) {
+  const s = String(rooms || "");
+  const half = s.match(/(\d+)\s*(?:1\s*\/\s*2|½)/);
+  if (half) return Number(half[1]) + 0.5;
+  const m = s.match(/(\d+(?:[.,]\d+)?)/);
+  return m ? Number(m[1].replace(",", ".")) : undefined;
+}
+
+function parseFloorSize(area) {
+  const s = String(area || "");
+  const m = s.match(/(\d+(?:[.,]\d+)?)/);
+  if (!m) return undefined;
+  return {
+    "@type": "QuantitativeValue",
+    value: Number(m[1].replace(",", ".")),
+    unitCode: "MTK",
+  };
+}
+
+function postalAddressFromListing(listing) {
+  const facts = listing.facts && typeof listing.facts === "object" ? listing.facts : {};
+  const loc = String(listing.location || "");
+  const plz =
+    (String(facts.PLZ || "").match(/\d{5}/) || [])[0] ||
+    (loc.match(/\((\d{5})\)/) || [])[1] ||
+    (loc.match(/\b(\d{5})\b/) || [])[1] ||
+    undefined;
+  const ort = String(facts.Ort || "").trim() || (/\bKonstanz\b/i.test(loc) ? "Konstanz" : "") || "Konstanz";
+  const addr = {
+    "@type": "PostalAddress",
+    addressLocality: ort,
+    addressCountry: "DE",
+  };
+  if (plz) addr.postalCode = plz;
+  const district = loc.split(",")[0]?.trim();
+  if (district && district.length < 48 && !new RegExp(`^${ort}$`, "i").test(district)) {
+    // District / Stadtteil – keep as streetAddress stand-in (no exact street from Immowelt)
+    addr.streetAddress = district;
+  }
+  return addr;
+}
+
+const OG_SHARE_WIDTH = 1200;
+const OG_SHARE_HEIGHT = 630;
+
+function shareOgBase(imageBase) {
+  if (!imageBase) return null;
+  if (/-og$/i.test(imageBase)) return imageBase;
+  return `${imageBase}-og`;
+}
+
 function shortId(id) {
   return id.slice(0, 8);
 }
@@ -832,7 +905,7 @@ function pictureTag(base, alt, { prefix = "", loading = "lazy", className = "" }
             </picture>`;
 }
 
-function renderExposeHtml(listing) {
+function renderExposeHtml(listing, ogShare = null) {
   const p = "../";
   const badge = badgeFor(listing);
   const ref = listingReference(listing);
@@ -847,20 +920,23 @@ function renderExposeHtml(listing) {
   ]
     .filter(Boolean)
     .join(" · ");
-  const metaDesc = normalizeContactPhoneDisplay(
-    listing.description ||
-    listing.short_description ||
-    `${title} in ${listing.location || "Konstanz"} – ${descBits}. Exposé anfragen bei Immobilien Eichmann.`
-  )
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 160);
+  const metaDesc = softShorten(
+    normalizeContactPhoneDisplay(
+      listing.description ||
+      listing.short_description ||
+      `${title} in ${listing.location || "Konstanz"} – ${descBits}. Exposé anfragen bei Immobilien Eichmann.`
+    ),
+    155
+  );
 
   const canonical = `${SITE_ORIGIN}/${listing.local_url}`;
-  const ogRel = assetRelPath(listing.image_base);
-  const ogImage = ogRel
-    ? `${SITE_ORIGIN}/${ogRel}.jpg`
-    : `${SITE_ORIGIN}/assets/share-card-plain-v2.jpg`;
+  const ogImage = ogShare?.url
+    || (assetRelPath(listing.image_base) ? `${SITE_ORIGIN}/${assetRelPath(listing.image_base)}.jpg` : null)
+    || `${SITE_ORIGIN}/assets/share-card-plain-v2.jpg`;
+  const ogWidth = ogShare?.width || (ogShare?.url ? OG_SHARE_WIDTH : 1200);
+  const ogHeight = ogShare?.height || (ogShare?.url ? OG_SHARE_HEIGHT : 630);
+  // Fallback share-card is known 1200×630; tiny main thumbs must not claim those dims.
+  const ogDimsKnown = Boolean(ogShare?.url) || ogImage.endsWith("/assets/share-card-plain-v2.jpg");
 
   const factRows = [
     ref ? ["Objektnummer", ref] : null,
@@ -996,13 +1072,33 @@ function renderExposeHtml(listing) {
   const anfrageSubject = `Exposé-Anfrage: ${title}`;
   const prefillMsg = `Guten Tag,\\nich interessiere mich für: ${title}${listing.location ? ` (${listing.location})` : ""}.\\nBitte senden Sie mir das Exposé / weitere Informationen.\\n\\nMit freundlichen Grüßen`;
 
+  const galleryImageUrls = [
+    listing.image_base,
+    ...(listing.gallery_bases || []).filter((b) => b && b !== listing.image_base),
+  ]
+    .filter(Boolean)
+    .map((b) => assetRelPath(b))
+    .filter(Boolean)
+    .slice(0, 12)
+    .map((rel) => `${SITE_ORIGIN}/${rel}.jpg`);
+  if (ogShare?.url && !galleryImageUrls.includes(ogShare.url)) {
+    galleryImageUrls.unshift(ogShare.url);
+  } else if (!galleryImageUrls.length && ogImage) {
+    galleryImageUrls.push(ogImage);
+  }
+  if (galleryImageUrls.length > 12) galleryImageUrls.length = 12;
+
+  const roomsNum = parseNumberOfRooms(listing.rooms);
+  const floorSize = parseFloorSize(listing.living_area);
+  const address = postalAddressFromListing(listing);
+
   const schema = {
     "@context": "https://schema.org",
     "@type": "RealEstateListing",
     name: title,
     description: metaDesc,
     url: canonical,
-    image: ogImage,
+    image: galleryImageUrls.length ? galleryImageUrls : ogImage,
     offers: listing.price
       ? {
           "@type": "Offer",
@@ -1011,9 +1107,9 @@ function renderExposeHtml(listing) {
           availability: "https://schema.org/InStock",
         }
       : undefined,
-    address: listing.location
-      ? { "@type": "PostalAddress", addressLocality: "Konstanz", streetAddress: listing.location }
-      : undefined,
+    address,
+    numberOfRooms: roomsNum,
+    floorSize: floorSize || undefined,
     broker: {
       "@type": "RealEstateAgent",
       name: "Immobilien Eichmann",
@@ -1022,6 +1118,33 @@ function renderExposeHtml(listing) {
       url: SITE_ORIGIN + "/",
     },
   };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE_ORIGIN + "/",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Angebote",
+        item: SITE_ORIGIN + "/index.html#angebote",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: title,
+        item: canonical,
+      },
+    ],
+  };
+
+  const waShareHref = `https://wa.me/?text=${encodeURIComponent(`${title} ${canonical}`)}`;
 
   return `<!DOCTYPE html>
 <html lang="de">
@@ -1039,6 +1162,8 @@ function renderExposeHtml(listing) {
   <meta property="og:description" content="${escapeHtml(metaDesc)}">
   <meta property="og:url" content="${escapeHtml(canonical)}">
   <meta property="og:image" content="${escapeHtml(ogImage)}">
+  ${ogDimsKnown ? `<meta property="og:image:width" content="${ogWidth}">
+  <meta property="og:image:height" content="${ogHeight}">` : ""}
   <meta property="og:image:alt" content="${escapeHtml(title)}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${escapeHtml(pageTitle)}">
@@ -1050,6 +1175,9 @@ function renderExposeHtml(listing) {
 <link rel="stylesheet" href="${p}css/styles.css?v=expose-mobile-overflow-v1">
   <script type="application/ld+json">
 ${JSON.stringify(schema, null, 2)}
+  </script>
+  <script type="application/ld+json">
+${JSON.stringify(breadcrumbSchema, null, 2)}
   </script>
 </head>
 <body>
@@ -1176,6 +1304,7 @@ ${JSON.stringify(schema, null, 2)}
             <div class="expose-secondary-actions">
               <a class="btn btn-outline btn-sm" href="tel:+491705225568">Anrufen +49 170 522 5568</a>
               <a class="btn btn-outline btn-sm" href="${p}kontakt.html?objekt=${encodeURIComponent(listing.slug)}#contact-form">Zum Kontaktformular</a>
+              <a class="btn btn-outline btn-sm" href="${escapeHtml(waShareHref)}" target="_blank" rel="noopener noreferrer">Per WhatsApp teilen</a>
               <a class="btn btn-outline btn-sm" href="${escapeHtml(listing.expose_url)}" target="_blank" rel="noopener noreferrer">Exposé auf Immowelt</a>
             </div>
             <p class="expose-disclaimer">Angaben ohne Gewähr. Maßgeblich sind die aktuellen Unterlagen und das Immowelt-Exposé.</p>
@@ -1352,8 +1481,14 @@ async function convertImages(srcPath, base, { fit = "cover", width = 800, height
 function collectKeepImageBases(listings) {
   const keep = new Set();
   for (const L of listings) {
-    if (L.image_base) keep.add(L.image_base);
-    for (const b of L.gallery_bases || []) keep.add(b);
+    if (L.image_base) {
+      keep.add(L.image_base);
+      keep.add(shareOgBase(L.image_base));
+    }
+    for (const b of L.gallery_bases || []) {
+      keep.add(b);
+      keep.add(shareOgBase(b));
+    }
     for (const b of L.floor_plan_bases || []) keep.add(b);
   }
   return keep;
@@ -1377,6 +1512,111 @@ async function syncOneImage(url, base, opts = {}) {
     await unlink(tmp).catch(() => {});
     return false;
   }
+}
+
+
+async function localListingImagePath(base) {
+  const rel = assetRelPath(base);
+  if (!rel) return null;
+  const jpg = path.join(ROOT, `${rel}.jpg`);
+  if (await fileExists(jpg)) return jpg;
+  const webp = path.join(ROOT, `${rel}.webp`);
+  if (await fileExists(webp)) return webp;
+  return null;
+}
+
+async function pickLargestLocalSource(listing) {
+  const seen = new Set();
+  const candidates = [];
+  for (const b of [...(listing.gallery_bases || []), listing.image_base]) {
+    if (!b || seen.has(b)) continue;
+    seen.add(b);
+    candidates.push(b);
+  }
+  let sharp;
+  try {
+    sharp = (await import("sharp")).default;
+  } catch {
+    // Fall back to first existing file without measuring
+    for (const b of candidates) {
+      const p = await localListingImagePath(b);
+      if (p) return p;
+    }
+    return null;
+  }
+  let bestPath = null;
+  let bestArea = -1;
+  for (const b of candidates) {
+    const p = await localListingImagePath(b);
+    if (!p) continue;
+    try {
+      const meta = await sharp(p).metadata();
+      const area = (meta.width || 0) * (meta.height || 0);
+      if (area > bestArea) {
+        bestArea = area;
+        bestPath = p;
+      }
+    } catch {
+      if (!bestPath) bestPath = p;
+    }
+  }
+  return bestPath;
+}
+
+/**
+ * Ensure a 1200×630 share crop exists for WhatsApp/FB/Twitter previews.
+ * Prefer largest local gallery asset (≥ gallery 800×600) over tiny main thumbs.
+ */
+async function ensureShareOgImage(listing) {
+  if (!listing?.image_base) return null;
+  const ogBase = shareOgBase(listing.image_base);
+  const rel = assetRelPath(ogBase);
+  if (!rel) return null;
+  const outJpg = path.join(ROOT, `${rel}.jpg`);
+  const outWebp = path.join(ROOT, `${rel}.webp`);
+
+  let sharp;
+  try {
+    sharp = (await import("sharp")).default;
+  } catch {
+    console.warn("sharp not installed – cannot build share OG crop");
+    return null;
+  }
+
+  let needsWrite = true;
+  if (await fileExists(outJpg)) {
+    try {
+      const meta = await sharp(outJpg).metadata();
+      if (meta.width === OG_SHARE_WIDTH && meta.height === OG_SHARE_HEIGHT) {
+        needsWrite = false;
+      }
+    } catch {
+      needsWrite = true;
+    }
+  }
+
+  if (needsWrite) {
+    const src = await pickLargestLocalSource(listing);
+    if (!src) return null;
+    await mkdir(path.dirname(outJpg), { recursive: true });
+    const pipeline = sharp(src).rotate().resize({
+      width: OG_SHARE_WIDTH,
+      height: OG_SHARE_HEIGHT,
+      fit: "cover",
+      position: "centre",
+      withoutEnlargement: false,
+    });
+    await pipeline.clone().jpeg({ quality: 85, mozjpeg: true }).toFile(outJpg);
+    await pipeline.clone().webp({ quality: 80 }).toFile(outWebp);
+    console.log(`Share OG ${ogBase} (${OG_SHARE_WIDTH}×${OG_SHARE_HEIGHT}) from ${path.basename(src)}`);
+  }
+
+  return {
+    base: ogBase,
+    url: `${SITE_ORIGIN}/${rel}.jpg`,
+    width: OG_SHARE_WIDTH,
+    height: OG_SHARE_HEIGHT,
+  };
 }
 
 function remoteMediaKey(rawUrl) {
@@ -1475,7 +1715,7 @@ async function syncImages(data, { skipDownload = false } = {}) {
 
 /** Managed image stems: Immowelt NN-xxxxxxxx(+gallery) or Admin admin-xxxxxxxx-ts */
 const MANAGED_IMAGE_STEM_RE =
-  /^(?:\d{2}-[a-f0-9]{8}(?:-g\d{2}|-fp\d{2})?|admin-[a-f0-9]{8}-\d+)(?:\.[a-z]+)?$/i;
+  /^(?:\d{2}-[a-f0-9]{8}(?:-g\d{2}|-fp\d{2}|-og)?|admin-[a-f0-9]{8}-\d+(?:-og)?)(?:\.[a-z]+)?$/i;
 
 async function cleanupOrphanImages(data) {
   await mkdir(IMAGES_DIR, { recursive: true });
@@ -1669,7 +1909,8 @@ async function renderExposePages(data) {
   const keepSlugs = new Set(detailed.map((L) => L.slug));
 
   for (const L of detailed) {
-    const html = renderExposeHtml(L);
+    const ogShare = dryRun ? null : await ensureShareOgImage(L);
+    const html = renderExposeHtml(L, ogShare);
     const fp = path.join(OBJEKT_DIR, `${L.slug}.html`);
     if (!dryRun) await writeFile(fp, html, "utf8");
     console.log(`Wrote ${L.local_url}`);
