@@ -1939,8 +1939,9 @@ a.listing-card:focus-visible {
 }
 .expose-description.prose p:last-child { margin-bottom: 0; }
 
-/* immowelt-sync-status-v1 */
+/* immowelt-sync-status-v1 — public pages: never show sync/API state (Admin only) */
 .immowelt-sync-status {
+  display: none !important;
   margin: 0.35rem 0 0;
   font-size: 0.78rem;
   line-height: 1.35;
