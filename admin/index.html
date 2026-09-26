@@ -5,24 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Admin – Immobilien Eichmann</title>
-  <link rel="stylesheet" href="admin.css?v=sync-outcome-1" />
+  <link rel="stylesheet" href="admin.css?v=admin-copy-2" />
 </head>
 <body>
   <header class="app-header hidden" id="app-header">
     <div>
       <h1>Admin</h1>
-      <div class="sub">Immobilien Eichmann · Immowelt + Eigen-Inserate</div>
+      <div class="sub">Immowelt und eigene Inserate verwalten</div>
     </div>
     <div class="actions">
-      <button type="button" class="btn btn-ghost btn-sm" id="btn-immowelt-sync" title="Immowelt-Objekte abgleichen, Ist und Neu prüfen">Immowelt Sync</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-immowelt-sync" title="Immowelt einlesen und Änderungen prüfen">Immowelt synchronisieren</button>
       <button type="button" class="btn btn-ghost btn-sm" id="btn-logout">Abmelden</button>
     </div>
   </header>
 
   <div class="sot-banner hidden" id="sot-banner" role="status">
-    <strong>Immowelt:</strong> Objekte ein- oder ausblenden. Das Immowelt-Konto wird nicht verändert.
-    <strong>Eigen:</strong> Eigene Inserate anlegen, Bilder hochladen und bearbeiten.
-    Änderungen erscheinen erst nach Übernahme: <em>Ist</em> (jetzt online) und <em>Neu</em> vergleichen, dann <em>Übernehmen</em> oder <em>Abbrechen</em>.
+    Immowelt synchronisieren, Ist und Neu prüfen, dann <strong>Übernehmen</strong> oder <strong>Abbrechen</strong>.
+    Immowelt-Objekte lassen sich hier nur ein- und ausblenden; gelöscht werden sie in Immowelt. Eigene Inserate bleiben bei der Immowelt-Synchronisierung erhalten und können Sie hier anlegen, bearbeiten, ausblenden oder löschen.
   </div>
 
   <main class="wrap">
@@ -56,13 +55,6 @@
           <strong>Immowelt-Stand</strong>
           <p class="hint" id="immowelt-health-line">Prüfe …</p>
           <p class="hint" id="immowelt-health-detail"></p>
-          <p id="immowelt-sync-outcome" class="sync-outcome hidden" role="status" aria-live="polite"></p>
-        </div>
-        <div class="card" style="margin-bottom:16px">
-          <strong>Hinweis</strong>
-          <p class="hint" style="margin:4px 0 0">Objektdaten bitte weiterhin in Immowelt pflegen. Hier nur Ein- oder Ausblenden auf unserer Website — kein Löschen.
-            Entfernte Immowelt-Objekte verschwinden nach <strong>Immowelt Sync</strong> und Übernahme.
-            Eigene Inserate (anlegen/löschen) finden Sie im Tab „Eigen-Inserate“.</p>
         </div>
         <div class="card table-wrap" style="padding:0;overflow:hidden">
           <table class="listings">
@@ -93,7 +85,7 @@
 
         <div class="card hidden" id="card-editor" style="margin-bottom:16px">
           <h3 style="margin-top:0;color:var(--primary)" id="editor-heading">Neues Eigen-Inserat</h3>
-          <p class="hint">Auf der Website erscheint das Badge <strong>nur bei uns</strong>. Immowelt wird nicht verändert. Speichern öffnet den Vergleich Ist / Neu.</p>
+          <p class="hint">Eigene Inserate bleiben von Immowelt getrennt. Sie können sie hier bearbeiten und mit Fotos ergänzen. Mit „Übernehmen“ wird die Änderung sichtbar.</p>
           <form id="form-eigen">
             <input type="hidden" id="f-id" />
             <div class="form-grid">
@@ -102,7 +94,7 @@
                 <input type="text" id="f-title" required placeholder="z. B. Eigentumswohnung Konstanz" />
               </div>
               <div>
-                <label for="f-slug">Slug</label>
+                <label for="f-slug">Seiten-Adresse</label>
                 <input type="text" id="f-slug" placeholder="auto" />
               </div>
               <div>
@@ -139,7 +131,7 @@
               </div>
               <div class="full">
                 <label>Bilder / Galerie</label>
-                <p class="hint" style="margin-top:0">Mehrere Fotos hochladen (JPEG/PNG/WebP, max. 8&nbsp;MB). Reihenfolge = Galerie auf dem Exposé (wie Immowelt). Erstes Bild = Hauptbild.</p>
+                <p class="hint" style="margin-top:0">Fotos auswählen (JPEG, PNG oder WebP; bis 8&nbsp;MB). Das erste Foto ist das Hauptbild.</p>
                 <div id="gallery-editor" class="gallery-editor">
                   <div id="gallery-thumbs" class="gallery-thumbs"></div>
                   <div class="gallery-actions">
@@ -152,8 +144,8 @@
                   <p id="gallery-msg" class="hint"></p>
                 </div>
                 <details class="url-fallback">
-                  <summary>Optional: Bild-URL statt Upload</summary>
-                  <label for="f-image">Hauptbild-URL</label>
+                  <summary>Optional: Bild-Adresse verwenden</summary>
+                  <label for="f-image">Bild-Adresse</label>
                   <input type="url" id="f-image" placeholder="https://…" />
                 </details>
               </div>
@@ -165,7 +157,7 @@
               </div>
             </div>
             <div class="btn-row">
-              <button type="submit" class="btn btn-primary">Speichern &amp; übernehmen</button>
+              <button type="submit" class="btn btn-primary">Speichern und prüfen</button>
               <button type="button" class="btn btn-outline" id="btn-cancel">Abbrechen</button>
               <button type="button" class="btn btn-outline" id="btn-delete" style="display:none;color:var(--err)">Löschen</button>
             </div>
@@ -194,16 +186,16 @@
   </main>
 
   <div id="pending-banner" class="pending-banner hidden" role="status">
-    <strong>Übernahme ausstehend</strong>
-    <span id="pending-banner-text">Es gibt Immowelt- oder Eigen-Änderungen, die noch nicht online sind.</span>
-    <button type="button" class="btn btn-primary btn-sm" id="btn-review-pending">Ist / Neu prüfen</button>
+    <strong>Änderungen warten</strong>
+    <span id="pending-banner-text">Die bisherige Website bleibt, bis Sie die Änderung prüfen und übernehmen.</span>
+    <button type="button" class="btn btn-primary btn-sm" id="btn-review-pending">Ist und Neu prüfen</button>
   </div>
 
   <div id="abnahme-modal" class="abnahme-modal hidden" role="dialog" aria-modal="true" aria-labelledby="abnahme-title">
     <div class="abnahme-backdrop" data-abnahme-cancel></div>
     <div class="abnahme-dialog">
       <h2 id="abnahme-title">Änderungen übernehmen?</h2>
-      <p class="hint" id="abnahme-lead">Vergleichen Sie Ist (jetzt online) und Neu (nach Übernahme).</p>
+      <p class="hint" id="abnahme-lead">Vergleichen Sie „Ist“ (bisher online) mit „Neu“. Erst mit „Übernehmen“ wird die Website geändert.</p>
       <p id="abnahme-warning" class="warn-box hidden"></p>
       <div id="abnahme-ist-neu" class="abnahme-ist-neu"></div>
       <div id="abnahme-sections" class="abnahme-sections"></div>
@@ -215,6 +207,6 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="admin.js?v=sync-outcome-1" type="module"></script>
+  <script src="admin.js?v=admin-copy-2" type="module"></script>
 </body>
 </html>
