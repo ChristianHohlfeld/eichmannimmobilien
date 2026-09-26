@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Admin – Immobilien Eichmann</title>
-  <link rel="stylesheet" href="admin.css?v=sync-loading-2" />
+  <link rel="stylesheet" href="admin.css?v=sync-loading-3" />
 </head>
 <body>
   <header class="app-header hidden" id="app-header">
@@ -17,6 +17,7 @@
       <button type="button" class="btn btn-ghost btn-sm" id="btn-immowelt-sync" title="Neue Inserate von Immowelt holen">Immowelt Sync</button>
       <button type="button" class="btn btn-ghost btn-sm" id="btn-logout">Abmelden</button>
     </div>
+    <div id="immowelt-sync-bar" class="immowelt-sync-bar hidden" role="status" aria-live="polite"></div>
   </header>
 
   <div class="sot-banner hidden" id="sot-banner" role="status">
@@ -44,6 +45,7 @@
       <nav class="tabs" role="tablist" aria-label="Admin-Bereiche">
         <button type="button" class="tab active" role="tab" aria-selected="true" data-tab="immowelt" id="tab-immowelt">Immowelt</button>
         <button type="button" class="tab" role="tab" aria-selected="false" data-tab="eigen" id="tab-eigen">Eigen-Inserate</button>
+        <button type="button" class="tab" role="tab" aria-selected="false" data-tab="sicherung" id="tab-sicherung">Sicherung</button>
       </nav>
 
       <!-- Immowelt panel -->
@@ -183,6 +185,39 @@
           </table>
         </div>
       </div>
+
+      <!-- Sicherung panel -->
+      <div id="panel-sicherung" class="tab-panel hidden" role="tabpanel">
+        <div class="toolbar">
+          <h2>Sicherung</h2>
+          <div class="btn-row" style="margin:0">
+            <button type="button" class="btn btn-primary btn-sm" id="btn-snapshot-create">Sicherung erstellen</button>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <p class="hint" style="margin-top:0">
+            Hier speichern Sie den aktuellen Stand von Inseraten, Eigen-Bildern und Einstellungen.
+            Es werden die 14 neuesten Stände behalten. Das Anmelde-Geheimnis wird nie in einer Sicherung abgelegt.
+          </p>
+          <p class="hint" id="sicherung-meta"></p>
+        </div>
+        <div class="card table-wrap" style="padding:0;overflow:hidden">
+          <table class="listings">
+            <thead>
+              <tr>
+                <th>Stand</th>
+                <th>Zeit</th>
+                <th>Größe</th>
+                <th>Version</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="sicherung-tbody">
+              <tr><td colspan="5" class="muted">Lade …</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -207,7 +242,24 @@
     </div>
   </div>
 
+  
+  <div id="restore-modal" class="abnahme-modal hidden" role="dialog" aria-modal="true" aria-labelledby="restore-title">
+    <div class="abnahme-backdrop" data-restore-cancel></div>
+    <div class="abnahme-dialog">
+      <h2 id="restore-title">Sicherung zurückspielen?</h2>
+      <p class="hint" id="restore-lead">Dadurch werden die aktuellen Daten durch den gewählten Stand ersetzt. Das lässt sich nicht rückgängig machen, außer Sie spielen danach eine andere Sicherung zurück.</p>
+      <div id="restore-overwrite" class="restore-overwrite"></div>
+      <label for="restore-phrase">Zur Bestätigung bitte genau <strong>RESTAURIEREN</strong> eingeben</label>
+      <input type="text" id="restore-phrase" autocomplete="off" spellcheck="false" placeholder="RESTAURIEREN" />
+      <p id="restore-error" class="err-box hidden"></p>
+      <div class="btn-row abnahme-actions">
+        <button type="button" class="btn btn-primary" id="restore-confirm" disabled>Zurückspielen</button>
+        <button type="button" class="btn btn-outline" id="restore-cancel" data-restore-cancel>Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast hidden"></div>
-  <script src="admin.js?v=sync-loading-2" type="module"></script>
+  <script src="admin.js?v=sync-loading-3" type="module"></script>
 </body>
 </html>

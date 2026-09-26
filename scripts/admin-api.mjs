@@ -14,6 +14,8 @@
  *   EICHMANN_SESSION_SECRET_FILE (default /var/lib/eichmann/admin-session.secret)
  *   EICHMANN_ADMIN_API_PORT (default 3847)
  *   EICHMANN_ADMIN_API_HOST (default 127.0.0.1)
+ *   EICHMANN_SNAPSHOTS_DIR (default /var/lib/eichmann/snapshots)
+ *   EICHMANN_SNAPSHOT_RETENTION (default 14)
  */
 import http from "node:http";
 import { spawn } from "node:child_process";
@@ -58,6 +60,16 @@ import {
   loadLiveListings,
 } from "./lib/publish-preview.mjs";
 import { publicImmoweltSyncReason } from "./lib/immowelt-public-reason.mjs";
+import {
+  createSnapshot,
+  listSnapshots,
+  restoreSnapshot,
+  restoreOverwriteList,
+  formatBytes,
+  RESTORE_PHRASE,
+  RETENTION,
+  SNAPSHOTS_ROOT,
+} from "./lib/snapshots.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const HOST = process.env.EICHMANN_ADMIN_API_HOST || "127.0.0.1";
@@ -915,6 +927,88 @@ async function handle(req, res) {
       } finally {
         db.close();
       }
+    }
+
+
+    // --- App-Sicherungen (Stufe A snapshots) ---
+    if (method === "GET" && p === "/snapshots") {
+      const snapshots = listSnapshots().map((s) => ({
+        id: s.id,
+        created_at: s.created_at,
+        deploy_commit: s.deploy_commit,
+        total_bytes: s.total_bytes,
+        total_human: formatBytes(s.total_bytes),
+        parts: s.parts || {},
+        reason: s.reason || null,
+      }));
+      return send(res, 200, {
+        ok: true,
+        retention: RETENTION,
+        snapshots_root: SNAPSHOTS_ROOT,
+        snapshots,
+      });
+    }
+
+    if (method === "GET" && p.startsWith("/snapshots/") && p.endsWith("/preview")) {
+      const id = decodeURIComponent(p.slice("/snapshots/".length, -"/preview".length));
+      if (!id || id.includes("..") || id.includes("/")) {
+        return send(res, 400, { ok: false, error: "Ungültige Sicherungs-ID" });
+      }
+      const preview = restoreOverwriteList(id);
+      return send(res, 200, { ok: true, ...preview });
+    }
+
+    if (method === "POST" && p === "/snapshots") {
+      const body = (await readBody(req)) || {};
+      const snap = await createSnapshot({
+        reason: body.reason === "cron" ? "cron" : "manual",
+      });
+      return send(res, 200, {
+        ok: true,
+        snapshot: {
+          id: snap.id,
+          created_at: snap.created_at,
+          deploy_commit: snap.deploy_commit,
+          total_bytes: snap.total_bytes,
+          total_human: formatBytes(snap.total_bytes),
+          parts: snap.parts || {},
+        },
+        retention: RETENTION,
+      });
+    }
+
+    if (method === "POST" && p === "/snapshots/restore") {
+      const body = (await readBody(req)) || {};
+      const id = String(body.id || "").trim();
+      if (!id || id.includes("..") || id.includes("/")) {
+        return send(res, 400, { ok: false, error: "Ungültige Sicherungs-ID" });
+      }
+      const phrase = String(body.confirm_phrase || body.confirmPhrase || "").trim();
+      // Always return overwrite preview on wrong/missing phrase (helps UI)
+      if (phrase !== RESTORE_PHRASE) {
+        const preview = restoreOverwriteList(id);
+        return send(res, 400, {
+          ok: false,
+          error: `Bitte zur Bestätigung genau „${RESTORE_PHRASE}“ eingeben.`,
+          requires_confirm_phrase: true,
+          confirm_phrase: RESTORE_PHRASE,
+          ...preview,
+        });
+      }
+      const result = await restoreSnapshot(id, {
+        confirmPhrase: phrase,
+        scheduleRestart: body.restart !== false,
+      });
+      return send(res, 200, {
+        ok: true,
+        restored: true,
+        id: result.id,
+        restored_at: result.restored_at,
+        published: result.published,
+        restart: result.restart,
+        message:
+          "Sicherung zurückgespielt. Die Website wurde neu erzeugt; der Admin-Dienst startet neu.",
+      });
     }
 
     return send(res, 404, { ok: false, error: `Unknown route ${method} ${p}` });

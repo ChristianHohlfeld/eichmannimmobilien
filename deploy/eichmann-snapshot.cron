@@ -1,0 +1,4 @@
+# App-Sicherungen Immobilien Eichmann – alle 12 Stunden, 14 Stände behalten
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+0 */12 * * * root cd /var/lib/eichmann/app && /usr/bin/node scripts/snapshot-cli.mjs create >> /var/log/eichmann-snapshot.log 2>&1

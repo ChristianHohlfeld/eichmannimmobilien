@@ -92,6 +92,7 @@ jobs:
             --exclude='.gitignore' \
             --exclude='media/' \
             --exclude='var/' \
+            --exclude='snapshots/' \
             ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEST_PATH}/"
           # Preserve Eigen uploads (media/eigen) across --delete deploys
           ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
@@ -119,6 +120,8 @@ jobs:
             --exclude node_modules/ \
             --exclude .git/ \
             --exclude var/ \
+            --exclude snapshots/ \
+            --exclude '**/snapshots/' \
             --exclude '**/*.db' \
             ./package.json ./package-lock.json ./scripts ./deploy \
             "${DEPLOY_USER}@${DEPLOY_HOST}:${APP}/"
@@ -156,5 +159,7 @@ jobs:
           chown -R www-data:www-data "$SITE" || true
           echo "SQLite SoT ready at $DB"
           # Install/refresh localhost admin API + nginx proxy
+          mkdir -p /var/lib/eichmann/snapshots
+          chmod 755 /var/lib/eichmann/snapshots
           bash "$APP/deploy/install-admin-api.sh"
           REMOTE
