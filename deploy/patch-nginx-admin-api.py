@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""Insert /admin/api/ proxy + /admin/eigen/ redirect into nginx site config."""
+"""Insert /admin/api/ proxy + /admin/eigen/ redirect into nginx site config.
+
+Also ensures client_max_body_size ~40m on /admin/api/ for multipart uploads.
+"""
 from pathlib import Path
 
 p = Path("/etc/nginx/sites-available/immobilieneichmann.de")
 text = p.read_text()
-if "location /admin/api/" in text:
-    print("nginx: /admin/api/ already present")
-    raise SystemExit(0)
+changed = False
 
 snippet = """
     # Admin API (localhost Node) — session cookie auth, no GitHub PAT
+    # Multipart eigen-image uploads need a raised body limit (default nginx is 1m).
     location /admin/api/ {
+        client_max_body_size 40m;
         proxy_pass http://127.0.0.1:3847;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -32,11 +35,33 @@ snippet = """
 
 """
 
-marker = "    location ~* \\.(css|js|mjs|"
-if marker in text:
-    text = text.replace(marker, snippet + marker, 1)
+if "location /admin/api/" not in text:
+    marker = "    location ~* \\.(css|js|mjs|"
+    if marker in text:
+        text = text.replace(marker, snippet + marker, 1)
+    else:
+        text = text.replace("\n    location / {\n", snippet + "\n    location / {\n", 1)
+    changed = True
+    print("nginx: inserted /admin/api/ + eigen redirect")
 else:
-    text = text.replace("\n    location / {\n", snippet + "\n    location / {\n", 1)
+    print("nginx: /admin/api/ already present")
 
-p.write_text(text)
-print("nginx: inserted /admin/api/ + eigen redirect")
+# Ensure client_max_body_size inside existing /admin/api/ block
+start = text.find("location /admin/api/")
+if start >= 0:
+    brace = text.find("{", start)
+    end = text.find("\n    }", brace)
+    if brace >= 0 and end > brace:
+        block = text[brace : end + 6]
+        if "client_max_body_size" not in block:
+            insert_at = brace + 1
+            text = text[:insert_at] + "\n        client_max_body_size 40m;" + text[insert_at:]
+            changed = True
+            print("nginx: added client_max_body_size 40m to /admin/api/")
+        else:
+            print("nginx: client_max_body_size already set for /admin/api/")
+
+if changed:
+    p.write_text(text)
+else:
+    print("nginx: no file changes needed")
