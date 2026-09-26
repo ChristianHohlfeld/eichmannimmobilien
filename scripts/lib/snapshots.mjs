@@ -613,11 +613,15 @@ export function scheduleApiRestart() {
  * Atomic restore: stage → fsync → swap DB+media+config+status → publish → schedule API restart.
  * Does NOT include or overwrite admin-session.secret.
  */
+export function normalizeRestorePhrase(value) {
+  return String(value || "").trim().toUpperCase();
+}
+
 export async function restoreSnapshot(id, { confirmPhrase, scheduleRestart = true } = {}) {
   const safeId = assertSafeSnapshotId(id);
-  if (String(confirmPhrase || "").trim() !== RESTORE_PHRASE) {
+  if (normalizeRestorePhrase(confirmPhrase) !== RESTORE_PHRASE) {
     const err = new Error(
-      `Bitte zur Bestätigung genau „${RESTORE_PHRASE}“ eingeben.`
+      `Bitte zur Bestätigung „${RESTORE_PHRASE}“ eingeben (Groß-/Kleinschreibung egal).`
     );
     err.status = 400;
     throw err;

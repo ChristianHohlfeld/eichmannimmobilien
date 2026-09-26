@@ -743,6 +743,7 @@ table.listings tr:hover td { background: #fafaf8; }
 .restore-overwrite { margin: 12px 0 16px; }
 .restore-list { margin: 8px 0 0; padding-left: 1.25rem; }
 .restore-list li { margin: 6px 0; }
+/* Visual uppercase only; .value may stay mixed — client+server normalize with toUpperCase */
 #restore-phrase {
   width: 100%;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -750,6 +751,21 @@ table.listings tr:hover td { background: #fafaf8; }
   text-transform: uppercase;
 }
 .row-actions { white-space: nowrap; text-align: right; }
+@media (max-width: 720px) {
+  .row-actions {
+    white-space: normal;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    text-align: left;
+  }
+  .row-actions .btn {
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+  }
+}
 
 /* Compact Abnahme summary (default) — full cards behind Details */
 .abnahme-summary {

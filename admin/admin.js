@@ -1458,7 +1458,7 @@ function renderDoSicherung() {
         (droplet.id || "—") +
         " · " +
         doSnapshotsList.length +
-        " Snapshot(s). Wiederherstellen nur über die DO-Konsole."
+        " Snapshot(s). Wiederherstellen nur über die DigitalOcean-Website (Links in der Tabelle)."
       : "";
   }
 
@@ -1616,11 +1616,15 @@ async function openRestoreModal(id) {
   }
 }
 
+function normalizeRestorePhrase(value) {
+  return String(value || "").trim().toUpperCase();
+}
+
 function onRestorePhraseInput() {
   const phrase = $("restore-phrase");
   const conf = $("restore-confirm");
   if (!phrase || !conf) return;
-  conf.disabled = phrase.value.trim() !== "RESTAURIEREN";
+  conf.disabled = normalizeRestorePhrase(phrase.value) !== "RESTAURIEREN";
 }
 
 async function onConfirmRestore() {
@@ -1628,10 +1632,10 @@ async function onConfirmRestore() {
   const phrase = $("restore-phrase");
   const err = $("restore-error");
   const conf = $("restore-confirm");
-  const typed = (phrase && phrase.value.trim()) || "";
+  const typed = normalizeRestorePhrase(phrase && phrase.value);
   if (typed !== "RESTAURIEREN") {
     if (err) {
-      err.textContent = "Bitte genau RESTAURIEREN eingeben.";
+      err.textContent = "Bitte RESTAURIEREN eingeben (Groß-/Kleinschreibung egal).";
       err.classList.remove("hidden");
     }
     return;

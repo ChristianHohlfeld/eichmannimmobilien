@@ -69,6 +69,7 @@ import {
   assertSafeSnapshotId,
   streamSnapshotDownload,
   RESTORE_PHRASE,
+  normalizeRestorePhrase,
   RETENTION,
   SNAPSHOTS_ROOT,
 } from "./lib/snapshots.mjs";
@@ -1010,13 +1011,15 @@ async function handle(req, res) {
       } catch {
         return send(res, 400, { ok: false, error: "Ungültige Sicherungs-ID" });
       }
-      const phrase = String(body.confirm_phrase || body.confirmPhrase || "").trim();
+      const phrase = normalizeRestorePhrase(
+        body.confirm_phrase || body.confirmPhrase
+      );
       // Always return overwrite preview on wrong/missing phrase (helps UI)
       if (phrase !== RESTORE_PHRASE) {
         const preview = restoreOverwriteList(id);
         return send(res, 400, {
           ok: false,
-          error: `Bitte zur Bestätigung genau „${RESTORE_PHRASE}“ eingeben.`,
+          error: `Bitte zur Bestätigung „${RESTORE_PHRASE}“ eingeben (Groß-/Kleinschreibung egal).`,
           requires_confirm_phrase: true,
           confirm_phrase: RESTORE_PHRASE,
           ...preview,
