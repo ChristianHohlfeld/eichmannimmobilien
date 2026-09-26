@@ -1,6 +1,6 @@
 /**
  * Diff live public listings.json vs SQLite SoT (or a proposed listing set).
- * Used for the admin Abnahme / confirmation modal.
+ * Powers the admin Abnahme modal: Ist (live) vs Neu (would become live).
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -63,6 +63,10 @@ function summarizeListing(L) {
   };
 }
 
+function publicCards(listings) {
+  return (listings || []).filter(isPublic).map(summarizeListing);
+}
+
 /**
  * @param {object[]} liveListings from public data/listings.json
  * @param {object[]} nextListings proposed public set (usually from DB export)
@@ -97,17 +101,25 @@ export function diffListings(liveListings, nextListings) {
         ...summarizeListing(next),
         from: livePub ? "öffentlich" : "ausgeblendet",
         to: nextPub ? "öffentlich" : "ausgeblendet",
+        ist: summarizeListing(live),
+        neu: summarizeListing(next),
       });
     }
     if (fingerprint(live) !== fingerprint(next)) {
-      // Don't double-count pure visibility flips as "geändert" if only site_hidden/active changed
       const liveCore = { ...live, site_hidden: false, active: true };
       const nextCore = { ...next, site_hidden: false, active: true };
       if (fingerprint(liveCore) !== fingerprint(nextCore)) {
-        changed.push(summarizeListing(next));
+        changed.push({
+          ...summarizeListing(next),
+          ist: summarizeListing(live),
+          neu: summarizeListing(next),
+        });
       } else if (livePub === nextPub) {
-        // active/detail_page nuance without visibility label
-        changed.push(summarizeListing(next));
+        changed.push({
+          ...summarizeListing(next),
+          ist: summarizeListing(live),
+          neu: summarizeListing(next),
+        });
       }
     }
   }
@@ -126,6 +138,16 @@ export function diffListings(liveListings, nextListings) {
     removed,
     changed,
     visibility,
+    ist: {
+      label: "Jetzt online (Ist)",
+      count: livePublic,
+      listings: publicCards(liveListings),
+    },
+    neu: {
+      label: "Nach Übernahme (Neu)",
+      count: nextPublic,
+      listings: publicCards(nextListings),
+    },
     counts: {
       live_public: livePublic,
       next_public: nextPublic,
@@ -162,12 +184,11 @@ export function previewPublish(siteRoot, dbDoc) {
     message: diff.empty_risk
       ? "Achtung: Danach wären keine Inserate mehr öffentlich."
       : diff.has_changes
-        ? "Diese Inserate ändern sich auf der öffentlichen Website."
+        ? "Vergleichen Sie Ist (jetzt online) und Neu (nach Übernahme)."
         : "Keine Unterschiede zur öffentlichen Website.",
   };
 }
 
-/** Preview a single Eigen upsert against live+DB union mentally. */
 export function previewEigenUpsert(siteRoot, dbListings, proposedListing) {
   const byId = new Map((dbListings || []).map((L) => [L.id, L]));
   byId.set(proposedListing.id, {

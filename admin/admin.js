@@ -193,16 +193,38 @@ function renderAbnahmeSections(changes) {
  * @param {{ changes?: object[], message?: string, empty_risk?: boolean, title?: string, lead?: string }} preview
  * @returns {Promise<boolean>}
  */
+function renderIstNeu(preview) {
+  const wrap = $("abnahme-ist-neu");
+  if (!wrap) return;
+  const ist = preview.ist || { label: "Jetzt online (Ist)", count: 0, listings: [] };
+  const neu = preview.neu || { label: "Nach Übernahme (Neu)", count: 0, listings: [] };
+  const col = (side, data) => {
+    const cards = (data.listings || []).slice(0, 24).map((it) => renderAbnahmeCard(it, side)).join("");
+    const more =
+      (data.listings || []).length > 24
+        ? `<p class="hint">… und ${(data.listings || []).length - 24} weitere</p>`
+        : "";
+    return `<section class="abnahme-side abnahme-side-${side}">
+      <h3>${esc(data.label || side)} <span class="muted">(${Number(data.count) || 0})</span></h3>
+      <div class="abnahme-cards">${cards || '<p class="abnahme-empty">Keine öffentlichen Inserate</p>'}${more}</div>
+    </section>`;
+  };
+  wrap.innerHTML = `<div class="abnahme-compare">${col("ist", ist)}${col("neu", neu)}</div>`;
+}
+
 function showAbnahme(preview) {
   return new Promise((resolve) => {
     const modal = $("abnahme-modal");
     const warn = $("abnahme-warning");
-    $("abnahme-title").textContent = preview.title || "Änderungen freigeben?";
+    $("abnahme-title").textContent = preview.title || "Änderungen übernehmen?";
     $("abnahme-lead").textContent =
       preview.lead ||
       preview.message ||
-      "Diese Inserate werden auf der öffentlichen Website geändert. Bitte prüfen.";
+      "Vergleichen Sie Ist (jetzt online) und Neu (nach Übernahme).";
+    renderIstNeu(preview);
     $("abnahme-sections").innerHTML = renderAbnahmeSections(preview.changes || []);
+    const confirmBtn = $("abnahme-confirm");
+    if (confirmBtn) confirmBtn.textContent = "Übernehmen";
     if (preview.empty_risk) {
       warn.textContent =
         "Achtung: Danach wären keine Inserate mehr öffentlich. Bitte nur fortfahren, wenn das beabsichtigt ist.";
@@ -242,7 +264,14 @@ async function confirmThenMutate(path, bodyBuilder) {
     body: JSON.stringify(previewBody),
   });
   if (preview.requires_confirm || preview.preview) {
-    const ok = await showAbnahme(preview);
+    const ok = await showAbnahme({
+      ...preview,
+      title: preview.title || "Änderungen übernehmen?",
+      lead:
+        preview.lead ||
+        preview.message ||
+        "Ist = jetzt online. Neu = nach Übernahme. Abbrechen lässt die Website unverändert.",
+    });
     if (!ok) return { cancelled: true };
   }
   const confirmBody = bodyBuilder(true);
@@ -398,7 +427,7 @@ function updatePendingBanner(preview) {
     text.textContent = pending?.message
       || (preview?.empty_risk
         ? "Achtung: Freigabe würde alle öffentlichen Inserate entfernen."
-        : "Es gibt Änderungen, die noch nicht auf der Website sind – bitte freigeben.");
+        : "Es gibt Änderungen, die noch nicht online sind – bitte Ist/Neu prüfen und übernehmen.");
   }
 }
 
@@ -777,8 +806,8 @@ async function onSubmit(ev) {
     const saved = res.listing || listing;
     applySavedListing(saved);
     syncGalleryFromListing(saved);
-    msg.textContent = "Gespeichert und auf der Website freigegeben.";
-    toast("Eigen-Inserat freigegeben", "ok");
+    msg.textContent = "Gespeichert und auf der Website übernommen.";
+    toast("Eigen-Inserat übernommen", "ok");
     $("f-id").value = saved.id;
     $("btn-delete").style.display = "";
     await loadImmoweltHealth();
@@ -809,26 +838,60 @@ async function onDelete() {
   }
 }
 
-async function onPublish() {
+/** Immowelt Sync path: sync SQLite, then same Abnahme (Ist/Neu) → Übernehmen publishes. */
+async function onImmoweltSync() {
   try {
-    toast("Prüfe Änderungen …");
-    const res = await confirmThenMutate("/publish", (confirm) => ({ confirm }));
-    if (res.cancelled) {
-      toast("Freigabe abgebrochen", "");
+    toast("Immowelt Sync läuft …");
+    const syncRes = await api("/immowelt/sync", {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
+    if (!syncRes.has_changes) {
+      toast(syncRes.message || "Keine Immowelt-Änderungen", "ok");
+      await reloadAll();
       return;
     }
-    toast("Website aktualisiert", "ok");
+    const ok = await showAbnahme({
+      ...syncRes,
+      title: "Immowelt Sync – übernehmen?",
+      lead: "Ist = jetzt online. Neu = nach Übernahme (Immowelt-Abgleich). Eigen-Inserate bleiben erhalten.",
+    });
+    if (!ok) {
+      toast("Abgebrochen – Website unverändert", "");
+      await reloadAll();
+      return;
+    }
+    await api("/publish", {
+      method: "POST",
+      body: JSON.stringify({
+        confirm: true,
+        allow_empty: syncRes.empty_risk === true,
+      }),
+    });
+    toast("Immowelt-Änderungen übernommen", "ok");
     await reloadAll();
   } catch (e) {
     toast(e.message || String(e), "err");
   }
 }
 
+/** Pending Übernahme (e.g. after sync without confirm) — same Abnahme gate. */
 async function onReviewPending() {
   try {
     const preview = await api("/publish/preview");
-    const ok = await showAbnahme(preview);
-    if (!ok) return;
+    if (!preview.has_changes && !preview.publish_pending) {
+      toast("Keine ausstehenden Änderungen", "ok");
+      return;
+    }
+    const ok = await showAbnahme({
+      ...preview,
+      title: "Änderungen übernehmen?",
+      lead: preview.publish_pending?.message || preview.message,
+    });
+    if (!ok) {
+      toast("Abgebrochen – Website unverändert", "");
+      return;
+    }
     await api("/publish", {
       method: "POST",
       body: JSON.stringify({
@@ -836,7 +899,7 @@ async function onReviewPending() {
         allow_empty: preview.empty_risk === true,
       }),
     });
-    toast("Website aktualisiert", "ok");
+    toast("Änderungen übernommen", "ok");
     await reloadAll();
   } catch (e) {
     toast(e.message || String(e), "err");
@@ -846,7 +909,8 @@ async function onReviewPending() {
 function bind() {
   $("form-login").addEventListener("submit", login);
   $("btn-logout").addEventListener("click", logout);
-  $("btn-publish").addEventListener("click", onPublish);
+  const syncBtn = $("btn-immowelt-sync");
+  if (syncBtn) syncBtn.addEventListener("click", onImmoweltSync);
   $("btn-reload-immowelt").addEventListener("click", () =>
     reloadImmowelt()
       .then(() => toast("Immowelt-Liste aktualisiert", "ok"))

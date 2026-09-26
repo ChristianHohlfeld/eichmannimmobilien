@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Admin – Immobilien Eichmann</title>
-  <link rel="stylesheet" href="admin.css?v=gallery-abnahme-2" />
+  <link rel="stylesheet" href="admin.css?v=abnahme-ist-neu-1" />
 </head>
 <body>
   <header class="app-header hidden" id="app-header">
@@ -14,7 +14,7 @@
       <div class="sub">Immobilien Eichmann · Immowelt + Eigen-Inserate</div>
     </div>
     <div class="actions">
-      <button type="button" class="btn btn-ghost btn-sm" id="btn-publish" title="Geprüfte Änderungen auf der Website veröffentlichen">Änderungen freigeben</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-immowelt-sync" title="Immowelt-Objekte abgleichen, Ist und Neu prüfen">Immowelt Sync</button>
       <button type="button" class="btn btn-ghost btn-sm" id="btn-logout">Abmelden</button>
     </div>
   </header>
@@ -22,7 +22,7 @@
   <div class="sot-banner hidden" id="sot-banner" role="status">
     <strong>Immowelt:</strong> Objekte ein- oder ausblenden. Das Immowelt-Konto wird nicht verändert.
     <strong>Eigen:</strong> Eigene Inserate anlegen, Bilder hochladen und bearbeiten.
-    Vor jeder Veröffentlichung: Änderungen prüfen, dann <em>Durchführen</em> oder <em>Abbrechen</em>.
+    Änderungen erscheinen erst nach Übernahme: <em>Ist</em> (jetzt online) und <em>Neu</em> vergleichen, dann <em>Übernehmen</em> oder <em>Abbrechen</em>.
   </div>
 
   <main class="wrap">
@@ -52,7 +52,7 @@
         <div class="toolbar">
           <h2>Immowelt-Objekte <span class="muted" id="immowelt-count"></span></h2>
           <div class="btn-row" style="margin:0">
-            <button type="button" class="btn btn-outline btn-sm" id="btn-reload-immowelt">Neu laden</button>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-reload-immowelt">Liste aktualisieren</button>
           </div>
         </div>
         <div class="card" id="immowelt-health" style="margin-bottom:16px">
@@ -89,13 +89,13 @@
           <h2>Eigen-Inserate <span class="muted" id="eigen-count"></span></h2>
           <div class="btn-row" style="margin:0">
             <button type="button" class="btn btn-primary btn-sm" id="btn-new-eigen">+ Neu</button>
-            <button type="button" class="btn btn-outline btn-sm" id="btn-reload-eigen">Neu laden</button>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-reload-eigen">Aktualisieren</button>
           </div>
         </div>
 
         <div class="card hidden" id="card-editor" style="margin-bottom:16px">
           <h3 style="margin-top:0;color:var(--primary)" id="editor-heading">Neues Eigen-Inserat</h3>
-          <p class="hint">Auf der Website erscheint das Badge <strong>nur bei uns</strong>. Immowelt wird nicht verändert. Speichern öffnet die Freigabe-Prüfung.</p>
+          <p class="hint">Auf der Website erscheint das Badge <strong>nur bei uns</strong>. Immowelt wird nicht verändert. Speichern öffnet den Vergleich Ist / Neu.</p>
           <form id="form-eigen">
             <input type="hidden" id="f-id" />
             <div class="form-grid">
@@ -167,7 +167,7 @@
               </div>
             </div>
             <div class="btn-row">
-              <button type="submit" class="btn btn-primary">Speichern &amp; freigeben</button>
+              <button type="submit" class="btn btn-primary">Speichern &amp; übernehmen</button>
               <button type="button" class="btn btn-outline" id="btn-cancel">Abbrechen</button>
               <button type="button" class="btn btn-outline" id="btn-delete" style="display:none;color:var(--err)">Löschen</button>
             </div>
@@ -196,26 +196,27 @@
   </main>
 
   <div id="pending-banner" class="pending-banner hidden" role="status">
-    <strong>Freigabe ausstehend</strong>
-    <span id="pending-banner-text">Es gibt geprüfte Änderungen, die noch nicht auf der Website sind.</span>
-    <button type="button" class="btn btn-primary btn-sm" id="btn-review-pending">Änderungen prüfen</button>
+    <strong>Übernahme ausstehend</strong>
+    <span id="pending-banner-text">Es gibt Immowelt- oder Eigen-Änderungen, die noch nicht online sind.</span>
+    <button type="button" class="btn btn-primary btn-sm" id="btn-review-pending">Ist / Neu prüfen</button>
   </div>
 
   <div id="abnahme-modal" class="abnahme-modal hidden" role="dialog" aria-modal="true" aria-labelledby="abnahme-title">
     <div class="abnahme-backdrop" data-abnahme-cancel></div>
     <div class="abnahme-dialog">
-      <h2 id="abnahme-title">Änderungen freigeben?</h2>
-      <p class="hint" id="abnahme-lead">Diese Inserate werden auf der öffentlichen Website geändert. Bitte prüfen.</p>
+      <h2 id="abnahme-title">Änderungen übernehmen?</h2>
+      <p class="hint" id="abnahme-lead">Vergleichen Sie Ist (jetzt online) und Neu (nach Übernahme).</p>
       <p id="abnahme-warning" class="warn-box hidden"></p>
+      <div id="abnahme-ist-neu" class="abnahme-ist-neu"></div>
       <div id="abnahme-sections" class="abnahme-sections"></div>
       <div class="btn-row abnahme-actions">
-        <button type="button" class="btn btn-primary" id="abnahme-confirm">Durchführen</button>
+        <button type="button" class="btn btn-primary" id="abnahme-confirm">Übernehmen</button>
         <button type="button" class="btn btn-outline" id="abnahme-cancel" data-abnahme-cancel>Abbrechen</button>
       </div>
     </div>
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="admin.js?v=gallery-abnahme-2" type="module"></script>
+  <script src="admin.js?v=abnahme-ist-neu-1" type="module"></script>
 </body>
 </html>

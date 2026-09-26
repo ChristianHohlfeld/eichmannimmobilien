@@ -16,6 +16,7 @@
  *   EICHMANN_ADMIN_API_HOST (default 127.0.0.1)
  */
 import http from "node:http";
+import { spawn } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -468,6 +469,81 @@ async function handle(req, res) {
         site_root: SITE_ROOT,
         email: session.email,
       });
+    }
+
+    // --- Immowelt Sync (updates SQLite only; live site needs Abnahme / Übernehmen) ---
+    if (method === "POST" && p === "/immowelt/sync") {
+      const body = (await readBody(req)) || {};
+      const appRoot = fs.existsSync("/var/lib/eichmann/app/scripts/sync-immowelt.mjs")
+        ? "/var/lib/eichmann/app"
+        : path.resolve(__dirname, "..");
+      const script = path.join(appRoot, "scripts", "sync-immowelt.mjs");
+      if (!fs.existsSync(script)) {
+        return send(res, 500, { ok: false, error: "Immowelt-Sync ist hier nicht verfügbar." });
+      }
+      // Never auto-publish: sync writes SQLite; Chris must Übernehmen via /publish
+      const env = {
+        ...process.env,
+        EICHMANN_DB_PATH: resolveDbPath(),
+        EICHMANN_SITE_ROOT: SITE_ROOT,
+        EICHMANN_AUTO_PUBLISH: "0",
+      };
+      const result = await new Promise((resolve) => {
+        const child = spawn(process.execPath, [script], {
+          cwd: appRoot,
+          env,
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+        let out = "";
+        let err = "";
+        const timer = setTimeout(() => {
+          try { child.kill("SIGTERM"); } catch { /* ignore */ }
+          resolve({ timedOut: true, out, err, code: -1 });
+        }, 240000);
+        child.stdout.on("data", (c) => { out += c; if (out.length > 200000) out = out.slice(-100000); });
+        child.stderr.on("data", (c) => { err += c; if (err.length > 80000) err = err.slice(-40000); });
+        child.on("close", (code) => {
+          clearTimeout(timer);
+          resolve({ timedOut: false, out, err, code });
+        });
+      });
+      const db = openApiDb();
+      try {
+        const doc = exportListingsDocument(db);
+        const preview = previewPublish(SITE_ROOT, doc);
+        if (!getMeta(db, "publish_pending") && preview.has_changes) {
+          setMeta(
+            db,
+            "publish_pending",
+            JSON.stringify({
+              reason: "immowelt_sync",
+              at: new Date().toISOString(),
+              listing_count: doc.listing_count,
+              active_listing_count: doc.active_listing_count,
+              message: "Immowelt-Sync abgeschlossen – bitte Ist und Neu prüfen, dann Übernehmen.",
+            })
+          );
+        }
+        const pendingRaw = getMeta(db, "publish_pending");
+        return send(res, 200, {
+          ok: result.code === 0 || preview.has_changes,
+          sync: {
+            exit_code: result.code,
+            timed_out: result.timedOut === true,
+            log_tail: (result.out || result.err || "").split("\n").slice(-30).join("\n"),
+          },
+          ...preview,
+          changes: changeSummaryFromPreview(preview),
+          publish_pending: pendingRaw ? JSON.parse(pendingRaw) : null,
+          requires_confirm: preview.has_changes,
+          path: "immowelt_sync",
+          message: preview.has_changes
+            ? "Immowelt-Sync: bitte Ist (jetzt online) und Neu vergleichen."
+            : "Immowelt-Sync: keine sichtbaren Änderungen zur Website.",
+        });
+      } finally {
+        db.close();
+      }
     }
 
     // --- Publish preview (no writes) ---

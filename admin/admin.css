@@ -543,3 +543,39 @@ table.listings tr:hover td { background: #fafaf8; }
   .abnahme-actions .btn { width: 100%; min-height: 48px; font-size: 1rem; }
   .abnahme-card-body strong { white-space: normal; }
 }
+
+/* Ist vs Neu compare */
+.abnahme-ist-neu { margin: 12px 0; }
+.abnahme-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.abnahme-side {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--off-white);
+  max-height: 280px;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.abnahme-side-ist { border-color: #c5cdd8; }
+.abnahme-side-neu { border-color: #b7dfc3; background: #f3faf5; }
+.abnahme-side h3 {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: var(--primary);
+  position: sticky;
+  top: 0;
+  background: inherit;
+  padding-bottom: 4px;
+  z-index: 1;
+}
+.abnahme-card.kind-ist { background: #fff; }
+.abnahme-card.kind-neu { background: #f3faf5; border-color: #b7dfc3; }
+
+@media (max-width: 720px) {
+  .abnahme-compare { grid-template-columns: 1fr; }
+  .abnahme-side { max-height: 220px; }
+}
