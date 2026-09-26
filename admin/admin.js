@@ -12,6 +12,10 @@ let activeTab = "immowelt";
 /** @type {{ base: string, url: string }[]} */
 let editorGallery = [];
 let pendingFiles = [];
+let sessionActive = false;
+let refreshInFlight = null;
+let refreshTimer = null;
+const REFRESH_INTERVAL_MS = 45_000;
 
 const $ = (id) => document.getElementById(id);
 
@@ -79,7 +83,7 @@ function showGate(on) {
   $("sot-banner").classList.toggle("hidden", on);
 }
 
-function setTab(name) {
+function setTab(name, refresh = true) {
   activeTab = name === "eigen" ? "eigen" : "immowelt";
   document.querySelectorAll(".tab").forEach((btn) => {
     const on = btn.getAttribute("data-tab") === activeTab;
@@ -91,6 +95,7 @@ function setTab(name) {
   if (location.hash.replace(/^#/, "") !== activeTab) {
     history.replaceState(null, "", `#${activeTab}`);
   }
+  if (refresh) void refreshActiveTab();
 }
 
 function tabFromHash() {
@@ -322,8 +327,10 @@ async function login(ev) {
       body: JSON.stringify({ email, password }),
     });
     $("password").value = "";
+    sessionActive = true;
     showGate(false);
-    setTab(tabFromHash());
+    setTab(tabFromHash(), false);
+    startAutoRefresh();
     await reloadAll();
   } catch (e) {
     err.textContent = e.message || String(e);
@@ -332,6 +339,8 @@ async function login(ev) {
 }
 
 async function logout() {
+  sessionActive = false;
+  stopAutoRefresh();
   try {
     await api("/logout", { method: "POST", body: "{}" });
   } catch {
@@ -533,6 +542,47 @@ async function reloadAll() {
   await Promise.all([reloadImmowelt(), reloadEigen()]);
 }
 
+function adminViewVisible() {
+  const app = $("view-app");
+  return sessionActive && !document.hidden && app && !app.classList.contains("hidden");
+}
+
+async function refreshActiveTab() {
+  if (!adminViewVisible()) return;
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (activeTab === "eigen" ? reloadEigen() : reloadImmowelt())
+    .catch((e) => toast(e.message || String(e), "err"))
+    .finally(() => {
+      refreshInFlight = null;
+    });
+  return refreshInFlight;
+}
+
+async function refreshAllVisible() {
+  if (!adminViewVisible()) return;
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = reloadAll()
+    .catch((e) => toast(e.message || String(e), "err"))
+    .finally(() => {
+      refreshInFlight = null;
+    });
+  return refreshInFlight;
+}
+
+function stopAutoRefresh() {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+}
+
+function startAutoRefresh() {
+  stopAutoRefresh();
+  refreshTimer = setInterval(() => {
+    if (adminViewVisible()) void refreshAllVisible();
+  }, REFRESH_INTERVAL_MS);
+}
+
 async function toggleVisibility(id) {
   const L = immoweltListings.find((x) => x.id === id) || eigenListings.find((x) => x.id === id);
   if (!L) return;
@@ -547,11 +597,8 @@ async function toggleVisibility(id) {
       toast("Abgebrochen – Website unverändert", "");
       return;
     }
-    L.site_hidden = nextHidden;
     toast(nextHidden ? "Auf der Website ausgeblendet" : "Auf der Website eingeblendet", "ok");
-    renderImmowelt();
-    renderEigen();
-    await loadImmoweltHealth();
+    await reloadAll();
   } catch (e) {
     toast(e.message || String(e), "err");
   }
@@ -810,7 +857,7 @@ async function onSubmit(ev) {
     toast("Eigen-Inserat übernommen", "ok");
     $("f-id").value = saved.id;
     $("btn-delete").style.display = "";
-    await loadImmoweltHealth();
+    await reloadAll();
   } catch (e) {
     msg.textContent = e.message || String(e);
     toast(e.message || String(e), "err");
@@ -831,7 +878,7 @@ async function onDelete() {
     renderEigen();
     closeEditor();
     toast("Eigen-Inserat gelöscht", "ok");
-    await loadImmoweltHealth();
+    await reloadAll();
   } catch (e) {
     $("form-msg").textContent = e.message || String(e);
     toast(e.message || String(e), "err");
@@ -911,16 +958,6 @@ function bind() {
   $("btn-logout").addEventListener("click", logout);
   const syncBtn = $("btn-immowelt-sync");
   if (syncBtn) syncBtn.addEventListener("click", onImmoweltSync);
-  $("btn-reload-immowelt").addEventListener("click", () =>
-    reloadImmowelt()
-      .then(() => toast("Immowelt-Liste aktualisiert", "ok"))
-      .catch((e) => toast(e.message || String(e), "err"))
-  );
-  $("btn-reload-eigen").addEventListener("click", () =>
-    reloadEigen()
-      .then(() => toast("Eigen-Liste aktualisiert", "ok"))
-      .catch((e) => toast(e.message || String(e), "err"))
-  );
   $("btn-new-eigen").addEventListener("click", () => openEditor(null));
   $("btn-cancel").addEventListener("click", closeEditor);
   $("btn-delete").addEventListener("click", onDelete);
@@ -929,6 +966,11 @@ function bind() {
     btn.addEventListener("click", () => setTab(btn.getAttribute("data-tab")));
   });
   window.addEventListener("hashchange", () => setTab(tabFromHash()));
+  const refreshOnReturn = () => {
+    if (adminViewVisible()) void refreshAllVisible();
+  };
+  document.addEventListener("visibilitychange", refreshOnReturn);
+  window.addEventListener("focus", refreshOnReturn);
 
   const fileInput = $("f-images");
   if (fileInput) fileInput.addEventListener("change", onFilesChosen);
@@ -947,8 +989,10 @@ async function boot() {
     return;
   }
   if (await ensureSession()) {
+    sessionActive = true;
     showGate(false);
-    setTab(tabFromHash());
+    setTab(tabFromHash(), false);
+    startAutoRefresh();
     try {
       await reloadAll();
     } catch (e) {
