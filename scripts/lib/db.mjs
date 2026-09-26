@@ -267,10 +267,14 @@ export function upsertImmoweltBatch(db, listings, { deactivateMissing = false, k
           .filter(Boolean)
           .map((x) => String(x).toLowerCase())
       );
+      // Sacred: only origin=immowelt rows — Eigen never deactivated by Sync
       const immoweltRows = db
         .prepare("SELECT * FROM listings WHERE origin = ?")
         .all(ORIGIN_IMMOWELT);
       for (const row of immoweltRows) {
+        if (row.origin !== ORIGIN_IMMOWELT) {
+          throw new Error("BUG: Immowelt deactivate touched non-immowelt row " + row.id);
+        }
         const key = String(row.immowelt_id || row.id).toLowerCase();
         if (keep.has(key)) continue;
         if (row.active === 0) continue;

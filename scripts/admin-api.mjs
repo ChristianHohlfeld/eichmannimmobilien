@@ -51,6 +51,7 @@ import {
 } from "./lib/eigen-images.mjs";
 import {
   previewPublish,
+  previewImmoweltSync,
   previewEigenUpsert,
   previewEigenDelete,
   previewVisibility,
@@ -510,7 +511,7 @@ async function handle(req, res) {
       const db = openApiDb();
       try {
         const doc = exportListingsDocument(db);
-        const preview = previewPublish(SITE_ROOT, doc);
+        const preview = previewImmoweltSync(SITE_ROOT, doc);
         if (!getMeta(db, "publish_pending") && preview.has_changes) {
           setMeta(
             db,
@@ -551,12 +552,21 @@ async function handle(req, res) {
       const db = openApiDb();
       try {
         const doc = exportListingsDocument(db);
-        const preview = previewPublish(SITE_ROOT, doc);
-        const pending = getMeta(db, "publish_pending");
+        const pendingRaw = getMeta(db, "publish_pending");
+        let pending = null;
+        try {
+          pending = pendingRaw ? JSON.parse(pendingRaw) : null;
+        } catch {
+          pending = null;
+        }
+        const preview =
+          pending?.reason === "immowelt_sync"
+            ? previewImmoweltSync(SITE_ROOT, doc)
+            : previewPublish(SITE_ROOT, doc);
         return send(res, 200, {
           ...preview,
           changes: changeSummaryFromPreview(preview),
-          publish_pending: pending ? JSON.parse(pending) : null,
+          publish_pending: pending,
         });
       } finally {
         db.close();

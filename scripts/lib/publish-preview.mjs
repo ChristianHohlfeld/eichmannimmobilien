@@ -1,6 +1,9 @@
 /**
- * Diff live public listings.json vs SQLite SoT (or a proposed listing set).
- * Powers the admin Abnahme modal: Ist (live) vs Neu (would become live).
+ * Diff live public listings.json vs proposed set (DB / Eigen edit).
+ * Powers Abnahme: Ist (live) vs Neu (would become live).
+ *
+ * Hard rule: Immowelt Sync (syncPath) never lists origin=Eigen under
+ * hinzukommen/wegfallen/geändert/Sichtbarkeit — Eigen are sacred.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -68,10 +71,15 @@ function publicCards(listings) {
 }
 
 /**
- * @param {object[]} liveListings from public data/listings.json
- * @param {object[]} nextListings proposed public set (usually from DB export)
+ * @param {object[]} liveListings
+ * @param {object[]} nextListings
+ * @param {{ syncPath?: boolean }} [opts]
  */
-export function diffListings(liveListings, nextListings) {
+export function diffListings(liveListings, nextListings, opts = {}) {
+  const syncPath = opts.syncPath === true;
+  const isEigen = (L) => originOf(L) === "Eigen";
+  const inDelta = (L) => !syncPath || !isEigen(L);
+
   const liveMap = new Map();
   for (const L of liveListings || []) {
     const k = publicKey(L);
@@ -88,12 +96,14 @@ export function diffListings(liveListings, nextListings) {
   const changed = [];
   const visibility = [];
 
-  for (const [id, next] of nextMap) {
-    const live = liveMap.get(id);
+  for (const [, next] of nextMap) {
+    const live = liveMap.get(publicKey(next));
     if (!live) {
-      if (isPublic(next)) added.push(summarizeListing(next));
+      if (isPublic(next) && inDelta(next)) added.push(summarizeListing(next));
       continue;
     }
+    if (!inDelta(next)) continue;
+
     const livePub = isPublic(live);
     const nextPub = isPublic(next);
     if (livePub !== nextPub) {
@@ -105,27 +115,20 @@ export function diffListings(liveListings, nextListings) {
         neu: summarizeListing(next),
       });
     }
-    if (fingerprint(live) !== fingerprint(next)) {
-      const liveCore = { ...live, site_hidden: false, active: true };
-      const nextCore = { ...next, site_hidden: false, active: true };
-      if (fingerprint(liveCore) !== fingerprint(nextCore)) {
-        changed.push({
-          ...summarizeListing(next),
-          ist: summarizeListing(live),
-          neu: summarizeListing(next),
-        });
-      } else if (livePub === nextPub) {
-        changed.push({
-          ...summarizeListing(next),
-          ist: summarizeListing(live),
-          neu: summarizeListing(next),
-        });
-      }
+
+    const liveCore = { ...live, site_hidden: false, active: true };
+    const nextCore = { ...next, site_hidden: false, active: true };
+    if (fingerprint(liveCore) !== fingerprint(nextCore)) {
+      changed.push({
+        ...summarizeListing(next),
+        ist: summarizeListing(live),
+        neu: summarizeListing(next),
+      });
     }
   }
 
-  for (const [id, live] of liveMap) {
-    if (!nextMap.has(id) && isPublic(live)) {
+  for (const [, live] of liveMap) {
+    if (!nextMap.has(publicKey(live)) && isPublic(live) && inDelta(live)) {
       removed.push(summarizeListing(live));
     }
   }
@@ -156,8 +159,7 @@ export function diffListings(liveListings, nextListings) {
     },
     empty_risk: nextPublic === 0 && livePublic > 0,
     has_changes:
-      added.length + removed.length + changed.length + visibility.length > 0 ||
-      livePublic !== nextPublic,
+      added.length + removed.length + changed.length + visibility.length > 0,
   };
 }
 
@@ -172,21 +174,27 @@ export function loadLiveListings(siteRoot) {
   }
 }
 
-/** Build preview of publishing current DB document vs live site. */
-export function previewPublish(siteRoot, dbDoc) {
+export function previewPublish(siteRoot, dbDoc, opts = {}) {
   const live = loadLiveListings(siteRoot);
   const next = Array.isArray(dbDoc?.listings) ? dbDoc.listings : [];
-  const diff = diffListings(live, next);
+  const diff = diffListings(live, next, opts);
   return {
     ok: true,
     preview: true,
+    sync_path: opts.syncPath === true,
     ...diff,
     message: diff.empty_risk
       ? "Achtung: Danach wären keine Inserate mehr öffentlich."
       : diff.has_changes
-        ? "Vergleichen Sie Ist (jetzt online) und Neu (nach Übernahme)."
+        ? opts.syncPath
+          ? "Immowelt Sync: nur Immowelt-Objekte ändern sich. Eigene Inserate bleiben."
+          : "Vergleichen Sie Ist (jetzt online) und Neu (nach Übernahme)."
         : "Keine Unterschiede zur öffentlichen Website.",
   };
+}
+
+export function previewImmoweltSync(siteRoot, dbDoc) {
+  return previewPublish(siteRoot, dbDoc, { syncPath: true });
 }
 
 export function previewEigenUpsert(siteRoot, dbListings, proposedListing) {

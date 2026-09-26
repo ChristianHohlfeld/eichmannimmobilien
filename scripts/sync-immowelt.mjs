@@ -2674,12 +2674,22 @@ export async function publishListingsDocument(doc, { siteRoot = ROOT, knownSlugs
 }
 
 async function persistImmoweltToSqlite(immoweltListings, meta = {}) {
-  const { openDb, upsertImmoweltBatch, exportListingsDocument, setMeta, countByOrigin } = await import("./lib/db.mjs");
+  const { openDb, upsertImmoweltBatch, exportListingsDocument, setMeta, countByOrigin, ORIGIN_EIGEN } = await import("./lib/db.mjs");
   const db = openDb();
-  const keepIds = immoweltListings
+  // Hard rule: Immowelt Sync never writes/deletes/hides origin=eigen
+  const onlyImmowelt = (immoweltListings || []).filter((L) => {
+    const o = String(L?.origin || L?.source || "immowelt").toLowerCase();
+    return o !== "eigen" && o !== "local" && o !== ORIGIN_EIGEN;
+  });
+  if (onlyImmowelt.length !== (immoweltListings || []).length) {
+    console.warn(
+      `persistImmoweltToSqlite: stripped ${(immoweltListings || []).length - onlyImmowelt.length} non-Immowelt row(s) before upsert`
+    );
+  }
+  const keepIds = onlyImmowelt
     .filter((L) => L.active !== false && L.missing_on_immowelt !== true)
     .map((L) => L.immowelt_id || L.id);
-  const results = upsertImmoweltBatch(db, immoweltListings, {
+  const results = upsertImmoweltBatch(db, onlyImmowelt, {
     deactivateMissing: true,
     keepImmoweltIds: keepIds,
   });
