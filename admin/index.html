@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Admin – Immobilien Eichmann</title>
-  <link rel="stylesheet" href="admin.css?v=sync-outcome-2" />
+  <link rel="stylesheet" href="admin.css?v=admin-copy-3" />
 </head>
 <body>
   <header class="app-header hidden" id="app-header">
@@ -14,14 +14,14 @@
       <div class="sub">Immowelt und eigene Inserate verwalten</div>
     </div>
     <div class="actions">
-      <button type="button" class="btn btn-ghost btn-sm" id="btn-immowelt-sync" title="Immowelt einlesen und Änderungen prüfen">Immowelt synchronisieren</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-immowelt-sync" title="Neue Inserate von Immowelt holen">Immowelt Sync</button>
       <button type="button" class="btn btn-ghost btn-sm" id="btn-logout">Abmelden</button>
     </div>
   </header>
 
   <div class="sot-banner hidden" id="sot-banner" role="status">
-    Immowelt synchronisieren, Ist und Neu prüfen, dann <strong>Übernehmen</strong> oder <strong>Abbrechen</strong>.
-    Immowelt-Objekte lassen sich hier nur ein- und ausblenden; gelöscht werden sie in Immowelt. Eigene Inserate bleiben bei der Immowelt-Synchronisierung erhalten und können Sie hier anlegen, bearbeiten, ausblenden oder löschen.
+    Mit „Immowelt Sync“ holen Sie die aktuellen Inserate von Immowelt. Prüfen Sie die Änderungen.
+    Mit „Übernehmen“ erscheinen sie auf der Website, mit „Abbrechen“ bleibt alles wie vorher. Eigene Inserate bleiben erhalten; Immowelt-Inserate können Sie hier nur ein- oder ausblenden und bei Immowelt löschen.
   </div>
 
   <main class="wrap">
@@ -52,7 +52,7 @@
           <h2>Immowelt-Objekte <span class="muted" id="immowelt-count"></span></h2>
         </div>
         <div class="card" id="immowelt-health" style="margin-bottom:16px">
-          <strong>Immowelt-Stand</strong>
+          <strong>Immowelt-Daten</strong>
           <p class="hint" id="immowelt-health-line">Prüfe …</p>
           <p class="hint" id="immowelt-health-detail"></p>
           <p id="immowelt-sync-outcome" class="sync-outcome hidden" role="status" aria-live="polite"></p>
@@ -86,7 +86,7 @@
 
         <div class="card hidden" id="card-editor" style="margin-bottom:16px">
           <h3 style="margin-top:0;color:var(--primary)" id="editor-heading">Neues Eigen-Inserat</h3>
-          <p class="hint">Eigene Inserate bleiben von Immowelt getrennt. Sie können sie hier bearbeiten und mit Fotos ergänzen. Mit „Übernehmen“ wird die Änderung sichtbar.</p>
+          <p class="hint">Hier legen Sie eigene Inserate an oder ändern sie. Diese Inserate gehören nicht zu Immowelt. Erst nach „Übernehmen“ sind die Änderungen auf der Website sichtbar.</p>
           <form id="form-eigen">
             <input type="hidden" id="f-id" />
             <div class="form-grid">
@@ -187,16 +187,16 @@
   </main>
 
   <div id="pending-banner" class="pending-banner hidden" role="status">
-    <strong>Änderungen warten</strong>
-    <span id="pending-banner-text">Die bisherige Website bleibt, bis Sie die Änderung prüfen und übernehmen.</span>
-    <button type="button" class="btn btn-primary btn-sm" id="btn-review-pending">Ist und Neu prüfen</button>
+    <strong>Eine Änderung wartet</strong>
+    <span id="pending-banner-text">Prüfen Sie die Änderung. Mit „Übernehmen“ wird sie auf der Website sichtbar.</span>
+    <button type="button" class="btn btn-primary btn-sm" id="btn-review-pending">Änderung prüfen</button>
   </div>
 
   <div id="abnahme-modal" class="abnahme-modal hidden" role="dialog" aria-modal="true" aria-labelledby="abnahme-title">
     <div class="abnahme-backdrop" data-abnahme-cancel></div>
     <div class="abnahme-dialog">
       <h2 id="abnahme-title">Änderungen übernehmen?</h2>
-      <p class="hint" id="abnahme-lead">Vergleichen Sie „Ist“ (bisher online) mit „Neu“. Erst mit „Übernehmen“ wird die Website geändert.</p>
+      <p class="hint" id="abnahme-lead">Vergleichen Sie die bisherige Website mit der neuen Version. Mit „Übernehmen“ wird die Änderung sichtbar.</p>
       <p id="abnahme-warning" class="warn-box hidden"></p>
       <div id="abnahme-ist-neu" class="abnahme-ist-neu"></div>
       <div id="abnahme-sections" class="abnahme-sections"></div>
@@ -208,6 +208,6 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="admin.js?v=sync-outcome-2" type="module"></script>
+  <script src="admin.js?v=admin-copy-3" type="module"></script>
 </body>
 </html>

@@ -238,7 +238,7 @@ function renderAbnahmeSections(changes) {
     </section>`);
   }
   if (!parts.length) {
-    return `<p class="abnahme-empty">Keine sichtbaren Änderungen. Website trotzdem aktualisieren?</p>`;
+    return `<p class="abnahme-empty">Es hat sich nichts geändert. Website trotzdem aktualisieren?</p>`;
   }
   return parts.join("");
 }
@@ -251,8 +251,8 @@ function renderAbnahmeSections(changes) {
 function renderIstNeu(preview) {
   const wrap = $("abnahme-ist-neu");
   if (!wrap) return;
-  const ist = preview.ist || { label: "Bisher online (Ist)", count: 0, listings: [] };
-  const neu = preview.neu || { label: "Nach „Übernehmen“ (Neu)", count: 0, listings: [] };
+  const ist = preview.ist || { label: "Bisher online", count: 0, listings: [] };
+  const neu = preview.neu || { label: "Nach „Übernehmen“", count: 0, listings: [] };
   const col = (side, data) => {
     const cards = (data.listings || []).slice(0, 24).map((it) => renderAbnahmeCard(it, side)).join("");
     const more =
@@ -274,14 +274,14 @@ function showAbnahme(preview) {
     $("abnahme-title").textContent = preview.title || "Änderungen übernehmen?";
     $("abnahme-lead").textContent =
       preview.lead ||
-      "Vergleichen Sie „Ist“ (bisher online) mit „Neu“. Erst mit „Übernehmen“ wird die Website geändert.";
+      "Vergleichen Sie die bisherige Website mit der neuen Version. Mit „Übernehmen“ wird die Änderung sichtbar.";
     renderIstNeu(preview);
     $("abnahme-sections").innerHTML = renderAbnahmeSections(preview.changes || []);
     const confirmBtn = $("abnahme-confirm");
     if (confirmBtn) confirmBtn.textContent = "Übernehmen";
     if (preview.empty_risk) {
       warn.textContent =
-        "Danach wären keine Inserate mehr öffentlich. Bitte prüfen Sie das vorher.";
+        "Danach ist kein Inserat mehr auf der Website sichtbar. Bitte prüfen Sie das vorher.";
       warn.classList.remove("hidden");
     } else {
       warn.classList.add("hidden");
@@ -321,7 +321,7 @@ async function confirmThenMutate(path, bodyBuilder) {
     const ok = await showAbnahme({
       ...preview,
       title: preview.title || "Änderungen übernehmen?",
-      lead: "Ist = bisher online. Neu zeigt den Stand nach „Übernehmen“. „Abbrechen“ lässt die bisherige Website unverändert.",
+      lead: "Bisher online. Nach „Übernehmen“ wird die Änderung sichtbar. „Abbrechen“ lässt alles wie vorher.",
     });
     if (!ok) return { cancelled: true };
   }
@@ -337,7 +337,7 @@ async function confirmThenMutate(path, bodyBuilder) {
       const force = await showAbnahme({
         ...e.data,
         title: "Ohne öffentliche Inserate übernehmen?",
-        lead: "Bitte prüfen Sie die Änderung. Die bisherige Website bleibt unverändert, wenn Sie abbrechen.",
+        lead: "Bitte prüfen Sie die Änderung. Wenn Sie abbrechen, bleibt alles wie vorher.",
       });
       if (!force) return { cancelled: true };
       return await api(path, {
@@ -408,12 +408,12 @@ async function ensureSession() {
 function publicImmoweltReason(reason, state) {
   const raw = String(reason || "").trim();
   const rejected =
-    "Abruf fehlgeschlagen. Die bisherige Website bleibt online.";
+    "Immowelt konnte nicht geladen werden. Die bisherige Website bleibt online.";
   const network =
-    "Immowelt ist vorübergehend nicht erreichbar. Die bisherige Website bleibt online.";
-  const unsafe = "Abruf nicht übernommen. Die bisherige Website bleibt online.";
-  const awaiting = "Immowelt-Zugang noch nicht eingerichtet. Die bisherige Website bleibt online.";
-  const open = "Kein aktueller Stand von Immowelt verfügbar.";
+    "Immowelt ist gerade nicht erreichbar. Die bisherige Website bleibt online.";
+  const unsafe = "Die Immowelt-Daten waren unvollständig. Die bisherige Website bleibt online.";
+  const awaiting = "Der Immowelt-Zugang fehlt noch. Die bisherige Website bleibt online.";
+  const open = "Keine aktuellen Daten von Immowelt.";
   if (!raw) {
     if (state === "awaiting_api_key") return awaiting;
     if (state === "rejected") return rejected;
@@ -475,17 +475,17 @@ async function loadImmoweltHealth() {
   }
   const valid = status.last_valid_at || null;
   if (status.state === "current") {
-    line.innerHTML = `<span class="badge ok">OK</span> aktueller Stand von Immowelt ${esc(fmt(valid))}`;
+    line.innerHTML = `<span class="badge ok">OK</span> aktuelle Inserate von Immowelt ${esc(fmt(valid))}`;
     detail.textContent =
-      "Die Objekte kommen aus Immowelt. Hier ändern Sie nur, ob sie auf unserer Website sichtbar sind.";
+      "Die Inserate kommen aus Immowelt. Hier wählen Sie nur, ob sie auf unserer Website sichtbar sind.";
   } else if (status.state === "awaiting_api_key") {
-    line.innerHTML = `<span class="badge warn">Zugang fehlt</span> bisheriger Stand ${esc(fmt(valid))}`;
+    line.innerHTML = `<span class="badge warn">Zugang fehlt</span> zuletzt geprüft ${esc(fmt(valid))}`;
     detail.textContent = publicImmoweltReason(status.reason, "awaiting_api_key");
   } else if (status.state === "rejected") {
-    line.innerHTML = `<span class="badge miss">Bisherige Website</span> Abruf verworfen · ${esc(fmt(valid))}`;
+    line.innerHTML = `<span class="badge miss">Website bleibt</span> Immowelt konnte nicht geladen werden · ${esc(fmt(valid))}`;
     detail.textContent = publicImmoweltReason(status.reason, "rejected");
   } else {
-    line.innerHTML = `<span class="badge warn">Status nicht verfügbar</span> letzter Stand ${esc(fmt(valid))}`;
+    line.innerHTML = `<span class="badge warn">Keine aktuellen Daten</span> zuletzt geprüft ${esc(fmt(valid))}`;
     detail.textContent = publicImmoweltReason(status.reason, status.state || "open");
   }
 }
@@ -503,8 +503,8 @@ function updatePendingBanner(preview) {
   banner.classList.remove("hidden");
   if (text) {
     text.textContent = preview?.empty_risk
-      ? "Die Freigabe würde alle öffentlichen Inserate entfernen. Bitte prüfen."
-      : "Änderungen warten. Prüfen Sie Ist und Neu und wählen Sie „Übernehmen“.";
+      ? "Wenn Sie übernehmen, verschwinden alle Inserate von der Website. Bitte prüfen."
+      : "Eine Änderung wartet. Prüfen Sie sie. Mit „Übernehmen“ wird sie auf der Website sichtbar.";
   }
 }
 
@@ -671,7 +671,7 @@ async function toggleVisibility(id) {
       confirm,
     }));
     if (res.cancelled) {
-      toast("Abgebrochen – Website unverändert", "");
+      toast("Abgebrochen. Alles bleibt wie vorher.", "");
       return;
     }
     toast(nextHidden ? "Auf der Website ausgeblendet" : "Auf der Website eingeblendet", "ok");
@@ -965,7 +965,7 @@ async function onDelete() {
 /** Immowelt Sync: never silent — Abnahme modal OR durable Immowelt-Stand status. */
 async function onImmoweltSync() {
   setImmoweltSyncBusy(true);
-  setImmoweltSyncOutcome("Immowelt Sync läuft … bitte warten.", "progress");
+  setImmoweltSyncOutcome("Immowelt Sync läuft. Bitte warten.", "progress");
   toast("Immowelt wird synchronisiert …");
   try {
     const syncRes = await api("/immowelt/sync", {
@@ -991,24 +991,24 @@ async function onImmoweltSync() {
     if (!syncRes.has_changes) {
       const msg =
         syncRes.message ||
-        "Keine Änderungen — Website bleibt wie sie ist.";
+        "Keine Änderungen. Die Website bleibt wie sie ist.";
       await reloadAll();
       setImmoweltSyncOutcome(msg, "ok");
       return;
     }
     setImmoweltSyncOutcome(
-      "Änderungen gefunden — bitte Ist und Neu prüfen, dann Übernehmen oder Abbrechen.",
+      "Änderungen gefunden. Bitte prüfen und dann „Übernehmen“ oder „Abbrechen“ wählen.",
       "warn"
     );
     const ok = await showAbnahme({
       ...syncRes,
       title: "Immowelt-Änderungen übernehmen?",
       lead:
-        "Ist = bisher online. Neu zeigt den Stand nach „Übernehmen“. Eigene Inserate bleiben erhalten.",
+        "Bisher online. Nach „Übernehmen“ wird die Änderung sichtbar. Eigene Inserate bleiben erhalten.",
     });
     if (!ok) {
       await reloadAll();
-      setImmoweltSyncOutcome("Abgebrochen — Website bleibt wie sie ist.", "ok");
+      setImmoweltSyncOutcome("Abgebrochen. Alles bleibt wie vorher.", "ok");
       return;
     }
     await api("/publish", {
@@ -1019,7 +1019,7 @@ async function onImmoweltSync() {
       }),
     });
     await reloadAll();
-    setImmoweltSyncOutcome("Immowelt-Änderungen übernommen — Website aktualisiert.", "ok");
+    setImmoweltSyncOutcome("Übernommen. Die Website ist aktualisiert.", "ok");
   } catch (e) {
     const msg = publicImmoweltReason(e.message || String(e), "rejected");
     setImmoweltSyncOutcome(msg, "err");
@@ -1039,10 +1039,10 @@ async function onReviewPending() {
     const ok = await showAbnahme({
       ...preview,
       title: "Änderungen übernehmen?",
-      lead: "Vergleichen Sie „Ist“ (bisher online) mit „Neu“. Erst mit „Übernehmen“ wird die Website geändert.",
+      lead: "Vergleichen Sie die bisherige Website mit der neuen Version. Mit „Übernehmen“ wird die Änderung sichtbar.",
     });
     if (!ok) {
-      toast("Abgebrochen – Website unverändert", "");
+      toast("Abgebrochen. Alles bleibt wie vorher.", "");
       return;
     }
     await api("/publish", {
