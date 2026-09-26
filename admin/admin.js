@@ -8,7 +8,9 @@ const API = "/admin/api";
 let config = null;
 let immoweltListings = [];
 let eigenListings = [];
+let snapshotsList = [];
 let activeTab = "immowelt";
+let restoreTargetId = null;
 /** @type {{ base: string, url: string }[]} */
 let editorGallery = [];
 let pendingFiles = [];
@@ -19,14 +21,30 @@ const REFRESH_INTERVAL_MS = 45_000;
 
 const $ = (id) => document.getElementById(id);
 
-function toast(msg, type = "") {
+function toast(msg, type = "", opts = {}) {
   const el = $("toast");
   if (!el) return;
+  const sticky = opts && opts.sticky === true;
   el.textContent = msg;
-  el.className = "toast" + (type ? " " + type : "");
+  el.className =
+    "toast" +
+    (type ? " " + type : "") +
+    (sticky ? " sticky" : "");
   el.classList.remove("hidden");
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => el.classList.add("hidden"), 4500);
+  if (!sticky) {
+    toast._t = setTimeout(() => el.classList.add("hidden"), 4500);
+  }
+}
+
+function clearStickyToast() {
+  const el = $("toast");
+  if (!el) return;
+  clearTimeout(toast._t);
+  if (el.classList.contains("sticky") || !el.classList.contains("hidden")) {
+    el.classList.add("hidden");
+    el.classList.remove("sticky");
+  }
 }
 
 /** Durable status under Immowelt-Stand — stays until next Sync (not toast-only). */
@@ -47,15 +65,15 @@ function clearImmoweltSyncLongWait() {
   }
 }
 
-function setImmoweltSyncOutcome(msg, kind = "") {
-  const el = $("immowelt-sync-outcome");
+function fillSyncStatusNode(el, msg, kind) {
   if (!el) return;
   if (!msg) {
     el.textContent = "";
-    el.className = "sync-outcome hidden";
+    el.className = el.id === "immowelt-sync-bar" ? "immowelt-sync-bar hidden" : "sync-outcome hidden";
     return;
   }
-  el.className = "sync-outcome" + (kind ? " " + kind : "");
+  const base = el.id === "immowelt-sync-bar" ? "immowelt-sync-bar" : "sync-outcome";
+  el.className = base + (kind ? " " + kind : "");
   if (kind === "progress") {
     el.innerHTML =
       '<span class="sync-spinner" aria-hidden="true"></span>' +
@@ -67,12 +85,36 @@ function setImmoweltSyncOutcome(msg, kind = "") {
   }
 }
 
+/** Updates sticky header bar + Immowelt-Stand line. Never blank between states. */
+function setImmoweltSyncOutcome(msg, kind = "") {
+  fillSyncStatusNode($("immowelt-sync-bar"), msg, kind);
+  fillSyncStatusNode($("immowelt-sync-outcome"), msg, kind);
+  if (!msg) {
+    clearStickyToast();
+    return;
+  }
+  if (kind === "progress") {
+    toast(msg, "warn", { sticky: true });
+  } else {
+    // Keep sticky toast until next Sync with the final result (no 4.5s vanish).
+    const t =
+      kind === "err" ? "error" : kind === "ok" ? "ok" : kind === "warn" ? "warn" : "";
+    toast(msg, t, { sticky: true });
+  }
+}
+
 function setImmoweltSyncBusy(busy) {
   const btn = $("btn-immowelt-sync");
   if (!btn) return;
   btn.disabled = !!busy;
   btn.setAttribute("aria-busy", busy ? "true" : "false");
-  btn.textContent = busy ? "Läuft …" : "Immowelt Sync";
+  btn.classList.toggle("is-syncing", !!busy);
+  if (busy) {
+    btn.innerHTML =
+      '<span class="btn-sync-spinner" aria-hidden="true"></span><span>Läuft …</span>';
+  } else {
+    btn.textContent = "Immowelt Sync";
+  }
 }
 
 function startImmoweltSyncLoading() {
@@ -274,14 +316,19 @@ function showGate(on) {
 }
 
 function setTab(name, refresh = true) {
-  activeTab = name === "eigen" ? "eigen" : "immowelt";
+  const allowed = new Set(["immowelt", "eigen", "sicherung"]);
+  activeTab = allowed.has(name) ? name : "immowelt";
   document.querySelectorAll(".tab").forEach((btn) => {
     const on = btn.getAttribute("data-tab") === activeTab;
     btn.classList.toggle("active", on);
     btn.setAttribute("aria-selected", on ? "true" : "false");
   });
-  $("panel-immowelt").classList.toggle("hidden", activeTab !== "immowelt");
-  $("panel-eigen").classList.toggle("hidden", activeTab !== "eigen");
+  const imm = $("panel-immowelt");
+  const eig = $("panel-eigen");
+  const sic = $("panel-sicherung");
+  if (imm) imm.classList.toggle("hidden", activeTab !== "immowelt");
+  if (eig) eig.classList.toggle("hidden", activeTab !== "eigen");
+  if (sic) sic.classList.toggle("hidden", activeTab !== "sicherung");
   if (location.hash.replace(/^#/, "") !== activeTab) {
     history.replaceState(null, "", `#${activeTab}`);
   }
@@ -290,7 +337,8 @@ function setTab(name, refresh = true) {
 
 function tabFromHash() {
   const h = (location.hash || "").replace(/^#/, "").toLowerCase();
-  return h === "eigen" ? "eigen" : "immowelt";
+  if (h === "eigen" || h === "sicherung") return h;
+  return "immowelt";
 }
 
 function slugify(title, id) {
@@ -760,7 +808,11 @@ async function reloadEigen() {
 }
 
 async function reloadAll() {
-  await Promise.all([reloadImmowelt(), reloadEigen()]);
+  const jobs = [reloadImmowelt(), reloadEigen()];
+  if (activeTab === "sicherung" || $("panel-sicherung")) {
+    jobs.push(reloadSicherung());
+  }
+  await Promise.all(jobs);
 }
 
 function adminViewVisible() {
@@ -771,7 +823,13 @@ function adminViewVisible() {
 async function refreshActiveTab() {
   if (!adminViewVisible()) return;
   if (refreshInFlight) return refreshInFlight;
-  refreshInFlight = (activeTab === "eigen" ? reloadEigen() : reloadImmowelt())
+  const loader =
+    activeTab === "eigen"
+      ? reloadEigen()
+      : activeTab === "sicherung"
+        ? reloadSicherung()
+        : reloadImmowelt();
+  refreshInFlight = loader
     .catch((e) => toast(e.message || String(e), "err"))
     .finally(() => {
       refreshInFlight = null;
@@ -1166,7 +1224,6 @@ async function applyImmoweltSyncSuccess(syncRes) {
 
 async function onImmoweltSync() {
   startImmoweltSyncLoading();
-  toast("Immowelt-Sync läuft…");
   try {
     const syncRes = await postImmoweltSync();
     await applyImmoweltSyncSuccess(syncRes);
@@ -1248,6 +1305,208 @@ async function onReviewPending() {
   }
 }
 
+
+function formatSnapTime(iso) {
+  if (!iso) return "—";
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString("de-DE", {
+      timeZone: "Europe/Berlin",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return String(iso);
+  }
+}
+
+async function reloadSicherung() {
+  const data = await api("/snapshots");
+  snapshotsList = data.snapshots || [];
+  const meta = $("sicherung-meta");
+  if (meta) {
+    meta.textContent =
+      "Es werden die " +
+      (data.retention || 14) +
+      " neuesten Stände behalten. Aktuell: " +
+      snapshotsList.length +
+      ".";
+  }
+  renderSicherung();
+}
+
+function renderSicherung() {
+  const tb = $("sicherung-tbody");
+  if (!tb) return;
+  if (!snapshotsList.length) {
+    tb.innerHTML =
+      '<tr><td colspan="5" class="muted">Noch keine Sicherung vorhanden. Klicken Sie auf „Sicherung erstellen“.</td></tr>';
+    return;
+  }
+  tb.innerHTML = snapshotsList
+    .map((s) => {
+      const commit = s.deploy_commit ? esc(s.deploy_commit) : "—";
+      return (
+        "<tr>" +
+        "<td><code>" +
+        esc(s.id) +
+        "</code></td>" +
+        "<td>" +
+        esc(formatSnapTime(s.created_at)) +
+        "</td>" +
+        "<td>" +
+        esc(s.total_human || "—") +
+        "</td>" +
+        "<td><code>" +
+        commit +
+        "</code></td>" +
+        '<td class="row-actions">' +
+        '<button type="button" class="btn btn-outline btn-sm" data-restore-id="' +
+        esc(s.id) +
+        '">Zurückspielen</button>' +
+        "</td>" +
+        "</tr>"
+      );
+    })
+    .join("");
+  tb.querySelectorAll("[data-restore-id]").forEach((btn) => {
+    btn.addEventListener("click", () => openRestoreModal(btn.getAttribute("data-restore-id")));
+  });
+}
+
+async function onCreateSnapshot() {
+  const btn = $("btn-snapshot-create");
+  if (btn) btn.disabled = true;
+  try {
+    toast("Sicherung wird erstellt …", "");
+    const res = await api("/snapshots", {
+      method: "POST",
+      body: JSON.stringify({ reason: "manual" }),
+    });
+    toast(
+      "Sicherung „" + (res.snapshot?.id || "") + "“ erstellt (" + (res.snapshot?.total_human || "") + ")",
+      "ok"
+    );
+    await reloadSicherung();
+  } catch (e) {
+    toast(e.message || String(e), "err");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function closeRestoreModal() {
+  const modal = $("restore-modal");
+  if (modal) modal.classList.add("hidden");
+  restoreTargetId = null;
+  const phrase = $("restore-phrase");
+  if (phrase) phrase.value = "";
+  const err = $("restore-error");
+  if (err) {
+    err.textContent = "";
+    err.classList.add("hidden");
+  }
+  const conf = $("restore-confirm");
+  if (conf) conf.disabled = true;
+}
+
+async function openRestoreModal(id) {
+  restoreTargetId = id;
+  const modal = $("restore-modal");
+  const box = $("restore-overwrite");
+  const phrase = $("restore-phrase");
+  const err = $("restore-error");
+  const conf = $("restore-confirm");
+  if (err) {
+    err.textContent = "";
+    err.classList.add("hidden");
+  }
+  if (phrase) phrase.value = "";
+  if (conf) conf.disabled = true;
+  if (box) box.innerHTML = "<p class=\"muted\">Lade …</p>";
+  if (modal) modal.classList.remove("hidden");
+  try {
+    const preview = await api("/snapshots/" + encodeURIComponent(id) + "/preview");
+    if (box) {
+      const items = preview.overwrite || [];
+      box.innerHTML =
+        "<p><strong>Stand:</strong> <code>" +
+        esc(preview.id) +
+        "</code> · " +
+        esc(formatSnapTime(preview.created_at)) +
+        (preview.deploy_commit ? " · Version <code>" + esc(preview.deploy_commit) + "</code>" : "") +
+        "</p>" +
+        "<p class=\"hint\">Folgendes wird überschrieben:</p>" +
+        "<ul class=\"restore-list\">" +
+        items
+          .map(
+            (it) =>
+              "<li><strong>" +
+              esc(it.label) +
+              "</strong>" +
+              (it.detail ? " – " + esc(it.detail) : "") +
+              "</li>"
+          )
+          .join("") +
+        "</ul>";
+    }
+  } catch (e) {
+    if (box) box.innerHTML = "";
+    if (err) {
+      err.textContent = e.message || String(e);
+      err.classList.remove("hidden");
+    }
+  }
+}
+
+function onRestorePhraseInput() {
+  const phrase = $("restore-phrase");
+  const conf = $("restore-confirm");
+  if (!phrase || !conf) return;
+  conf.disabled = phrase.value.trim() !== "RESTAURIEREN";
+}
+
+async function onConfirmRestore() {
+  if (!restoreTargetId) return;
+  const phrase = $("restore-phrase");
+  const err = $("restore-error");
+  const conf = $("restore-confirm");
+  const typed = (phrase && phrase.value.trim()) || "";
+  if (typed !== "RESTAURIEREN") {
+    if (err) {
+      err.textContent = "Bitte genau RESTAURIEREN eingeben.";
+      err.classList.remove("hidden");
+    }
+    return;
+  }
+  if (conf) conf.disabled = true;
+  try {
+    toast("Sicherung wird zurückgespielt …", "");
+    await api("/snapshots/restore", {
+      method: "POST",
+      body: JSON.stringify({
+        id: restoreTargetId,
+        confirm_phrase: typed,
+      }),
+    });
+    closeRestoreModal();
+    toast("Sicherung zurückgespielt. Seite wird neu geladen …", "ok");
+    setTimeout(() => {
+      location.reload();
+    }, 1500);
+  } catch (e) {
+    if (err) {
+      err.textContent = e.message || String(e);
+      err.classList.remove("hidden");
+    }
+    toast(e.message || String(e), "err");
+    if (conf) conf.disabled = false;
+  }
+}
+
 function bind() {
   $("form-login").addEventListener("submit", login);
   $("btn-logout").addEventListener("click", logout);
@@ -1273,6 +1532,16 @@ function bind() {
   if (uploadBtn) uploadBtn.addEventListener("click", uploadPendingImages);
   const reviewBtn = $("btn-review-pending");
   if (reviewBtn) reviewBtn.addEventListener("click", onReviewPending);
+
+  const snapBtn = $("btn-snapshot-create");
+  if (snapBtn) snapBtn.addEventListener("click", onCreateSnapshot);
+  const restorePhrase = $("restore-phrase");
+  if (restorePhrase) restorePhrase.addEventListener("input", onRestorePhraseInput);
+  const restoreConfirm = $("restore-confirm");
+  if (restoreConfirm) restoreConfirm.addEventListener("click", onConfirmRestore);
+  document.querySelectorAll("[data-restore-cancel]").forEach((el) => {
+    el.addEventListener("click", closeRestoreModal);
+  });
 }
 
 async function boot() {

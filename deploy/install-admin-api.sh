@@ -49,6 +49,17 @@ chown -R www-data:www-data "$SITE/media"
 chmod 775 "$SITE/media" "$SITE/media/eigen"
 chmod g+s "$SITE/media" "$SITE/media/eigen" || true
 
+
+# App-Sicherungen: Ordner + Cron (alle 12h, 14 Stände)
+mkdir -p /var/lib/eichmann/snapshots
+chmod 755 /var/lib/eichmann/snapshots
+if [ -f "$APP/deploy/eichmann-snapshot.cron" ]; then
+  cp -f "$APP/deploy/eichmann-snapshot.cron" /etc/cron.d/eichmann-snapshot
+  chmod 644 /etc/cron.d/eichmann-snapshot
+fi
+touch /var/log/eichmann-snapshot.log
+chmod 644 /var/log/eichmann-snapshot.log || true
+
 systemctl daemon-reload
 systemctl enable eichmann-admin-api.service
 systemctl restart eichmann-admin-api.service
