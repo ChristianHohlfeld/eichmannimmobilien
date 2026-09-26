@@ -196,10 +196,27 @@
         </div>
         <div class="card" style="margin-bottom:16px">
           <p class="hint" style="margin-top:0">
-            Hier speichern Sie den aktuellen Stand von Inseraten, Eigen-Bildern und Einstellungen.
-            Es werden die 14 neuesten Stände behalten. Das Anmelde-Geheimnis wird nie in einer Sicherung abgelegt.
-            Mit „Download“ laden Sie eine Sicherung als Archiv (.tar.gz) herunter — ohne Geheimnisse.
+            <strong>Kurz erklärt — was Sie hier tun können:</strong>
           </p>
+          <ol class="hint sicherung-howto" style="margin-top:8px;padding-left:1.2rem">
+            <li>
+              <strong>Sicherung erstellen / Download:</strong>
+              Mit „Sicherung erstellen“ speichern Sie den aktuellen Stand (Inserate, Eigen-Bilder, Einstellungen).
+              Mit „Download“ laden Sie eine Sicherung als Datei auf Ihren Computer — ohne Anmelde-Geheimnis.
+              Es bleiben die 14 neuesten Stände.
+            </li>
+            <li>
+              <strong>Zurückspielen:</strong>
+              Wählen Sie einen Stand und tippen Sie zur Bestätigung das Wort <strong>RESTAURIEREN</strong>
+              (Groß- oder Kleinbuchstaben egal). Vorher sehen Sie, was überschrieben wird.
+              Mit „Abbrechen“ passiert nichts.
+            </li>
+            <li>
+              <strong>Ganzer Server (DigitalOcean):</strong>
+              Wöchentliche Abbilder des kompletten Servers. Wiederherstellen nur über die DigitalOcean-Website
+              (Links in der Tabelle unten) — Schritt für Schritt ohne Terminal.
+            </li>
+          </ol>
           <p class="hint" id="sicherung-meta"></p>
         </div>
         <div class="card table-wrap" style="padding:0;overflow:hidden;margin-bottom:16px">
@@ -220,18 +237,19 @@
         </div>
 
         <div class="card" style="margin-bottom:16px">
-          <h3 style="margin-top:0">Server-Snapshots (DigitalOcean)</h3>
+          <h3 style="margin-top:0">Ganzer Server — DigitalOcean</h3>
           <p class="hint">
-            Wöchentliche Abbilder des ganzen Servers (wie bei Hetzner-Snapshots).
-            Wiederherstellen bitte in der DigitalOcean-Konsole — nicht mit einem Klick hier,
+            Hier sehen Sie die wöchentlichen Abbilder des kompletten Servers.
+            Zurückspielen geht nur über die DigitalOcean-Website (nicht mit einem Klick hier),
             damit nichts versehentlich den laufenden Server überschreibt.
           </p>
           <p class="hint" id="do-sicherung-meta"></p>
           <p id="do-sicherung-error" class="err-box hidden"></p>
           <div class="warn-box" id="do-restore-warn" style="margin-bottom:12px">
-            <strong>Achtung:</strong> Ein Server-Wiederherstellen löscht alles auf der Festplatte,
-            was neuer ist als der Snapshot. Die Website ist währenddessen offline.
+            <strong>Achtung:</strong> Beim Wiederherstellen geht alles verloren, was neuer ist als der Snapshot.
+            Die Website ist währenddessen einige Minuten nicht erreichbar.
           </div>
+          <p class="hint" style="margin-bottom:6px"><strong>So geht’s in der DigitalOcean-Website (ohne Terminal):</strong></p>
           <ol class="hint" id="do-restore-steps" style="padding-left:1.2rem"></ol>
         </div>
         <div class="card table-wrap" style="padding:0;overflow:hidden">
@@ -283,7 +301,7 @@
       <h2 id="restore-title">Sicherung zurückspielen?</h2>
       <p class="hint" id="restore-lead">Dadurch werden die aktuellen Daten durch den gewählten Stand ersetzt. Das lässt sich nicht rückgängig machen, außer Sie spielen danach eine andere Sicherung zurück.</p>
       <div id="restore-overwrite" class="restore-overwrite"></div>
-      <label for="restore-phrase">Zur Bestätigung bitte genau <strong>RESTAURIEREN</strong> eingeben</label>
+      <label for="restore-phrase">Zur Bestätigung bitte <strong>RESTAURIEREN</strong> eingeben (Groß-/Kleinschreibung egal)</label>
       <input type="text" id="restore-phrase" autocomplete="off" spellcheck="false" placeholder="RESTAURIEREN" />
       <p id="restore-error" class="err-box hidden"></p>
       <div class="btn-row abnahme-actions">
@@ -294,6 +312,6 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="admin.js?v=sicherung-do-1" type="module"></script>
+  <script src="admin.js?v=sicherung-phrase-1" type="module"></script>
 </body>
 </html>

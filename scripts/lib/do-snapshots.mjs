@@ -157,11 +157,11 @@ export async function listDoSnapshots() {
     snapshots,
     restore_preferred: "console",
     restore_steps_de: [
-      "Öffnen Sie den Link „In DO-Konsole wiederherstellen“ (öffnet die Droplet-Einstellungen).",
-      "Dort: Einstellungen → Rebuild (oder Aktionen → Restore base image).",
-      `Im Dropdown den Snapshot wählen (z. B. eichmann-web-…), dann zur Bestätigung genau „${DROPLET_NAME}“ eintippen und Rebuild starten.`,
-      "Warnung: Der Server ist währenddessen offline. Alles auf der Festplatte, das neuer ist als der Snapshot, geht verloren.",
-      "Nach dem Rebuild: SSH-Host-Key kann sich ändern — ggf. known_hosts-Eintrag entfernen.",
+      "In der Tabelle auf „In DO-Konsole wiederherstellen“ klicken — es öffnet sich die DigitalOcean-Website (mit dem richtigen Server).",
+      "Auf der Seite „Einstellungen“ wählen, danach „Rebuild“ (Server neu aufbauen).",
+      `In der Liste den gewünschten Snapshot auswählen (Name beginnt oft mit „${DROPLET_NAME}“). Zur Bestätigung den Servernamen „${DROPLET_NAME}“ eintippen und auf Rebuild klicken.`,
+      "Der Server ist währenddessen einige Minuten nicht erreichbar. Alles, was neuer ist als der Snapshot, geht verloren.",
+      "Wenn die Website wieder läuft, sind Sie fertig — kein Terminal und keine Befehle nötig.",
     ],
     ...consoleUrls(droplet.id, snapshots[0]?.id),
   };
