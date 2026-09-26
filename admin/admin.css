@@ -748,3 +748,48 @@ table.listings tr:hover td { background: #fafaf8; }
   text-transform: uppercase;
 }
 .row-actions { white-space: nowrap; text-align: right; }
+
+/* Compact Abnahme summary (default) — full cards behind Details */
+.abnahme-summary {
+  margin: 12px 0 8px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--mist);
+  border: 1px solid var(--border);
+}
+.abnahme-summary-line {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.abnahme-summary-line:last-child { margin-bottom: 0; }
+.abnahme-details-fold {
+  margin: 10px 0 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--white);
+  padding: 0 12px 8px;
+}
+.abnahme-details-fold > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 12px 4px;
+  list-style: none;
+  color: var(--primary-mid);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.abnahme-details-fold > summary::-webkit-details-marker { display: none; }
+.abnahme-details-fold > summary::before {
+  content: "▸ ";
+  display: inline-block;
+  margin-right: 4px;
+}
+.abnahme-details-fold[open] > summary::before { content: "▾ "; }
+.abnahme-details-body { padding-bottom: 8px; }
+@media (max-width: 640px) {
+  .abnahme-summary-line { font-size: 1.08rem; }
+  .abnahme-dialog { max-height: min(92vh, 900px); }
+}

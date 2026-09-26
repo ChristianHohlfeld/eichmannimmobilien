@@ -432,13 +432,36 @@ function renderAbnahmeSections(changes) {
 }
 
 /**
- * Show Abnahme modal with visual listing cards.
- * @param {{ changes?: object[], message?: string, empty_risk?: boolean, title?: string, lead?: string }} preview
+ * Abnahme: compact summary by default; full Ist/Neu cards behind „Details anzeigen“.
+ * @param {{ changes?: object[], message?: string, empty_risk?: boolean, title?: string, lead?: string, ist?: object, neu?: object }} preview
  * @returns {Promise<boolean>}
  */
-function renderIstNeu(preview) {
-  const wrap = $("abnahme-ist-neu");
-  if (!wrap) return;
+function countAbnahmeChanges(changes) {
+  const c = { neu: 0, geändert: 0, entfernt: 0, sichtbarkeit: 0 };
+  for (const x of changes || []) {
+    if (x.action === "hinzukommen") c.neu += 1;
+    else if (x.action === "wegfallen") c.entfernt += 1;
+    else if (x.action === "Sichtbarkeit") c.sichtbarkeit += 1;
+    else c.geändert += 1;
+  }
+  return c;
+}
+
+function renderAbnahmeSummaryHtml(preview) {
+  const istN = Number(preview.ist?.count) || 0;
+  const neuN = Number(preview.neu?.count) || 0;
+  const c = countAbnahmeChanges(preview.changes);
+  const sicht =
+    c.sichtbarkeit > 0
+      ? ` · <strong>Sichtbarkeit:</strong> ${c.sichtbarkeit}`
+      : "";
+  return `<div class="abnahme-summary" id="abnahme-summary">
+    <p class="abnahme-summary-line"><strong>Jetzt online:</strong> ${istN} · <strong>Nach Übernahme:</strong> ${neuN}</p>
+    <p class="abnahme-summary-line"><strong>Neu:</strong> ${c.neu} · <strong>Geändert:</strong> ${c.geändert} · <strong>Entfernt:</strong> ${c.entfernt}${sicht}</p>
+  </div>`;
+}
+
+function renderIstNeuHtml(preview) {
   const ist = preview.ist || { label: "Bisher online", count: 0, listings: [] };
   const neu = preview.neu || { label: "Nach „Übernehmen“", count: 0, listings: [] };
   const col = (side, data) => {
@@ -452,7 +475,7 @@ function renderIstNeu(preview) {
       <div class="abnahme-cards">${cards || '<p class="abnahme-empty">Keine öffentlichen Inserate</p>'}${more}</div>
     </section>`;
   };
-  wrap.innerHTML = `<div class="abnahme-compare">${col("ist", ist)}${col("neu", neu)}</div>`;
+  return `<div class="abnahme-compare">${col("ist", ist)}${col("neu", neu)}</div>`;
 }
 
 function showAbnahme(preview) {
@@ -462,9 +485,16 @@ function showAbnahme(preview) {
     $("abnahme-title").textContent = preview.title || "Änderungen übernehmen?";
     $("abnahme-lead").textContent =
       preview.lead ||
-      "Vergleichen Sie die bisherige Website mit der neuen Version. Mit „Übernehmen“ wird die Änderung sichtbar.";
-    renderIstNeu(preview);
-    $("abnahme-sections").innerHTML = renderAbnahmeSections(preview.changes || []);
+      "Kurz prüfen, ob die Zahlen stimmen. Mit „Übernehmen“ wird die Website geändert.";
+    const detailsBody =
+      renderIstNeuHtml(preview) + renderAbnahmeSections(preview.changes || []);
+    $("abnahme-ist-neu").innerHTML =
+      renderAbnahmeSummaryHtml(preview) +
+      `<details class="abnahme-details-fold">
+        <summary>Details anzeigen</summary>
+        <div class="abnahme-details-body">${detailsBody}</div>
+      </details>`;
+    $("abnahme-sections").innerHTML = "";
     const confirmBtn = $("abnahme-confirm");
     if (confirmBtn) confirmBtn.textContent = "Übernehmen";
     if (preview.empty_risk) {
