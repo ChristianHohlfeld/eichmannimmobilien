@@ -1,4 +1,5 @@
 /* expose-lightbox-v2 */
+/* listing-aspect-cls-v1 */
 /* expose-mobile-overflow-v1 */
 /* sticky-icons-neutral-v1 + flyer-session-once */
 /* cta-script-caveat v1 */
@@ -521,8 +522,19 @@ a.listing-card:focus-visible {
   background: var(--mist);
   overflow: hidden;
   position: relative;
+  width: 100%;
+  /* Reserve box before images decode — avoids CLS on mobile/desktop */
+  contain: layout paint;
 }
-.listing-photo picture { display: block; width: 100%; height: 100%; }
+.listing-photo picture,
+.listing-photo > img,
+.listing-photo-placeholder {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
 .listing-photo img {
   width: 100%;
   height: 100%;
@@ -1556,10 +1568,15 @@ a.listing-card:focus-visible {
   position: relative;
   aspect-ratio: 4 / 3;
   background: var(--mist);
+  overflow: hidden;
+  width: 100%;
+  contain: layout paint;
 }
 .expose-gallery-item {
   margin: 0;
   display: none;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
 }
@@ -1573,11 +1590,13 @@ a.listing-card:focus-visible {
   max-width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   display: block;
 }
 .expose-gallery-placeholder {
   display: grid;
   place-items: center;
+  width: 100%;
   height: 100%;
   color: var(--slate);
 }
@@ -1593,13 +1612,15 @@ a.listing-card:focus-visible {
 .expose-thumb {
   flex: 0 0 72px;
   width: 72px;
-  height: 54px;
+  aspect-ratio: 4 / 3;
+  height: auto;
   padding: 0;
   border: 2px solid transparent;
   border-radius: 6px;
   overflow: hidden;
   cursor: pointer;
   background: var(--mist);
+  position: relative;
 }
 .expose-thumb.is-active,
 .expose-thumb:focus-visible {
@@ -1962,9 +1983,8 @@ a.listing-card:focus-visible {
 .listing-card-static { cursor: default; }
 .listing-card-static:hover { transform: none; }
 .listing-photo-placeholder {
-  width: 100%;
-  height: 100%;
-  min-height: 220px;
+  /* Fills .listing-photo aspect-ratio box (absolute inset) — no min-height CLS */
+  min-height: 0;
   display: grid;
   place-items: center;
   background: linear-gradient(135deg, rgba(17,45,61,.06), rgba(17,45,61,.14));
