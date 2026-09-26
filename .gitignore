@@ -10,3 +10,7 @@ test-results/
 *.db-wal
 *.db-shm
 var/
+# Eigen uploads live on droplet only (keep folder scaffold in git)
+media/eigen/**
+!media/eigen/
+!media/eigen/.gitkeep

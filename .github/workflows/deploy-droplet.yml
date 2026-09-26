@@ -93,6 +93,10 @@ jobs:
             --exclude='media/' \
             --exclude='var/' \
             ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEST_PATH}/"
+          # Preserve Eigen uploads (media/eigen) across --delete deploys
+          ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "mkdir -p '${DEST_PATH}/media/eigen' && chown -R www-data:www-data '${DEST_PATH}/media' || true"
           ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
             "${DEPLOY_USER}@${DEPLOY_HOST}" \
             "chown -R www-data:www-data '${DEST_PATH}' && echo \"DEPLOYED_COMMIT=${COMMIT}\" > /root/.eichmann-deploy-ref && nginx -t && systemctl reload nginx && echo OK ${COMMIT}"

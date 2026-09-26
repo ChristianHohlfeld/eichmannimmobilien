@@ -1,7 +1,7 @@
 /**
- * Unified Admin – Immowelt visibility + Eigen CRUD.
- * Auth: email + password → HttpOnly session cookie via /admin/api/
- * No GitHub PAT. Immowelt account is never written.
+ * Unified Admin – Immowelt visibility + Eigen CRUD + multi-image upload.
+ * Auth: session cookie via /admin/api/
+ * Public site changes require Abnahme modal (confirm:true).
  */
 const API = "/admin/api";
 
@@ -9,6 +9,9 @@ let config = null;
 let immoweltListings = [];
 let eigenListings = [];
 let activeTab = "immowelt";
+/** @type {{ base: string, url: string }[]} */
+let editorGallery = [];
+let pendingFiles = [];
 
 const $ = (id) => document.getElementById(id);
 
@@ -40,10 +43,16 @@ async function api(path, options = {}) {
     ...options,
     headers: {
       Accept: "application/json",
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(options.body && !(options.body instanceof FormData)
+        ? { "Content-Type": "application/json" }
+        : {}),
       ...(options.headers || {}),
     },
   };
+  // FormData: let browser set multipart boundary — strip Content-Type if set
+  if (options.body instanceof FormData && opts.headers["Content-Type"]) {
+    delete opts.headers["Content-Type"];
+  }
   const res = await fetch(`${API}${path}`, opts);
   let data = null;
   const text = await res.text();
@@ -107,6 +116,161 @@ function shortId(id) {
   return String(id || "").slice(0, 8);
 }
 
+function thumbUrl(item) {
+  if (!item) return null;
+  if (item.thumb) return item.thumb;
+  if (item.url) return item.url;
+  if (item.main_image_url) return item.main_image_url;
+  const base = item.image_base || (item.gallery_bases && item.gallery_bases[0]);
+  if (!base) return null;
+  const b = String(base).replace(/^\/+/, "");
+  const rel = b.includes("/") ? b : `assets/listings/${b}`;
+  return `/${rel}.jpg`;
+}
+
+/* ---------- Abnahme modal (visual listing cards) ---------- */
+
+function actionLabel(action) {
+  const map = {
+    hinzukommen: "Neu auf der Website",
+    wegfallen: "Verschwinden von der Website",
+    geändert: "Geändert",
+    Sichtbarkeit: "Sichtbarkeit",
+  };
+  return map[action] || action;
+}
+
+function renderAbnahmeCard(item, kind) {
+  const thumb = thumbUrl(item);
+  const detail = item.detail ? `<span>${esc(item.detail)}</span>` : "";
+  const price = item.price ? `<span>${esc(item.price)}</span>` : "";
+  const media = thumb
+    ? `<img class="abnahme-thumb" src="${esc(thumb)}" alt="" loading="lazy" width="72" height="54" />`
+    : `<div class="abnahme-thumb-ph" aria-hidden="true">Kein Bild</div>`;
+  return `<article class="abnahme-card kind-${esc(kind)}">
+    ${media}
+    <div class="abnahme-card-body">
+      <strong title="${esc(item.title)}">${esc(item.title || "–")}</strong>
+      <div class="abnahme-card-meta">
+        <span class="badge">${esc(item.origin || "–")}</span>
+        <span>${esc(item.location || "–")}</span>
+        ${price}
+        ${detail}
+      </div>
+    </div>
+  </article>`;
+}
+
+function renderAbnahmeSections(changes) {
+  const groups = {
+    hinzukommen: [],
+    wegfallen: [],
+    geändert: [],
+    Sichtbarkeit: [],
+  };
+  for (const c of changes || []) {
+    const k = groups[c.action] ? c.action : "geändert";
+    groups[k].push(c);
+  }
+  const parts = [];
+  for (const [kind, items] of Object.entries(groups)) {
+    if (!items.length) continue;
+    parts.push(`<section class="abnahme-section" data-kind="${esc(kind)}">
+      <h3>${esc(actionLabel(kind))} (${items.length})</h3>
+      <div class="abnahme-cards">
+        ${items.map((it) => renderAbnahmeCard(it, kind)).join("")}
+      </div>
+    </section>`);
+  }
+  if (!parts.length) {
+    return `<p class="abnahme-empty">Keine sichtbaren Inserats-Unterschiede – Website trotzdem neu erzeugen?</p>`;
+  }
+  return parts.join("");
+}
+
+/**
+ * Show Abnahme modal with visual listing cards.
+ * @param {{ changes?: object[], message?: string, empty_risk?: boolean, title?: string, lead?: string }} preview
+ * @returns {Promise<boolean>}
+ */
+function showAbnahme(preview) {
+  return new Promise((resolve) => {
+    const modal = $("abnahme-modal");
+    const warn = $("abnahme-warning");
+    $("abnahme-title").textContent = preview.title || "Änderungen freigeben?";
+    $("abnahme-lead").textContent =
+      preview.lead ||
+      preview.message ||
+      "Diese Inserate werden auf der öffentlichen Website geändert. Bitte prüfen.";
+    $("abnahme-sections").innerHTML = renderAbnahmeSections(preview.changes || []);
+    if (preview.empty_risk) {
+      warn.textContent =
+        "Achtung: Danach wären keine Inserate mehr öffentlich. Bitte nur fortfahren, wenn das beabsichtigt ist.";
+      warn.classList.remove("hidden");
+    } else {
+      warn.classList.add("hidden");
+      warn.textContent = "";
+    }
+    modal.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+    $("abnahme-confirm").focus();
+
+    const cleanup = (ok) => {
+      modal.classList.add("hidden");
+      document.body.style.overflow = "";
+      modal.removeEventListener("click", onClick);
+      document.removeEventListener("keydown", onKey);
+      resolve(ok);
+    };
+    const onClick = (e) => {
+      if (e.target.closest("[data-abnahme-cancel]")) cleanup(false);
+      if (e.target.id === "abnahme-confirm") cleanup(true);
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") cleanup(false);
+    };
+    modal.addEventListener("click", onClick);
+    document.addEventListener("keydown", onKey);
+  });
+}
+
+/** Call mutating endpoint: first without confirm (preview), show modal, then confirm:true. */
+async function confirmThenMutate(path, bodyBuilder) {
+  const previewBody = bodyBuilder(false);
+  const preview = await api(path, {
+    method: "POST",
+    body: JSON.stringify(previewBody),
+  });
+  if (preview.requires_confirm || preview.preview) {
+    const ok = await showAbnahme(preview);
+    if (!ok) return { cancelled: true };
+  }
+  const confirmBody = bodyBuilder(true);
+  if (preview.empty_risk) confirmBody.allow_empty = true;
+  try {
+    return await api(path, {
+      method: "POST",
+      body: JSON.stringify(confirmBody),
+    });
+  } catch (e) {
+    if (e.status === 409 && e.data?.empty_risk) {
+      const force = await showAbnahme({
+        ...e.data,
+        title: "Wirklich ohne öffentliche Inserate freigeben?",
+        lead: e.message,
+      });
+      if (!force) return { cancelled: true };
+      return await api(path, {
+        method: "POST",
+        body: JSON.stringify({ ...confirmBody, allow_empty: true }),
+      });
+    }
+    throw e;
+  }
+}
+
+/* ---------- Auth / config ---------- */
+
 async function loadConfig() {
   const res = await fetch("config.json", { cache: "no-store" });
   if (!res.ok) throw new Error("config.json fehlt");
@@ -120,7 +284,6 @@ async function login(ev) {
   try {
     const email = normalizeEmail($("email").value);
     const password = $("password").value;
-    // Client-side gate mirrors server (UX only); real auth is cookie from API
     const allowed = (config.admin_emails || []).map(normalizeEmail);
     if (allowed.length && !allowed.includes(email)) {
       throw new Error("E-Mail nicht freigeschaltet");
@@ -157,6 +320,8 @@ async function ensureSession() {
   }
 }
 
+/* ---------- Lists ---------- */
+
 async function loadImmoweltHealth() {
   const line = $("immowelt-health-line");
   const detail = $("immowelt-health-detail");
@@ -176,6 +341,7 @@ async function loadImmoweltHealth() {
       .replace(",", "");
   };
   let status = {};
+  let publishPending = null;
   try {
     const st = await api("/status");
     status = st.immowelt_sync || {};
@@ -189,20 +355,50 @@ async function loadImmoweltHealth() {
       /* ignore */
     }
   }
+  try {
+    const prev = await api("/publish/preview");
+    publishPending = prev.publish_pending;
+    updatePendingBanner(prev);
+  } catch {
+    updatePendingBanner(null);
+  }
   const valid = status.last_valid_at || null;
   if (status.state === "current") {
-    line.innerHTML = `<span class="badge ok">OK</span> offizieller Immowelt-API-Stand ${esc(fmt(valid))}`;
+    line.innerHTML = `<span class="badge ok">OK</span> aktueller Immowelt-Stand ${esc(fmt(valid))}`;
     detail.textContent =
       "Immowelt ist fachliche Quelle; nur validierte Snapshots werden übernommen. Hier nur Sichtbarkeit.";
   } else if (status.state === "awaiting_api_key") {
-    line.innerHTML = `<span class="badge warn">API-Key fehlt</span> letzter gültiger Stand ${esc(fmt(valid))}`;
-    detail.textContent = status.reason || "Offizielle Immowelt-API vorbereitet; Key fehlt noch.";
+    line.innerHTML = `<span class="badge warn">Zugang fehlt</span> letzter gültiger Stand ${esc(fmt(valid))}`;
+    detail.textContent = status.reason || "Immowelt-Zugang noch nicht eingerichtet; letzter bekannter Stand bleibt.";
   } else if (status.state === "rejected") {
     line.innerHTML = `<span class="badge miss">LKG aktiv</span> Abruf verworfen · ${esc(fmt(valid))}`;
     detail.textContent = status.reason || "Unsicherer Abruf verworfen. Last Known Good bleibt online.";
   } else {
     line.innerHTML = `<span class="badge warn">Status offen</span> letzter Stand ${esc(fmt(valid))}`;
-    detail.textContent = status.reason || "Kein bestätigter aktueller Immowelt-API-Snapshot.";
+    detail.textContent = status.reason || "Kein bestätigter aktueller Immowelt-Stand.";
+  }
+  if (publishPending && publishPending.message) {
+    detail.textContent =
+      (detail.textContent || "") + " · " + publishPending.message;
+  }
+}
+
+function updatePendingBanner(preview) {
+  const banner = $("pending-banner");
+  const text = $("pending-banner-text");
+  if (!banner) return;
+  const pending = preview?.publish_pending;
+  const has = preview?.has_changes || (pending && pending.reason);
+  if (!has) {
+    banner.classList.add("hidden");
+    return;
+  }
+  banner.classList.remove("hidden");
+  if (text) {
+    text.textContent = pending?.message
+      || (preview?.empty_risk
+        ? "Achtung: Freigabe würde alle öffentlichen Inserate entfernen."
+        : "Es gibt Änderungen, die noch nicht auf der Website sind – bitte freigeben.");
   }
 }
 
@@ -247,7 +443,7 @@ function renderImmowelt() {
     .join("");
   tbody.querySelectorAll("[data-toggle-hidden]").forEach((btn) => {
     btn.addEventListener("click", () =>
-      toggleVisibility(btn.getAttribute("data-toggle-hidden"), "immowelt")
+      toggleVisibility(btn.getAttribute("data-toggle-hidden"))
     );
   });
 }
@@ -262,12 +458,14 @@ function renderEigen() {
   tbody.innerHTML = eigenListings
     .map((L) => {
       const local = L.local_url ? `../${L.local_url}` : "#";
+      const nImg = (L.gallery_bases || L.images || []).length;
       return `<tr>
         <td>
           <strong>${esc(L.title || "–")}</strong>
           <div><span class="badge ok">nur bei uns</span>
           ${L.site_hidden ? ' <span class="badge warn">ausgeblendet</span>' : ""}
-          ${L.active === false ? ' <span class="badge warn">inaktiv</span>' : ""}</div>
+          ${L.active === false ? ' <span class="badge warn">inaktiv</span>' : ""}
+          ${nImg ? ` <span class="badge">${nImg} Fotos</span>` : ""}</div>
           <div class="mono muted">${esc(L.id)}</div>
         </td>
         <td>${esc(L.location || "–")}</td>
@@ -311,25 +509,188 @@ async function toggleVisibility(id) {
   if (!L) return;
   const nextHidden = L.site_hidden !== true;
   try {
-    await api("/visibility", {
-      method: "POST",
-      body: JSON.stringify({ id, site_hidden: nextHidden }),
-    });
+    const res = await confirmThenMutate("/visibility", (confirm) => ({
+      id,
+      site_hidden: nextHidden,
+      confirm,
+    }));
+    if (res.cancelled) {
+      toast("Abgebrochen – Website unverändert", "");
+      return;
+    }
     L.site_hidden = nextHidden;
-    toast(nextHidden ? "Auf Website ausgeblendet" : "Wieder eingeblendet", "ok");
+    toast(nextHidden ? "Auf der Website ausgeblendet" : "Auf der Website eingeblendet", "ok");
     renderImmowelt();
     renderEigen();
+    await loadImmoweltHealth();
   } catch (e) {
     toast(e.message || String(e), "err");
   }
 }
+
+/* ---------- Gallery editor ---------- */
+
+function syncGalleryFromListing(L) {
+  const bases = Array.isArray(L?.gallery_bases) ? L.gallery_bases : [];
+  const images = Array.isArray(L?.images) ? L.images : [];
+  editorGallery = bases.map((base, i) => ({
+    base,
+    url: images[i] || thumbUrl({ image_base: base }) || "",
+  }));
+  if (!editorGallery.length && L?.main_image_url) {
+    editorGallery = [{ base: null, url: L.main_image_url }];
+  }
+  pendingFiles = [];
+  const fileInput = $("f-images");
+  if (fileInput) fileInput.value = "";
+  const btn = $("btn-upload-images");
+  if (btn) btn.disabled = true;
+  renderGalleryThumbs();
+}
+
+function renderGalleryThumbs() {
+  const wrap = $("gallery-thumbs");
+  if (!wrap) return;
+  if (!editorGallery.length) {
+    wrap.innerHTML = `<p class="hint" style="margin:0">Noch keine Bilder – Dateien wählen und hochladen.</p>`;
+    return;
+  }
+  wrap.innerHTML = editorGallery
+    .map((g, i) => {
+      const src = g.url || thumbUrl({ image_base: g.base }) || "";
+      return `<div class="gallery-thumb${i === 0 ? " is-main" : ""}" data-idx="${i}">
+        ${src ? `<img src="${esc(src)}" alt="Foto ${i + 1}" width="96" height="72" loading="lazy" />` : `<div class="abnahme-thumb-ph">?</div>`}
+        <div class="thumb-meta"><span>${i === 0 ? "Haupt" : i + 1}</span></div>
+        <div class="thumb-actions">
+          <button type="button" class="btn btn-outline btn-sm" data-gal-up="${i}" ${i === 0 ? "disabled" : ""} title="Nach vorne">↑</button>
+          <button type="button" class="btn btn-outline btn-sm" data-gal-down="${i}" ${i === editorGallery.length - 1 ? "disabled" : ""} title="Nach hinten">↓</button>
+          <button type="button" class="btn btn-outline btn-sm" data-gal-del="${i}" title="Entfernen">×</button>
+        </div>
+      </div>`;
+    })
+    .join("");
+  wrap.querySelectorAll("[data-gal-up]").forEach((btn) => {
+    btn.addEventListener("click", () => moveGallery(Number(btn.getAttribute("data-gal-up")), -1));
+  });
+  wrap.querySelectorAll("[data-gal-down]").forEach((btn) => {
+    btn.addEventListener("click", () => moveGallery(Number(btn.getAttribute("data-gal-down")), 1));
+  });
+  wrap.querySelectorAll("[data-gal-del]").forEach((btn) => {
+    btn.addEventListener("click", () => deleteGalleryAt(Number(btn.getAttribute("data-gal-del"))));
+  });
+}
+
+async function moveGallery(idx, delta) {
+  const j = idx + delta;
+  if (j < 0 || j >= editorGallery.length) return;
+  const tmp = editorGallery[idx];
+  editorGallery[idx] = editorGallery[j];
+  editorGallery[j] = tmp;
+  renderGalleryThumbs();
+  const id = $("f-id").value;
+  const bases = editorGallery.map((g) => g.base).filter(Boolean);
+  if (id && bases.length === editorGallery.length) {
+    try {
+      const res = await api("/eigen/images/reorder", {
+        method: "POST",
+        body: JSON.stringify({ id, gallery_bases: bases }),
+      });
+      if (res.listing) applySavedListing(res.listing);
+    } catch (e) {
+      toast(e.message || String(e), "err");
+    }
+  }
+}
+
+async function deleteGalleryAt(idx) {
+  const item = editorGallery[idx];
+  if (!item) return;
+  if (!confirm("Dieses Bild entfernen?")) return;
+  const id = $("f-id").value;
+  if (id && item.base) {
+    try {
+      const res = await api("/eigen/images/delete", {
+        method: "POST",
+        body: JSON.stringify({ id, base: item.base }),
+      });
+      if (res.listing) {
+        applySavedListing(res.listing);
+        syncGalleryFromListing(res.listing);
+        toast("Bild entfernt – Website ändert sich erst nach Freigabe", "ok");
+        return;
+      }
+    } catch (e) {
+      toast(e.message || String(e), "err");
+      return;
+    }
+  }
+  editorGallery.splice(idx, 1);
+  renderGalleryThumbs();
+}
+
+function onFilesChosen() {
+  const input = $("f-images");
+  pendingFiles = input?.files ? Array.from(input.files) : [];
+  const btn = $("btn-upload-images");
+  if (btn) btn.disabled = !pendingFiles.length;
+  const msg = $("gallery-msg");
+  if (msg) {
+    msg.textContent = pendingFiles.length
+      ? `${pendingFiles.length} Datei(en) bereit zum Hochladen`
+      : "";
+  }
+}
+
+async function uploadPendingImages() {
+  const id = $("f-id").value || crypto.randomUUID();
+  $("f-id").value = id;
+  if (!pendingFiles.length) {
+    toast("Keine Dateien gewählt", "err");
+    return;
+  }
+  const msg = $("gallery-msg");
+  if (msg) msg.textContent = "Lade hoch …";
+  const fd = new FormData();
+  fd.append("id", id);
+  const title = $("f-title").value.trim();
+  if (title) fd.append("title", title);
+  const slug = $("f-slug").value.trim();
+  if (slug) fd.append("slug", slug);
+  for (const f of pendingFiles) fd.append("images", f, f.name);
+  try {
+    const res = await api("/eigen/images", { method: "POST", body: fd });
+    if (res.listing) {
+      applySavedListing(res.listing);
+      syncGalleryFromListing(res.listing);
+    }
+    pendingFiles = [];
+    const input = $("f-images");
+    if (input) input.value = "";
+    const btn = $("btn-upload-images");
+    if (btn) btn.disabled = true;
+    if (msg) msg.textContent = "Upload OK – mit „Speichern & freigeben“ erscheinen die Fotos auf der Website.";
+    toast("Bilder hochgeladen – Website ändert sich erst nach Freigabe", "ok");
+  } catch (e) {
+    if (msg) msg.textContent = e.message || String(e);
+    toast(e.message || String(e), "err");
+  }
+}
+
+function applySavedListing(saved) {
+  const idx = eigenListings.findIndex((x) => x.id === saved.id);
+  if (idx >= 0) eigenListings[idx] = saved;
+  else eigenListings.unshift(saved);
+  renderEigen();
+}
+
+/* ---------- Eigen editor ---------- */
 
 function openEditor(id) {
   const L = id ? eigenListings.find((x) => x.id === id) : null;
   $("card-editor").classList.remove("hidden");
   $("editor-heading").textContent = L ? "Eigen-Inserat bearbeiten" : "Neues Eigen-Inserat";
   $("btn-delete").style.display = L ? "" : "none";
-  $("f-id").value = L?.id || "";
+  $("f-id").value = L?.id || crypto.randomUUID();
   $("f-title").value = L?.title || "";
   $("f-slug").value = L?.slug || "";
   $("f-price").value = L?.price || "";
@@ -344,6 +705,8 @@ function openEditor(id) {
   $("f-active").checked = L?.active !== false;
   $("f-site-hidden").checked = L?.site_hidden === true;
   $("form-msg").textContent = "";
+  syncGalleryFromListing(L);
+  $("card-editor").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function closeEditor() {
@@ -352,6 +715,9 @@ function closeEditor() {
   $("f-status").value = "Kauf";
   $("f-active").checked = true;
   $("btn-delete").style.display = "none";
+  editorGallery = [];
+  pendingFiles = [];
+  renderGalleryThumbs();
 }
 
 function buildListing() {
@@ -359,7 +725,17 @@ function buildListing() {
   const title = $("f-title").value.trim();
   if (!title) throw new Error("Titel fehlt");
   const slug = ($("f-slug").value.trim() || slugify(title, id)).replace(/^\/+|\/+$/g, "");
-  const image = $("f-image").value.trim() || null;
+  const urlFallback = $("f-image").value.trim() || null;
+  const bases = editorGallery.map((g) => g.base).filter(Boolean);
+  const images = editorGallery.map((g) => g.url).filter(Boolean);
+  let main = images[0] || urlFallback;
+  let gallery_bases = bases;
+  let image_base = bases[0] || null;
+  if (!gallery_bases.length && urlFallback) {
+    main = urlFallback;
+    gallery_bases = [];
+    image_base = null;
+  }
   return {
     id,
     slug,
@@ -373,8 +749,10 @@ function buildListing() {
     type: $("f-type").value.trim() || null,
     short_description: $("f-short").value.trim() || null,
     description: $("f-description").value.trim() || null,
-    main_image_url: image,
-    images: image ? [image] : [],
+    main_image_url: main,
+    images: images.length ? images : main ? [main] : [],
+    gallery_bases,
+    image_base,
     active: $("f-active").checked,
     detail_page: true,
     site_hidden: $("f-site-hidden").checked,
@@ -387,22 +765,23 @@ function buildListing() {
 async function onSubmit(ev) {
   ev.preventDefault();
   const msg = $("form-msg");
-  msg.textContent = "Speichere …";
+  msg.textContent = "Prüfe Änderungen …";
   try {
     const listing = buildListing();
-    const res = await api("/eigen", {
-      method: "POST",
-      body: JSON.stringify({ listing }),
-    });
+    const res = await confirmThenMutate("/eigen", (confirm) => ({ listing, confirm }));
+    if (res.cancelled) {
+      msg.textContent = "Abgebrochen – nichts publiziert.";
+      toast("Abgebrochen", "");
+      return;
+    }
     const saved = res.listing || listing;
-    const idx = eigenListings.findIndex((x) => x.id === saved.id);
-    if (idx >= 0) eigenListings[idx] = saved;
-    else eigenListings.unshift(saved);
-    renderEigen();
-    msg.textContent = "Gespeichert und publiziert.";
-    toast("Eigen-Inserat gespeichert", "ok");
+    applySavedListing(saved);
+    syncGalleryFromListing(saved);
+    msg.textContent = "Gespeichert und auf der Website freigegeben.";
+    toast("Eigen-Inserat freigegeben", "ok");
     $("f-id").value = saved.id;
     $("btn-delete").style.display = "";
+    await loadImmoweltHealth();
   } catch (e) {
     msg.textContent = e.message || String(e);
     toast(e.message || String(e), "err");
@@ -412,17 +791,18 @@ async function onSubmit(ev) {
 async function onDelete() {
   const id = $("f-id").value;
   if (!id) return;
-  if (!confirm("Eigen-Inserat wirklich löschen?")) return;
-  $("form-msg").textContent = "Lösche …";
+  $("form-msg").textContent = "Prüfe Löschung …";
   try {
-    await api("/eigen/delete", {
-      method: "POST",
-      body: JSON.stringify({ id }),
-    });
+    const res = await confirmThenMutate("/eigen/delete", (confirm) => ({ id, confirm }));
+    if (res.cancelled) {
+      $("form-msg").textContent = "Löschen abgebrochen.";
+      return;
+    }
     eigenListings = eigenListings.filter((x) => x.id !== id);
     renderEigen();
     closeEditor();
     toast("Eigen-Inserat gelöscht", "ok");
+    await loadImmoweltHealth();
   } catch (e) {
     $("form-msg").textContent = e.message || String(e);
     toast(e.message || String(e), "err");
@@ -431,9 +811,32 @@ async function onDelete() {
 
 async function onPublish() {
   try {
-    toast("Publiziere …");
-    await api("/publish", { method: "POST", body: "{}" });
-    toast("Site aus SQLite publiziert", "ok");
+    toast("Prüfe Änderungen …");
+    const res = await confirmThenMutate("/publish", (confirm) => ({ confirm }));
+    if (res.cancelled) {
+      toast("Freigabe abgebrochen", "");
+      return;
+    }
+    toast("Website aktualisiert", "ok");
+    await reloadAll();
+  } catch (e) {
+    toast(e.message || String(e), "err");
+  }
+}
+
+async function onReviewPending() {
+  try {
+    const preview = await api("/publish/preview");
+    const ok = await showAbnahme(preview);
+    if (!ok) return;
+    await api("/publish", {
+      method: "POST",
+      body: JSON.stringify({
+        confirm: true,
+        allow_empty: preview.empty_risk === true,
+      }),
+    });
+    toast("Website aktualisiert", "ok");
     await reloadAll();
   } catch (e) {
     toast(e.message || String(e), "err");
@@ -462,6 +865,13 @@ function bind() {
     btn.addEventListener("click", () => setTab(btn.getAttribute("data-tab")));
   });
   window.addEventListener("hashchange", () => setTab(tabFromHash()));
+
+  const fileInput = $("f-images");
+  if (fileInput) fileInput.addEventListener("change", onFilesChosen);
+  const uploadBtn = $("btn-upload-images");
+  if (uploadBtn) uploadBtn.addEventListener("click", uploadPendingImages);
+  const reviewBtn = $("btn-review-pending");
+  if (reviewBtn) reviewBtn.addEventListener("click", onReviewPending);
 }
 
 async function boot() {

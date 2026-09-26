@@ -694,10 +694,11 @@ function renderCard(listing) {
 
   const detailed = hasPublicDetail(listing);
   const href = listing.local_url || localExposePath(listing);
-  const media = base
+  const rel = assetRelPath(base);
+  const media = rel
     ? `<picture>
-              <source srcset="assets/listings/${escapeHtml(base)}.webp" type="image/webp">
-              <img src="assets/listings/${escapeHtml(base)}.jpg" alt="${escapeHtml(alt)}" loading="lazy" width="800" height="600" decoding="async">
+              <source srcset="${escapeHtml(rel)}.webp" type="image/webp">
+              <img src="${escapeHtml(rel)}.jpg" alt="${escapeHtml(alt)}" loading="lazy" width="800" height="600" decoding="async">
             </picture>`
     : `<div class="listing-photo-placeholder" aria-hidden="true"><span>Immobilien Eichmann</span></div>`;
 
@@ -808,11 +809,21 @@ function assetPrefix(fromObjekt) {
   return fromObjekt ? "../" : "";
 }
 
+/** Resolve gallery stem: Immowelt "01-abcd1234" → assets/listings/…; Eigen "media/eigen/id/01" → as-is. */
+function assetRelPath(base) {
+  const b = String(base || "").replace(/^\/+/, "").replace(/\\/g, "/");
+  if (!b) return null;
+  if (b.includes("/")) return b;
+  return `assets/listings/${b}`;
+}
+
 function pictureTag(base, alt, { prefix = "", loading = "lazy", className = "" } = {}) {
+  const rel = assetRelPath(base);
+  if (!rel) return "";
   const cls = className ? ` class="${className}"` : "";
   return `<picture>
-              <source srcset="${prefix}assets/listings/${escapeHtml(base)}.webp" type="image/webp">
-              <img src="${prefix}assets/listings/${escapeHtml(base)}.jpg" alt="${escapeHtml(alt)}" loading="${loading}" width="800" height="600" decoding="async"${cls}>
+              <source srcset="${prefix}${escapeHtml(rel)}.webp" type="image/webp">
+              <img src="${prefix}${escapeHtml(rel)}.jpg" alt="${escapeHtml(alt)}" loading="${loading}" width="800" height="600" decoding="async"${cls}>
             </picture>`;
 }
 
@@ -841,8 +852,9 @@ function renderExposeHtml(listing) {
     .slice(0, 160);
 
   const canonical = `${SITE_ORIGIN}/${listing.local_url}`;
-  const ogImage = listing.image_base
-    ? `${SITE_ORIGIN}/assets/listings/${listing.image_base}.jpg`
+  const ogRel = assetRelPath(listing.image_base);
+  const ogImage = ogRel
+    ? `${SITE_ORIGIN}/${ogRel}.jpg`
     : `${SITE_ORIGIN}/assets/share-card-plain-v2.jpg`;
 
   const factRows = [
@@ -1383,6 +1395,17 @@ async function syncImages(data, { skipDownload = false } = {}) {
       L.image_base = null;
       L.gallery_bases = [];
       L.floor_plan_bases = [];
+      continue;
+    }
+
+    // Path-style Eigen bases (media/eigen/…) are local uploads — never fetch as Immowelt CDN URLs
+    const isLocalPathBase = String(L.image_base || "").includes("/");
+    if (isLocalPathBase) {
+      const bases = [
+        L.image_base,
+        ...(L.gallery_bases || []).filter((b) => b && b !== L.image_base),
+      ].filter(Boolean);
+      L.gallery_bases = bases;
       continue;
     }
 
@@ -2614,15 +2637,28 @@ export async function publishListingsDocument(doc, { siteRoot = ROOT, knownSlugs
     listings: Array.isArray(doc.listings) ? doc.listings.map((L) => ({ ...L })) : [],
   };
   data.listings.forEach((L, i) => {
-    if (!(L.detail_page === false && !L.main_image_url && !(L.images || []).length)) {
-      L.image_base = L.image_base || imageBase(i, L.id);
-    }
-    L.slug = makeSlug(L);
-    L.local_url = localExposePath(L);
     if (!L.origin) {
       const src = String(L.source || "").toLowerCase();
       L.origin = src === "eigen" || src === "local" ? "eigen" : "immowelt";
     }
+    const hasMedia =
+      L.image_base ||
+      L.main_image_url ||
+      (Array.isArray(L.images) && L.images.length) ||
+      (Array.isArray(L.gallery_bases) && L.gallery_bases.length);
+    if (L.detail_page === false && !hasMedia) {
+      L.image_base = null;
+    } else if (L.origin === "eigen" || L.origin === "local") {
+      // Eigen: only keep explicit local gallery bases (media/eigen/…); never invent Immowelt stems
+      if (!L.image_base && Array.isArray(L.gallery_bases) && L.gallery_bases.length) {
+        L.image_base = L.gallery_bases[0];
+      }
+      if (!hasMedia) L.image_base = null;
+    } else if (!(L.detail_page === false && !hasMedia)) {
+      L.image_base = L.image_base || imageBase(i, L.id);
+    }
+    L.slug = makeSlug(L);
+    L.local_url = localExposePath(L);
   });
   data.listing_count = data.listings.length;
 
@@ -2821,8 +2857,33 @@ async function main() {
     source: data.source,
     immowelt_profile: data.immowelt_profile || data.source,
   });
-  await publishListingsDocument(doc);
-  console.log(`Accepted Immowelt sync into SQLite SoT: ${doc.listing_count} total records published.`);
+  // Live HTML/JSON publish requires Chris Abnahme in /admin (confirm modal).
+  // Sync may update SQLite; public site stays until "Neu publizieren" / Freigabe.
+  const { openDb, setMeta } = await import("./lib/db.mjs");
+  const dbMeta = openDb();
+  try {
+    setMeta(
+      dbMeta,
+      "publish_pending",
+      JSON.stringify({
+        reason: "immowelt_sync",
+        at: new Date().toISOString(),
+        listing_count: doc.listing_count,
+        active_listing_count: doc.active_listing_count,
+        message: "Immowelt-Sync in SQLite übernommen – öffentliche Website wartet auf Freigabe.",
+      })
+    );
+  } finally {
+    dbMeta.close();
+  }
+  if (process.env.EICHMANN_AUTO_PUBLISH === "1") {
+    await publishListingsDocument(doc);
+    console.log(`AUTO_PUBLISH: ${doc.listing_count} records published to site.`);
+  } else {
+    console.log(
+      `Accepted Immowelt sync into SQLite SoT: ${doc.listing_count} records. Live publish deferred (Abnahme in /admin).`
+    );
+  }
   await writeSyncStatus({
     state: "current",
     previous,

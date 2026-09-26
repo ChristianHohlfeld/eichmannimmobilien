@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Admin – Immobilien Eichmann</title>
-  <link rel="stylesheet" href="admin.css?v=unified-1" />
+  <link rel="stylesheet" href="admin.css?v=gallery-abnahme-2" />
 </head>
 <body>
   <header class="app-header hidden" id="app-header">
@@ -14,21 +14,21 @@
       <div class="sub">Immobilien Eichmann · Immowelt + Eigen-Inserate</div>
     </div>
     <div class="actions">
-      <button type="button" class="btn btn-ghost btn-sm" id="btn-publish" title="Statische Site aus SQLite neu erzeugen">Neu publizieren</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-publish" title="Geprüfte Änderungen auf der Website veröffentlichen">Änderungen freigeben</button>
       <button type="button" class="btn btn-ghost btn-sm" id="btn-logout">Abmelden</button>
     </div>
   </header>
 
   <div class="sot-banner hidden" id="sot-banner" role="status">
-    <strong>SoT = SQLite</strong> auf dem Droplet.
-    Immowelt-Tab: Sichtbarkeit &amp; Sync-Status (kein Schreiben ins Immowelt-Konto).
-    Eigen-Tab: volles CRUD — Speichern nur mit Admin-Passwort (kein GitHub-Token).
+    <strong>Immowelt:</strong> Objekte ein- oder ausblenden. Das Immowelt-Konto wird nicht verändert.
+    <strong>Eigen:</strong> Eigene Inserate anlegen, Bilder hochladen und bearbeiten.
+    Vor jeder Veröffentlichung: Änderungen prüfen, dann <em>Durchführen</em> oder <em>Abbrechen</em>.
   </div>
 
   <main class="wrap">
     <section id="view-gate" class="card gate-card">
       <h2 style="margin-top:0;font-family:var(--font-display);color:var(--primary)">Anmeldung</h2>
-      <p class="hint">Freigeschaltete E-Mail + Passwort. Speichern läuft über die Server-API auf dem Droplet — <strong>kein GitHub-PAT</strong>.</p>
+      <p class="hint">Bitte mit freigeschalteter E-Mail und Passwort anmelden.</p>
       <form id="form-login">
         <label for="email">E-Mail</label>
         <input type="email" id="email" autocomplete="username" required autofocus placeholder="chris.hohlfeld@gmail.com" />
@@ -50,20 +50,20 @@
       <!-- Immowelt panel -->
       <div id="panel-immowelt" class="tab-panel" role="tabpanel">
         <div class="toolbar">
-          <h2>Immowelt-Spiegel <span class="muted" id="immowelt-count"></span></h2>
+          <h2>Immowelt-Objekte <span class="muted" id="immowelt-count"></span></h2>
           <div class="btn-row" style="margin:0">
             <button type="button" class="btn btn-outline btn-sm" id="btn-reload-immowelt">Neu laden</button>
           </div>
         </div>
         <div class="card" id="immowelt-health" style="margin-bottom:16px">
-          <strong>Immowelt-Datenstatus</strong>
+          <strong>Immowelt-Stand</strong>
           <p class="hint" id="immowelt-health-line">Prüfe …</p>
           <p class="hint" id="immowelt-health-detail"></p>
         </div>
         <div class="card" style="margin-bottom:16px">
           <strong>Hinweis</strong>
-          <p class="hint" style="margin:4px 0 0">Objektdaten ausschließlich in Immowelt pflegen. Hier nur Ein-/Ausblenden auf unserer Website.
-            Immowelt-Import läuft über den geplanten GitHub-Workflow (read-only). Eigen-Inserate im Tab „Eigen-Inserate“.</p>
+          <p class="hint" style="margin:4px 0 0">Objektdaten bitte weiterhin in Immowelt pflegen. Hier nur Ein- oder Ausblenden auf unserer Website.
+            Eigene Inserate (nicht über Immowelt) finden Sie im Tab „Eigen-Inserate“.</p>
         </div>
         <div class="card table-wrap" style="padding:0;overflow:hidden">
           <table class="listings">
@@ -95,7 +95,7 @@
 
         <div class="card hidden" id="card-editor" style="margin-bottom:16px">
           <h3 style="margin-top:0;color:var(--primary)" id="editor-heading">Neues Eigen-Inserat</h3>
-          <p class="hint">Badge auf der Website: <strong>nur bei uns</strong>. Kein Immowelt-Schreiben. Speichern → SQLite + Publish.</p>
+          <p class="hint">Auf der Website erscheint das Badge <strong>nur bei uns</strong>. Immowelt wird nicht verändert. Speichern öffnet die Freigabe-Prüfung.</p>
           <form id="form-eigen">
             <input type="hidden" id="f-id" />
             <div class="form-grid">
@@ -140,8 +140,24 @@
                 <textarea id="f-description" rows="6"></textarea>
               </div>
               <div class="full">
-                <label for="f-image">Hauptbild-URL</label>
-                <input type="url" id="f-image" placeholder="https://…" />
+                <label>Bilder / Galerie</label>
+                <p class="hint" style="margin-top:0">Mehrere Fotos hochladen (JPEG/PNG/WebP, max. 8&nbsp;MB). Reihenfolge = Galerie auf dem Exposé (wie Immowelt). Erstes Bild = Hauptbild.</p>
+                <div id="gallery-editor" class="gallery-editor">
+                  <div id="gallery-thumbs" class="gallery-thumbs"></div>
+                  <div class="gallery-actions">
+                    <label class="btn btn-outline btn-sm gallery-upload-btn">
+                      + Bilder wählen
+                      <input type="file" id="f-images" accept="image/jpeg,image/png,image/webp" multiple hidden />
+                    </label>
+                    <button type="button" class="btn btn-outline btn-sm" id="btn-upload-images" disabled>Hochladen</button>
+                  </div>
+                  <p id="gallery-msg" class="hint"></p>
+                </div>
+                <details class="url-fallback">
+                  <summary>Optional: Bild-URL statt Upload</summary>
+                  <label for="f-image">Hauptbild-URL</label>
+                  <input type="url" id="f-image" placeholder="https://…" />
+                </details>
               </div>
               <div>
                 <label><input type="checkbox" id="f-active" checked /> aktiv</label>
@@ -151,7 +167,7 @@
               </div>
             </div>
             <div class="btn-row">
-              <button type="submit" class="btn btn-primary">Speichern &amp; publizieren</button>
+              <button type="submit" class="btn btn-primary">Speichern &amp; freigeben</button>
               <button type="button" class="btn btn-outline" id="btn-cancel">Abbrechen</button>
               <button type="button" class="btn btn-outline" id="btn-delete" style="display:none;color:var(--err)">Löschen</button>
             </div>
@@ -179,7 +195,27 @@
     </section>
   </main>
 
+  <div id="pending-banner" class="pending-banner hidden" role="status">
+    <strong>Freigabe ausstehend</strong>
+    <span id="pending-banner-text">Es gibt geprüfte Änderungen, die noch nicht auf der Website sind.</span>
+    <button type="button" class="btn btn-primary btn-sm" id="btn-review-pending">Änderungen prüfen</button>
+  </div>
+
+  <div id="abnahme-modal" class="abnahme-modal hidden" role="dialog" aria-modal="true" aria-labelledby="abnahme-title">
+    <div class="abnahme-backdrop" data-abnahme-cancel></div>
+    <div class="abnahme-dialog">
+      <h2 id="abnahme-title">Änderungen freigeben?</h2>
+      <p class="hint" id="abnahme-lead">Diese Inserate werden auf der öffentlichen Website geändert. Bitte prüfen.</p>
+      <p id="abnahme-warning" class="warn-box hidden"></p>
+      <div id="abnahme-sections" class="abnahme-sections"></div>
+      <div class="btn-row abnahme-actions">
+        <button type="button" class="btn btn-primary" id="abnahme-confirm">Durchführen</button>
+        <button type="button" class="btn btn-outline" id="abnahme-cancel" data-abnahme-cancel>Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast hidden"></div>
-  <script src="admin.js?v=unified-1" type="module"></script>
+  <script src="admin.js?v=gallery-abnahme-2" type="module"></script>
 </body>
 </html>

@@ -59,6 +59,8 @@ systemctl is-active eichmann-admin-api.service
 if [ -f "$NGINX_SITE" ]; then
   python3 "$APP/deploy/patch-nginx-admin-api.py"
 fi
+mkdir -p "$SITE/media/eigen"
+chown -R www-data:www-data "$SITE/media" || true
 
 nginx -t
 systemctl reload nginx

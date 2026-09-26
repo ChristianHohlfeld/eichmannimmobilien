@@ -340,3 +340,206 @@ table.listings tr:hover td { background: #fafaf8; }
   from { opacity: 0.6; }
   to { opacity: 1; }
 }
+
+/* Gallery editor */
+.gallery-editor { margin-top: 6px; }
+.gallery-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 8px 0 12px;
+  min-height: 40px;
+}
+.gallery-thumb {
+  position: relative;
+  width: 96px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--mist);
+}
+.gallery-thumb img {
+  display: block;
+  width: 96px;
+  height: 72px;
+  object-fit: cover;
+}
+.gallery-thumb.is-main { outline: 2px solid var(--accent); }
+.gallery-thumb .thumb-meta {
+  font-size: 0.7rem;
+  padding: 4px 6px;
+  color: var(--slate);
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  align-items: center;
+}
+.gallery-thumb .thumb-actions {
+  display: flex;
+  gap: 2px;
+  padding: 0 4px 4px;
+}
+.gallery-thumb .thumb-actions button {
+  flex: 1;
+  font-size: 0.65rem;
+  padding: 3px 4px;
+}
+.gallery-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.gallery-upload-btn { cursor: pointer; margin: 0; }
+.url-fallback { margin-top: 12px; font-size: 0.875rem; color: var(--slate); }
+.url-fallback summary { cursor: pointer; font-weight: 600; color: var(--primary); }
+.url-fallback label { margin-top: 8px; }
+
+/* Pending publish banner */
+.pending-banner {
+  background: #fff4d6;
+  border-bottom: 1px solid #f0d48a;
+  color: #5c4700;
+  padding: 10px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Abnahme modal — visual listing cards */
+.abnahme-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.abnahme-modal.hidden { display: none !important; }
+.abnahme-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 39, 68, 0.55);
+}
+.abnahme-dialog {
+  position: relative;
+  z-index: 1;
+  background: var(--white);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(15, 39, 68, 0.25);
+  width: min(100%, 720px);
+  max-height: min(90vh, 860px);
+  overflow: auto;
+  padding: 22px 24px 20px;
+}
+.abnahme-dialog h2 {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  color: var(--primary);
+  font-size: 1.35rem;
+}
+.abnahme-sections { display: flex; flex-direction: column; gap: 16px; margin: 14px 0 8px; }
+.abnahme-section h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  color: var(--primary);
+}
+.abnahme-section[data-kind="hinzukommen"] h3 { color: var(--ok); }
+.abnahme-section[data-kind="wegfallen"] h3 { color: var(--err); }
+.abnahme-section[data-kind="Sichtbarkeit"] h3 { color: var(--warn); }
+.abnahme-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.abnahme-card {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: var(--off-white);
+}
+.abnahme-card.kind-wegfallen { opacity: 0.85; border-color: #efc7c7; background: #fdf6f6; }
+.abnahme-card.kind-hinzukommen { border-color: #b7dfc3; background: #f3faf5; }
+.abnahme-card.kind-Sichtbarkeit { border-color: #f0d48a; background: #fffdf5; }
+.abnahme-thumb {
+  width: 72px;
+  height: 54px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--mist);
+  display: block;
+}
+.abnahme-thumb-ph {
+  width: 72px;
+  height: 54px;
+  border-radius: 6px;
+  background: var(--mist);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: var(--muted);
+  text-align: center;
+  padding: 4px;
+}
+.abnahme-card-body { min-width: 0; }
+.abnahme-card-body strong {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.abnahme-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--slate);
+  align-items: center;
+}
+.abnahme-actions { margin-top: 8px; position: sticky; bottom: 0; background: var(--white); padding-top: 8px; }
+.abnahme-empty {
+  font-size: 0.9rem;
+  color: var(--slate);
+  padding: 8px 0;
+}
+
+/* Responsive: admin + Abnahme on phone */
+@media (max-width: 720px) {
+  .wrap { width: min(100% - 1.25rem, 1100px); margin: 16px auto 48px; }
+  .app-header { padding: 12px 14px; }
+  .app-header .actions { width: 100%; }
+  .app-header .actions .btn { flex: 1; min-height: 44px; }
+  .sot-banner { font-size: 0.85rem; padding: 10px 14px; }
+  .pending-banner { flex-direction: column; align-items: stretch; }
+  .pending-banner .btn { width: 100%; min-height: 44px; }
+  .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab { min-height: 44px; padding: 12px 14px; white-space: nowrap; }
+  .card { padding: 16px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .btn-row .btn { min-height: 44px; }
+  .gallery-thumbs { gap: 8px; }
+  .gallery-thumb { width: calc(50% - 4px); max-width: 160px; }
+  .gallery-thumb img { width: 100%; height: auto; aspect-ratio: 4/3; }
+  .gallery-thumb .thumb-actions button { min-height: 36px; font-size: 0.75rem; }
+  .gallery-actions { flex-direction: column; align-items: stretch; }
+  .gallery-actions .btn, .gallery-upload-btn { width: 100%; min-height: 44px; justify-content: center; }
+  table.listings { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .abnahme-modal { padding: 8px; align-items: flex-end; }
+  .abnahme-dialog {
+    width: 100%;
+    max-height: min(92vh, 900px);
+    border-radius: 16px 16px 0 0;
+    padding: 18px 16px calc(16px + env(safe-area-inset-bottom));
+  }
+  .abnahme-card { grid-template-columns: 64px 1fr; gap: 10px; }
+  .abnahme-thumb, .abnahme-thumb-ph { width: 64px; height: 48px; }
+  .abnahme-actions { flex-direction: column; }
+  .abnahme-actions .btn { width: 100%; min-height: 48px; font-size: 1rem; }
+  .abnahme-card-body strong { white-space: normal; }
+}

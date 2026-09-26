@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""Insert /admin/api/ proxy + /admin/eigen/ redirect into nginx site config.
-
-Also ensures client_max_body_size ~40m on /admin/api/ for multipart uploads.
-"""
+"""Ensure /admin/api/ proxy + eigen redirect + 40m upload body limit in nginx site config."""
 from pathlib import Path
 
 p = Path("/etc/nginx/sites-available/immobilieneichmann.de")
@@ -10,7 +7,7 @@ text = p.read_text()
 changed = False
 
 snippet = """
-    # Admin API (localhost Node) — session cookie auth, no GitHub PAT
+    # Admin API (localhost Node) — session cookie auth
     # Multipart eigen-image uploads need a raised body limit (default nginx is 1m).
     location /admin/api/ {
         client_max_body_size 40m;
@@ -21,6 +18,7 @@ snippet = """
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_read_timeout 120s;
+        proxy_request_buffering off;
     }
 
     location = /admin/eigen {
@@ -63,5 +61,6 @@ if start >= 0:
 
 if changed:
     p.write_text(text)
+    print("nginx: config updated")
 else:
-    print("nginx: no file changes needed")
+    print("nginx: no changes needed")

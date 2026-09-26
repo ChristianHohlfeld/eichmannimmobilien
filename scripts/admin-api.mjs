@@ -32,10 +32,29 @@ import {
   exportListingsDocument,
   allSlugs,
   countByOrigin,
+  setMeta,
+  getMeta,
   ORIGIN_EIGEN,
   ORIGIN_IMMOWELT,
   REPO_ROOT,
 } from "./lib/db.mjs";
+import {
+  parseMultipart,
+  storeEigenImage,
+  applyGalleryToListing,
+  removeEigenImageFiles,
+  removeAllEigenMedia,
+  MAX_IMAGE_BYTES,
+  MAX_IMAGES_PER_LISTING,
+  publicUrlForBase,
+} from "./lib/eigen-images.mjs";
+import {
+  previewPublish,
+  previewEigenUpsert,
+  previewEigenDelete,
+  previewVisibility,
+  loadLiveListings,
+} from "./lib/publish-preview.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const HOST = process.env.EICHMANN_ADMIN_API_HOST || "127.0.0.1";
@@ -53,7 +72,8 @@ const SECRET_FILE =
   "/var/lib/eichmann/admin-session.secret";
 const COOKIE_NAME = "eichmann_admin_session";
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12h
-const MAX_BODY = 512 * 1024;
+const MAX_BODY = 512 * 1024; // JSON bodies
+const MAX_MULTIPART = 40 * 1024 * 1024;
 
 process.env.EICHMANN_SITE_ROOT = SITE_ROOT;
 
@@ -262,6 +282,39 @@ function clearSessionCookie() {
   return `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0`;
 }
 
+
+function requireConfirm(body) {
+  if (!body || body.confirm !== true) {
+    const err = new Error("Bitte Änderungen zuerst prüfen und freigeben.");
+    err.status = 428; // Precondition Required
+    err.requires_confirm = true;
+    throw err;
+  }
+}
+
+function changeSummaryFromPreview(preview) {
+  const items = [];
+  for (const x of preview.added || []) {
+    items.push({ action: "hinzukommen", ...x });
+  }
+  for (const x of preview.removed || []) {
+    items.push({ action: "wegfallen", ...x });
+  }
+  for (const x of preview.changed || []) {
+    items.push({ action: "geändert", ...x });
+  }
+  for (const x of preview.visibility || []) {
+    items.push({
+      action: "Sichtbarkeit",
+      title: x.title,
+      location: x.location,
+      origin: x.origin,
+      detail: `${x.from} → ${x.to}`,
+    });
+  }
+  return items;
+}
+
 function requireAuth(req) {
   const cookies = parseCookies(req.headers.cookie);
   const session = verifySession(cookies[COOKIE_NAME]);
@@ -305,7 +358,7 @@ async function handle(req, res) {
 
   if (method === "OPTIONS") {
     res.writeHead(204, {
-      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
       "Access-Control-Allow-Credentials": "true",
     });
@@ -417,18 +470,67 @@ async function handle(req, res) {
       });
     }
 
+    // --- Publish preview (no writes) ---
+    if (method === "GET" && p === "/publish/preview") {
+      const db = openApiDb();
+      try {
+        const doc = exportListingsDocument(db);
+        const preview = previewPublish(SITE_ROOT, doc);
+        const pending = getMeta(db, "publish_pending");
+        return send(res, 200, {
+          ...preview,
+          changes: changeSummaryFromPreview(preview),
+          publish_pending: pending ? JSON.parse(pending) : null,
+        });
+      } finally {
+        db.close();
+      }
+    }
+
+    // --- Eigen upsert: preview without confirm, apply+publish with confirm:true ---
     if (method === "POST" && p === "/eigen") {
       const body = (await readBody(req)) || {};
       const listing = body.listing || body;
       if (!listing || typeof listing !== "object") {
-        return send(res, 400, { ok: false, error: "listing object required" });
+        return send(res, 400, { ok: false, error: "Inserat-Daten fehlen" });
       }
       const db = openApiDb();
       try {
+        const all = listAllListings(db);
+        const preview = previewEigenUpsert(SITE_ROOT, all, {
+          ...listing,
+          origin: "eigen",
+          source: "eigen",
+        });
+        if (body.confirm !== true) {
+          return send(res, 200, {
+            ok: true,
+            preview: true,
+            requires_confirm: true,
+            ...preview,
+            changes: changeSummaryFromPreview(preview),
+          });
+        }
+        if (preview.empty_risk && body.allow_empty !== true) {
+          return send(res, 409, {
+            ok: false,
+            error: "Abbruch: Danach wären keine Inserate mehr öffentlich.",
+            ...preview,
+            changes: changeSummaryFromPreview(preview),
+          });
+        }
         const result = upsertEigenListing(db, listing);
         const saved = getListingById(db, result.id);
         const published = await runPublish(db);
-        return send(res, 200, { ok: true, result, listing: saved, published });
+        setMeta(db, "publish_pending", "");
+        return send(res, 200, {
+          ok: true,
+          confirmed: true,
+          result,
+          listing: saved,
+          published,
+          changes: changeSummaryFromPreview(preview),
+        });
       } finally {
         db.close();
       }
@@ -440,12 +542,163 @@ async function handle(req, res) {
     ) {
       const body = (method === "POST" ? await readBody(req) : null) || {};
       const id = body.id || searchParams.get("id");
-      if (!id) return send(res, 400, { ok: false, error: "id required" });
+      if (!id) return send(res, 400, { ok: false, error: "Inserat-Nummer fehlt" });
       const db = openApiDb();
       try {
+        const all = listAllListings(db);
+        const preview = previewEigenDelete(SITE_ROOT, all, id);
+        if (body.confirm !== true) {
+          return send(res, 200, {
+            ok: true,
+            preview: true,
+            requires_confirm: true,
+            ...preview,
+            changes: changeSummaryFromPreview(preview),
+          });
+        }
+        if (preview.empty_risk && body.allow_empty !== true) {
+          return send(res, 409, {
+            ok: false,
+            error: "Abbruch: Danach wären keine Inserate mehr öffentlich.",
+            ...preview,
+            changes: changeSummaryFromPreview(preview),
+          });
+        }
+        const existing = getListingById(db, id);
         const result = deleteEigenListing(db, id);
+        await removeAllEigenMedia(SITE_ROOT, id);
         const published = await runPublish(db);
-        return send(res, 200, { ok: true, result, published });
+        setMeta(db, "publish_pending", "");
+        return send(res, 200, {
+          ok: true,
+          confirmed: true,
+          result,
+          deleted: existing,
+          published,
+          changes: changeSummaryFromPreview(preview),
+        });
+      } finally {
+        db.close();
+      }
+    }
+
+    // Multi-image upload (multipart). Updates DB gallery fields but does NOT publish.
+    if (method === "POST" && p === "/eigen/images") {
+      const { fields, files } = await parseMultipart(req, { maxTotalBytes: MAX_MULTIPART });
+      const listingId = String(fields.id || fields.listing_id || "").trim();
+      if (!listingId) return send(res, 400, { ok: false, error: "id (listing) required" });
+      const uploads = files.filter((f) => f.field === "images" || f.field === "image" || f.field === "file");
+      if (!uploads.length) return send(res, 400, { ok: false, error: "Keine Bilddatei ausgewählt" });
+
+      const db = openApiDb();
+      try {
+        let listing = getListingById(db, listingId);
+        // Allow upload before first save: create a minimal eigen stub if missing
+        if (!listing) {
+          const stub = {
+            id: listingId,
+            slug: fields.slug || `objekt-${listingId.replace(/[^a-z0-9]/gi, "").slice(0, 8) || "neu"}`,
+            title: fields.title || "Neues Eigen-Inserat (Entwurf)",
+            origin: "eigen",
+            source: "eigen",
+            active: false,
+            detail_page: true,
+            site_hidden: true,
+            images: [],
+            gallery_bases: [],
+            main_image_url: null,
+            image_base: null,
+            sync_policy: "independent",
+          };
+          upsertEigenListing(db, stub);
+          listing = getListingById(db, listingId);
+        }
+        if (listing.origin !== ORIGIN_EIGEN) {
+          return send(res, 400, { ok: false, error: "Bilder nur für eigene Inserate" });
+        }
+        let bases = Array.isArray(listing.gallery_bases) ? [...listing.gallery_bases] : [];
+        const stored = [];
+        for (const file of uploads) {
+          if (bases.length >= MAX_IMAGES_PER_LISTING) break;
+          if (file.buffer.length > MAX_IMAGE_BYTES) {
+            return send(res, 413, {
+              ok: false,
+              error: `Datei ${file.filename} zu groß (max ${MAX_IMAGE_BYTES / 1024 / 1024} MB)`,
+            });
+          }
+          const one = await storeEigenImage(SITE_ROOT, listingId, file.buffer, {
+            filename: file.filename,
+            existingBases: bases,
+          });
+          bases.push(one.base);
+          stored.push(one);
+        }
+        applyGalleryToListing(listing, bases);
+        upsertEigenListing(db, listing);
+        const saved = getListingById(db, listingId);
+        return send(res, 200, {
+          ok: true,
+          published: false,
+          note: "Bilder gespeichert – Website ändert sich erst nach Freigabe.",
+          stored,
+          listing: saved,
+        });
+      } finally {
+        db.close();
+      }
+    }
+
+    // Delete one image or reorder; no publish
+    if (method === "POST" && p === "/eigen/images/delete") {
+      const body = (await readBody(req)) || {};
+      const id = body.id;
+      const base = body.base;
+      if (!id || !base) return send(res, 400, { ok: false, error: "Bildangabe fehlt" });
+      const db = openApiDb();
+      try {
+        const listing = getListingById(db, id);
+        if (!listing || listing.origin !== ORIGIN_EIGEN) {
+          return send(res, 404, { ok: false, error: "Eigen-Inserat nicht gefunden" });
+        }
+        const bases = (listing.gallery_bases || []).filter((b) => b !== base);
+        await removeEigenImageFiles(SITE_ROOT, base);
+        applyGalleryToListing(listing, bases);
+        upsertEigenListing(db, listing);
+        return send(res, 200, {
+          ok: true,
+          published: false,
+          listing: getListingById(db, id),
+        });
+      } finally {
+        db.close();
+      }
+    }
+
+    if (method === "POST" && p === "/eigen/images/reorder") {
+      const body = (await readBody(req)) || {};
+      const id = body.id;
+      const order = body.gallery_bases || body.order;
+      if (!id || !Array.isArray(order)) {
+        return send(res, 400, { ok: false, error: "Bildreihenfolge fehlt" });
+      }
+      const db = openApiDb();
+      try {
+        const listing = getListingById(db, id);
+        if (!listing || listing.origin !== ORIGIN_EIGEN) {
+          return send(res, 404, { ok: false, error: "Eigen-Inserat nicht gefunden" });
+        }
+        const allowed = new Set(listing.gallery_bases || []);
+        const next = order.filter((b) => allowed.has(b));
+        for (const b of listing.gallery_bases || []) {
+          if (!next.includes(b)) next.push(b);
+        }
+        applyGalleryToListing(listing, next);
+        upsertEigenListing(db, listing);
+        return send(res, 200, {
+          ok: true,
+          published: false,
+          listing: getListingById(db, id),
+        });
       } finally {
         db.close();
       }
@@ -454,26 +707,80 @@ async function handle(req, res) {
     if (method === "POST" && p === "/visibility") {
       const body = (await readBody(req)) || {};
       const id = body.id;
-      if (!id) return send(res, 400, { ok: false, error: "id required" });
+      if (!id) return send(res, 400, { ok: false, error: "Inserat-Nummer fehlt" });
       if (typeof body.site_hidden !== "boolean") {
-        return send(res, 400, { ok: false, error: "site_hidden boolean required" });
+        return send(res, 400, { ok: false, error: "Sichtbarkeit ungültig" });
       }
       const db = openApiDb();
       try {
+        const all = listAllListings(db);
+        const preview = previewVisibility(SITE_ROOT, all, id, body.site_hidden);
+        if (body.confirm !== true) {
+          return send(res, 200, {
+            ok: true,
+            preview: true,
+            requires_confirm: true,
+            ...preview,
+            changes: changeSummaryFromPreview(preview),
+          });
+        }
+        if (preview.empty_risk && body.allow_empty !== true) {
+          return send(res, 409, {
+            ok: false,
+            error: "Abbruch: Danach wären keine Inserate mehr öffentlich.",
+            ...preview,
+            changes: changeSummaryFromPreview(preview),
+          });
+        }
         const result = setSiteHidden(db, id, body.site_hidden);
         const saved = getListingById(db, id);
         const published = await runPublish(db);
-        return send(res, 200, { ok: true, result, listing: saved, published });
+        setMeta(db, "publish_pending", "");
+        return send(res, 200, {
+          ok: true,
+          confirmed: true,
+          result,
+          listing: saved,
+          published,
+          changes: changeSummaryFromPreview(preview),
+        });
       } finally {
         db.close();
       }
     }
 
     if (method === "POST" && p === "/publish") {
+      const body = (await readBody(req)) || {};
       const db = openApiDb();
       try {
+        const doc = exportListingsDocument(db);
+        const preview = previewPublish(SITE_ROOT, doc);
+        if (body.confirm !== true) {
+          return send(res, 200, {
+            ok: true,
+            preview: true,
+            requires_confirm: true,
+            ...preview,
+            changes: changeSummaryFromPreview(preview),
+          });
+        }
+        if (preview.empty_risk && body.allow_empty !== true) {
+          return send(res, 409, {
+            ok: false,
+            error: "Abbruch: Danach wären keine Inserate mehr öffentlich.",
+            ...preview,
+            changes: changeSummaryFromPreview(preview),
+          });
+        }
         const published = await runPublish(db);
-        return send(res, 200, { ok: true, published });
+        setMeta(db, "publish_pending", "");
+        return send(res, 200, {
+          ok: true,
+          confirmed: true,
+          published,
+          changes: changeSummaryFromPreview(preview),
+          counts: preview.counts,
+        });
       } finally {
         db.close();
       }
@@ -483,7 +790,9 @@ async function handle(req, res) {
   } catch (e) {
     const status = e.status || 500;
     console.error(`[admin-api] ${method} ${req.url}:`, e.message || e);
-    return send(res, status, { ok: false, error: e.message || String(e) });
+    const payload = { ok: false, error: e.message || String(e) };
+    if (e.requires_confirm) payload.requires_confirm = true;
+    return send(res, status, payload);
   }
 }
 

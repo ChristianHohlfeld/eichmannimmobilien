@@ -280,19 +280,22 @@
   }
 
 
-  /* Exposé gallery thumbs */
+  /* Exposé gallery thumbs + swipe (Immowelt + Eigen same UX) */
   var gallery = document.getElementById("expose-gallery");
   if (gallery) {
     var items = gallery.querySelectorAll(".expose-gallery-item");
     var thumbs = gallery.querySelectorAll("[data-thumb-index]");
+    var slideIdx = 0;
     function showSlide(idx) {
+      if (!items.length) return;
+      slideIdx = ((idx % items.length) + items.length) % items.length;
       items.forEach(function (el, i) {
-        if (items.length > 1) el.style.display = i === idx ? "block" : "none";
-        el.classList.toggle("is-active", i === idx);
+        if (items.length > 1) el.style.display = i === slideIdx ? "block" : "none";
+        el.classList.toggle("is-active", i === slideIdx);
       });
       thumbs.forEach(function (btn) {
         var i = Number(btn.getAttribute("data-thumb-index"));
-        btn.classList.toggle("is-active", i === idx);
+        btn.classList.toggle("is-active", i === slideIdx);
       });
     }
     if (items.length > 1) showSlide(0);
@@ -301,6 +304,24 @@
         showSlide(Number(btn.getAttribute("data-thumb-index")) || 0);
       });
     });
+    // Touch / pointer swipe on stage
+    var stage = gallery.querySelector(".expose-gallery-stage") || gallery;
+    var startX = null;
+    var startY = null;
+    stage.addEventListener("touchstart", function (e) {
+      if (!e.touches || !e.touches.length) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+    stage.addEventListener("touchend", function (e) {
+      if (startX == null || !e.changedTouches || !e.changedTouches.length) return;
+      var dx = e.changedTouches[0].clientX - startX;
+      var dy = e.changedTouches[0].clientY - startY;
+      startX = null;
+      startY = null;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+      if (items.length > 1) showSlide(slideIdx + (dx < 0 ? 1 : -1));
+    }, { passive: true });
   }
 
 
