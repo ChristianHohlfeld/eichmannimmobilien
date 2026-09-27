@@ -93,6 +93,7 @@ jobs:
             --exclude='media/' \
             --exclude='var/' \
             --exclude='snapshots/' \
+            --exclude='data/flyer-settings.json' \
             ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEST_PATH}/"
           # Preserve Eigen uploads (media/eigen) across --delete deploys
           ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
@@ -162,4 +163,7 @@ jobs:
           mkdir -p /var/lib/eichmann/snapshots
           chmod 755 /var/lib/eichmann/snapshots
           bash "$APP/deploy/install-admin-api.sh"
+          # Re-publish public flyer Immo-Nummer mirror from droplet settings store
+          EICHMANN_SITE_ROOT="$SITE" node --input-type=module -e "import('./scripts/lib/site-settings.mjs').then(m => m.writePublicFlyerSettings(process.env.EICHMANN_SITE_ROOT))" \
+            || echo "WARN: flyer-settings public mirror skipped"
           REMOTE
