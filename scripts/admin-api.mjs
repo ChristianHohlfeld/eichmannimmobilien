@@ -79,6 +79,12 @@ import {
   saveImmoweltCredentials,
   hasImmoweltApiKey,
 } from "./lib/immowelt-secrets.mjs";
+import {
+  sha256Hex,
+  savePasswordHash as writePasswordHash,
+  validatePasswordChange,
+  sessionMatchesPassword,
+} from "./lib/admin-password.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const HOST = process.env.EICHMANN_ADMIN_API_HOST || "127.0.0.1";
@@ -108,6 +114,7 @@ function loadConfig() {
   return JSON.parse(raw);
 }
 
+
 function ensureSecret() {
   const dir = path.dirname(SECRET_FILE);
   if (!fs.existsSync(SECRET_FILE)) {
@@ -125,9 +132,6 @@ function ensureSecret() {
 
 const SESSION_SECRET = ensureSecret();
 
-function sha256Hex(text) {
-  return crypto.createHash("sha256").update(String(text), "utf8").digest("hex");
-}
 
 function b64url(buf) {
   return Buffer.from(buf)
@@ -342,7 +346,7 @@ function changeSummaryFromPreview(preview) {
 function requireAuth(req) {
   const cookies = parseCookies(req.headers.cookie);
   const session = verifySession(cookies[COOKIE_NAME]);
-  if (!session) {
+  if (!session || !sessionMatchesPassword(session, loadConfig().password_sha256)) {
     const err = new Error("Nicht angemeldet");
     err.status = 401;
     throw err;
@@ -541,6 +545,7 @@ async function handle(req, res) {
         email,
         exp: Date.now() + SESSION_TTL_MS,
         iat: Date.now(),
+        ph: expect,
       });
       return send(
         res,
@@ -557,7 +562,9 @@ async function handle(req, res) {
     if (method === "GET" && p === "/me") {
       const cookies = parseCookies(req.headers.cookie);
       const session = verifySession(cookies[COOKIE_NAME]);
-      if (!session) return send(res, 401, { ok: false, authenticated: false });
+      if (!session || !sessionMatchesPassword(session, loadConfig().password_sha256)) {
+        return send(res, 401, { ok: false, authenticated: false });
+      }
       return send(res, 200, { ok: true, authenticated: true, email: session.email });
     }
 
@@ -570,6 +577,56 @@ async function handle(req, res) {
 
     if (method !== "GET" && !sameOriginOk(req)) {
       return send(res, 403, { ok: false, error: "Origin abgelehnt" });
+    }
+
+    // --- Passwort ändern (SHA-256 in EICHMANN_ADMIN_CONFIG; session secret unchanged) ---
+    if (method === "POST" && p === "/password") {
+      if (!rateLimit(ip, { limit: 8, windowMs: 60_000 })) {
+        return send(res, 429, { ok: false, error: "Zu viele Versuche – bitte warten." });
+      }
+      const body = (await readBody(req)) || {};
+      const current = String(body.current_password || "");
+      const neu = String(body.new_password || "");
+      const wieder = String(
+        body.new_password_repeat || body.new_password_confirm || body.confirm_password || ""
+      );
+      const expect = String(loadConfig().password_sha256 || "").toLowerCase();
+      const checked = validatePasswordChange({
+        currentPassword: current,
+        newPassword: neu,
+        newPasswordRepeat: wieder,
+        expectHash: expect,
+      });
+      if (!checked.ok) {
+        return send(res, checked.status, { ok: false, error: checked.error });
+      }
+      const newHash = checked.newHash;
+      writePasswordHash(CONFIG_PATH, newHash);
+      const token = signSession({
+        email: session.email,
+        exp: Date.now() + SESSION_TTL_MS,
+        iat: Date.now(),
+        ph: newHash,
+      });
+      console.log(
+        JSON.stringify({
+          event: "admin_password_changed",
+          email: session.email,
+          at: new Date().toISOString(),
+          sessions_invalidated: true,
+        })
+      );
+      return send(
+        res,
+        200,
+        {
+          ok: true,
+          sessions_invalidated: true,
+          message:
+            "Passwort wurde geändert. Andere offene Anmeldungen sind jetzt abgelaufen. Sie bleiben angemeldet.",
+        },
+        { "Set-Cookie": setSessionCookie(res, token) }
+      );
     }
 
     if (method === "GET" && p === "/listings") {

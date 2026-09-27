@@ -78,6 +78,8 @@ jobs:
           set -euo pipefail
           DEST_PATH="${DEPLOY_PATH:-/var/www/immobilieneichmann.de}"
           COMMIT="$(git rev-parse --short HEAD)"
+          # Preserve live admin/config.json (password_sha256 may differ from git;
+          # Passwort ändern writes only on the droplet via EICHMANN_ADMIN_CONFIG).
           rsync -az --delete \
             -e "ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
             --exclude='.git/' \
@@ -93,6 +95,7 @@ jobs:
             --exclude='media/' \
             --exclude='var/' \
             --exclude='snapshots/' \
+            --exclude='admin/config.json' \
             ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEST_PATH}/"
           # Preserve Eigen uploads (media/eigen) across --delete deploys
           ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \

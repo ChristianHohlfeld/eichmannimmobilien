@@ -811,3 +811,26 @@ table.listings tr:hover td { background: #fafaf8; }
   .abnahme-summary-line { font-size: 1.08rem; }
   .abnahme-dialog { max-height: min(92vh, 900px); }
 }
+
+
+/* Passwort ändern modal */
+.password-dialog label {
+  display: block;
+  margin: 12px 0 4px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.password-dialog input[type="password"] {
+  width: 100%;
+  box-sizing: border-box;
+}
+.password-dialog .btn-row {
+  margin-top: 16px;
+}
+@media (max-width: 720px) {
+  .password-dialog {
+    width: 100%;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+}

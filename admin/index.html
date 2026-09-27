@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Admin – Immobilien Eichmann</title>
-  <link rel="stylesheet" href="admin.css?v=remove-flyer-immo-nr-1" />
+  <link rel="stylesheet" href="admin.css?v=passwort-aendern-1" />
 </head>
 <body>
   <header class="app-header hidden" id="app-header">
@@ -15,6 +15,7 @@
     </div>
     <div class="actions">
       <button type="button" class="btn btn-ghost btn-sm" id="btn-immowelt-sync" title="Neue Inserate von Immowelt holen">Immowelt Sync</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-password" title="Admin-Passwort ändern">Passwort ändern</button>
       <button type="button" class="btn btn-ghost btn-sm" id="btn-logout">Abmelden</button>
     </div>
     <div id="immowelt-sync-bar" class="immowelt-sync-bar hidden" role="status" aria-live="polite"></div>
@@ -339,7 +340,31 @@
     </div>
   </div>
 
+  <div id="password-modal" class="abnahme-modal hidden" role="dialog" aria-modal="true" aria-labelledby="password-title">
+    <div class="abnahme-backdrop" data-password-cancel></div>
+    <div class="abnahme-dialog password-dialog">
+      <h2 id="password-title">Passwort ändern</h2>
+      <p class="hint" style="margin-top:0">
+        Hier können Sie Ihr Admin-Passwort ändern. Danach sind andere offene Anmeldungen abgelaufen — Sie bleiben angemeldet.
+      </p>
+      <form id="form-password" autocomplete="off">
+        <label for="pw-current">Aktuelles Passwort</label>
+        <input type="password" id="pw-current" name="current_password" autocomplete="current-password" required />
+        <label for="pw-new">Neues Passwort</label>
+        <input type="password" id="pw-new" name="new_password" autocomplete="new-password" required minlength="8" />
+        <label for="pw-repeat">Neues Passwort wiederholen</label>
+        <input type="password" id="pw-repeat" name="new_password_repeat" autocomplete="new-password" required minlength="8" />
+        <p id="password-error" class="err-box hidden" role="alert"></p>
+        <p id="password-ok" class="ok-box hidden" role="status"></p>
+        <div class="btn-row abnahme-actions">
+          <button type="submit" class="btn btn-primary" id="btn-password-save">Passwort speichern</button>
+          <button type="button" class="btn btn-outline" id="btn-password-cancel" data-password-cancel>Abbrechen</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="toast" class="toast hidden"></div>
-  <script src="admin.js?v=remove-flyer-immo-nr-1" type="module"></script>
+  <script src="admin.js?v=passwort-aendern-1" type="module"></script>
 </body>
 </html>
