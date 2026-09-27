@@ -649,14 +649,12 @@ async function loadImmoweltCredentials() {
   const statusEl = $("iw-api-key-status");
   const kn = $("iw-kundennummer");
   const keyInput = $("iw-api-key");
-  const flyerNr = $("iw-flyer-immo-nr");
   const replaceWrap = $("iw-replace-wrap");
   const replaceCb = $("iw-replace-key");
   if (!statusEl || !kn) return;
   try {
     const st = await api("/immowelt/credentials");
     kn.value = st.kundennummer || "";
-    if (flyerNr) flyerNr.value = st.flyer_immo_nummer || "";
     if (st.has_key) {
       statusEl.innerHTML = `<span class="badge ok">gesetzt</span> ${esc(st.masked_key || "••••")}`;
       if (replaceWrap) replaceWrap.classList.remove("hidden");
@@ -683,28 +681,23 @@ async function onSaveImmoweltCredentials(ev) {
   const msg = $("iw-credentials-msg");
   const btn = $("btn-iw-credentials-save");
   const kn = ($("iw-kundennummer")?.value || "").trim();
-  const flyer_immo_nummer = ($("iw-flyer-immo-nr")?.value || "").trim();
   const replaceCb = $("iw-replace-key");
   const replace_key = Boolean(replaceCb && replaceCb.checked);
   const api_key = ($("iw-api-key")?.value || "").trim();
+  if (!kn) {
+    if (msg) {
+      msg.classList.add("err-box");
+      msg.textContent = "Bitte die Kundennummer eintragen.";
+    }
+    return;
+  }
   const statusBefore = await api("/immowelt/credentials").catch(() => ({ has_key: false }));
-  const canSaveCreds = Boolean(kn && (api_key || (statusBefore.has_key && !replace_key)));
-  if (!canSaveCreds) {
-    // Flyer-only save is allowed without Immowelt key.
-    if (kn && !statusBefore.has_key && !api_key) {
-      if (msg) {
-        msg.classList.add("err-box");
-        msg.textContent = "Bitte den API-Schlüssel eintragen.";
-      }
-      return;
+  if (!statusBefore.has_key && !api_key) {
+    if (msg) {
+      msg.classList.add("err-box");
+      msg.textContent = "Bitte den API-Schlüssel eintragen.";
     }
-    if (!kn && (api_key || replace_key)) {
-      if (msg) {
-        msg.classList.add("err-box");
-        msg.textContent = "Bitte die Kundennummer eintragen.";
-      }
-      return;
-    }
+    return;
   }
   if (statusBefore.has_key && replace_key && !api_key) {
     if (msg) {
@@ -713,15 +706,12 @@ async function onSaveImmoweltCredentials(ev) {
     }
     return;
   }
-  const willSync = canSaveCreds;
   if (msg) {
     msg.classList.remove("err-box");
-    msg.textContent = willSync
-      ? "Speichere Zugang und starte Synchronisation …"
-      : "Speichere Immo-Nummer (Flyer) …";
+    msg.textContent = "Speichere Zugang und starte Synchronisation …";
   }
   if (btn) btn.disabled = true;
-  if (willSync) startImmoweltSyncLoading();
+  startImmoweltSyncLoading();
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), SYNC_CLIENT_TIMEOUT_MS);
   try {
@@ -731,22 +721,19 @@ async function onSaveImmoweltCredentials(ev) {
         kundennummer: kn,
         api_key,
         replace_key,
-        flyer_immo_nummer,
-        trigger_sync: willSync,
+        trigger_sync: true,
       }),
       signal: ctrl.signal,
     });
     if ($("iw-api-key")) $("iw-api-key").value = "";
     if (replaceCb) replaceCb.checked = false;
     await loadImmoweltCredentials();
-    if (msg) msg.textContent = res.message || "Gespeichert.";
+    if (msg) msg.textContent = res.message || "Zugang gespeichert.";
     if (res.sync) {
       await applyImmoweltSyncSuccess(res.sync);
-    } else if (willSync) {
+    } else {
       setImmoweltSyncOutcome(res.message || "Zugang gespeichert.", "ok");
       await loadImmoweltHealth();
-    } else {
-      toast(res.message || "Immo-Nummer (Flyer) gespeichert.", "ok");
     }
   } catch (e) {
     const errMsg = e.message || String(e);
@@ -754,7 +741,7 @@ async function onSaveImmoweltCredentials(ev) {
       msg.classList.add("err-box");
       msg.textContent = errMsg;
     }
-    if (willSync) setImmoweltSyncOutcome(errMsg, "err");
+    setImmoweltSyncOutcome(errMsg, "err");
   } finally {
     clearTimeout(timer);
     clearImmoweltSyncLongWait();
