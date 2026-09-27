@@ -605,6 +605,103 @@ async function logout() {
   showGate(true);
 }
 
+function openPasswordModal() {
+  const modal = $("password-modal");
+  if (!modal) return;
+  const err = $("password-error");
+  const ok = $("password-ok");
+  if (err) {
+    err.textContent = "";
+    err.classList.add("hidden");
+  }
+  if (ok) {
+    ok.textContent = "";
+    ok.classList.add("hidden");
+  }
+  const form = $("form-password");
+  if (form) form.reset();
+  modal.classList.remove("hidden");
+  const first = $("pw-current");
+  if (first) setTimeout(() => first.focus(), 50);
+}
+
+function closePasswordModal() {
+  const modal = $("password-modal");
+  if (modal) modal.classList.add("hidden");
+  const form = $("form-password");
+  if (form) form.reset();
+}
+
+async function onChangePassword(ev) {
+  ev.preventDefault();
+  const err = $("password-error");
+  const ok = $("password-ok");
+  const saveBtn = $("btn-password-save");
+  if (err) {
+    err.textContent = "";
+    err.classList.add("hidden");
+  }
+  if (ok) {
+    ok.textContent = "";
+    ok.classList.add("hidden");
+  }
+  const current = ($("pw-current") && $("pw-current").value) || "";
+  const neu = ($("pw-new") && $("pw-new").value) || "";
+  const wieder = ($("pw-repeat") && $("pw-repeat").value) || "";
+  if (!current || !neu || !wieder) {
+    if (err) {
+      err.textContent = "Bitte alle drei Felder ausfüllen.";
+      err.classList.remove("hidden");
+    }
+    return;
+  }
+  if (neu.length < 8) {
+    if (err) {
+      err.textContent = "Das neue Passwort muss mindestens 8 Zeichen haben.";
+      err.classList.remove("hidden");
+    }
+    return;
+  }
+  if (neu !== wieder) {
+    if (err) {
+      err.textContent = "Neues Passwort und Wiederholung stimmen nicht überein.";
+      err.classList.remove("hidden");
+    }
+    return;
+  }
+  if (saveBtn) saveBtn.disabled = true;
+  try {
+    const res = await api("/password", {
+      method: "POST",
+      body: JSON.stringify({
+        current_password: current,
+        new_password: neu,
+        new_password_repeat: wieder,
+      }),
+    });
+    if ($("pw-current")) $("pw-current").value = "";
+    if ($("pw-new")) $("pw-new").value = "";
+    if ($("pw-repeat")) $("pw-repeat").value = "";
+    const msg =
+      (res && res.message) ||
+      "Passwort wurde geändert. Andere Anmeldungen sind abgelaufen.";
+    if (ok) {
+      ok.textContent = msg;
+      ok.classList.remove("hidden");
+    }
+    toast(msg, "ok");
+    setTimeout(() => closePasswordModal(), 1800);
+  } catch (e) {
+    if (err) {
+      err.textContent = e.message || String(e);
+      err.classList.remove("hidden");
+    }
+    toast(e.message || String(e), "err");
+  } finally {
+    if (saveBtn) saveBtn.disabled = false;
+  }
+}
+
 async function ensureSession() {
   try {
     const me = await api("/me");
@@ -1774,6 +1871,13 @@ async function onConfirmRestore() {
 function bind() {
   $("form-login").addEventListener("submit", login);
   $("btn-logout").addEventListener("click", logout);
+  const pwBtn = $("btn-password");
+  if (pwBtn) pwBtn.addEventListener("click", openPasswordModal);
+  const pwForm = $("form-password");
+  if (pwForm) pwForm.addEventListener("submit", onChangePassword);
+  document.querySelectorAll("[data-password-cancel]").forEach((el) => {
+    el.addEventListener("click", closePasswordModal);
+  });
   const syncBtn = $("btn-immowelt-sync");
   if (syncBtn) syncBtn.addEventListener("click", onImmoweltSync);
   const credForm = $("form-immowelt-credentials");
