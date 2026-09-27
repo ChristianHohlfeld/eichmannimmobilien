@@ -79,6 +79,11 @@ import {
   saveImmoweltCredentials,
   hasImmoweltApiKey,
 } from "./lib/immowelt-secrets.mjs";
+import {
+  getSiteSettings,
+  saveFlyerImmoNummer,
+  writePublicFlyerSettings,
+} from "./lib/site-settings.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const HOST = process.env.EICHMANN_ADMIN_API_HOST || "127.0.0.1";
@@ -561,6 +566,16 @@ async function handle(req, res) {
       return send(res, 200, { ok: true, authenticated: true, email: session.email });
     }
 
+    // Public flyer settings (Immo-Nummer override) — not a secret
+    if (method === "GET" && (p === "/public/flyer-settings" || p === "/flyer-settings")) {
+      const st = getSiteSettings();
+      return send(res, 200, {
+        ok: true,
+        flyer_immo_nummer: st.flyer_immo_nummer,
+        updated_at: st.updated_at,
+      });
+    }
+
     // Everything below requires auth
     if (!rateLimit(ip, { limit: 120, windowMs: 60_000 })) {
       return send(res, 429, { ok: false, error: "Rate limit" });
@@ -611,7 +626,10 @@ async function handle(req, res) {
         ok: true,
         counts,
         immowelt_sync: sync,
-        immowelt_credentials: getImmoweltCredentialsStatus(),
+        immowelt_credentials: {
+          ...getImmoweltCredentialsStatus(),
+          flyer_immo_nummer: getSiteSettings().flyer_immo_nummer,
+        },
         sot: "sqlite",
         db: resolveDbPath(),
         site_root: SITE_ROOT,
@@ -633,30 +651,64 @@ async function handle(req, res) {
 
     // --- Immowelt API credentials (Kundennummer + API-Key; droplet secrets only) ---
     if (method === "GET" && p === "/immowelt/credentials") {
-      return send(res, 200, getImmoweltCredentialsStatus());
+      const creds = getImmoweltCredentialsStatus();
+      const site = getSiteSettings();
+      return send(res, 200, {
+        ...creds,
+        flyer_immo_nummer: site.flyer_immo_nummer,
+      });
     }
 
     if ((method === "PUT" || method === "POST") && p === "/immowelt/credentials") {
       const body = (await readBody(req)) || {};
+      // Always persist flyer Immo-Nummer with this form (droplet settings store).
+      let site = getSiteSettings();
+      if ("flyer_immo_nummer" in body || "flyerImmoNummer" in body) {
+        site = saveFlyerImmoNummer(body.flyer_immo_nummer ?? body.flyerImmoNummer, {
+          siteRoot: SITE_ROOT,
+        });
+      } else {
+        writePublicFlyerSettings(SITE_ROOT, site.flyer_immo_nummer);
+      }
       const replaceKey = body.replace_key === true || body.replaceKey === true;
       const statusBefore = getImmoweltCredentialsStatus();
-      const keep_existing_key = statusBefore.has_key && !replaceKey && !String(body.api_key || "").trim();
-      const saved = saveImmoweltCredentials({
-        kundennummer: body.kundennummer,
-        api_key: body.api_key,
-        keep_existing_key,
-      });
-      // Stabschef: after save, sync immediately via official API.
-      const trigger = body.trigger_sync !== false;
+      const apiKeyIn = String(body.api_key || "").trim();
+      const knIn = String(body.kundennummer || "").trim();
+      const keep_existing_key = statusBefore.has_key && !replaceKey && !apiKeyIn;
+      const canSaveCreds = Boolean(knIn && (apiKeyIn || keep_existing_key));
+      let saved = {
+        ...statusBefore,
+        flyer_immo_nummer: site.flyer_immo_nummer,
+      };
       let syncPayload = null;
-      if (trigger) {
-        const result = await runImmoweltSyncChild();
-        const db = openApiDb();
-        try {
-          syncPayload = buildImmoweltSyncResponse(db, result);
-        } finally {
-          db.close();
+      let trigger = false;
+      if (canSaveCreds) {
+        saved = {
+          ...saveImmoweltCredentials({
+            kundennummer: body.kundennummer,
+            api_key: body.api_key,
+            keep_existing_key,
+          }),
+          flyer_immo_nummer: site.flyer_immo_nummer,
+        };
+        // Stabschef: after save, sync immediately via official API.
+        trigger = body.trigger_sync !== false;
+        if (trigger) {
+          const result = await runImmoweltSyncChild();
+          const db = openApiDb();
+          try {
+            syncPayload = buildImmoweltSyncResponse(db, result);
+          } finally {
+            db.close();
+          }
         }
+      } else if (!("flyer_immo_nummer" in body || "flyerImmoNummer" in body)) {
+        // Neither usable credentials nor flyer field — keep prior validation errors.
+        saveImmoweltCredentials({
+          kundennummer: body.kundennummer,
+          api_key: body.api_key,
+          keep_existing_key,
+        });
       }
       return send(res, 200, {
         ok: true,
@@ -664,7 +716,9 @@ async function handle(req, res) {
         // Never echo full key
         message: trigger
           ? "Zugang gespeichert. Synchronisation gestartet."
-          : "Zugang gespeichert.",
+          : canSaveCreds
+            ? "Zugang gespeichert."
+            : "Immo-Nummer (Flyer) gespeichert.",
         sync: syncPayload,
       });
     }

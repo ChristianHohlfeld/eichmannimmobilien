@@ -211,6 +211,50 @@
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && modal && !modal.hidden) closeFlyer();
   });
+  /* Flyer Immo-Nummer: Admin-Einstellung überschreibt HTML-Default (z. B. 2800). */
+  (function applyFlyerImmoNummer() {
+    function resolveFlyerSettingsUrl() {
+      var script = document.querySelector('script[src*="js/main.js"]');
+      if (script && script.src) {
+        try {
+          return new URL("../data/flyer-settings.json", script.src).href;
+        } catch (e) { /* fall through */ }
+      }
+      return "/data/flyer-settings.json";
+    }
+    function applyNummer(n) {
+      n = String(n || "").trim();
+      if (!n) return;
+      document.querySelectorAll("[data-flyer-immo-nr]").forEach(function (el) {
+        el.textContent = n;
+      });
+      document.querySelectorAll("[data-flyer-immo-mailto]").forEach(function (a) {
+        var href = a.getAttribute("href") || "";
+        a.setAttribute("href", href.replace(/ImmoNr%20[^&"]+/i, "ImmoNr%20" + encodeURIComponent(n)));
+      });
+      var msg = document.querySelector('form [name="message"]');
+      if (msg && msg.placeholder && /ImmoNr\s*\d+/i.test(msg.placeholder)) {
+        msg.placeholder = msg.placeholder.replace(/ImmoNr\s*\d+/i, "ImmoNr " + n);
+      }
+    }
+    fetch(resolveFlyerSettingsUrl(), { credentials: "same-origin", cache: "no-store" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("no flyer settings");
+        return r.json();
+      })
+      .then(function (cfg) {
+        if (cfg && cfg.flyer_immo_nummer) applyNummer(cfg.flyer_immo_nummer);
+      })
+      .catch(function () {
+        fetch("/admin/api/public/flyer-settings", { credentials: "same-origin", cache: "no-store" })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (cfg) {
+            if (cfg && cfg.flyer_immo_nummer) applyNummer(cfg.flyer_immo_nummer);
+          })
+          .catch(function () { /* keep HTML default */ });
+      });
+  })();
+
   /* Flyer: nur Startseite (Root) einmalig beim Laden auto-öffnen; sonst nur via [data-open-flyer]. */
   (function () {
     if (!modal) return;
