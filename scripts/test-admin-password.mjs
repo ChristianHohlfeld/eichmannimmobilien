@@ -7,12 +7,19 @@ import {
   sha256Hex,
   validatePasswordChange,
   savePasswordHash,
+  loadPasswordHash,
+  migratePasswordHashFromConfig,
   sessionMatchesPassword,
+  adminAuthSecretsPath,
   MIN_PASSWORD_LENGTH,
 } from "./lib/admin-password.mjs";
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "eichmann-pw-"));
+const secretsDir = path.join(tmpDir, "secrets");
+const authPath = path.join(secretsDir, "admin-auth.json");
 const configPath = path.join(tmpDir, "config.json");
+process.env.EICHMANN_ADMIN_AUTH_FILE = authPath;
+
 const oldPw = "AltesPasswort1";
 const newPw = "NeuesPasswort2";
 const oldHash = sha256Hex(oldPw);
@@ -31,7 +38,7 @@ fs.writeFileSync(
 );
 
 assert.equal(MIN_PASSWORD_LENGTH, 8);
-assert.equal(sha256Hex("abc"), sha256Hex("abc"));
+assert.equal(adminAuthSecretsPath(), authPath);
 
 {
   const bad = validatePasswordChange({
@@ -88,6 +95,20 @@ assert.equal(sha256Hex("abc"), sha256Hex("abc"));
   assert.match(bad.error, /unterscheiden/);
 }
 
+// Fallback: secrets missing → config.json
+assert.equal(loadPasswordHash(configPath), oldHash);
+
+const mig = migratePasswordHashFromConfig(configPath);
+assert.equal(mig.migrated, true);
+assert.equal(mig.prefix, oldHash.slice(0, 7));
+assert.ok(fs.existsSync(authPath));
+assert.equal(fs.statSync(authPath).mode & 0o777, 0o600);
+assert.equal(loadPasswordHash(configPath), oldHash);
+
+// Second migrate is a no-op (does not overwrite)
+const mig2 = migratePasswordHashFromConfig(configPath);
+assert.equal(mig2.migrated, false);
+
 const ok = validatePasswordChange({
   currentPassword: oldPw,
   newPassword: newPw,
@@ -99,14 +120,19 @@ assert.equal(ok.newHash, sha256Hex(newPw));
 
 const written = savePasswordHash(configPath, ok.newHash);
 assert.equal(written, sha256Hex(newPw));
+const auth = JSON.parse(fs.readFileSync(authPath, "utf8"));
+assert.equal(auth.password_sha256, sha256Hex(newPw));
+// Public/legacy config must NOT be rewritten by password change
 const cfg = JSON.parse(fs.readFileSync(configPath, "utf8"));
-assert.equal(cfg.password_sha256, sha256Hex(newPw));
+assert.equal(cfg.password_sha256, oldHash);
 assert.equal(cfg.note, "keep-me");
 assert.deepEqual(cfg.admin_emails, ["helmut@example.com"]);
+assert.equal(loadPasswordHash(configPath), sha256Hex(newPw));
 
 assert.equal(sessionMatchesPassword({ ph: oldHash }, sha256Hex(newPw)), false);
 assert.equal(sessionMatchesPassword({ ph: sha256Hex(newPw) }, sha256Hex(newPw)), true);
 assert.equal(sessionMatchesPassword({}, sha256Hex(newPw)), false);
 
 fs.rmSync(tmpDir, { recursive: true, force: true });
+delete process.env.EICHMANN_ADMIN_AUTH_FILE;
 console.log("test-admin-password: ok");
