@@ -28,6 +28,7 @@ WorkingDirectory=/var/lib/eichmann/app
 Environment=EICHMANN_DB_PATH=/var/lib/eichmann/listings.db
 Environment=EICHMANN_SITE_ROOT=/var/www/immobilieneichmann.de
 Environment=EICHMANN_ADMIN_CONFIG=/var/www/immobilieneichmann.de/admin/config.json
+Environment=EICHMANN_ADMIN_AUTH_FILE=/var/lib/eichmann/secrets/admin-auth.json
 Environment=EICHMANN_SESSION_SECRET_FILE=/var/lib/eichmann/admin-session.secret
 Environment=EICHMANN_ADMIN_API_HOST=127.0.0.1
 Environment=EICHMANN_ADMIN_API_PORT=3847
@@ -67,6 +68,19 @@ if [ -f "$APP/deploy/eichmann-do-snapshot.cron" ]; then
 fi
 touch /var/log/eichmann-do-snapshot.log
 chmod 644 /var/log/eichmann-do-snapshot.log || true
+
+# Admin auth hash: prefer droplet secrets (never overwrite existing).
+mkdir -p /var/lib/eichmann/secrets
+chmod 700 /var/lib/eichmann/secrets
+export EICHMANN_ADMIN_AUTH_FILE=/var/lib/eichmann/secrets/admin-auth.json
+if [ -f "$APP/scripts/lib/admin-password.mjs" ]; then
+  node --input-type=module -e "
+    import { migratePasswordHashFromConfig } from '$APP/scripts/lib/admin-password.mjs';
+    const r = migratePasswordHashFromConfig('$SITE/admin/config.json');
+    console.log(JSON.stringify({ event: 'admin_auth_install', ...r }));
+  " || echo "WARN: admin-auth migrate skipped"
+fi
+chmod 600 /var/lib/eichmann/secrets/admin-auth.json 2>/dev/null || true
 
 systemctl daemon-reload
 systemctl enable eichmann-admin-api.service

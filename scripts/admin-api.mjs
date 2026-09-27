@@ -3,7 +3,9 @@
  * Localhost admin API for Immobilien Eichmann.
  * Bound to 127.0.0.1 only; nginx reverse-proxies /admin/api/.
  *
- * Auth: email allowlist + password_sha256 (same as public admin/config.json)
+ * Auth: email allowlist + password_sha256
+ *       Preferred: /var/lib/eichmann/secrets/admin-auth.json (mode 600)
+ *       Fallback: admin/config.json (deploy must not overwrite live hash)
  *       → HttpOnly Secure SameSite=Strict session cookie (HMAC-signed).
  * No GitHub PAT required for Eigen CRUD or Immowelt visibility.
  *
@@ -11,6 +13,7 @@
  *   EICHMANN_DB_PATH      (default /var/lib/eichmann/listings.db)
  *   EICHMANN_SITE_ROOT    (default /var/www/immobilieneichmann.de)
  *   EICHMANN_ADMIN_CONFIG (default $SITE_ROOT/admin/config.json)
+ *   EICHMANN_ADMIN_AUTH_FILE (default /var/lib/eichmann/secrets/admin-auth.json)
  *   EICHMANN_SESSION_SECRET_FILE (default /var/lib/eichmann/admin-session.secret)
  *   EICHMANN_ADMIN_API_PORT (default 3847)
  *   EICHMANN_ADMIN_API_HOST (default 127.0.0.1)
@@ -81,9 +84,11 @@ import {
 } from "./lib/immowelt-secrets.mjs";
 import {
   sha256Hex,
+  loadPasswordHash,
   savePasswordHash as writePasswordHash,
   validatePasswordChange,
   sessionMatchesPassword,
+  migratePasswordHashFromConfig,
 } from "./lib/admin-password.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -114,6 +119,9 @@ function loadConfig() {
   return JSON.parse(raw);
 }
 
+function expectPasswordHash() {
+  return loadPasswordHash(CONFIG_PATH);
+}
 
 function ensureSecret() {
   const dir = path.dirname(SECRET_FILE);
@@ -346,7 +354,7 @@ function changeSummaryFromPreview(preview) {
 function requireAuth(req) {
   const cookies = parseCookies(req.headers.cookie);
   const session = verifySession(cookies[COOKIE_NAME]);
-  if (!session || !sessionMatchesPassword(session, loadConfig().password_sha256)) {
+  if (!session || !sessionMatchesPassword(session, expectPasswordHash())) {
     const err = new Error("Nicht angemeldet");
     err.status = 401;
     throw err;
@@ -537,7 +545,7 @@ async function handle(req, res) {
         return send(res, 403, { ok: false, error: "E-Mail nicht freigeschaltet" });
       }
       const hash = sha256Hex(password);
-      const expect = String(config.password_sha256 || "").toLowerCase();
+      const expect = expectPasswordHash();
       if (!expect || hash !== expect) {
         return send(res, 401, { ok: false, error: "Passwort falsch" });
       }
@@ -562,7 +570,7 @@ async function handle(req, res) {
     if (method === "GET" && p === "/me") {
       const cookies = parseCookies(req.headers.cookie);
       const session = verifySession(cookies[COOKIE_NAME]);
-      if (!session || !sessionMatchesPassword(session, loadConfig().password_sha256)) {
+      if (!session || !sessionMatchesPassword(session, expectPasswordHash())) {
         return send(res, 401, { ok: false, authenticated: false });
       }
       return send(res, 200, { ok: true, authenticated: true, email: session.email });
@@ -579,7 +587,7 @@ async function handle(req, res) {
       return send(res, 403, { ok: false, error: "Origin abgelehnt" });
     }
 
-    // --- Passwort ändern (SHA-256 in EICHMANN_ADMIN_CONFIG; session secret unchanged) ---
+    // --- Passwort ändern (SHA-256 in admin-auth secrets; session secret unchanged) ---
     if (method === "POST" && p === "/password") {
       if (!rateLimit(ip, { limit: 8, windowMs: 60_000 })) {
         return send(res, 429, { ok: false, error: "Zu viele Versuche – bitte warten." });
@@ -590,7 +598,7 @@ async function handle(req, res) {
       const wieder = String(
         body.new_password_repeat || body.new_password_confirm || body.confirm_password || ""
       );
-      const expect = String(loadConfig().password_sha256 || "").toLowerCase();
+      const expect = expectPasswordHash();
       const checked = validatePasswordChange({
         currentPassword: current,
         newPassword: neu,
@@ -1196,8 +1204,23 @@ const server = http.createServer((req, res) => {
   });
 });
 
+try {
+  const mig = migratePasswordHashFromConfig(CONFIG_PATH);
+  if (mig.migrated) {
+    console.log(
+      JSON.stringify({
+        event: "admin_auth_migrated_to_secrets",
+        path: mig.path,
+        hash_prefix: mig.prefix,
+      })
+    );
+  }
+} catch (e) {
+  console.error("[admin-api] auth migrate skipped:", e.message || e);
+}
+
 server.listen(PORT, HOST, () => {
   console.log(
-    `eichmann-admin-api listening on http://${HOST}:${PORT} (site=${SITE_ROOT}, db=${resolveDbPath()}, config=${CONFIG_PATH})`
+    `eichmann-admin-api listening on http://${HOST}:${PORT} (site=${SITE_ROOT}, db=${resolveDbPath()}, config=${CONFIG_PATH}, auth=${process.env.EICHMANN_ADMIN_AUTH_FILE || "/var/lib/eichmann/secrets/admin-auth.json"})`
   );
 });

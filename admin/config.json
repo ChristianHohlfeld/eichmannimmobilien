@@ -1,11 +1,11 @@
 {
-  "password_sha256": "328aa98fc811253a6d64cf44c54996db2ad3c51b2ffb959a11bcb1aa52c80c61",
+  "password_sha256": "",
   "repo": "ChristianHohlfeld/eichmannimmobilien",
   "branch": "main",
   "listings_path": "data/listings.json",
   "assets_prefix": "assets/listings",
   "workflow_file": "sync-immowelt.yml",
-  "note": "Login: Allowlist-E-Mail + Passwort → HttpOnly Session-Cookie via /admin/api/. Kein GitHub-PAT. Eigen-CRUD + Immowelt-Sichtbarkeit über Droplet-API → SQLite SoT. Immowelt-Konto read-only.",
+  "note": "Login: Allowlist-E-Mail + Passwort → HttpOnly Session-Cookie via /admin/api/. Passwort-Hash nur auf dem Droplet: /var/lib/eichmann/secrets/admin-auth.json (nie in git). Kein GitHub-PAT. Eigen-CRUD + Immowelt-Sichtbarkeit über Droplet-API → SQLite SoT. Immowelt-Konto read-only.",
   "admin_emails": [
     "chris.hohlfeld@gmail.com",
     "chris.hohlfeld@googlemail.com",

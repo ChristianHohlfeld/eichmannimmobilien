@@ -2,7 +2,7 @@
   "name": "eichmannimmobilien",
   "private": true,
   "type": "module",
-  "description": "Static site for Immobilien Eichmann \u2013 Immowelt listings sync",
+  "description": "Static site for Immobilien Eichmann – Immowelt listings sync",
   "scripts": {
     "sync-immowelt": "node scripts/sync-immowelt.mjs",
     "sync-immowelt:render": "node scripts/sync-immowelt.mjs --render-only",
@@ -24,7 +24,8 @@
     "test:immowelt-reason": "node scripts/test-immowelt-public-reason.mjs",
     "admin-api": "node scripts/admin-api.mjs",
     "test:immowelt-secrets": "node scripts/test-immowelt-secrets.mjs",
-    "test:immowelt-api": "node scripts/test-immowelt-official-api.mjs"
+    "test:immowelt-api": "node scripts/test-immowelt-official-api.mjs",
+    "test:admin-password": "node scripts/test-admin-password.mjs"
   },
   "engines": {
     "node": ">=20"
