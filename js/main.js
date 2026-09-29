@@ -325,7 +325,7 @@
   }
 
 
-  /* Exposé lightbox v3 — Erleben fullscreen: only close X top-left */
+  /* Exposé lightbox v2 — Close fixed am Viewport */
   (function exposeLightbox() {
     var roots = [];
     var g = document.getElementById("expose-gallery");
@@ -352,20 +352,28 @@
     overlay.hidden = true;
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
-    overlay.setAttribute("aria-label", "Exposé erleben");
+    overlay.setAttribute("aria-label", "Bildansicht");
     overlay.innerHTML =
       '<button type="button" class="lb-close" aria-label="Schließen">×</button>' +
+      '<button type="button" class="lb-nav lb-prev" aria-label="Vorheriges Bild">‹</button>' +
       '<figure class="lb-dialog">' +
       '<img src="" alt="">' +
       '<figcaption class="lb-caption"></figcaption>' +
-      "</figure>";
+      "</figure>" +
+      '<button type="button" class="lb-nav lb-next" aria-label="Nächstes Bild">›</button>';
     document.body.appendChild(overlay);
 
     var lbImg = overlay.querySelector(".lb-dialog img");
     var lbCap = overlay.querySelector(".lb-caption");
+    var btnPrev = overlay.querySelector(".lb-prev");
+    var btnNext = overlay.querySelector(".lb-next");
     var idx = 0;
-    var touchStartX = null;
-    var touchStartY = null;
+
+    function syncNav() {
+      var multi = sources.length > 1;
+      btnPrev.hidden = !multi;
+      btnNext.hidden = !multi;
+    }
 
     function openAt(i) {
       idx = (i + sources.length) % sources.length;
@@ -377,18 +385,15 @@
           ? lbImg.alt + " (" + (idx + 1) + " / " + sources.length + ")"
           : lbImg.alt || "";
       overlay.hidden = false;
-      document.body.classList.add("lb-open");
       document.body.style.overflow = "hidden";
+      syncNav();
       overlay.querySelector(".lb-close").focus();
     }
 
     function closeLb() {
       overlay.hidden = true;
       lbImg.removeAttribute("src");
-      document.body.classList.remove("lb-open");
       document.body.style.overflow = "";
-      touchStartX = null;
-      touchStartY = null;
     }
 
     sources.forEach(function (img, i) {
@@ -404,34 +409,21 @@
       });
     });
 
-    overlay.querySelector(".lb-close").addEventListener("click", function (e) {
-      e.stopPropagation();
-      closeLb();
-    });
+    overlay.querySelector(".lb-close").addEventListener("click", closeLb);
     overlay.addEventListener("click", function (e) {
       if (e.target === overlay) closeLb();
     });
-    /* Swipe between images — replaces large nav icons on mobile */
-    overlay.addEventListener("touchstart", function (e) {
-      if (!e.touches || !e.touches.length) return;
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-    }, { passive: true });
-    overlay.addEventListener("touchend", function (e) {
-      if (touchStartX == null || !e.changedTouches || !e.changedTouches.length) return;
-      var dx = e.changedTouches[0].clientX - touchStartX;
-      var dy = e.changedTouches[0].clientY - touchStartY;
-      touchStartX = null;
-      touchStartY = null;
-      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
-      if (sources.length > 1) openAt(idx + (dx < 0 ? 1 : -1));
-    }, { passive: true });
+    btnPrev.addEventListener("click", function (e) {
+      e.stopPropagation();
+      openAt(idx - 1);
+    });
+    btnNext.addEventListener("click", function (e) {
+      e.stopPropagation();
+      openAt(idx + 1);
+    });
     document.addEventListener("keydown", function (e) {
       if (overlay.hidden) return;
-      if (e.key === "Escape") {
-        e.preventDefault();
-        closeLb();
-      }
+      if (e.key === "Escape") closeLb();
       if (e.key === "ArrowLeft") openAt(idx - 1);
       if (e.key === "ArrowRight") openAt(idx + 1);
     });

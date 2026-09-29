@@ -304,10 +304,10 @@ for (const full of await htmlFiles()) {
     '<p class="form-note legal-request-note">Informationen zur Verarbeitung Ihrer Angaben finden Sie in der <a href="${p}datenschutz.html">Datenschutzerklärung</a>. Durch das Absenden kommt kein Maklervertrag zustande.</p>'
   );
   s = s.replace(/<img class="logo-svg" src="${p}assets\/logo\.(?:png|svg)\?v=[^"]+"/g, '<img class="logo-svg" src="${p}assets/logo-header.svg?v=header-safe-v1"');
-  s = s.replace(/js\/main\.js\?v=[^"]+/g, 'js/main.js?v=expose-erleben-fs-v1');
+  s = s.replace(/js\/main\.js\?v=[^"]+/g, 'js/main.js?v=form-gateway-v1');
   s = s.replace(
     '  <script src="${p}js/analytics.js" defer></script>\n  <script src="${p}js/main.js?v=flyer-root-v1" defer></script>',
-    '  <script>window.__eichmannJsBase="${p}js/";</script>\n  <script src="${p}js/cookie-consent.js?v=abs-datenschutz-v2" defer></script>\n  <script src="${p}js/main.js?v=expose-erleben-fs-v1" defer></script>'
+    '  <script>window.__eichmannJsBase="${p}js/";</script>\n  <script src="${p}js/cookie-consent.js?v=abs-datenschutz-v2" defer></script>\n  <script src="${p}js/main.js?v=form-gateway-v1" defer></script>'
   );
   await write("scripts/sync-immowelt.mjs", s);
 }
