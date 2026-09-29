@@ -16,7 +16,6 @@
     "test:jsonld": "node scripts/test-jsonld.mjs",
     "test:legal": "node scripts/test-legal-baseline.mjs",
     "test:expose-form": "node scripts/test-expose-form.mjs",
-    "test:expose-erleben": "node scripts/test-expose-erleben-lightbox.mjs",
     "test:content": "node scripts/test-listing-content.mjs",
     "db:migrate": "node scripts/db-migrate.mjs",
     "db:bootstrap": "node scripts/db-migrate.mjs --bootstrap",
