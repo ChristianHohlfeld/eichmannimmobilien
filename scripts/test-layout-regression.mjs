@@ -195,21 +195,23 @@ async function measurePage(page, base, path, vp) {
       }
     }
 
-    // ChatGPT funnel layout: sticky Anrufen+Vormerken always in viewport;
+    // ChatGPT funnel layout: one Anrufen+Vormerken pair in the intro flow;
     // mobile order brand → hero → intro (hero before intro CTAs).
     const funnel = await page.evaluate(() => {
       const modal = document.getElementById('flyerModal');
       if (!modal || modal.hidden) return null;
       const sticky = modal.querySelector('.flyer-sticky-ctas');
-      const hero = modal.querySelector('.flyer-hero-img');
       const intro = modal.querySelector('.flyer-intro');
-      const call = sticky?.querySelector('a[href^="tel:"]');
-      const vormerk = sticky?.querySelector('a[href*="kontakt"]');
-      const s = sticky?.getBoundingClientRect();
-      const h = hero?.getBoundingClientRect();
+      const introCtas = intro?.querySelector('.flyer-intro-ctas');
+      const call = introCtas?.querySelector('a[href^="tel:"]');
+      const vormerk = introCtas?.querySelector('a[href*="kontakt"]');
+      const c = introCtas?.getBoundingClientRect();
+      const h = modal.querySelector('.flyer-hero-img')?.getBoundingClientRect();
       const i = intro?.getBoundingClientRect();
+      const cStyle = introCtas ? getComputedStyle(introCtas) : null;
       return {
-        stickyVisible: !!(sticky && s && s.height > 0 && s.bottom <= window.innerHeight + 2 && s.top < window.innerHeight),
+        hasSticky: !!sticky,
+        introCtasInFlow: !!(introCtas && c && cStyle && cStyle.position !== 'fixed' && cStyle.position !== 'absolute' && c.top >= i.top - 2 && c.bottom <= i.bottom + 2),
         hasAnrufen: !!(call && /Anrufen/i.test(call.textContent || '')),
         hasVormerken: !!(vormerk && /Vormerken/i.test(vormerk.textContent || '')),
         heroTop: h ? Math.round(h.top) : null,
@@ -220,9 +222,10 @@ async function measurePage(page, base, path, vp) {
     if (!funnel) {
       fail(`${label}: flyer funnel layout check — modal not open`);
     } else {
-      if (!funnel.stickyVisible) fail(`${label}: flyer sticky CTAs not visible in viewport`);
-      if (!funnel.hasAnrufen) fail(`${label}: flyer sticky missing Anrufen`);
-      if (!funnel.hasVormerken) fail(`${label}: flyer sticky missing Vormerken`);
+      if (funnel.hasSticky) fail(`${label}: flyer sticky CTA bar must be removed`);
+      if (!funnel.introCtasInFlow) fail(`${label}: flyer intro CTAs must remain in normal flow`);
+      if (!funnel.hasAnrufen) fail(`${label}: flyer intro missing Anrufen`);
+      if (!funnel.hasVormerken) fail(`${label}: flyer intro missing Vormerken`);
       if (!funnel.planenOk) fail(`${label}: flyer wording "planen" missing`);
       if (vp.name === 'mobile' && funnel.heroTop != null && funnel.introTop != null) {
         if (funnel.heroTop >= funnel.introTop - 2) {

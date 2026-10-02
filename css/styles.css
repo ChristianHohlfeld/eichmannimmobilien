@@ -1384,44 +1384,6 @@ a.flyer-cta-script:focus-visible {
 .flyer-foot-contact a:hover { color: var(--accent-soft) !important; }
 .flyer-slogan { color: rgba(255,255,255,0.75) !important; }
 
-/* Sticky Anrufen + Vormerken: always findable while flyer scrolls */
-.flyer-sticky-ctas {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1350; /* below close (1400), above overlay (1300) */
-  display: flex;
-  gap: 0.5rem;
-  padding:
-    0.65rem
-    max(0.75rem, env(safe-area-inset-right, 0px))
-    max(0.65rem, env(safe-area-inset-bottom, 0px))
-    max(0.75rem, env(safe-area-inset-left, 0px));
-  background: rgba(255, 255, 255, 0.98);
-  border-top: 1px solid var(--border);
-  box-shadow: 0 -6px 24px rgba(15, 39, 68, 0.16);
-  box-sizing: border-box;
-}
-.flyer-sticky-ctas .btn {
-  flex: 1 1 0;
-  justify-content: center;
-  min-height: 48px;
-  font-size: 0.95rem;
-}
-.flyer-overlay[hidden] .flyer-sticky-ctas { display: none !important; }
-@media (min-width: 981px) {
-  /* Desktop: keep bar aligned to flyer dialog width for readability */
-  .flyer-sticky-ctas {
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-    width: min(920px, calc(100% - 1.5rem));
-    border-radius: var(--radius) var(--radius) 0 0;
-    bottom: 0;
-  }
-}
-
 /* Header logo: keep lake-blue mark (SVG fill), no red clash */
 .site-header .logo-svg,
 .site-header .logo img {
@@ -1892,7 +1854,7 @@ a.flyer-cta-script:focus-visible {
   left: 0;
   right: 0;
   bottom: 0;
-  /* Above site sticky-bar (1300) + flyer sticky (1350) so Accept is always tappable */
+  /* Above site sticky-bar so Accept is always tappable */
   z-index: 1600;
   padding: 0.85rem 1rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
   background: rgba(15, 23, 32, 0.96);
@@ -1900,12 +1862,9 @@ a.flyer-cta-script:focus-visible {
   box-shadow: 0 -8px 28px rgba(0,0,0,0.18);
 }
 /* Sticky CTA bars must not trap cookie Accept/Reject on mobile */
-body.cookie-banner-open .sticky-bar,
-body.cookie-banner-open .flyer-sticky-ctas {
+body.cookie-banner-open .sticky-bar {
   display: none !important;
 }
-/* One CTA pair only: sticky Anrufen+Vormerken (intro duplicate removed) */
-.flyer-intro-ctas { display: none !important; }
 .cookie-banner[hidden] { display: none !important; }
 .cookie-banner-inner {
   max-width: var(--measure, 1120px);
