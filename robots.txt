@@ -7,13 +7,14 @@ Allow: /llms.txt
 Allow: /agents.txt
 Allow: /.well-known/mcp.json
 Allow: /.well-known/mcp/
+Allow: /mcp
 Disallow: /admin/
 
 # AI / Agent discovery
 # - llms.txt  → Einstieg + Objekt-URLs + NAP
 # - agents.txt → Leserechte für Angebote
 # - ai/listings.json → maschinenlesbarer Angebots-Index (eine Quelle mit der Website)
-# - .well-known/mcp.json → statische MCP-Discovery (kein Live-MCP-HTTP)
+# - .well-known/mcp.json + /mcp → Live MCP Streamable-HTTP (search_listings, get_listing)
 
 
 # OpenAI search / ads crawlers (ChatGPT discovery)
