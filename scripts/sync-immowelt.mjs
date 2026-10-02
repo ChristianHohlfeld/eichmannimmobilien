@@ -31,6 +31,7 @@ import { reconcileMissingImmoweltOffers } from "./lib/immowelt-reconcile.mjs";
 import { publicImmoweltSyncReason } from "./lib/immowelt-public-reason.mjs";
 import { hasImmoweltApiKey, readImmoweltCredentials } from "./lib/immowelt-secrets.mjs";
 import { fetchOfficialImmoweltListings } from "./lib/immowelt-official-api.mjs";
+import { writeAiDiscoveryArtifacts } from "./lib/ai-discovery.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.EICHMANN_SITE_ROOT
@@ -73,6 +74,10 @@ const STATIC_SITEMAP_PATHS = [
   { loc: "/allmannsdorf.html", priority: "0.8", changefreq: "weekly" },
   { loc: "/ratgeber.html", priority: "0.8", changefreq: "weekly" },
   { loc: "/immobilienbewertung-konstanz.html", priority: "0.8", changefreq: "monthly" },
+  { loc: "/llms.txt", priority: "0.6", changefreq: "weekly" },
+  { loc: "/agents.txt", priority: "0.4", changefreq: "monthly" },
+  { loc: "/ai/listings.json", priority: "0.9", changefreq: "daily" },
+  { loc: "/.well-known/mcp.json", priority: "0.5", changefreq: "monthly" },
 ];
 
 const args = new Set(process.argv.slice(2));
@@ -2050,6 +2055,15 @@ async function renderIntoPages(data) {
   }
 
   await renderExposePages(data);
+  // AI-Index + Discovery aus derselben Listing-Liste wie HTML (vor Sitemap, damit lastmod greift)
+  const ai = await writeAiDiscoveryArtifacts(data, {
+    siteRoot: ROOT,
+    origin: SITE_ORIGIN,
+    dryRun,
+  });
+  console.log(
+    `Updated AI discovery (${ai.aiDoc.listing_count} public listings → llms.txt, agents.txt, ai/, .well-known/mcp*)`
+  );
   await updateSitemap(data);
 }
 

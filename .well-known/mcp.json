@@ -1,0 +1,77 @@
+{
+  "schema_version": "eichmann.mcp-discovery/v1",
+  "name": "immobilien-eichmann-listings",
+  "title": "Immobilien Eichmann – Angebots-Index",
+  "description": "Statische MCP-Discovery für Kaufangebote. Kein Live-MCP-HTTP auf diesem Host — Ressourcen sind öffentliche JSON-Feeds.",
+  "websiteUrl": "https://immobilieneichmann.de/",
+  "transport": {
+    "type": "static-resources",
+    "note": "GitHub-Repo + DigitalOcean Static. Für echten MCP-Streamable-HTTP später optional DigitalOcean App/Function."
+  },
+  "resources": [
+    {
+      "name": "listings_index",
+      "uri": "https://immobilieneichmann.de/ai/listings.json",
+      "mimeType": "application/json",
+      "description": "Schlanker öffentlicher Angebots-Index (search_listings / get_listing)."
+    },
+    {
+      "name": "listings_full_export",
+      "uri": "https://immobilieneichmann.de/data/listings.json",
+      "mimeType": "application/json",
+      "description": "Vollständiger Render-Export (gleiche Quelle wie HTML)."
+    },
+    {
+      "name": "llms_txt",
+      "uri": "https://immobilieneichmann.de/llms.txt",
+      "mimeType": "text/plain",
+      "description": "Menschen-/AI-lesbare Einstiegsseite mit Objekt-URLs und NAP."
+    }
+  ],
+  "tools": [
+    {
+      "name": "search_listings",
+      "description": "Öffentliche Angebote suchen/filtern über ai/listings.json",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string",
+            "description": "Freitext Titel/Ort/Typ"
+          },
+          "min_price_eur": {
+            "type": "number"
+          },
+          "max_price_eur": {
+            "type": "number"
+          },
+          "rooms": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_listing",
+      "description": "Ein Angebot per slug oder id",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  ],
+  "listing_count": 11,
+  "generated_at": "2026-10-02T05:44:22.183Z",
+  "server_card": "https://immobilieneichmann.de/ai/server-card.json",
+  "catalog": "https://immobilieneichmann.de/.well-known/mcp/catalog.json"
+}

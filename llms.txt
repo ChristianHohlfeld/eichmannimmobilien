@@ -1,33 +1,61 @@
 # Immobilien Eichmann
 
-- **Site:** Immobilien Eichmann (Helmut Eichmann), Konstanz / Bodensee
-- **URL:** https://immobilieneichmann.de/
-- **Language:** de
+> Immobilienmakler in Konstanz / Bodensee. Sprache: de.
+> Live-Stand der Angebote = dieser Index (generiert aus derselben Quelle wie die Website).
 
-## Kontakt
+## NAP / Kontakt (Helmut Eichmann)
 
-- **Adresse:** Jacob-Burckhardt-Str. 40, 78464 Konstanz
-- **Telefon:** +49 170 5225568 / +49 7531 9228848
-- **E-Mail:** info@immobilien-eichmann.com
+- Name: Immobilien Eichmann · Helmut Eichmann
+- Adresse: Jacob-Burckhardt-Str. 40, 78464 Konstanz, Deutschland
+- Telefon: +49 170 5225568 / +49 7531 9228848
+- E-Mail: info@immobilien-eichmann.com
+- Web: https://immobilieneichmann.de/
+
+## Angebots-Index (für AI / Agents)
+
+- **AI-Index (schlank, nur öffentlich):** https://immobilieneichmann.de/ai/listings.json
+- **Voll-Export (Render-Spiegel):** https://immobilieneichmann.de/data/listings.json
+- **MCP-Discovery:** https://immobilieneichmann.de/.well-known/mcp.json
+- **MCP-Catalog:** https://immobilieneichmann.de/.well-known/mcp/catalog.json
+- **Server-Card (statisch):** https://immobilieneichmann.de/ai/server-card.json
+- **agents.txt:** https://immobilieneichmann.de/agents.txt
+- **Sitemap:** https://immobilieneichmann.de/sitemap.xml
+- Anzahl Kaufobjekte im Index: 11
+- generiert: 2026-10-02T05:44:22.183Z
+
+## Tools (Konzept über JSON-Feed)
+
+1. `search_listings` — `GET ai/listings.json`, dann `listings[]` filtern.
+2. `get_listing` — Eintrag per `slug`/`id` aus dem Index; Details unter `url` (HTML) oder Voll-Export.
+
+Kein Live-MCP-Streamable-HTTP auf dem Static-Host. Ressourcen sind öffentliche JSON/HTML-URLs.
+
+## Aktuelle Objekt-URLs
+
+- [KfW-55 Sonnige 1 Zimmerwohnung Neubau Konstanz (Königsbau)](https://immobilieneichmann.de/objekt/penthouse-konigsbau-c6b1d820.html) (Königsbau, Konstanz (78464)) — 199.000 €
+- [Ein Dreifamillienhaus in wunderschöner, grüner Lage](https://immobilieneichmann.de/objekt/mehrfamilienhaus-wollmatingen-32a8908e.html) (Wollmatingen, Konstanz (78467)) — 1.250.000 €
+- [Wohnung A5 · 3 Zimmer · Neubau Sunside Living](https://immobilieneichmann.de/objekt/wohnung-wollmatingen-4fed09f2.html) (Wollmatingen, Konstanz (78467)) — 641.200 €
+- [3 Zimmerwohnung Konstanz Wollmatingen](https://immobilieneichmann.de/objekt/wohnung-wollmatingen-e7e58fe2.html) (Wollmatingen, Konstanz (78467)) — 330.000 €
+- [4-Zimmer-Wohnung in neu saniertem 5-Familien-Jugendstil-Haus 1. OG Provisionsfrei](https://immobilieneichmann.de/objekt/wohnung-petershausen-86a7d4f6.html) (Petershausen, Konstanz (78467)) — 735.000 €
+- [4 Zimmer Wohnung B9 / Haus B](https://immobilieneichmann.de/objekt/wohnung-wollmatingen-7bff84e7.html) (Wollmatingen, Konstanz (78467)) — 695.000 €
+- [2 1/2 Zimmer Penthouse Wohnung](https://immobilieneichmann.de/objekt/penthouse-furstenberg-6fd6062e.html) (Fürstenberg, Konstanz (78467)) — 380.000 €
+- [Wohnung A12 · 4 Zimmer · Neubau Sunside Living](https://immobilieneichmann.de/objekt/maisonette-wollmatingen-484fee8a.html) (Wollmatingen, Konstanz (78467)) — 738.100 €
+- [Wohnung A9 · 4 Zimmer · Neubau Sunside Living](https://immobilieneichmann.de/objekt/maisonette-wollmatingen-4ac199b6.html) (Wollmatingen, Konstanz (78467)) — 696.200 €
+- [Wohnung A3 · 2 Zimmer · Neubau Sunside Living](https://immobilieneichmann.de/objekt/maisonette-furstenberg-bb241b38.html) (Wollmatingen, Konstanz (78467)) — 361.500 €
+- [Wohnung A2 · 2 Zimmer · Neubau Sunside Living](https://immobilieneichmann.de/objekt/maisonette-furstenberg-ff414db8.html) (Wollmatingen, Konstanz (78467)) — 363.700 €
 
 ## Wichtige Seiten
 
-- **Makler:** https://immobilieneichmann.de/immobilienmakler-konstanz.html
-- **Bewertung:** https://immobilieneichmann.de/immobilienbewertung-konstanz.html
-- **Verkaufen:** https://immobilieneichmann.de/haus-verkaufen-konstanz.html
-- **Wohnung kaufen:** https://immobilieneichmann.de/wohnung-kaufen-konstanz.html
-- **Konstanz:** https://immobilieneichmann.de/konstanz.html
-- **Wollmatingen:** https://immobilieneichmann.de/wollmatingen.html
-- **Allmannsdorf:** https://immobilieneichmann.de/allmannsdorf.html
-- **Leistungen:** https://immobilieneichmann.de/leistungen.html
-- **Projekte:** https://immobilieneichmann.de/projekte.html
-- **Kontakt:** https://immobilieneichmann.de/kontakt.html
-- **Ratgeber:** https://immobilieneichmann.de/ratgeber.html
-
-## Immobilienangebote
-
-Immowelt ist die Single Source of Truth für aktuelle Immobilienangebote. `data/listings.json` ist ein lokaler Spiegel für die Website; lokal darf nur die Website-Sichtbarkeit (`site_hidden`) abweichen.
-
-## Sitemap
-
-https://immobilieneichmann.de/sitemap.xml
+- Startseite: https://immobilieneichmann.de/
+- Aktuelle Angebote (HTML): https://immobilieneichmann.de/#angebote
+- Leistungen: https://immobilieneichmann.de/leistungen.html
+- Projekte: https://immobilieneichmann.de/projekte.html
+- Kontakt: https://immobilieneichmann.de/kontakt.html
+- Immobilienmakler Konstanz: https://immobilieneichmann.de/immobilienmakler-konstanz.html
+- Wohnung kaufen Konstanz: https://immobilieneichmann.de/wohnung-kaufen-konstanz.html
+- Haus verkaufen Konstanz: https://immobilieneichmann.de/haus-verkaufen-konstanz.html
+- Immobilienbewertung Konstanz: https://immobilieneichmann.de/immobilienbewertung-konstanz.html
+- Konstanz: https://immobilieneichmann.de/konstanz.html
+- Wollmatingen: https://immobilieneichmann.de/wollmatingen.html
+- Allmannsdorf: https://immobilieneichmann.de/allmannsdorf.html
+- Ratgeber: https://immobilieneichmann.de/ratgeber.html

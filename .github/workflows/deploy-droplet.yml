@@ -22,6 +22,9 @@ on:
       - "sitemap.xml"
       - "robots.txt"
       - "llms.txt"
+      - "agents.txt"
+      - "ai/**"
+      - ".well-known/**"
       - ".nojekyll"
       - ".github/workflows/deploy-droplet.yml"
   workflow_dispatch:

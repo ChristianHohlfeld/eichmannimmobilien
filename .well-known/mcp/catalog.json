@@ -1,0 +1,12 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/v1/catalog.schema.json",
+  "version": 1,
+  "servers": [
+    {
+      "name": "immobilien-eichmann-listings",
+      "title": "Immobilien Eichmann Angebote",
+      "url": "https://immobilieneichmann.de/ai/server-card.json",
+      "description": "Statischer Angebots-Index (JSON-Ressourcen, kein Live-MCP-HTTP)."
+    }
+  ]
+}

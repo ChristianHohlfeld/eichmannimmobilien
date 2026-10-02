@@ -1,0 +1,20 @@
+# agents.txt — Immobilien Eichmann
+# Kurzregeln für AI-Agents. Angebotsstand = Live-Website.
+
+User-Agent: *
+Allow: /
+Allow: /ai/listings.json
+Allow: /data/listings.json
+Allow: /objekt/
+Allow: /llms.txt
+Allow: /.well-known/mcp.json
+Allow: /.well-known/mcp/catalog.json
+Allow: /ai/server-card.json
+Disallow: /admin/
+
+# Erlaubt: Lesen der öffentlichen Kaufangebote und Kontaktdaten (NAP).
+# Nicht erlaubt: Schreiben, Formular-Spam, Admin-API, Secrets.
+
+Contact: info@immobilien-eichmann.com
+Index: https://immobilieneichmann.de/ai/listings.json
+Llms: https://immobilieneichmann.de/llms.txt
