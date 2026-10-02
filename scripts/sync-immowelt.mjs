@@ -1177,7 +1177,7 @@ function renderExposeHtml(listing, ogShare = null) {
   <link rel="icon" href="${p}assets/logo.svg?v=noclip-v1" type="image/svg+xml">
   <link rel="icon" href="${p}assets/logo.png" type="image/png" sizes="any">
   <link rel="apple-touch-icon" href="${p}assets/apple-touch-icon.png">
-<link rel="stylesheet" href="${p}css/styles.css?v=floating-wa-v1">
+<link rel="stylesheet" href="${p}css/styles.css?v=chatgpt-vormerk-v1">
   <script type="application/ld+json">
 ${JSON.stringify(schema, null, 2)}
   </script>
@@ -1389,7 +1389,7 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
 
   <script>window.__eichmannJsBase="${p}js/";</script>
   <script src="${p}js/cookie-consent.js?v=abs-datenschutz-v2" defer></script>
-  <script src="${p}js/main.js?v=form-gateway-v1" defer></script>
+  <script src="${p}js/main.js?v=chatgpt-vormerk-v1" defer></script>
 </body>
 </html>
 `;
