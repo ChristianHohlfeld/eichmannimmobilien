@@ -81,7 +81,13 @@ body {
   line-height: var(--lh-body);
   -webkit-font-smoothing: antialiased;
   font-weight: 400;
-  padding-bottom: calc(var(--sticky-h) + var(--space-2));
+  padding-bottom: max(
+    calc(var(--sticky-h) + var(--space-2)),
+    calc(var(--sticky-h) + env(safe-area-inset-bottom, 0px))
+  );
+}
+main {
+  padding-bottom: max(var(--space-3), env(safe-area-inset-bottom, 0px));
 }
 img { max-width: 100%; height: auto; display: block; }
 a { color: var(--primary-mid); text-decoration: none; }
@@ -935,6 +941,7 @@ a.listing-card:focus-visible {
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 -4px 18px rgba(15, 39, 68, 0.12);
   /* keep bar fully on-screen; safe-area via padding below */
+  padding-bottom: max(0px, env(safe-area-inset-bottom, 0px));
   overflow: visible;
 }
 .sticky-item {
@@ -1079,10 +1086,11 @@ body.flyer-open .floating-wa { display: none !important; }
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   padding:
-    max(0.75rem, env(safe-area-inset-top))
-    max(0.75rem, env(safe-area-inset-right))
-    max(1.25rem, env(safe-area-inset-bottom))
-    max(0.75rem, env(safe-area-inset-left));
+    max(0.75rem, env(safe-area-inset-top, 0px))
+    max(0.75rem, env(safe-area-inset-right, 0px))
+    0
+    max(0.75rem, env(safe-area-inset-left, 0px));
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
 }
 .flyer-backdrop {
@@ -1106,7 +1114,7 @@ body.flyer-open .floating-wa { display: none !important; }
   box-shadow: var(--shadow);
   box-sizing: border-box;
   /* Raum für sticky Anrufen/Vormerken am Viewport-Boden */
-  padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: max(4.75rem, env(safe-area-inset-bottom, 0px));
 }
 .flyer-close {
   /* Am Viewport fixiert — immer sichtbar, nicht abgeschnitten */
@@ -1325,10 +1333,11 @@ a.flyer-cta-script:focus-visible {
   }
   .flyer-overlay {
     padding:
-      max(0.5rem, env(safe-area-inset-top))
-      max(0.5rem, env(safe-area-inset-right))
-      max(1rem, env(safe-area-inset-bottom))
-      max(0.5rem, env(safe-area-inset-left));
+      max(0.5rem, env(safe-area-inset-top, 0px))
+      max(0.5rem, env(safe-area-inset-right, 0px))
+      0
+      max(0.5rem, env(safe-area-inset-left, 0px));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
   }
   .flyer-dialog {
     width: 100%;
@@ -1537,15 +1546,18 @@ a.flyer-cta-script:focus-visible {
 /* iOS safe-area: sticky clearance so footer/CTAs stay tappable */
 @supports (padding: max(0px)) {
   body {
-    padding-bottom: calc(var(--sticky-h) + var(--space-2) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: max(
+      calc(var(--sticky-h) + var(--space-2)),
+      calc(var(--sticky-h) + env(safe-area-inset-bottom, 0px))
+    );
   }
   .sticky-bar {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: max(0px, env(safe-area-inset-bottom, 0px));
   }
   .flyer-overlay {
     /* Keep the last flyer content above the iOS Safari toolbar while scrolling. */
-    padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
-    scroll-padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: max(var(--space-2), env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: max(var(--space-2), env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -1861,7 +1873,8 @@ a.flyer-cta-script:focus-visible {
   bottom: 0;
   /* Above site sticky-bar so Accept is always tappable */
   z-index: 1600;
-  padding: 0.85rem 1rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
+  padding: 0.85rem 1rem;
+  padding-bottom: max(0.85rem, env(safe-area-inset-bottom, 0px));
   background: rgba(15, 23, 32, 0.96);
   color: #f5f7fa;
   box-shadow: 0 -8px 28px rgba(0,0,0,0.18);
