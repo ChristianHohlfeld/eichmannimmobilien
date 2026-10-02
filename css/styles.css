@@ -1542,6 +1542,11 @@ a.flyer-cta-script:focus-visible {
   .sticky-bar {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+  .flyer-overlay {
+    /* Keep the last flyer content above the iOS Safari toolbar while scrolling. */
+    padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 @media (max-width: 640px) {
