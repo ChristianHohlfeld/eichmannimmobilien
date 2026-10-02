@@ -21,8 +21,8 @@ import { fileURLToPath } from "node:url";
 const PROTOCOL = "2025-03-26";
 const SERVER_INFO = {
   name: "immobilien-eichmann-listings",
-  version: "1.0.0",
-  title: "Immobilien Eichmann – Angebote",
+  version: "1.1.0",
+  title: "Immobilien Eichmann – Angebote & Anfragen",
 };
 
 const HOST = process.env.EICHMANN_MCP_HOST || "127.0.0.1";
@@ -33,6 +33,15 @@ const LISTINGS_FILE = path.join(SITE_ROOT, "ai", "listings.json");
 const LISTINGS_URL =
   process.env.EICHMANN_LISTINGS_URL ||
   "https://immobilieneichmann.de/ai/listings.json";
+const FLYER_FILE = path.join(SITE_ROOT, "ai", "flyer-allmannsdorf.json");
+const FLYER_URL =
+  process.env.EICHMANN_FLYER_URL ||
+  "https://immobilieneichmann.de/ai/flyer-allmannsdorf.json";
+const FORMS_BASE =
+  process.env.EICHMANN_FORMS_BASE ||
+  "https://forms.digitalisierungsplanung.de/v1/immobilieneichmann";
+const SITE_ORIGIN =
+  process.env.EICHMANN_SITE_ORIGIN || "https://immobilieneichmann.de";
 const CACHE_MS = Number(process.env.EICHMANN_MCP_CACHE_MS || 15000);
 
 const TOOLS = [
@@ -92,6 +101,68 @@ const TOOLS = [
       openWorldHint: false,
     },
   },
+  {
+    name: "get_flyer",
+    description:
+      "Neubauprojekt-Flyer Konstanz-Allmannsdorf laden (5 Mehrfamilienhäuser, 44 Wohnungen, Seesicht). Quelle = ai/flyer-allmannsdorf.json – keine erfundenen Einzelwohnungen.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+  },
+  {
+    name: "submit_inquiry",
+    description:
+      "Interessenten-Anfrage / Lead an Immobilien Eichmann senden. flow=contact (allgemein oder Vormerkung Allmannsdorf) oder flow=expose (Exposé zu einem Kaufobjekt). Nutzt dieselben Formular-Endpoints wie die Website. privacy_consent=true erforderlich (Datenschutz).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        flow: {
+          type: "string",
+          description: '"contact" (Kontakt/Vormerkung) oder "expose" (Exposé-Anfrage)',
+        },
+        name: { type: "string", description: "Nachname (contact: voller Name; expose: Nachname)" },
+        email: { type: "string", description: "E-Mail (Pflicht)" },
+        phone: { type: "string", description: "Telefon (optional)" },
+        message: {
+          type: "string",
+          description: "Nachricht (Pflicht bei flow=contact)",
+        },
+        anliegen: {
+          type: "string",
+          description:
+            'Betreff, z.B. "Vormerkung Neubau Allmannsdorf", "Vermittlung / Kauf", "Allgemeine Anfrage"',
+        },
+        privacy_consent: {
+          type: "boolean",
+          description: "Muss true sein (Einwilligung Datenschutz / Kontaktaufnahme)",
+        },
+        anrede: { type: "string", description: 'expose: "Herr" | "Frau" | "Familie"' },
+        vorname: { type: "string", description: "expose: Vorname" },
+        strasse: { type: "string", description: "expose: Straße und Hausnummer" },
+        plz: { type: "string", description: "expose: PLZ" },
+        ort: { type: "string", description: "expose: Ort" },
+        objekt: { type: "string", description: "expose: Objekttitel" },
+        objekt_url: {
+          type: "string",
+          description: "expose: https://immobilieneichmann.de/objekt/<slug>.html",
+        },
+      },
+      required: ["flow", "email", "privacy_consent"],
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true,
+    },
+  },
 ];
 
 let cache = { at: 0, doc: null };
@@ -121,6 +192,127 @@ async function loadListingsDoc() {
   doc._source = source;
   cache = { at: now, doc };
   return doc;
+}
+
+let flyerCache = { at: 0, doc: null };
+
+async function loadFlyerDoc() {
+  const now = Date.now();
+  if (flyerCache.doc && now - flyerCache.at < CACHE_MS) return flyerCache.doc;
+  let raw = null;
+  let source = "file";
+  try {
+    raw = await fs.readFile(FLYER_FILE, "utf8");
+  } catch {
+    source = "http";
+    const res = await fetch(FLYER_URL, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) throw new Error(`flyer fetch HTTP ${res.status}`);
+    raw = await res.text();
+  }
+  const doc = JSON.parse(raw);
+  if (!doc || doc.unit_count !== 44) {
+    throw new Error("flyer-allmannsdorf.json missing or unit_count != 44");
+  }
+  doc._source = source;
+  flyerCache = { at: now, doc };
+  return doc;
+}
+
+function validEmail(value) {
+  const s = String(value || "").trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+}
+
+async function submitInquiry(args = {}) {
+  const flow = String(args.flow || "").trim().toLowerCase();
+  if (flow !== "contact" && flow !== "expose") {
+    return { error: "flow muss contact oder expose sein", ok: false };
+  }
+  if (args.privacy_consent !== true) {
+    return {
+      error: "privacy_consent muss true sein (Datenschutz-Einwilligung)",
+      ok: false,
+    };
+  }
+  if (!validEmail(args.email)) {
+    return { error: "E-Mail ist ungültig", ok: false };
+  }
+
+  let payload;
+  if (flow === "contact") {
+    const name = String(args.name || "").trim();
+    const message = String(args.message || "").trim();
+    if (!name) return { error: "name fehlt", ok: false };
+    if (!message) return { error: "message fehlt", ok: false };
+    payload = {
+      name,
+      email: String(args.email).trim(),
+      phone: String(args.phone || "").trim(),
+      anliegen: String(args.anliegen || "Allgemeine Anfrage").trim() || "Allgemeine Anfrage",
+      message,
+    };
+  } else {
+    const required = ["anrede", "vorname", "name", "strasse", "plz", "ort", "objekt", "objekt_url"];
+    for (const key of required) {
+      if (!String(args[key] || "").trim()) {
+        return { error: `${key} fehlt`, ok: false };
+      }
+    }
+    if (!["Herr", "Frau", "Familie"].includes(String(args.anrede).trim())) {
+      return { error: 'anrede muss Herr, Frau oder Familie sein', ok: false };
+    }
+    payload = {
+      anrede: String(args.anrede).trim(),
+      vorname: String(args.vorname).trim(),
+      name: String(args.name).trim(),
+      strasse: String(args.strasse).trim(),
+      plz: String(args.plz).trim(),
+      ort: String(args.ort).trim(),
+      phone: String(args.phone || "").trim(),
+      email: String(args.email).trim(),
+      objekt: String(args.objekt).trim(),
+      objekt_url: String(args.objekt_url).trim(),
+    };
+  }
+
+  const endpoint = `${FORMS_BASE}/${flow}`;
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Origin: SITE_ORIGIN,
+      Referer: `${SITE_ORIGIN}/mcp`,
+    },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(20000),
+  });
+  let data = {};
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
+  }
+  if (!res.ok || data.success !== true) {
+    return {
+      ok: false,
+      http_status: res.status,
+      error: data.error || data.message || `forms HTTP ${res.status}`,
+      requestId: data.requestId || null,
+      endpoint,
+    };
+  }
+  return {
+    ok: true,
+    flow,
+    requestId: data.requestId || null,
+    endpoint,
+    anliegen: payload.anliegen || null,
+    message: "Anfrage übermittelt. Immobilien Eichmann meldet sich.",
+  };
 }
 
 function norm(s) {
@@ -204,6 +396,22 @@ function textResult(obj) {
 }
 
 async function callTool(name, args) {
+  if (name === "get_flyer") {
+    const flyer = await loadFlyerDoc();
+    const { _source, ...clean } = flyer;
+    return textResult({ flyer: clean, source: _source });
+  }
+  if (name === "submit_inquiry") {
+    const out = await submitInquiry(args || {});
+    if (!out.ok) {
+      return {
+        content: [{ type: "text", text: JSON.stringify(out, null, 2) }],
+        isError: true,
+        structuredContent: out,
+      };
+    }
+    return textResult(out);
+  }
   const doc = await loadListingsDoc();
   if (name === "search_listings") return textResult(searchListings(doc, args || {}));
   if (name === "get_listing") {
@@ -253,7 +461,7 @@ async function handleRpc(msg) {
           },
           serverInfo: SERVER_INFO,
           instructions:
-            "Öffentliche Kaufangebote Immobilien Eichmann, Konstanz. Tools: search_listings, get_listing. Daten = Live https://immobilieneichmann.de/ai/listings.json",
+            "Immobilien Eichmann Konstanz. Tools: search_listings, get_listing (Kaufangebote), get_flyer (Allmannsdorf 44 WE), submit_inquiry (Leads). Daten: ai/listings.json + ai/flyer-allmannsdorf.json",
         });
       case "ping":
         return jsonRpcResult(id, {});
@@ -274,7 +482,14 @@ async function handleRpc(msg) {
               name: "listings_index",
               title: "AI Listings Index",
               mimeType: "application/json",
-              description: "Schlanker öffentlicher Angebots-Index",
+              description: "Schlanker öffentlicher Angebots-Index inkl. projects[] (Allmannsdorf 44 WE)",
+            },
+            {
+              uri: "https://immobilieneichmann.de/ai/flyer-allmannsdorf.json",
+              name: "flyer_allmannsdorf",
+              title: "Flyer Neubau Allmannsdorf",
+              mimeType: "application/json",
+              description: "5 MFH / 44 Wohnungen – strukturierte Flyer-Fakten",
             },
             {
               uri: "https://immobilieneichmann.de/llms.txt",
@@ -289,6 +504,19 @@ async function handleRpc(msg) {
         if (uri === "https://immobilieneichmann.de/ai/listings.json") {
           const doc = await loadListingsDoc();
           const { _source, ...clean } = doc;
+          return jsonRpcResult(id, {
+            contents: [
+              {
+                uri,
+                mimeType: "application/json",
+                text: JSON.stringify(clean, null, 2),
+              },
+            ],
+          });
+        }
+        if (uri === "https://immobilieneichmann.de/ai/flyer-allmannsdorf.json") {
+          const flyer = await loadFlyerDoc();
+          const { _source, ...clean } = flyer;
           return jsonRpcResult(id, {
             contents: [
               {
@@ -396,12 +624,15 @@ const server = http.createServer(async (req, res) => {
   if (pathname === "/health" || pathname === "/mcp/health") {
     try {
       const doc = await loadListingsDoc();
+      const flyer = await loadFlyerDoc();
       sendJson(res, 200, {
         ok: true,
         service: "eichmann-mcp",
         listing_count: doc.listing_count,
+        flyer_unit_count: flyer.unit_count,
         generated_at: doc.generated_at,
         source: doc._source,
+        tools: ["search_listings", "get_listing", "get_flyer", "submit_inquiry"],
       });
     } catch (err) {
       sendJson(res, 503, { ok: false, error: err.message });

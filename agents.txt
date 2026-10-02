@@ -4,8 +4,10 @@
 User-Agent: *
 Allow: /
 Allow: /ai/listings.json
+Allow: /ai/flyer-allmannsdorf.json
 Allow: /data/listings.json
 Allow: /objekt/
+Allow: /allmannsdorf.html
 Allow: /llms.txt
 Allow: /.well-known/mcp.json
 Allow: /.well-known/mcp/catalog.json
@@ -14,8 +16,9 @@ Allow: /mcp
 Allow: /mcp.html
 Disallow: /admin/
 
-# Erlaubt: Lesen der öffentlichen Kaufangebote und Kontaktdaten (NAP).
-# Nicht erlaubt: Schreiben, Formular-Spam, Admin-API, Secrets.
+# Erlaubt: Lesen der öffentlichen Kaufangebote, Flyer-Fakten und NAP.
+# Erlaubt über MCP: submit_inquiry (echte Interessenten-Anfragen, mit privacy_consent).
+# Nicht erlaubt: Formular-Spam, Admin-API, Secrets.
 
 Contact: info@immobilien-eichmann.com
 Index: https://immobilieneichmann.de/ai/listings.json

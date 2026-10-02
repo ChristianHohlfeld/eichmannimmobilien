@@ -114,7 +114,8 @@ try {
 
   const tools = await rpc("tools/list", {}, 2);
   const names = (tools.json?.result?.tools || []).map((t) => t.name).sort();
-  if (names.join(",") !== "get_listing,search_listings") {
+  const expected = ["get_flyer", "get_listing", "search_listings", "submit_inquiry"];
+  if (names.join(",") !== expected.join(",")) {
     fail(`tools unexpected: ${names.join(",")}`);
   }
 
@@ -138,13 +139,37 @@ try {
     fail(`get_listing failed for ${slug}`);
   }
 
+  const flyer = await rpc("tools/call", { name: "get_flyer", arguments: {} }, 5);
+  const flyerObj = JSON.parse(flyer.json?.result?.content?.[0]?.text || "{}");
+  if (flyerObj.flyer?.unit_count !== 44) {
+    fail(`get_flyer unit_count expected 44 got ${flyerObj.flyer?.unit_count}`);
+  }
+
+  const badInquiry = await rpc(
+    "tools/call",
+    {
+      name: "submit_inquiry",
+      arguments: {
+        flow: "contact",
+        name: "Test",
+        email: "test@example.com",
+        message: "x",
+        privacy_consent: false,
+      },
+    },
+    6
+  );
+  if (!badInquiry.json?.result?.isError) {
+    fail("submit_inquiry without privacy_consent should be error");
+  }
+
   if (errors.length) {
     console.error(`MCP smoke FAILED (${errors.length}):`);
     errors.forEach((e) => console.error(" -", e));
     process.exitCode = 1;
   } else {
     console.log(
-      `MCP OK: health=${h.json.listing_count} search=${searchObj.count} get=${slug} port=${PORT}`
+      `MCP OK: health=${h.json.listing_count} flyer=${flyerObj.flyer.unit_count} search=${searchObj.count} get=${slug} tools=${names.join(",")} port=${PORT}`
     );
   }
 } catch (err) {

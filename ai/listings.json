@@ -17,7 +17,7 @@
     "email": "info@immobilien-eichmann.com",
     "website": "https://immobilieneichmann.de/"
   },
-  "generated_at": "2026-10-02T06:32:52.877Z",
+  "generated_at": "2026-10-02T11:44:36.591Z",
   "source_export": "https://immobilieneichmann.de/data/listings.json",
   "tools": {
     "search_listings": {
@@ -29,6 +29,16 @@
       "resource": "https://immobilieneichmann.de/ai/listings.json",
       "detail_pages": "https://immobilieneichmann.de/objekt/<slug>.html",
       "full_export": "https://immobilieneichmann.de/data/listings.json"
+    },
+    "get_flyer": {
+      "description": "Neubauprojekt-Flyer Allmannsdorf (44 Wohnungen) als strukturierte Fakten laden.",
+      "resource": "https://immobilieneichmann.de/ai/flyer-allmannsdorf.json",
+      "page": "https://immobilieneichmann.de/allmannsdorf.html"
+    },
+    "submit_inquiry": {
+      "description": "Lead/Anfrage an Immobilien Eichmann senden (Kontakt oder Exposé). Gleiche Endpoints wie die Website-Formulare.",
+      "contact_endpoint": "https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/contact",
+      "expose_endpoint": "https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/expose"
     }
   },
   "listing_count": 11,
@@ -231,5 +241,25 @@
       "origin": "immowelt",
       "image": "https://mms.immowelt.de/c/3/9/3/c393347b-4d2d-407a-901e-f70d2d00bf38.png?w=525&h=394"
     }
-  ]
+  ],
+  "projects": [
+    {
+      "id": "neubau-allmannsdorf",
+      "slug": "allmannsdorf",
+      "kind": "neubau_vormerkung",
+      "title": "Neubauprojekt Konstanz-Allmannsdorf",
+      "unit_count": 44,
+      "building_count": 5,
+      "location": "Konstanz-Allmannsdorf",
+      "living_area_range": "40–124 m²",
+      "rooms_range": "2–5",
+      "price_range": "295.000–1.450.000 €",
+      "provisionsfrei": true,
+      "url": "https://immobilieneichmann.de/allmannsdorf.html",
+      "flyer": "https://immobilieneichmann.de/ai/flyer-allmannsdorf.json",
+      "vormerkung_url": "https://immobilieneichmann.de/kontakt.html?interesse=allmannsdorf#contact-form",
+      "short_description": "5 Mehrfamilienhäuser mit 44 Wohnungen, viele mit Seesicht. Vormerkung möglich."
+    }
+  ],
+  "project_unit_count_total": 44
 }

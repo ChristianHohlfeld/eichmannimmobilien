@@ -1,0 +1,75 @@
+{
+  "schema": "eichmann.flyer.ai/v1",
+  "id": "neubau-allmannsdorf",
+  "slug": "allmannsdorf",
+  "kind": "neubau_vormerkung",
+  "title": "Neubauprojekt Konstanz-Allmannsdorf",
+  "language": "de",
+  "site": "https://immobilieneichmann.de/",
+  "pages": {
+    "project": "https://immobilieneichmann.de/allmannsdorf.html",
+    "projekte": "https://immobilieneichmann.de/projekte.html",
+    "contact_vormerkung": "https://immobilieneichmann.de/kontakt.html?interesse=allmannsdorf#contact-form",
+    "flyer_modal_on": ["https://immobilieneichmann.de/", "https://immobilieneichmann.de/index.html"]
+  },
+  "summary": "Wir freuen uns, Ihnen mitteilen zu können, dass wir ein neues Bauprojekt planen. 5 Mehrfamilienhäuser mit 44 Wohnungen. Viele Wohnungen mit traumhafter Seesicht.",
+  "description": "In einer der gefragtesten Wohnlagen Konstanz entsteht ein modernes Wohnensemble mit 5 Mehrfamilienhäusern und insgesamt 44 hochwertigen Wohnungen. Freuen Sie sich auf durchdachte Grundrisse, lichtdurchflutete Räume und eine Architektur, die Design, Komfort und Lebensqualität vereint. Viele Wohnungen bieten einen einzigartigen Blick auf den Bodensee.",
+  "unit_count": 44,
+  "building_count": 5,
+  "building_type": "Mehrfamilienhäuser",
+  "specs": {
+    "lage": "Konstanz-Allmannsdorf",
+    "gebaeude": "5 Mehrfamilienhäuser",
+    "einheiten": "44 Wohnungen",
+    "highlight": "Viele Wohnungen mit traumhafter Seesicht",
+    "flaechen": "40–124 m²",
+    "zimmer": "2–5",
+    "grundstueck": "ca. 4.000 m²",
+    "preise": "295.000–1.450.000 €",
+    "provision": "Provisionsfrei: JA"
+  },
+  "features": [
+    "Hochwertige Architektur",
+    "Nachhaltige Bauweise",
+    "Barrierearme Wohnungen",
+    "Lift & Tiefgarage",
+    "Attraktive Grundrisse",
+    "Ruhige und gefragte Lage"
+  ],
+  "checks": [
+    "5 Mehrfamilienhäuser mit 44 Wohnungen",
+    "Viele Wohnungen mit traumhafter Seesicht"
+  ],
+  "images": {
+    "hero": {
+      "jpg": "https://immobilieneichmann.de/assets/flyer/hero-dining.jpg",
+      "webp": "https://immobilieneichmann.de/assets/flyer/hero-dining.webp"
+    },
+    "living": {
+      "jpg": "https://immobilieneichmann.de/assets/flyer/living.jpg",
+      "webp": "https://immobilieneichmann.de/assets/flyer/living.webp"
+    },
+    "dining_detail": {
+      "jpg": "https://immobilieneichmann.de/assets/flyer/dining-detail.jpg",
+      "webp": "https://immobilieneichmann.de/assets/flyer/dining-detail.webp"
+    }
+  },
+  "cta": {
+    "phone": "+49 170 5225568",
+    "email": "info@immobilien-eichmann.com",
+    "email_subject": "Vormerkung Neubau Allmannsdorf",
+    "anliegen": "Vormerkung Neubau Allmannsdorf",
+    "whatsapp": "https://wa.me/491705225568?text=Guten%20Tag%2C%20ich%20interessiere%20mich%20f%C3%BCr%20das%20Neubauprojekt%20Allmannsdorf."
+  },
+  "notes": [
+    "Die 44 Wohnungen sind das Neubauprojekt (Flyer), keine 44 einzelnen Immowelt-Kaufanzeigen.",
+    "Einzelobjekt-Exposés je Wohnung sind öffentlich noch nicht als listings[] veröffentlicht.",
+    "Vormerkung/Anfrage: MCP-Tool submit_inquiry (flow=contact, anliegen=Vormerkung Neubau Allmannsdorf) oder Kontaktformular."
+  ],
+  "source": [
+    "index.html flyer modal (#flyerModal)",
+    "allmannsdorf.html",
+    "projekte.html",
+    "assets/flyer/*"
+  ]
+}

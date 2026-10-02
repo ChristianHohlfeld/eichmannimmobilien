@@ -120,9 +120,42 @@ export function buildAiListingsDocument(data, { origin = DEFAULT_SITE_ORIGIN, ge
         detail_pages: `${absUrl(origin, "objekt/")}<slug>.html`,
         full_export: absUrl(origin, "data/listings.json"),
       },
+      get_flyer: {
+        description:
+          "Neubauprojekt-Flyer Allmannsdorf (44 Wohnungen) als strukturierte Fakten laden.",
+        resource: absUrl(origin, "ai/flyer-allmannsdorf.json"),
+        page: absUrl(origin, "allmannsdorf.html"),
+      },
+      submit_inquiry: {
+        description:
+          "Lead/Anfrage an Immobilien Eichmann senden (Kontakt oder Exposé). Gleiche Endpoints wie die Website-Formulare.",
+        contact_endpoint: "https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/contact",
+        expose_endpoint: "https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/expose",
+      },
     },
     listing_count: publicDetail.length,
     listings: publicDetail,
+    projects: [
+      {
+        id: "neubau-allmannsdorf",
+        slug: "allmannsdorf",
+        kind: "neubau_vormerkung",
+        title: "Neubauprojekt Konstanz-Allmannsdorf",
+        unit_count: 44,
+        building_count: 5,
+        location: "Konstanz-Allmannsdorf",
+        living_area_range: "40–124 m²",
+        rooms_range: "2–5",
+        price_range: "295.000–1.450.000 €",
+        provisionsfrei: true,
+        url: absUrl(origin, "allmannsdorf.html"),
+        flyer: absUrl(origin, "ai/flyer-allmannsdorf.json"),
+        vormerkung_url: absUrl(origin, "kontakt.html?interesse=allmannsdorf#contact-form"),
+        short_description:
+          "5 Mehrfamilienhäuser mit 44 Wohnungen, viele mit Seesicht. Vormerkung möglich.",
+      },
+    ],
+    project_unit_count_total: 44,
   };
 }
 
@@ -158,7 +191,7 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
   lines.push("");
   lines.push(`- **Endpoint:** ${o}/mcp`);
   lines.push("- **Transport:** streamable-http (JSON-RPC POST)");
-  lines.push("- Tools: `search_listings`, `get_listing` — Quelle = Live `ai/listings.json`");
+  lines.push("- Tools: `search_listings`, `get_listing`, `get_flyer`, `submit_inquiry` — Listings = Live `ai/listings.json`; Flyer = `ai/flyer-allmannsdorf.json`");
   lines.push(`- Discovery: ${o}/.well-known/mcp.json`);
   lines.push("");
   lines.push("## MCP in Assistenten verbinden");
@@ -173,6 +206,13 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
   lines.push("");
   lines.push("1. `search_listings` — `GET ai/listings.json`, dann `listings[]` filtern.");
   lines.push("2. `get_listing` — Eintrag per `slug`/`id` aus dem Index; Details unter `url`.");
+  lines.push("");
+  lines.push("## Neubau-Flyer Allmannsdorf (44 Wohnungen)");
+  lines.push("");
+  lines.push(`- **Flyer (JSON):** ${o}/ai/flyer-allmannsdorf.json`);
+  lines.push(`- **Projektseite:** ${o}/allmannsdorf.html`);
+  lines.push("- 5 Mehrfamilienhäuser · 44 Wohnungen · 40–124 m² · 2–5 Zimmer · 295.000–1.450.000 € · provisionsfrei");
+  lines.push("- MCP: `get_flyer` · Vormerkung: `submit_inquiry` mit anliegen=\"Vormerkung Neubau Allmannsdorf\"");
   lines.push("");
   lines.push("## Aktuelle Objekt-URLs");
   lines.push("");
@@ -200,8 +240,10 @@ export function buildAgentsTxt({ origin = DEFAULT_SITE_ORIGIN } = {}) {
 User-Agent: *
 Allow: /
 Allow: /ai/listings.json
+Allow: /ai/flyer-allmannsdorf.json
 Allow: /data/listings.json
 Allow: /objekt/
+Allow: /allmannsdorf.html
 Allow: /llms.txt
 Allow: /.well-known/mcp.json
 Allow: /.well-known/mcp/catalog.json
@@ -210,8 +252,9 @@ Allow: /mcp
 Allow: /mcp.html
 Disallow: /admin/
 
-# Erlaubt: Lesen der öffentlichen Kaufangebote und Kontaktdaten (NAP).
-# Nicht erlaubt: Schreiben, Formular-Spam, Admin-API, Secrets.
+# Erlaubt: Lesen der öffentlichen Kaufangebote, Flyer-Fakten und NAP.
+# Erlaubt über MCP: submit_inquiry (echte Interessenten-Anfragen, mit privacy_consent).
+# Nicht erlaubt: Formular-Spam, Admin-API, Secrets.
 
 Contact: ${NAP.email}
 Index: ${o}/ai/listings.json
@@ -229,7 +272,7 @@ export function buildMcpDiscovery(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) 
     name: "immobilien-eichmann-listings",
     title: "Immobilien Eichmann – Angebots-Index",
     description:
-      "Live MCP Streamable-HTTP für Kaufangebote. Tools lesen denselben Index wie die Website (ai/listings.json).",
+      "Live MCP Streamable-HTTP: Kaufangebote, Neubau-Flyer Allmannsdorf (44 Wohnungen), Anfragen/Leads. Listings = ai/listings.json.",
     websiteUrl: `${o}/`,
     transport: {
       type: "streamable-http",
@@ -247,7 +290,13 @@ export function buildMcpDiscovery(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) 
         name: "listings_index",
         uri: `${o}/ai/listings.json`,
         mimeType: "application/json",
-        description: "Schlanker öffentlicher Angebots-Index (search_listings / get_listing).",
+        description: "Schlanker öffentlicher Angebots-Index (search_listings / get_listing) inkl. projects[].",
+      },
+      {
+        name: "flyer_allmannsdorf",
+        uri: `${o}/ai/flyer-allmannsdorf.json`,
+        mimeType: "application/json",
+        description: "Neubauprojekt-Flyer Allmannsdorf: 5 MFH, 44 Wohnungen (get_flyer).",
       },
       {
         name: "listings_full_export",
@@ -290,6 +339,35 @@ export function buildMcpDiscovery(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) 
           },
         },
       },
+      {
+        name: "get_flyer",
+        description: "Neubauprojekt-Flyer Allmannsdorf (44 Wohnungen)",
+        inputSchema: { type: "object", properties: {} },
+      },
+      {
+        name: "submit_inquiry",
+        description: "Lead/Anfrage (Kontakt oder Exposé) an Eichmann senden",
+        inputSchema: {
+          type: "object",
+          properties: {
+            flow: { type: "string", description: "contact | expose" },
+            name: { type: "string" },
+            email: { type: "string" },
+            phone: { type: "string" },
+            message: { type: "string" },
+            anliegen: { type: "string" },
+            privacy_consent: { type: "boolean" },
+            anrede: { type: "string" },
+            vorname: { type: "string" },
+            strasse: { type: "string" },
+            plz: { type: "string" },
+            ort: { type: "string" },
+            objekt: { type: "string" },
+            objekt_url: { type: "string" },
+          },
+          required: ["flow", "email", "privacy_consent"],
+        },
+      },
     ],
     listing_count: aiDoc.listing_count,
     generated_at: aiDoc.generated_at,
@@ -308,7 +386,7 @@ export function buildMcpCatalog({ origin = DEFAULT_SITE_ORIGIN } = {}) {
         name: "immobilien-eichmann-listings",
         title: "Immobilien Eichmann Angebote",
         url: `${o}/ai/server-card.json`,
-        description: "Live MCP Streamable-HTTP unter /mcp (search_listings, get_listing).",
+        description: "Live MCP unter /mcp (search_listings, get_listing, get_flyer, submit_inquiry).",
         remotes: [{ type: "streamable-http", url: `${o}/mcp` }],
       },
     ],
@@ -322,7 +400,7 @@ export function buildServerCard(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
     name: "immobilien-eichmann-listings",
     title: "Immobilien Eichmann – Listings",
     description:
-      "Live MCP Streamable-HTTP für Kaufangebote in Konstanz. Tools search_listings / get_listing lesen ai/listings.json (gleiche Publish-Pipeline wie die Website).",
+      "Live MCP für Kaufangebote, Allmannsdorf-Flyer (44 WE) und Anfragen. Tools: search_listings, get_listing, get_flyer, submit_inquiry.",
     version: "1.0.0",
     websiteUrl: `${o}/`,
     repository: {
@@ -344,7 +422,8 @@ export function buildServerCard(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
         discovery: `${o}/.well-known/mcp.json`,
         listing_count: aiDoc.listing_count,
         generated_at: aiDoc.generated_at,
-        tools: ["search_listings", "get_listing"],
+        tools: ["search_listings", "get_listing", "get_flyer", "submit_inquiry"],
+        flyer: `${o}/ai/flyer-allmannsdorf.json`,
       },
     },
   };

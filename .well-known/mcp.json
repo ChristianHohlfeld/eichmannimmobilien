@@ -2,7 +2,7 @@
   "schema_version": "eichmann.mcp-discovery/v1",
   "name": "immobilien-eichmann-listings",
   "title": "Immobilien Eichmann – Angebots-Index",
-  "description": "Live MCP Streamable-HTTP für Kaufangebote. Tools lesen denselben Index wie die Website (ai/listings.json).",
+  "description": "Live MCP Streamable-HTTP: Kaufangebote, Neubau-Flyer Allmannsdorf (44 Wohnungen), Anfragen/Leads. Listings = ai/listings.json.",
   "websiteUrl": "https://immobilieneichmann.de/",
   "transport": {
     "type": "streamable-http",
@@ -20,7 +20,13 @@
       "name": "listings_index",
       "uri": "https://immobilieneichmann.de/ai/listings.json",
       "mimeType": "application/json",
-      "description": "Schlanker öffentlicher Angebots-Index (search_listings / get_listing)."
+      "description": "Schlanker öffentlicher Angebots-Index (search_listings / get_listing) inkl. projects[]."
+    },
+    {
+      "name": "flyer_allmannsdorf",
+      "uri": "https://immobilieneichmann.de/ai/flyer-allmannsdorf.json",
+      "mimeType": "application/json",
+      "description": "Neubauprojekt-Flyer Allmannsdorf: 5 MFH, 44 Wohnungen (get_flyer)."
     },
     {
       "name": "listings_full_export",
@@ -81,10 +87,75 @@
           }
         }
       }
+    },
+    {
+      "name": "get_flyer",
+      "description": "Neubauprojekt-Flyer Allmannsdorf (44 Wohnungen)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "submit_inquiry",
+      "description": "Lead/Anfrage (Kontakt oder Exposé) an Eichmann senden",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "flow": {
+            "type": "string",
+            "description": "contact | expose"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "anliegen": {
+            "type": "string"
+          },
+          "privacy_consent": {
+            "type": "boolean"
+          },
+          "anrede": {
+            "type": "string"
+          },
+          "vorname": {
+            "type": "string"
+          },
+          "strasse": {
+            "type": "string"
+          },
+          "plz": {
+            "type": "string"
+          },
+          "ort": {
+            "type": "string"
+          },
+          "objekt": {
+            "type": "string"
+          },
+          "objekt_url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "flow",
+          "email",
+          "privacy_consent"
+        ]
+      }
     }
   ],
   "listing_count": 11,
-  "generated_at": "2026-10-02T06:32:52.877Z",
+  "generated_at": "2026-10-02T11:44:36.591Z",
   "server_card": "https://immobilieneichmann.de/ai/server-card.json",
   "catalog": "https://immobilieneichmann.de/.well-known/mcp/catalog.json"
 }

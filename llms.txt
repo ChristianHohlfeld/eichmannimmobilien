@@ -21,13 +21,13 @@
 - **agents.txt:** https://immobilieneichmann.de/agents.txt
 - **Sitemap:** https://immobilieneichmann.de/sitemap.xml
 - Anzahl Kaufobjekte im Index: 11
-- generiert: 2026-10-02T06:32:52.877Z
+- generiert: 2026-10-02T11:44:36.591Z
 
 ## MCP (Streamable HTTP)
 
 - **Endpoint:** https://immobilieneichmann.de/mcp
 - **Transport:** streamable-http (JSON-RPC POST)
-- Tools: `search_listings`, `get_listing` — Quelle = Live `ai/listings.json`
+- Tools: `search_listings`, `get_listing`, `get_flyer`, `submit_inquiry` — Listings = Live `ai/listings.json`; Flyer = `ai/flyer-allmannsdorf.json`
 - Discovery: https://immobilieneichmann.de/.well-known/mcp.json
 
 ## MCP in Assistenten verbinden
@@ -42,6 +42,13 @@
 
 1. `search_listings` — `GET ai/listings.json`, dann `listings[]` filtern.
 2. `get_listing` — Eintrag per `slug`/`id` aus dem Index; Details unter `url`.
+
+## Neubau-Flyer Allmannsdorf (44 Wohnungen)
+
+- **Flyer (JSON):** https://immobilieneichmann.de/ai/flyer-allmannsdorf.json
+- **Projektseite:** https://immobilieneichmann.de/allmannsdorf.html
+- 5 Mehrfamilienhäuser · 44 Wohnungen · 40–124 m² · 2–5 Zimmer · 295.000–1.450.000 € · provisionsfrei
+- MCP: `get_flyer` · Vormerkung: `submit_inquiry` mit anliegen="Vormerkung Neubau Allmannsdorf"
 
 ## Aktuelle Objekt-URLs
 
