@@ -194,6 +194,42 @@ async function measurePage(page, base, path, vp) {
         fail(`${label}: flyer close sits left of flyer dialog`);
       }
     }
+
+    // ChatGPT funnel layout: sticky Anrufen+Vormerken always in viewport;
+    // mobile order brand → hero → intro (hero before intro CTAs).
+    const funnel = await page.evaluate(() => {
+      const modal = document.getElementById('flyerModal');
+      if (!modal || modal.hidden) return null;
+      const sticky = modal.querySelector('.flyer-sticky-ctas');
+      const hero = modal.querySelector('.flyer-hero-img');
+      const intro = modal.querySelector('.flyer-intro');
+      const call = sticky?.querySelector('a[href^="tel:"]');
+      const vormerk = sticky?.querySelector('a[href*="kontakt"]');
+      const s = sticky?.getBoundingClientRect();
+      const h = hero?.getBoundingClientRect();
+      const i = intro?.getBoundingClientRect();
+      return {
+        stickyVisible: !!(sticky && s && s.height > 0 && s.bottom <= window.innerHeight + 2 && s.top < window.innerHeight),
+        hasAnrufen: !!(call && /Anrufen/i.test(call.textContent || '')),
+        hasVormerken: !!(vormerk && /Vormerken/i.test(vormerk.textContent || '')),
+        heroTop: h ? Math.round(h.top) : null,
+        introTop: i ? Math.round(i.top) : null,
+        planenOk: /planen/.test(intro?.textContent || ''),
+      };
+    });
+    if (!funnel) {
+      fail(`${label}: flyer funnel layout check — modal not open`);
+    } else {
+      if (!funnel.stickyVisible) fail(`${label}: flyer sticky CTAs not visible in viewport`);
+      if (!funnel.hasAnrufen) fail(`${label}: flyer sticky missing Anrufen`);
+      if (!funnel.hasVormerken) fail(`${label}: flyer sticky missing Vormerken`);
+      if (!funnel.planenOk) fail(`${label}: flyer wording "planen" missing`);
+      if (vp.name === 'mobile' && funnel.heroTop != null && funnel.introTop != null) {
+        if (funnel.heroTop >= funnel.introTop - 2) {
+          fail(`${label}: mobile flyer hero should appear before intro (heroTop=${funnel.heroTop}, introTop=${funnel.introTop})`);
+        }
+      }
+    }
   }
 
   // sample screenshot path for debugging on fail (always write small set)
