@@ -1,8 +1,8 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "de.immobilieneichmann/listings",
-  "title": "Immobilien Eichmann – Angebote",
-  "description": "Live MCP for Kaufangebote of Immobilien Eichmann (Konstanz/Bodensee). Tools search_listings and get_listing read the same ai/listings.json the website publishes — always current, no second list.",
+  "title": "Immobilien Eichmann \u2013 Angebote",
+  "description": "Live MCP for Immobilien Eichmann listings (Konstanz). Tools: search_listings, get_listing.",
   "version": "1.0.0",
   "websiteUrl": "https://immobilieneichmann.de/",
   "repository": {
@@ -18,7 +18,10 @@
   ],
   "_meta": {
     "io.modelcontextprotocol.registry/publisher-provided": {
-      "tools": ["search_listings", "get_listing"],
+      "tools": [
+        "search_listings",
+        "get_listing"
+      ],
       "listings_index": "https://immobilieneichmann.de/ai/listings.json",
       "language": "de",
       "region": "Konstanz"

@@ -2,6 +2,8 @@
 
 Live endpoint (after deploy): **https://immobilieneichmann.de/mcp**
 
+Note: registry `description` must be ≤100 characters.
+
 Canonical `server.json` (domain namespace): repo root `server.json` → `de.immobilieneichmann/listings`  
 GitHub-namespace fallback: `mcp/server.github-namespace.json`
 
