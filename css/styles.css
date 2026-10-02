@@ -1546,10 +1546,18 @@ a.flyer-cta-script:focus-visible {
 /* iOS safe-area: sticky clearance so footer/CTAs stay tappable */
 @supports (padding: max(0px)) {
   body {
-    padding-bottom: calc(var(--sticky-h) + var(--space-2) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: max(
+      calc(var(--sticky-h) + var(--space-2)),
+      calc(var(--sticky-h) + env(safe-area-inset-bottom, 0px))
+    );
   }
   .sticky-bar {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: max(0px, env(safe-area-inset-bottom, 0px));
+  }
+  .flyer-overlay {
+    /* Keep the last flyer content above the iOS Safari toolbar while scrolling. */
+    padding-bottom: max(var(--space-2), env(safe-area-inset-bottom, 0px));
+    scroll-padding-bottom: max(var(--space-2), env(safe-area-inset-bottom, 0px));
   }
 }
 
