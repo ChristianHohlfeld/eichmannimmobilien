@@ -1,7 +1,7 @@
 /* expose-lightbox-v2 */
 /* listing-aspect-cls-v1 */
 /* expose-mobile-overflow-v1 */
-/* floating-wa-v1 + sticky-icons-neutral-v1 + flyer-session-once + chatgpt-vormerk-v1 + flyer-layout-sticky-v1 */
+/* floating-wa-v1 + sticky-icons-neutral-v1 + flyer-session-once + chatgpt-vormerk-v1 + flyer-layout-sticky-v1 + flyer-cta-cookie-v1 */
 /* cta-script-caveat v1 */
 /* Immobilien Eichmann – Design Brief v1
    Tokens: lake/night blue + sand-gold + neutrals. Calm premium local Makler. */
@@ -1892,12 +1892,20 @@ a.flyer-cta-script:focus-visible {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 1200;
+  /* Above site sticky-bar (1300) + flyer sticky (1350) so Accept is always tappable */
+  z-index: 1600;
   padding: 0.85rem 1rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
   background: rgba(15, 23, 32, 0.96);
   color: #f5f7fa;
   box-shadow: 0 -8px 28px rgba(0,0,0,0.18);
 }
+/* Sticky CTA bars must not trap cookie Accept/Reject on mobile */
+body.cookie-banner-open .sticky-bar,
+body.cookie-banner-open .flyer-sticky-ctas {
+  display: none !important;
+}
+/* One CTA pair only: sticky Anrufen+Vormerken (intro duplicate removed) */
+.flyer-intro-ctas { display: none !important; }
 .cookie-banner[hidden] { display: none !important; }
 .cookie-banner-inner {
   max-width: var(--measure, 1120px);
