@@ -90,10 +90,19 @@ jobs:
           if-no-files-found: error
       - name: Generated listing output must be committed
         run: |
-          if ! git diff --exit-code -- index.html projekte.html partials/listings-grid.html objekt sitemap.xml; then
+          # HTML/grid must match render exactly.
+          if ! git diff --exit-code -- index.html projekte.html partials/listings-grid.html objekt; then
             echo "::error::Generated listing HTML is stale. Run npm run sync-immowelt:render and commit the generated output."
             exit 1
           fi
+          # sitemap lastmod uses file mtimes; CI checkout mtimes always drift vs committed.
+          # Fail only if URL set / structure changes (ignore lastmod-only diffs).
+          if git diff -- sitemap.xml | grep -E '^[+-]' | grep -vE '^(---|\+\+\+|@@)' | grep -v 'lastmod' | grep -q .; then
+            echo "::error::sitemap.xml structure changed without commit. Run npm run sync-immowelt:render and commit."
+            git diff -- sitemap.xml
+            exit 1
+          fi
+          echo "Generated listing output OK (sitemap lastmod drift ignored)."
       - name: Legal / privacy baseline
         run: node scripts/test-legal-baseline.mjs
       - name: Install Playwright Chromium

@@ -14,34 +14,34 @@ Filter (öffentlich mit Detailseite):
 
 | Pfad | Zweck |
 |------|--------|
-| `/ai/listings.json` | Schlanker AI-Index (`search_listings` / `get_listing`) |
-| `/data/listings.json` | Voll-Export (Render-Spiegel, `"sot": "sqlite"`) |
-| `/llms.txt` | Einstieg: NAP Helmut, Index-Links, Objekt-URLs |
-| `/agents.txt` | Kurz: Lesen der Angebote erlaubt, Admin verboten |
-| `/.well-known/mcp.json` | Statische MCP-Discovery (Ressourcen + Tool-Konzept) |
+| `/mcp` | Live Streamable-HTTP MCP (`search_listings`, `get_listing`) |
+| `/mcp.html` | **CTAs:** Claude deep-link, ChatGPT paste, Cursor/VS Code mcp.json |
+| `/ai/listings.json` | Schlanker AI-Index |
+| `/data/listings.json` | Voll-Export (Render-Spiegel) |
+| `/llms.txt` | Einstieg: NAP, Index, **Connect-Anleitung** |
+| `/agents.txt` | Kurz: Lesen erlaubt, Admin verboten |
+| `/.well-known/mcp.json` | Statische MCP-Discovery |
 | `/.well-known/mcp/catalog.json` | Catalog → Server-Card |
-| `/ai/server-card.json` | Server-Card ohne Live-HTTP-Remote |
+| `/ai/server-card.json` | Server-Card |
 
-Hosting: **DigitalOcean Droplet** `eichmann-web` (nicht GitHub Pages). Statische Dateien reichen für Discovery.
+Hosting: **DigitalOcean Droplet** `eichmann-web`.
+
+## Connect (copy)
+
+- Claude: https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=Immobilien%20Eichmann&connectorUrl=https%3A%2F%2Fimmobilieneichmann.de%2Fmcp
+- ChatGPT Developer Mode: paste `https://immobilieneichmann.de/mcp`
+- Cursor/VS Code: `{"mcpServers":{"immobilien-eichmann":{"url":"https://immobilieneichmann.de/mcp"}}}`
 
 ## Aktualität
 
 `publishListingsDocument` → `renderIntoPages` schreibt AI-Artefakte mit.
 
-Manuell / CI ohne Full-Sync:
-
 ```bash
 npm run ai:index
 npm run test:ai-index
+npm run test:mcp
 ```
-
-## Tools (Konzept)
-
-1. **search_listings** — `GET /ai/listings.json`, `listings[]` filtern  
-2. **get_listing** — per `slug`/`id`; Detail unter `url` (HTML)
-
-Kein Streamable-HTTP-MCP auf dem Static-Host. Optional später: kleiner MCP-Server auf DigitalOcean, der genau diese JSON-URLs liest (`mcp-static/README.md`).
 
 ## Schema.org
 
-Objektseiten haben bereits `RealEstateListing` JSON-LD (vom Sync-Renderer). Kein Extra-Schritt nötig.
+Objektseiten haben `RealEstateListing` JSON-LD (Sync-Renderer).

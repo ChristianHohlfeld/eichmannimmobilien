@@ -21,7 +21,7 @@
 - **agents.txt:** https://immobilieneichmann.de/agents.txt
 - **Sitemap:** https://immobilieneichmann.de/sitemap.xml
 - Anzahl Kaufobjekte im Index: 11
-- generiert: 2026-10-02T06:08:39.881Z
+- generiert: 2026-10-02T06:32:52.877Z
 
 ## MCP (Streamable HTTP)
 
@@ -29,6 +29,14 @@
 - **Transport:** streamable-http (JSON-RPC POST)
 - Tools: `search_listings`, `get_listing` — Quelle = Live `ai/listings.json`
 - Discovery: https://immobilieneichmann.de/.well-known/mcp.json
+
+## MCP in Assistenten verbinden
+
+- **Anleitung (Website):** https://immobilieneichmann.de/mcp.html
+- **Claude (Deep-Link Custom Connector):** https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=Immobilien%20Eichmann&connectorUrl=https%3A%2F%2Fimmobilieneichmann.de%2Fmcp
+- **ChatGPT:** Developer Mode / Apps → Remote MCP URL `https://immobilieneichmann.de/mcp` (keine Auth)
+- **Cursor / VS Code mcp.json:** `{"mcpServers":{"immobilien-eichmann":{"url":"https://immobilieneichmann.de/mcp"}}}`
+- **Official Registry:** `de.immobilieneichmann/listings`
 
 ## JSON-Feeds (ohne MCP-Client)
 
@@ -56,6 +64,7 @@
 - Leistungen: https://immobilieneichmann.de/leistungen.html
 - Projekte: https://immobilieneichmann.de/projekte.html
 - Kontakt: https://immobilieneichmann.de/kontakt.html
+- MCP verbinden: https://immobilieneichmann.de/mcp.html
 - Immobilienmakler Konstanz: https://immobilieneichmann.de/immobilienmakler-konstanz.html
 - Wohnung kaufen Konstanz: https://immobilieneichmann.de/wohnung-kaufen-konstanz.html
 - Haus verkaufen Konstanz: https://immobilieneichmann.de/haus-verkaufen-konstanz.html
