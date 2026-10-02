@@ -76,4 +76,3 @@ Draft: name Immobilien Eichmann – Angebote · endpoint `https://immobilieneich
 ## Private key (HTTP registry auth)
 
 Ed25519 private key used for publish is **not** in git. Chris should store a copy in a password manager; public proof at `https://immobilieneichmann.de/.well-known/mcp-registry-auth`.
-2026-10-02T08:37:31+02:00
