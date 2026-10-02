@@ -15,4 +15,12 @@ Disallow: /admin/
 # - ai/listings.json → maschinenlesbarer Angebots-Index (eine Quelle mit der Website)
 # - .well-known/mcp.json → statische MCP-Discovery (kein Live-MCP-HTTP)
 
+
+# OpenAI search / ads crawlers (ChatGPT discovery)
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: OAI-AdsBot
+Allow: /
+
 Sitemap: https://immobilieneichmann.de/sitemap.xml
