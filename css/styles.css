@@ -1,7 +1,7 @@
 /* expose-lightbox-v2 */
 /* listing-aspect-cls-v1 */
 /* expose-mobile-overflow-v1 */
-/* floating-wa-v1 + sticky-icons-neutral-v1 + flyer-session-once */
+/* floating-wa-v1 + sticky-icons-neutral-v1 + flyer-session-once + chatgpt-vormerk-v1 */
 /* cta-script-caveat v1 */
 /* Immobilien Eichmann – Design Brief v1
    Tokens: lake/night blue + sand-gold + neutrals. Calm premium local Makler. */
@@ -919,7 +919,7 @@ a.listing-card:focus-visible {
   color: var(--slate);
 }
 
-/* ——— Sticky bar: Kontakt | Tippgeber | Bewertung ——— */
+/* ——— Sticky bar: Kontakt | Anrufen | Bewertung ——— */
 .sticky-bar {
   position: fixed;
   left: 0;
@@ -1059,6 +1059,11 @@ a.listing-card:focus-visible {
 }
 
 /* Flyer modal */
+/* Cookie / chrome must never cover flyer CTAs while modal is open */
+body.flyer-open #cookie-banner,
+body.flyer-open .cookie-banner,
+body.flyer-open .sticky-bar,
+body.flyer-open .floating-wa { display: none !important; }
 .flyer-overlay[hidden] { display: none !important; }
 .flyer-overlay {
   position: fixed;
@@ -1192,6 +1197,27 @@ a.listing-card:focus-visible {
   font-weight: 700;
   letter-spacing: 0.01em;
   font-style: normal;
+  display: inline-block;
+  text-decoration: none;
+  cursor: pointer;
+}
+a.flyer-cta-script:hover,
+a.flyer-cta-script:focus-visible {
+  color: var(--accent-hover, var(--accent));
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+.flyer-intro-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.flyer-intro-ctas .btn {
+  flex: 1 1 auto;
+  justify-content: center;
+  min-height: 44px;
+  font-size: 0.9rem;
 }
 .flyer-hero-img { grid-column: 2; grid-row: 1 / 3; min-height: 280px; }
 .flyer-hero-img img { width: 100%; height: 100%; object-fit: cover; min-height: 280px; }
@@ -1269,8 +1295,10 @@ a.listing-card:focus-visible {
   /* hero text-only: no top image */
   .hero-copy { padding: var(--space-4) var(--space-2) var(--space-5); max-width: none; }
   .hero h1 { max-width: none; }
-  .flyer-hero-img { grid-column: 1; grid-row: auto; order: -1; }
-  .flyer-hero-img img { min-height: 200px; max-height: 260px; }
+  .flyer-brand { order: 0; }
+  .flyer-intro { order: 1; }
+  .flyer-hero-img { grid-column: 1; grid-row: auto; order: 2; }
+  .flyer-hero-img img { min-height: 160px; max-height: 220px; }
 }
 @media (max-width: 640px) {
   .menu-toggle { display: inline-flex; }

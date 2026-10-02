@@ -211,15 +211,20 @@
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && modal && !modal.hidden) closeFlyer();
   });
-  /* Flyer: nur Startseite (Root) einmalig beim Laden auto-öffnen; sonst nur via [data-open-flyer]. */
+  /* Flyer: nur Startseite (Root) einmalig pro Session (sessionStorage); sonst nur via [data-open-flyer]. */
   (function () {
     if (!modal) return;
     var path = location.pathname || "/";
     var isHome = path === "/" || /(?:^|\/)index\.html$/i.test(path);
     if (!isHome) return;
+    var KEY = "eichmann_flyer_shown_v1";
+    try {
+      if (sessionStorage.getItem(KEY) === "1") return;
+    } catch (e) {}
     setTimeout(function () {
       if (!modal || !modal.hidden) return;
       openFlyer();
+      try { sessionStorage.setItem(KEY, "1"); } catch (e) {}
     }, 800);
   })();
 
@@ -469,5 +474,25 @@
       }
     }
   }
-})();
 
+  /* ChatGPT / Allmannsdorf Vormerk UTM → WhatsApp prefill */
+  (function () {
+    var params;
+    try { params = new URLSearchParams(location.search || ""); } catch (e) { return; }
+    var src = (params.get("utm_source") || "").toLowerCase();
+    var camp = (params.get("utm_campaign") || "").toLowerCase();
+    var hit = src === "chatgpt" || camp.indexOf("allmannsdorf_vormerk") !== -1;
+    if (!hit) return;
+    var text = "Allmannsdorf Vormerkung";
+    var enc = encodeURIComponent(text);
+    document.querySelectorAll("a.floating-wa, a[href*=\"wa.me/\"]").forEach(function (a) {
+      var href = a.getAttribute("href") || "";
+      if (href.indexOf("wa.me/") === -1) return;
+      var base = href.split("?")[0];
+      a.setAttribute("href", base + "?text=" + enc);
+      a.setAttribute("aria-label", "WhatsApp: " + text);
+      a.setAttribute("title", "WhatsApp: " + text);
+    });
+  })();
+
+})();

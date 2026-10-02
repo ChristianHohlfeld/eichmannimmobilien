@@ -161,8 +161,13 @@ async function measurePage(page, base, path, vp) {
   }
 
   // Home flyer: Close button must sit on the flyer's right edge on desktop and mobile.
+  // Clear once-per-session guard so desktop + mobile both see auto-open in one browser context.
   // Wait for the intentional 800ms auto-open delay before measuring.
   if (path === '/') {
+    await page.evaluate(() => {
+      try { sessionStorage.removeItem('eichmann_flyer_shown_v1'); } catch (e) {}
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(900);
     const flyer = await page.evaluate(() => {
       const modal = document.getElementById('flyerModal');
