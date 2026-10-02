@@ -29,6 +29,7 @@ const STATIC_PAGE_LINKS = [
   ["Leistungen", "/leistungen.html"],
   ["Projekte", "/projekte.html"],
   ["Kontakt", "/kontakt.html"],
+  ["MCP verbinden", "/mcp.html"],
   ["Immobilienmakler Konstanz", "/immobilienmakler-konstanz.html"],
   ["Wohnung kaufen Konstanz", "/wohnung-kaufen-konstanz.html"],
   ["Haus verkaufen Konstanz", "/haus-verkaufen-konstanz.html"],
@@ -160,6 +161,14 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
   lines.push("- Tools: `search_listings`, `get_listing` — Quelle = Live `ai/listings.json`");
   lines.push(`- Discovery: ${o}/.well-known/mcp.json`);
   lines.push("");
+  lines.push("## MCP in Assistenten verbinden");
+  lines.push("");
+  lines.push(`- **Anleitung (Website):** ${o}/mcp.html`);
+  lines.push("- **Claude (Deep-Link Custom Connector):** https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=Immobilien%20Eichmann&connectorUrl=https%3A%2F%2Fimmobilieneichmann.de%2Fmcp");
+  lines.push("- **ChatGPT:** Developer Mode / Apps → Remote MCP URL `https://immobilieneichmann.de/mcp` (keine Auth)");
+  lines.push('- **Cursor / VS Code mcp.json:** `{"mcpServers":{"immobilien-eichmann":{"url":"https://immobilieneichmann.de/mcp"}}}`');
+  lines.push("- **Official Registry:** `de.immobilieneichmann/listings`");
+  lines.push("");
   lines.push("## JSON-Feeds (ohne MCP-Client)");
   lines.push("");
   lines.push("1. `search_listings` — `GET ai/listings.json`, dann `listings[]` filtern.");
@@ -198,6 +207,7 @@ Allow: /.well-known/mcp.json
 Allow: /.well-known/mcp/catalog.json
 Allow: /ai/server-card.json
 Allow: /mcp
+Allow: /mcp.html
 Disallow: /admin/
 
 # Erlaubt: Lesen der öffentlichen Kaufangebote und Kontaktdaten (NAP).

@@ -1,60 +1,78 @@
-# MCP Directory Submissions — Status & Click Drafts
+# MCP Directory Submissions — Priority & Status
 
 **Live endpoint:** https://immobilieneichmann.de/mcp  
+**On-site CTAs:** https://immobilieneichmann.de/mcp.html  
 **Official registry:** `de.immobilieneichmann/listings` @ 1.0.0 — **LIVE**  
 Search: https://registry.modelcontextprotocol.io/v0.1/servers?search=de.immobilieneichmann
 
-## 1. Official MCP Registry — DONE
+## Priority (2026-10-02)
+
+1. **On-site CTAs** (ship first — conversion while reviews pend) — `mcp.html` + `llms.txt` / `agents.txt`
+2. **ChatGPT Plugins Directory** — remote MCP ZIP + portal
+3. **Claude** — custom connector deep-link (no Team required) → then Directory at https://claude.ai/directory/manage
+4. **Official MCP Registry** — **DONE**
+5. **Smithery** — https://smithery.ai/new
+6. **Glama / MCP.so** — claim / submit when logged in
+7. ~~PulseMCP~~ — skip (submissions paused; auto-ingest later)
+8. ~~Gemini web~~ — skip (US-only)
+
+---
+
+## 0. On-site CTAs — SHIP
+
+| Client | Action |
+|--------|--------|
+| Claude | https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=Immobilien%20Eichmann&connectorUrl=https%3A%2F%2Fimmobilieneichmann.de%2Fmcp |
+| ChatGPT | Developer Mode / Apps → paste `https://immobilieneichmann.de/mcp` |
+| Cursor / VS Code | `{"mcpServers":{"immobilien-eichmann":{"url":"https://immobilieneichmann.de/mcp"}}}` |
+
+Page: `/mcp.html` · Privacy: `/datenschutz.html` §7 MCP
+
+## 1. ChatGPT Plugins Directory
+
+- Docs: https://developers.openai.com/plugins/deploy/submission  
+- Package in repo: `chatgpt-plugin/` (ZIP for portal upload)  
+- Prep notes: `docs/chatgpt-plugin-submission.md`  
+- Domain verify path: `/.well-known/openai-apps-challenge` (token from portal; see `.well-known/openai-apps-challenge.README.md`)  
+- **Blockers:** Chris OpenAI login + **non-EU-residency** project + identity verification; demo video URL; portal Upload
+
+| Field | Value |
+|-------|--------|
+| Name | Immobilien Eichmann |
+| MCP URL | https://immobilieneichmann.de/mcp |
+| Privacy | https://immobilieneichmann.de/datenschutz.html |
+| Support | https://immobilieneichmann.de/kontakt.html |
+| Terms | https://immobilieneichmann.de/mcp.html#nutzung |
+| Company / website | https://immobilieneichmann.de/ |
+| Countries | DE (+ AT, CH, US, GB as listed in package) |
+| Auth | None |
+
+## 2. Claude
+
+- **Custom connector (works without Team):** deep-link above / `mcp.html`
+- **Directory:** https://claude.ai/directory/manage — try with paid Claude; if gated, report
+
+## 3. Official MCP Registry — DONE
 
 Published 2026-10-02 via HTTP domain verify (`/.well-known/mcp-registry-auth`).
 
-## 2. Smithery — needs Chris login
-
-Blocked without Smithery account / browser OAuth.
+## 4. Smithery — needs Chris login
 
 **Click:** https://smithery.ai/new  
-Paste URL: `https://immobilieneichmann.de/mcp`  
-Suggested name: `eichmann/listings`
-
-CLI (after login or with `SMITHERY_API_KEY`):
+Paste: `https://immobilieneichmann.de/mcp` · Name: `eichmann/listings`
 
 ```bash
 npx -y @smithery/cli mcp publish "https://immobilieneichmann.de/mcp" -n eichmann/listings
 ```
 
-## 3. PulseMCP — paused (auto-ingest later)
+## 5. MCP.so — needs GitHub login in browser
 
-Submit form: https://www.pulsemcp.com/submit  
-Status as of 2026-10-02: **submissions temporarily paused**. They say publish to Official Registry (done) and they will pick it up automatically when reopened.
+Draft: name Immobilien Eichmann – Angebote · endpoint `https://immobilieneichmann.de/mcp` · repo ChristianHohlfeld/eichmannimmobilien
 
-## 4. MCP.so — needs GitHub login in browser
+## 6. Glama — claim / add
 
-**Click:** https://mcp.so (Add / Submit server)  
-Draft:
-
-| Field | Value |
-|-------|--------|
-| Type | server / remote |
-| Name | Immobilien Eichmann – Angebote |
-| GitHub | https://github.com/ChristianHohlfeld/eichmannimmobilien |
-| Endpoint | https://immobilieneichmann.de/mcp |
-| Config | `{"mcpServers":{"immobilien-eichmann":{"url":"https://immobilieneichmann.de/mcp"}}}` |
-| Description | Live Streamable-HTTP MCP für Kaufangebote von Immobilien Eichmann in Konstanz. Tools: search_listings, get_listing. Quelle = ai/listings.json. |
-| Tags | immobilien, konstanz, real-estate, germany, listings |
-
-## 5. Glama — needs browser / claim
-
-**Click:** https://glama.ai/mcp/servers (Add MCP Server / Connector)  
-Also: claim after official-registry ingest. Repo has `glama.json`.
-
-| Field | Value |
-|-------|--------|
-| Display name | Immobilien Eichmann Listings |
-| GitHub | https://github.com/ChristianHohlfeld/eichmannimmobilien |
-| Connector URL | https://immobilieneichmann.de/mcp |
-| Transport | streamable-http |
-| Description | Live MCP for Kaufangebote in Konstanz. Tools search_listings + get_listing. |
+**Click:** https://glama.ai/mcp/servers · `glama.json` in repo
 
 ## Private key (HTTP registry auth)
 
-Ed25519 private key used for publish is **not** in git. Kept on agent box at `/workspace/secrets/mcp-registry-key.pem` during this session. Chris should store a copy in a password manager for further publishes; public proof stays at `https://immobilieneichmann.de/.well-known/mcp-registry-auth`.
+Ed25519 private key used for publish is **not** in git. Chris should store a copy in a password manager; public proof at `https://immobilieneichmann.de/.well-known/mcp-registry-auth`.

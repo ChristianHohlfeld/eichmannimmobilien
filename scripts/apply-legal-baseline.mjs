@@ -150,12 +150,16 @@ for (const full of await htmlFiles()) {
       <h2>6. Externe Links</h2>
       <p>Die Website enthält Links zu externen Angeboten, insbesondere zu Immowelt und Google Maps. Beim bloßen Besuch unserer Website werden über solche Links keine Daten an den jeweiligen Anbieter übertragen. Erst beim Anklicken wird dessen Website aufgerufen.</p>
 
-      <h2>7. Ihre Rechte</h2>
+      <h2>7. MCP-Endpoint (AI-Assistenten)</h2>
+      <p>Unter <code>https://immobilieneichmann.de/mcp</code> stellen wir einen öffentlich erreichbaren MCP-Endpoint (Model Context Protocol, Streamable HTTP) bereit. Der Endpoint liefert ausschließlich bereits öffentliche Kaufangebote aus dem Live-Index <code>ai/listings.json</code>. Es gibt keine Nutzeranmeldung und keine Authentifizierung am MCP. Schreibende Aktionen werden nicht angeboten.</p>
+      <p>Beim Aufruf des Endpoints können technisch erforderliche Verbindungsdaten (insbesondere IP-Adresse, Zeitpunkt, User-Agent) auf dem Hosting-Server in Server-Logs anfallen, vergleichbar mit dem Abruf anderer öffentlicher Website-URLs. Rechtsgrundlage für den Betrieb ist Art. 6 Abs. 1 lit. f DSGVO (Bereitstellung öffentlicher Angebotsinformationen). Anleitung: <a href="mcp.html">MCP verbinden</a>.</p>
+
+      <h2>8. Ihre Rechte</h2>
       <p>Sie haben nach Maßgabe der gesetzlichen Voraussetzungen insbesondere Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch. Eine erteilte Einwilligung können Sie jederzeit mit Wirkung für die Zukunft widerrufen.</p>
       <p>Sie haben außerdem das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren. Für Baden-Württemberg: Der Landesbeauftragte für den Datenschutz und die Informationsfreiheit Baden-Württemberg, Heilbronner Straße 35, 70191 Stuttgart, <a href="https://www.baden-wuerttemberg.datenschutz.de/" target="_blank" rel="noopener noreferrer">baden-wuerttemberg.datenschutz.de</a>.</p>
 
-      <h2>8. Stand</h2>
-      <p>Stand: September 2026.</p>`;
+      <h2>9. Stand</h2>
+      <p>Stand: Oktober 2026.</p>`;
   s = replaceLegalCard(s, inner);
   await write("datenschutz.html", s);
 }

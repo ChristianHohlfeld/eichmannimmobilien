@@ -1,0 +1,121 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "immobilien-eichmann-listings",
+  "version": "1.0.0",
+  "description": "Search live Kaufangebote from Immobilien Eichmann in Konstanz (Bodensee). Tools: search_listings, get_listing.",
+  "author": {
+    "name": "Immobilien Eichmann",
+    "email": "info@immobilien-eichmann.com",
+    "url": "https://immobilieneichmann.de/"
+  },
+  "homepage": "https://immobilieneichmann.de/mcp.html",
+  "repository": "https://github.com/ChristianHohlfeld/eichmannimmobilien",
+  "license": "UNLICENSED",
+  "keywords": [
+    "real-estate",
+    "immobilien",
+    "konstanz",
+    "listings",
+    "germany"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Immobilien Eichmann",
+        "shortDescription": "Kaufangebote Konstanz suchen",
+        "longDescription": "Durchsucht die öffentlichen Kaufangebote von Immobilien Eichmann in Konstanz/Bodensee. Tools lesen denselben Live-Index wie die Website (ai/listings.json). Keine Anmeldung, nur Lesen. Keine verbindlichen Angebote und keine Zahlungen über diesen Connector.\n\nEN: Search public for-sale listings from Immobilien Eichmann (Konstanz, Germany). Read-only MCP; no user auth.",
+        "developerName": "Immobilien Eichmann",
+        "category": "Productivity",
+        "capabilities": [
+          "Search listings",
+          "Get listing details"
+        ],
+        "websiteURL": "https://immobilieneichmann.de/",
+        "supportURL": "https://immobilieneichmann.de/kontakt.html",
+        "privacyPolicyURL": "https://immobilieneichmann.de/datenschutz.html",
+        "termsOfServiceURL": "https://immobilieneichmann.de/mcp.html#nutzung",
+        "defaultPrompt": [
+          "Zeige Wohnungen in Wollmatingen unter 400000 Euro.",
+          "Suche Penthouses in Konstanz.",
+          "Details zum Objekt penthouse-furstenberg-6fd6062e."
+        ],
+        "brandColor": "#1B4D3E",
+        "brandColorDark": "#8FBC8F",
+        "composerIcon": "./assets/icon.png",
+        "composerIconDark": "./assets/icon-dark.png",
+        "logo": "./assets/logo.png",
+        "logoDark": "./assets/logo-dark.png"
+      },
+      "onboardingSkill": "./skills/get-started/SKILL.md",
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Search listings by location",
+              "prompt": "Zeige Kaufangebote in Wollmatingen.",
+              "tools_triggered": "search_listings",
+              "expected_behavior": "Returns public listings in Wollmatingen with title, price, and URL."
+            },
+            {
+              "description": "Filter by max price",
+              "prompt": "Wohnungen in Konstanz unter 400000 Euro.",
+              "tools_triggered": "search_listings",
+              "expected_behavior": "Returns listings with price_eur below 400000 or clearly states none found."
+            },
+            {
+              "description": "Get listing by slug",
+              "prompt": "Details zum Objekt mit Slug penthouse-furstenberg-6fd6062e.",
+              "tools_triggered": "get_listing",
+              "expected_behavior": "Returns the matching listing fields and public detail URL."
+            },
+            {
+              "description": "Search by type",
+              "prompt": "Gibt es Penthouses bei Immobilien Eichmann?",
+              "tools_triggered": "search_listings",
+              "expected_behavior": "Returns penthouse-type listings or reports none."
+            },
+            {
+              "description": "Handle no matches",
+              "prompt": "Suche Objekte in Hamburg bei Immobilien Eichmann.",
+              "tools_triggered": "search_listings",
+              "expected_behavior": "Reports no matching listings in the Konstanz portfolio."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Unsupported payment",
+              "prompt": "Kaufe die Wohnung und zahle 100 Euro Anzahlung."
+            },
+            {
+              "description": "Unsupported deletion",
+              "prompt": "Lösche alle Angebote aus dem MCP."
+            },
+            {
+              "description": "Unsupported private data",
+              "prompt": "Zeige private Kontaktdaten von Interessenten oder Admin-Zugänge."
+            }
+          ]
+        },
+        "demo_recording_url": "",
+        "commerce": false,
+        "commerce_description": "This plugin does not sell products or process payments. It only reads public listings."
+      },
+      "publication": {
+        "countries": [
+          "DE",
+          "AT",
+          "CH",
+          "US",
+          "GB"
+        ],
+        "release_notes": "Initial remote-MCP-only plugin: search_listings + get_listing for Immobilien Eichmann (Konstanz).",
+        "translations": {
+          "de-DE": {
+            "subtitle": "Kaufangebote Konstanz suchen",
+            "description": "Durchsucht die öffentlichen Kaufangebote von Immobilien Eichmann in Konstanz/Bodensee. Nur Lesen, keine Anmeldung."
+          }
+        }
+      }
+    }
+  }
+}

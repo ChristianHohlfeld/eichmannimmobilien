@@ -1,20 +1,21 @@
-node_modules/
-.DS_Store
-*.log
-assets/listings/._tmp-*
-# layout/visual test artifacts
-test-results/
-# SQLite SoT (never commit; lives on droplet at /var/lib/eichmann/listings.db)
-*.db
-*.db-journal
-*.db-wal
-*.db-shm
-var/
-# Eigen uploads live on droplet only (keep folder scaffold in git)
-media/eigen/**
+
 !media/eigen/
 !media/eigen/.gitkeep
-
+# Eigen uploads live on droplet only (keep folder scaffold in git)
 # MCP registry signing key (never commit)
-mcp-registry-key.pem
+# SQLite SoT (never commit; lives on droplet at /var/lib/eichmann/listings.db)
+# layout/visual test artifacts
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.log
+.DS_Store
+assets/listings/._tmp-*
+chatgpt-plugin.zip
 mcp-registry-*.pem
+mcp-registry-key.pem
+media/eigen/**
+node_modules/
+test-results/
+var/

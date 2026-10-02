@@ -33,4 +33,9 @@
   <url><loc>https://immobilieneichmann.de/objekt/maisonette-furstenberg-bb241b38.html</loc><lastmod>2026-10-02T08:15:02+02:00</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://immobilieneichmann.de/objekt/maisonette-furstenberg-ff414db8.html</loc><lastmod>2026-10-02T08:15:02+02:00</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
 <!-- IMMWELT-OBJEKT:END -->
+  <url>
+    <loc>https://immobilieneichmann.de/mcp.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
 </urlset>
