@@ -13,3 +13,8 @@ location = /projekte/ {
 ```
 
 After changing the site config, validate and reload nginx, then verify that `/projekte/` returns `301` to `/projekte` and `/projekte` returns `200`.
+
+## Public MCP (`/mcp`)
+
+Production nginx proxies `location = /mcp` to `http://127.0.0.1:3848/mcp` (systemd `eichmann-mcp.service`).
+Patched idempotently by `deploy/patch-nginx-mcp.py` via `deploy/install-mcp.sh` on each droplet deploy.

@@ -6,7 +6,13 @@
       "name": "immobilien-eichmann-listings",
       "title": "Immobilien Eichmann Angebote",
       "url": "https://immobilieneichmann.de/ai/server-card.json",
-      "description": "Statischer Angebots-Index (JSON-Ressourcen, kein Live-MCP-HTTP)."
+      "description": "Live MCP Streamable-HTTP unter /mcp (search_listings, get_listing).",
+      "remotes": [
+        {
+          "type": "streamable-http",
+          "url": "https://immobilieneichmann.de/mcp"
+        }
+      ]
     }
   ]
 }

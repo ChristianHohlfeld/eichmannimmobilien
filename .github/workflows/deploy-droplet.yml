@@ -24,6 +24,7 @@ on:
       - "llms.txt"
       - "agents.txt"
       - "ai/**"
+      - "mcp-static/**"
       - ".well-known/**"
       - ".nojekyll"
       - ".github/workflows/deploy-droplet.yml"
@@ -168,4 +169,5 @@ jobs:
           mkdir -p /var/lib/eichmann/snapshots
           chmod 755 /var/lib/eichmann/snapshots
           bash "$APP/deploy/install-admin-api.sh"
+          bash "$APP/deploy/install-mcp.sh"
           REMOTE

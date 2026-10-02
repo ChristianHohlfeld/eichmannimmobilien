@@ -10,6 +10,7 @@ Allow: /llms.txt
 Allow: /.well-known/mcp.json
 Allow: /.well-known/mcp/catalog.json
 Allow: /ai/server-card.json
+Allow: /mcp
 Disallow: /admin/
 
 # Erlaubt: Lesen der öffentlichen Kaufangebote und Kontaktdaten (NAP).

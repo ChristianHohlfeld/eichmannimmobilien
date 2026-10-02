@@ -1,0 +1,8 @@
+{
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "maintainers": ["ChristianHohlfeld"],
+  "name": "Immobilien Eichmann Listings",
+  "description": "Live Streamable-HTTP MCP for Kaufangebote in Konstanz. Tools: search_listings, get_listing. Source = https://immobilieneichmann.de/ai/listings.json",
+  "category": "real-estate",
+  "tags": ["immobilien", "konstanz", "listings", "germany", "real-estate"]
+}

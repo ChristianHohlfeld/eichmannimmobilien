@@ -1,0 +1,19 @@
+[Unit]
+Description=Eichmann Immobilien public MCP (Streamable HTTP)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/lib/eichmann/app
+Environment=NODE_ENV=production
+Environment=EICHMANN_SITE_ROOT=/var/www/immobilieneichmann.de
+Environment=EICHMANN_MCP_HOST=127.0.0.1
+Environment=EICHMANN_MCP_PORT=3848
+ExecStart=/usr/bin/node /var/lib/eichmann/app/scripts/mcp-server.mjs
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

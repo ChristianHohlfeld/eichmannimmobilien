@@ -1,15 +1,20 @@
-# Optional: MCP über statische JSON-URLs
+# MCP – Immobilien Eichmann
 
-Auf dem Live-Host gibt es **keinen** MCP Streamable-HTTP-Endpoint (Static auf DigitalOcean).
+Live **Streamable-HTTP** MCP on the droplet (alongside static nginx):
 
-Discovery:
+- Endpoint: `https://immobilieneichmann.de/mcp`
+- Tools: `search_listings`, `get_listing`
+- Source: Live `/ai/listings.json` (same publish pipeline as the website — no second list)
+- Process: `eichmann-mcp.service` → `127.0.0.1:3848`, nginx `/mcp`
 
-- https://immobilieneichmann.de/.well-known/mcp.json
-- https://immobilieneichmann.de/ai/listings.json
+## Local smoke
 
-Ein späterer gehosteter MCP (z. B. DigitalOcean App) braucht nur:
+```bash
+EICHMANN_SITE_ROOT=$PWD EICHMANN_MCP_PORT=3848 npm run mcp
+# other terminal:
+npm run test:mcp
+```
 
-1. Resource `listings` → fetch `ai/listings.json`
-2. Tools `search_listings` / `get_listing` → Filter über denselben Feed
+## Registry / directories
 
-Keine zweite Datenquelle anbinden — immer die Live-JSON der Website.
+See `docs/mcp-registry-publish.md`.

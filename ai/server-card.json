@@ -1,23 +1,29 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json",
   "name": "immobilien-eichmann-listings",
-  "title": "Immobilien Eichmann – Listings (static)",
-  "description": "Keine Streamable-HTTP-URL. Clients sollen die Ressourcen unter /ai/listings.json nutzen. Optional später: gehosteter MCP auf DigitalOcean.",
+  "title": "Immobilien Eichmann – Listings",
+  "description": "Live MCP Streamable-HTTP für Kaufangebote in Konstanz. Tools search_listings / get_listing lesen ai/listings.json (gleiche Publish-Pipeline wie die Website).",
   "version": "1.0.0",
   "websiteUrl": "https://immobilieneichmann.de/",
   "repository": {
     "url": "https://github.com/ChristianHohlfeld/eichmannimmobilien",
     "source": "github"
   },
-  "remotes": [],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://immobilieneichmann.de/mcp"
+    }
+  ],
   "_meta": {
-    "immobilieneichmann.de/static": {
-      "mode": "static-resources",
+    "immobilieneichmann.de/mcp": {
+      "mode": "streamable-http",
+      "endpoint": "https://immobilieneichmann.de/mcp",
       "listings_index": "https://immobilieneichmann.de/ai/listings.json",
       "listings_full": "https://immobilieneichmann.de/data/listings.json",
       "discovery": "https://immobilieneichmann.de/.well-known/mcp.json",
       "listing_count": 11,
-      "generated_at": "2026-10-02T05:49:15.232Z",
+      "generated_at": "2026-10-02T05:53:00.632Z",
       "tools": [
         "search_listings",
         "get_listing"

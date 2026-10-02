@@ -153,12 +153,17 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
   lines.push(`- Anzahl Kaufobjekte im Index: ${aiDoc.listing_count}`);
   lines.push(`- generiert: ${aiDoc.generated_at}`);
   lines.push("");
-  lines.push("## Tools (Konzept über JSON-Feed)");
+  lines.push("## MCP (Streamable HTTP)");
+  lines.push("");
+  lines.push(`- **Endpoint:** ${o}/mcp`);
+  lines.push("- **Transport:** streamable-http (JSON-RPC POST)");
+  lines.push("- Tools: `search_listings`, `get_listing` — Quelle = Live `ai/listings.json`");
+  lines.push(`- Discovery: ${o}/.well-known/mcp.json`);
+  lines.push("");
+  lines.push("## JSON-Feeds (ohne MCP-Client)");
   lines.push("");
   lines.push("1. `search_listings` — `GET ai/listings.json`, dann `listings[]` filtern.");
-  lines.push("2. `get_listing` — Eintrag per `slug`/`id` aus dem Index; Details unter `url` (HTML) oder Voll-Export.");
-  lines.push("");
-  lines.push("Kein Live-MCP-Streamable-HTTP auf dem Static-Host. Ressourcen sind öffentliche JSON/HTML-URLs.");
+  lines.push("2. `get_listing` — Eintrag per `slug`/`id` aus dem Index; Details unter `url`.");
   lines.push("");
   lines.push("## Aktuelle Objekt-URLs");
   lines.push("");
@@ -192,6 +197,7 @@ Allow: /llms.txt
 Allow: /.well-known/mcp.json
 Allow: /.well-known/mcp/catalog.json
 Allow: /ai/server-card.json
+Allow: /mcp
 Disallow: /admin/
 
 # Erlaubt: Lesen der öffentlichen Kaufangebote und Kontaktdaten (NAP).
@@ -204,8 +210,7 @@ Llms: ${o}/llms.txt
 }
 
 /**
- * Static MCP discovery: no streamable HTTP endpoint on GitHub Pages / DO static root.
- * Points clients at JSON resources + documents optional future hosted MCP.
+ * MCP discovery: live Streamable-HTTP at /mcp + JSON resource fallbacks.
  */
 export function buildMcpDiscovery(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
   const o = String(origin || DEFAULT_SITE_ORIGIN).replace(/\/$/, "");
@@ -214,12 +219,19 @@ export function buildMcpDiscovery(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) 
     name: "immobilien-eichmann-listings",
     title: "Immobilien Eichmann – Angebots-Index",
     description:
-      "Statische MCP-Discovery für Kaufangebote. Kein Live-MCP-HTTP auf diesem Host — Ressourcen sind öffentliche JSON-Feeds.",
+      "Live MCP Streamable-HTTP für Kaufangebote. Tools lesen denselben Index wie die Website (ai/listings.json).",
     websiteUrl: `${o}/`,
     transport: {
-      type: "static-resources",
-      note: "GitHub-Repo + DigitalOcean Static. Für echten MCP-Streamable-HTTP später optional DigitalOcean App/Function.",
+      type: "streamable-http",
+      url: `${o}/mcp`,
+      note: "POST JSON-RPC an /mcp. Quelle = Live ai/listings.json (Publish-Pipeline).",
     },
+    remotes: [
+      {
+        type: "streamable-http",
+        url: `${o}/mcp`,
+      },
+    ],
     resources: [
       {
         name: "listings_index",
@@ -252,6 +264,8 @@ export function buildMcpDiscovery(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) 
             max_price_eur: { type: "number" },
             rooms: { type: "string" },
             location: { type: "string" },
+            type: { type: "string" },
+            limit: { type: "number" },
           },
         },
       },
@@ -284,7 +298,8 @@ export function buildMcpCatalog({ origin = DEFAULT_SITE_ORIGIN } = {}) {
         name: "immobilien-eichmann-listings",
         title: "Immobilien Eichmann Angebote",
         url: `${o}/ai/server-card.json`,
-        description: "Statischer Angebots-Index (JSON-Ressourcen, kein Live-MCP-HTTP).",
+        description: "Live MCP Streamable-HTTP unter /mcp (search_listings, get_listing).",
+        remotes: [{ type: "streamable-http", url: `${o}/mcp` }],
       },
     ],
   };
@@ -295,19 +310,25 @@ export function buildServerCard(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
   return {
     $schema: "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json",
     name: "immobilien-eichmann-listings",
-    title: "Immobilien Eichmann – Listings (static)",
+    title: "Immobilien Eichmann – Listings",
     description:
-      "Keine Streamable-HTTP-URL. Clients sollen die Ressourcen unter /ai/listings.json nutzen. Optional später: gehosteter MCP auf DigitalOcean.",
+      "Live MCP Streamable-HTTP für Kaufangebote in Konstanz. Tools search_listings / get_listing lesen ai/listings.json (gleiche Publish-Pipeline wie die Website).",
     version: "1.0.0",
     websiteUrl: `${o}/`,
     repository: {
       url: "https://github.com/ChristianHohlfeld/eichmannimmobilien",
       source: "github",
     },
-    remotes: [],
+    remotes: [
+      {
+        type: "streamable-http",
+        url: `${o}/mcp`,
+      },
+    ],
     _meta: {
-      "immobilieneichmann.de/static": {
-        mode: "static-resources",
+      "immobilieneichmann.de/mcp": {
+        mode: "streamable-http",
+        endpoint: `${o}/mcp`,
         listings_index: `${o}/ai/listings.json`,
         listings_full: `${o}/data/listings.json`,
         discovery: `${o}/.well-known/mcp.json`,

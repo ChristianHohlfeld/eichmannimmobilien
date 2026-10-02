@@ -14,3 +14,7 @@ var/
 media/eigen/**
 !media/eigen/
 !media/eigen/.gitkeep
+
+# MCP registry signing key (never commit)
+mcp-registry-key.pem
+mcp-registry-*.pem
