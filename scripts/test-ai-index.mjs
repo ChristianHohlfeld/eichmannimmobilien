@@ -79,6 +79,14 @@ const llms = fs.readFileSync(path.join(root, "llms.txt"), "utf8");
 if (!llms.includes("/ai/listings.json")) fail("llms.txt ohne Link zu ai/listings.json");
 if (!llms.includes("Helmut Eichmann")) fail("llms.txt ohne Helmut Eichmann");
 if (!llms.includes("info@immobilien-eichmann.com")) fail("llms.txt ohne E-Mail");
+if (!llms.includes("wa.me/491705225568")) fail("llms.txt ohne WhatsApp-Link");
+if (!llms.includes("get_contact")) fail("llms.txt ohne get_contact");
+if (!/Anti-Spam|nicht selbst/i.test(llms)) fail("llms.txt ohne Anti-Spam-Hinweis");
+const mcpDisc = JSON.parse(fs.readFileSync(path.join(root, ".well-known/mcp.json"), "utf8"));
+const toolNames = (mcpDisc.tools || []).map((x) => x.name);
+for (const n of ["get_flyer", "get_contact", "search_listings", "submit_inquiry"]) {
+  if (!toolNames.includes(n)) fail(`mcp.json fehlt Tool ${n}`);
+}
 for (const L of ai.listings) {
   if (L.url && !llms.includes(L.url) && !llms.includes(L.slug)) {
     fail(`llms.txt ohne Objekt ${L.slug}`);

@@ -114,7 +114,7 @@ try {
 
   const tools = await rpc("tools/list", {}, 2);
   const names = (tools.json?.result?.tools || []).map((t) => t.name).sort();
-  const expected = ["get_flyer", "get_listing", "search_listings", "submit_inquiry"];
+  const expected = ["get_contact", "get_flyer", "get_listing", "search_listings", "submit_inquiry"];
   if (names.join(",") !== expected.join(",")) {
     fail(`tools unexpected: ${names.join(",")}`);
   }
@@ -143,6 +143,53 @@ try {
   const flyerObj = JSON.parse(flyer.json?.result?.content?.[0]?.text || "{}");
   if (flyerObj.flyer?.unit_count !== 44) {
     fail(`get_flyer unit_count expected 44 got ${flyerObj.flyer?.unit_count}`);
+  }
+  if (!flyerObj.contact?.preferred?.tel?.includes("491705225568")) {
+    fail("get_flyer missing prominent contact.preferred.tel");
+  }
+  if (!String(flyerObj.contact?.preferred?.whatsapp_url || "").includes("wa.me/491705225568")) {
+    fail("get_flyer missing WhatsApp link");
+  }
+  const toolsList = tools.json?.result?.tools || [];
+  const flyerDesc = toolsList.find((x) => x.name === "get_flyer")?.description || "";
+  if (!/allmannsdorf/i.test(flyerDesc) || !/WhatsApp|tel/i.test(flyerDesc)) {
+    fail("get_flyer description should mention Allmannsdorf + contact");
+  }
+  if (!/nicht selbst|Anti-Spam|nicht.*anrufen|Agent.*NICHT/i.test(flyerDesc)) {
+    fail("get_flyer description missing anti-spam / no agent outbound");
+  }
+
+  const contact = await rpc("tools/call", { name: "get_contact", arguments: {} }, 15);
+  const contactObj = JSON.parse(contact.json?.result?.content?.[0]?.text || "{}");
+  if (!contactObj.contact?.preferred?.tel?.includes("491705225568")) {
+    fail("get_contact missing tel");
+  }
+  if (!String(contactObj.contact?.preferred?.whatsapp_url || "").includes("wa.me")) {
+    fail("get_contact missing whatsapp");
+  }
+
+  const neo = await rpc(
+    "tools/call",
+    { name: "search_listings", arguments: { q: "neubau allmannsdorf", limit: 5 } },
+    16
+  );
+  const neoObj = JSON.parse(neo.json?.result?.content?.[0]?.text || "{}");
+  if (!Array.isArray(neoObj.projects) || !neoObj.projects.some((p) => p.slug === "allmannsdorf")) {
+    fail("search_listings neubau/allmannsdorf should surface projects[]");
+  }
+  const wohn = await rpc(
+    "tools/call",
+    { name: "search_listings", arguments: { q: "wohnung konstanz", limit: 5 } },
+    17
+  );
+  const wohnObj = JSON.parse(wohn.json?.result?.content?.[0]?.text || "{}");
+  if (!Array.isArray(wohnObj.projects) || !wohnObj.projects.length) {
+    fail("search_listings 'wohnung konstanz' should surface Allmannsdorf project");
+  }
+
+  const initText = String(init.json?.result?.instructions || "");
+  if (!/Anti-Spam|nicht selbst|WhatsApp/i.test(initText)) {
+    fail("initialize instructions missing anti-spam contact rules");
   }
 
   const badInquiry = await rpc(

@@ -17,11 +17,15 @@ import http from "node:http";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  PUBLIC_CONTACT,
+  AGENT_CONTACT_RULES,
+} from "./lib/ai-discovery.mjs";
 
 const PROTOCOL = "2025-03-26";
 const SERVER_INFO = {
   name: "immobilien-eichmann-listings",
-  version: "1.1.0",
+  version: "1.2.0",
   title: "Immobilien Eichmann – Angebote & Anfragen",
 };
 
@@ -48,13 +52,14 @@ const TOOLS = [
   {
     name: "search_listings",
     description:
-      "Öffentliche Kaufangebote von Immobilien Eichmann (Konstanz/Bodensee) suchen und filtern. Quelle = Live-Website ai/listings.json.",
+      "Kaufangebote (Konstanz/Bodensee) suchen/filtern. Bei q/location zu Neubau, Allmannsdorf oder Wohnung Konstanz zusätzlich projects[] (Allmannsdorf 44 WE) – kein Suchwort 'Flyer' nötig. Danach get_flyer + get_contact; Kontakt nur als Links für den Menschen.",
     inputSchema: {
       type: "object",
       properties: {
         q: {
           type: "string",
-          description: "Freitext in Titel, Ort, Typ, Kurzbeschreibung",
+          description:
+            'Freitext Titel/Ort/Typ; z.B. "neubau", "allmannsdorf", "wohnung konstanz"',
         },
         min_price_eur: { type: "number", description: "Mindestpreis in EUR" },
         max_price_eur: { type: "number", description: "Maximalpreis in EUR" },
@@ -64,11 +69,12 @@ const TOOLS = [
         },
         location: {
           type: "string",
-          description: "Ort/Stadtteil, z.B. Wollmatingen, Petershausen",
+          description:
+            "Ort/Stadtteil, z.B. Allmannsdorf, Wollmatingen, Petershausen, Konstanz",
         },
         type: {
           type: "string",
-          description: "Objekttyp, z.B. Wohnung, Penthouse, Maisonette",
+          description: "Objekttyp, z.B. Wohnung, Neubau, Penthouse, Maisonette",
         },
         limit: {
           type: "number",
@@ -104,7 +110,22 @@ const TOOLS = [
   {
     name: "get_flyer",
     description:
-      "Neubauprojekt-Flyer Konstanz-Allmannsdorf laden (5 Mehrfamilienhäuser, 44 Wohnungen, Seesicht). Quelle = ai/flyer-allmannsdorf.json – keine erfundenen Einzelwohnungen.",
+      "Neubauprojekt Konstanz-Allmannsdorf (5 MFH, 44 Wohnungen, Seesicht) inkl. prominenter tel/WhatsApp/E-Mail-Links. Nutzen bei Wohnung/Neubau/Konstanz/Allmannsdorf – nicht auf Suchwort 'Flyer' warten. Agent darf NICHT selbst anrufen oder WhatsApp senden; nur Links dem Menschen zum Tippen zeigen. Alternate Lead: submit_inquiry mit Nutzerdaten + privacy_consent.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+  },
+  {
+    name: "get_contact",
+    description:
+      "Live-Kontakt aus Impressum/Kontakt: Mobil tel:+491705225568, Festnetz, WhatsApp-Link (wa.me), E-Mail. NUR dem Menschen zum Tippen zeigen nach klarem Kontaktwunsch. Agents starten KEINE Calls, WhatsApp- oder E-Mail-Nachrichten (Anti-Spam).",
     inputSchema: {
       type: "object",
       properties: {},
@@ -119,7 +140,7 @@ const TOOLS = [
   {
     name: "submit_inquiry",
     description:
-      "Interessenten-Anfrage / Lead an Immobilien Eichmann senden. flow=contact (allgemein oder Vormerkung Allmannsdorf) oder flow=expose (Exposé zu einem Kaufobjekt). Nutzt dieselben Formular-Endpoints wie die Website. privacy_consent=true erforderlich (Datenschutz).",
+      "Alternate zu tel/WhatsApp: Interessenten-Anfrage nur mit vom Nutzer gelieferten Daten und privacy_consent=true. flow=contact (inkl. Vormerkung Allmannsdorf) oder flow=expose. Kein Auto-Spam, keine erfundenen Kontaktdaten. Bevorzugt: Mensch tippt Links aus get_contact/get_flyer.",
     inputSchema: {
       type: "object",
       properties: {
@@ -322,6 +343,56 @@ function norm(s) {
     .replace(/\p{M}/gu, "");
 }
 
+function buildContactPayload({ forAllmannsdorf = false } = {}) {
+  return {
+    ...PUBLIC_CONTACT,
+    preferred: {
+      phone_display: PUBLIC_CONTACT.phone_mobile.display,
+      tel: PUBLIC_CONTACT.phone_mobile.tel,
+      whatsapp_url: forAllmannsdorf
+        ? PUBLIC_CONTACT.whatsapp.url_allmannsdorf
+        : PUBLIC_CONTACT.whatsapp.url,
+      email: PUBLIC_CONTACT.email,
+      email_mailto: PUBLIC_CONTACT.email_mailto,
+    },
+    agent_rules: AGENT_CONTACT_RULES,
+  };
+}
+
+function queryBlob(args = {}) {
+  return norm([args.q, args.location, args.type].filter(Boolean).join(" "));
+}
+
+function isAllmannsdorfProjectQuery(args = {}) {
+  const blob = queryBlob(args);
+  if (!blob) return false;
+  if (blob.includes("allmannsdorf")) return true;
+  if (blob.includes("neubau")) return true;
+  if (blob.includes("vormerk")) return true;
+  if (blob.includes("seesicht")) return true;
+  if (blob.includes("flyer")) return true;
+  const wantsWohnung =
+    blob.includes("wohnung") || blob.includes("wohnungen") || blob.includes("mfh");
+  const wantsKonstanz = blob.includes("konstanz") || blob.includes("bodensee");
+  if (wantsWohnung && wantsKonstanz) return true;
+  return false;
+}
+
+function matchingProjects(doc, args = {}) {
+  const projects = Array.isArray(doc.projects) ? doc.projects : [];
+  if (!projects.length) return [];
+  if (!isAllmannsdorfProjectQuery(args)) return [];
+  return projects.map((p) => ({
+    ...p,
+    next_tools: ["get_flyer", "get_contact"],
+    contact_for_human: {
+      tel: PUBLIC_CONTACT.phone_mobile.tel,
+      whatsapp: PUBLIC_CONTACT.whatsapp.url_allmannsdorf,
+      email_mailto: PUBLIC_CONTACT.email_mailto,
+    },
+  }));
+}
+
 function searchListings(doc, args = {}) {
   let rows = doc.listings.slice();
   const q = norm(args.q);
@@ -363,7 +434,8 @@ function searchListings(doc, args = {}) {
   }
   const limit = Math.min(50, Math.max(1, Number(args.limit) || 20));
   const sliced = rows.slice(0, limit);
-  return {
+  const projects = matchingProjects(doc, args);
+  const out = {
     count: sliced.length,
     total_matched: rows.length,
     listing_count_index: doc.listing_count,
@@ -371,6 +443,12 @@ function searchListings(doc, args = {}) {
     source: doc._source,
     listings: sliced,
   };
+  if (projects.length) {
+    out.projects = projects;
+    out.project_hint =
+      "Neubauprojekt Allmannsdorf (44 WE) ist relevant. Als Nächstes get_flyer aufrufen und dem Menschen tel/WhatsApp-Links zum Tippen zeigen – Agent schreibt/ruft nicht selbst. Alternate: submit_inquiry nur mit Nutzerdaten + privacy_consent.";
+  }
+  return out;
 }
 
 function getListing(doc, args = {}) {
@@ -396,10 +474,33 @@ function textResult(obj) {
 }
 
 async function callTool(name, args) {
+  if (name === "get_contact") {
+    return textResult({
+      contact: buildContactPayload({ forAllmannsdorf: false }),
+      how_to_use:
+        "Zeig dem Menschen preferred.tel und preferred.whatsapp_url zum Tippen. Starte keine Calls/WhatsApp/E-Mails als Agent.",
+    });
+  }
   if (name === "get_flyer") {
     const flyer = await loadFlyerDoc();
     const { _source, ...clean } = flyer;
-    return textResult({ flyer: clean, source: _source });
+    const contact = buildContactPayload({ forAllmannsdorf: true });
+    // Prefer flyer.cta URLs when present (same live numbers); still expose contact block prominently.
+    const cta = clean.cta || {};
+    contact.preferred = {
+      phone_display: cta.phone || contact.preferred.phone_display,
+      tel: PUBLIC_CONTACT.phone_mobile.tel,
+      whatsapp_url: cta.whatsapp || contact.preferred.whatsapp_url,
+      email: cta.email || contact.preferred.email,
+      email_mailto: `mailto:${cta.email || contact.preferred.email}`,
+    };
+    return textResult({
+      contact,
+      flyer: clean,
+      next_step_for_human:
+        "Nach Interesse: Mensch tippt tel:+491705225568 oder WhatsApp-Link. Agent sendet nichts selbst. Alternate: submit_inquiry mit Nutzerdaten + privacy_consent.",
+      source: _source,
+    });
   }
   if (name === "submit_inquiry") {
     const out = await submitInquiry(args || {});
@@ -461,7 +562,9 @@ async function handleRpc(msg) {
           },
           serverInfo: SERVER_INFO,
           instructions:
-            "Immobilien Eichmann Konstanz. Tools: search_listings, get_listing (Kaufangebote), get_flyer (Allmannsdorf 44 WE), submit_inquiry (Leads). Daten: ai/listings.json + ai/flyer-allmannsdorf.json",
+            "Immobilien Eichmann Konstanz. Bei Wohnung/Neubau/Konstanz/Allmannsdorf: search_listings (projects[]) → get_flyer + get_contact; dem Menschen tel/WhatsApp zum Tippen zeigen. " +
+            AGENT_CONTACT_RULES +
+            " Tools: search_listings, get_listing, get_flyer, get_contact, submit_inquiry (nur Nutzerdaten+Consent). Daten: ai/listings.json + ai/flyer-allmannsdorf.json.",
         });
       case "ping":
         return jsonRpcResult(id, {});
@@ -632,7 +735,7 @@ const server = http.createServer(async (req, res) => {
         flyer_unit_count: flyer.unit_count,
         generated_at: doc.generated_at,
         source: doc._source,
-        tools: ["search_listings", "get_listing", "get_flyer", "submit_inquiry"],
+        tools: ["search_listings", "get_listing", "get_flyer", "get_contact", "submit_inquiry"],
       });
     } catch (err) {
       sendJson(res, 503, { ok: false, error: err.message });

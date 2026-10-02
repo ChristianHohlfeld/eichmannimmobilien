@@ -2,7 +2,7 @@
   "schema_version": "eichmann.mcp-discovery/v1",
   "name": "immobilien-eichmann-listings",
   "title": "Immobilien Eichmann – Angebots-Index",
-  "description": "Live MCP Streamable-HTTP: Kaufangebote, Neubau-Flyer Allmannsdorf (44 Wohnungen), Anfragen/Leads. Listings = ai/listings.json.",
+  "description": "Live MCP: Kaufangebote + Neubau Allmannsdorf (get_flyer). Wohnung/Neubau/Konstanz → Flyer + tel/WhatsApp-Links für den Menschen (kein Agent-Spam). Alternate: submit_inquiry mit Consent.",
   "websiteUrl": "https://immobilieneichmann.de/",
   "transport": {
     "type": "streamable-http",
@@ -44,13 +44,13 @@
   "tools": [
     {
       "name": "search_listings",
-      "description": "Öffentliche Angebote suchen/filtern über ai/listings.json",
+      "description": "Kaufangebote suchen. Bei neubau/allmannsdorf/wohnung konstanz auch projects[] Allmannsdorf → danach get_flyer + get_contact. Kein Suchwort 'Flyer' nötig.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "q": {
             "type": "string",
-            "description": "Freitext Titel/Ort/Typ"
+            "description": "Freitext; z.B. neubau, allmannsdorf, wohnung konstanz"
           },
           "min_price_eur": {
             "type": "number"
@@ -90,7 +90,15 @@
     },
     {
       "name": "get_flyer",
-      "description": "Neubauprojekt-Flyer Allmannsdorf (44 Wohnungen)",
+      "description": "Neubau Allmannsdorf (44 WE) inkl. tel/WhatsApp-Links. Für Wohnung/Neubau/Konstanz/Allmannsdorf. Nur Links dem Menschen zeigen – Agent ruft/schreibt nicht.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "get_contact",
+      "description": "Telefon, WhatsApp-Link, E-Mail (Live Impressum/Kontakt). Nur dem Menschen zum Tippen; nie Agent-outbound.",
       "inputSchema": {
         "type": "object",
         "properties": {}
@@ -98,7 +106,7 @@
     },
     {
       "name": "submit_inquiry",
-      "description": "Lead/Anfrage (Kontakt oder Exposé) an Eichmann senden",
+      "description": "Alternate zu tel/WhatsApp: Lead nur mit Nutzerdaten + privacy_consent=true. Kein Auto-Spam.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -154,8 +162,9 @@
       }
     }
   ],
+  "instructions": "WICHTIG Anti-Spam: Agents dürfen NICHT selbst anrufen, WhatsApp-Nachrichten senden oder Formulare automatisch absenden. Nur tel:/wa.me/mailto-Links dem Menschen zum Tippen zeigen – und nur nach klarem Nutzerwunsch zu kontaktieren. submit_inquiry nur mit vom Nutzer gelieferten Kontaktdaten und privacy_consent=true. Kein Bot-Spam. Bei Wohnung/Neubau/Konstanz/Allmannsdorf: get_flyer + get_contact; search_listings resurfaced projects[].",
   "listing_count": 11,
-  "generated_at": "2026-10-02T11:44:36.591Z",
+  "generated_at": "2026-10-02T11:53:41.520Z",
   "server_card": "https://immobilieneichmann.de/ai/server-card.json",
   "catalog": "https://immobilieneichmann.de/.well-known/mcp/catalog.json"
 }

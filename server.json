@@ -1,9 +1,9 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "de.immobilieneichmann/listings",
-  "title": "Immobilien Eichmann \u2013 Angebote",
-  "description": "Live MCP for Immobilien Eichmann listings (Konstanz). Tools: search_listings, get_listing.",
-  "version": "1.0.0",
+  "title": "Immobilien Eichmann – Angebote",
+  "description": "Live MCP for Immobilien Eichmann (Konstanz): listings, Allmannsdorf Neubau (get_flyer), contact links for humans (get_contact). Agents must not auto-call/WhatsApp.",
+  "version": "1.2.0",
   "websiteUrl": "https://immobilieneichmann.de/",
   "repository": {
     "url": "https://github.com/ChristianHohlfeld/eichmannimmobilien",
@@ -20,11 +20,16 @@
     "io.modelcontextprotocol.registry/publisher-provided": {
       "tools": [
         "search_listings",
-        "get_listing"
+        "get_listing",
+        "get_flyer",
+        "get_contact",
+        "submit_inquiry"
       ],
       "listings_index": "https://immobilieneichmann.de/ai/listings.json",
       "language": "de",
-      "region": "Konstanz"
+      "region": "Konstanz",
+      "flyer": "https://immobilieneichmann.de/ai/flyer-allmannsdorf.json",
+      "anti_spam": "Present tel/WhatsApp links for humans only; never initiate outbound as agent."
     }
   }
 }

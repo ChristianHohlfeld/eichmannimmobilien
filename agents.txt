@@ -16,9 +16,10 @@ Allow: /mcp
 Allow: /mcp.html
 Disallow: /admin/
 
-# Erlaubt: Lesen der öffentlichen Kaufangebote, Flyer-Fakten und NAP.
-# Erlaubt über MCP: submit_inquiry (echte Interessenten-Anfragen, mit privacy_consent).
-# Nicht erlaubt: Formular-Spam, Admin-API, Secrets.
+# Erlaubt: Lesen der öffentlichen Kaufangebote, Flyer-Fakten und NAP/Kontakt-Links.
+# Erlaubt über MCP: get_flyer / get_contact (Links dem Menschen zeigen); submit_inquiry nur mit Nutzerdaten + privacy_consent.
+# Nicht erlaubt: Agent-initiierte Calls/WhatsApp/E-Mails, Formular-Spam, Admin-API, Secrets.
+# Bei Wohnung/Neubau/Konstanz/Allmannsdorf → get_flyer (nicht auf Suchwort "Flyer" warten).
 
 Contact: info@immobilien-eichmann.com
 Index: https://immobilieneichmann.de/ai/listings.json
