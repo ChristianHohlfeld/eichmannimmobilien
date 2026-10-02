@@ -21,14 +21,19 @@
 - **agents.txt:** https://immobilieneichmann.de/agents.txt
 - **Sitemap:** https://immobilieneichmann.de/sitemap.xml
 - Anzahl Kaufobjekte im Index: 11
-- generiert: 2026-10-02T05:49:15.232Z
+- generiert: 2026-10-02T05:53:00.632Z
 
-## Tools (Konzept über JSON-Feed)
+## MCP (Streamable HTTP)
+
+- **Endpoint:** https://immobilieneichmann.de/mcp
+- **Transport:** streamable-http (JSON-RPC POST)
+- Tools: `search_listings`, `get_listing` — Quelle = Live `ai/listings.json`
+- Discovery: https://immobilieneichmann.de/.well-known/mcp.json
+
+## JSON-Feeds (ohne MCP-Client)
 
 1. `search_listings` — `GET ai/listings.json`, dann `listings[]` filtern.
-2. `get_listing` — Eintrag per `slug`/`id` aus dem Index; Details unter `url` (HTML) oder Voll-Export.
-
-Kein Live-MCP-Streamable-HTTP auf dem Static-Host. Ressourcen sind öffentliche JSON/HTML-URLs.
+2. `get_listing` — Eintrag per `slug`/`id` aus dem Index; Details unter `url`.
 
 ## Aktuelle Objekt-URLs
 

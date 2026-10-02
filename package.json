@@ -11,7 +11,7 @@
     "test:layout": "node scripts/test-layout-regression.mjs",
     "build:share": "node scripts/build-share-card.mjs",
     "test:share": "node scripts/test-share-card.mjs",
-    "test": "npm run test:share && npm run test:logo && npm run test:jsonld && npm run test:legal && npm run test:content && npm run test:layout && npm run test:ai-index",
+    "test": "npm run test:share && npm run test:logo && npm run test:jsonld && npm run test:legal && npm run test:content && npm run test:layout && npm run test:ai-index && npm run test:mcp",
     "test:strict": "npm run test:legal && STRICT=1 npm run test:logo && STRICT=1 npm run test:layout",
     "test:jsonld": "node scripts/test-jsonld.mjs",
     "test:legal": "node scripts/test-legal-baseline.mjs",
@@ -27,7 +27,9 @@
     "test:immowelt-api": "node scripts/test-immowelt-official-api.mjs",
     "test:admin-password": "node scripts/test-admin-password.mjs",
     "ai:index": "node scripts/build-ai-index.mjs",
-    "test:ai-index": "node scripts/test-ai-index.mjs"
+    "test:ai-index": "node scripts/test-ai-index.mjs",
+    "mcp": "node scripts/mcp-server.mjs",
+    "test:mcp": "node scripts/test-mcp-server.mjs"
   },
   "engines": {
     "node": ">=20"

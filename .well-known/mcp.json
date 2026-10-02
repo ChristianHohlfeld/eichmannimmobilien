@@ -2,12 +2,19 @@
   "schema_version": "eichmann.mcp-discovery/v1",
   "name": "immobilien-eichmann-listings",
   "title": "Immobilien Eichmann – Angebots-Index",
-  "description": "Statische MCP-Discovery für Kaufangebote. Kein Live-MCP-HTTP auf diesem Host — Ressourcen sind öffentliche JSON-Feeds.",
+  "description": "Live MCP Streamable-HTTP für Kaufangebote. Tools lesen denselben Index wie die Website (ai/listings.json).",
   "websiteUrl": "https://immobilieneichmann.de/",
   "transport": {
-    "type": "static-resources",
-    "note": "GitHub-Repo + DigitalOcean Static. Für echten MCP-Streamable-HTTP später optional DigitalOcean App/Function."
+    "type": "streamable-http",
+    "url": "https://immobilieneichmann.de/mcp",
+    "note": "POST JSON-RPC an /mcp. Quelle = Live ai/listings.json (Publish-Pipeline)."
   },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://immobilieneichmann.de/mcp"
+    }
+  ],
   "resources": [
     {
       "name": "listings_index",
@@ -50,6 +57,12 @@
           },
           "location": {
             "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "number"
           }
         }
       }
@@ -71,7 +84,7 @@
     }
   ],
   "listing_count": 11,
-  "generated_at": "2026-10-02T05:49:15.232Z",
+  "generated_at": "2026-10-02T05:53:00.632Z",
   "server_card": "https://immobilieneichmann.de/ai/server-card.json",
   "catalog": "https://immobilieneichmann.de/.well-known/mcp/catalog.json"
 }
