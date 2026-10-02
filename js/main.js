@@ -186,6 +186,7 @@
     if (cookie && !cookie.hidden) {
       cookie.dataset.flyerHidden = "1";
       cookie.hidden = true;
+      document.body.classList.remove("cookie-banner-open");
     }
   }
   function closeFlyer() {
@@ -197,6 +198,7 @@
     if (cookie && cookie.dataset.flyerHidden === "1") {
       delete cookie.dataset.flyerHidden;
       cookie.hidden = false;
+      document.body.classList.add("cookie-banner-open");
     }
   }
   document.querySelectorAll("[data-open-flyer]").forEach(function (el) {

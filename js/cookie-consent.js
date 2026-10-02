@@ -39,11 +39,13 @@
   function hideBanner() {
     var el = document.getElementById("cookie-banner");
     if (el) el.hidden = true;
+    document.body.classList.remove("cookie-banner-open");
   }
 
   function showBanner() {
     var el = document.getElementById("cookie-banner");
     if (el) el.hidden = false;
+    document.body.classList.add("cookie-banner-open");
   }
 
   function ensureBanner() {
