@@ -15,6 +15,13 @@
         var value = query.get(key);
         if (value) params[key] = value;
       });
+      if (!Object.keys(params).length) {
+        var stored = JSON.parse(window.sessionStorage.getItem('eichmann_attr_v1') || 'null');
+        var firstUtm = stored && stored.utm ? stored.utm : {};
+        ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].forEach(function (key) {
+          if (firstUtm[key]) params[key] = String(firstUtm[key]);
+        });
+      }
     } catch (e) {}
     Object.keys(extra || {}).forEach(function (key) {
       if (extra[key] !== undefined && extra[key] !== null && extra[key] !== '') params[key] = extra[key];

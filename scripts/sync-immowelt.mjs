@@ -1390,7 +1390,7 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
 
   <script>window.__eichmannJsBase="${p}js/";</script>
   <script src="${p}js/cookie-consent.js?v=abs-datenschutz-v2" defer></script>
-  <script src="${p}js/main.js?v=chatgpt-vormerk-v1" defer></script>
+  <script src="${p}js/main.js?v=lead-attr-v1" defer></script>
 </body>
 </html>
 `;

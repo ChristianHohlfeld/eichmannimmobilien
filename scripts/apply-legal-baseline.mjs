@@ -78,7 +78,7 @@ for (const full of await htmlFiles()) {
     'Informationen zur Verarbeitung Ihrer Angaben finden Sie in der <a href="' + prefix + 'datenschutz.html">Datenschutzerklärung</a>. Durch das Absenden kommt kein Maklervertrag zustande.'
   );
   s = useSafeHeaderLogo(s);
-  s = s.replace(/js\/main\.js\?v=[^"]+/g, "js/main.js?v=chatgpt-vormerk-v1");
+  s = s.replace(/js\/main\.js\?v=[^"]+/g, "js/main.js?v=lead-attr-v1");
   await writeFile(full, s, "utf8");
 }
 
@@ -137,6 +137,7 @@ for (const full of await htmlFiles()) {
       <h2>3. Kontakt und Anfragen</h2>
       <p>Wenn Sie uns per Telefon, E-Mail oder über ein Formular kontaktieren, verarbeiten wir die von Ihnen mitgeteilten Daten zur Bearbeitung Ihrer Anfrage. Bei objektbezogenen oder sonstigen geschäftlichen Anfragen erfolgt dies regelmäßig auf Grundlage von Art. 6 Abs. 1 lit. b DSGVO; im Übrigen auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO.</p>
       <p>Kontakt- und Exposé-Anfragen werden über ein technisch getrenntes Formular-Gateway unter <strong>forms.digitalisierungsplanung.de</strong> verarbeitet. Das Gateway prüft die übermittelten Pflichtfelder und leitet die Anfrage über <strong>Amazon Simple Email Service (Amazon SES)</strong> an unser E-Mail-Postfach weiter. Formularinhalte werden vom Gateway nicht in einer eigenen Formular-Datenbank gespeichert; technische Protokolle enthalten keine Namen, E-Mail-Adressen, Telefonnummern oder Nachrichtentexte.</p>
+      <p>Damit wir nachvollziehen können, über welchen Weg eine Anfrage zu uns gefunden hat, übermittelt das Formular zusätzlich technische Herkunftsangaben: UTM-Kampagnenparameter aus dem aufgerufenen Link (z.&nbsp;B. utm_source, utm_medium, utm_campaign), die verweisende Seite (Referrer), die zuerst aufgerufene Seite (Landing) sowie die Seite, auf der das Formular abgeschickt wurde. Diese Angaben werden nur für die Dauer der Browser-Sitzung im Session Storage Ihres Browsers zwischengespeichert, nicht an Dritte übermittelt und ausschließlich zusammen mit Ihrer Anfrage an unser E-Mail-Postfach weitergeleitet. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO; die Zwischenspeicherung ist für die von Ihnen gewünschte Übermittlung der Anfrage erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG).</p>
       <p>Anfragedaten speichern wir anschließend nur so lange, wie dies für die Bearbeitung und eine mögliche vorvertragliche oder vertragliche Abwicklung erforderlich ist. Gesetzliche Aufbewahrungspflichten bleiben unberührt. Wenn Sie die Formularübermittlung nicht nutzen möchten, können Sie uns direkt per E-Mail oder Telefon kontaktieren.</p>
 
       <h2>4. Datenschutzauswahl und Google Analytics</h2>
@@ -308,10 +309,10 @@ for (const full of await htmlFiles()) {
     '<p class="form-note legal-request-note">Informationen zur Verarbeitung Ihrer Angaben finden Sie in der <a href="${p}datenschutz.html">Datenschutzerklärung</a>. Durch das Absenden kommt kein Maklervertrag zustande.</p>'
   );
   s = s.replace(/<img class="logo-svg" src="${p}assets\/logo\.(?:png|svg)\?v=[^"]+"/g, '<img class="logo-svg" src="${p}assets/logo-header.svg?v=header-safe-v1"');
-  s = s.replace(/js\/main\.js\?v=[^"]+/g, 'js/main.js?v=chatgpt-vormerk-v1');
+  s = s.replace(/js\/main\.js\?v=[^"]+/g, 'js/main.js?v=lead-attr-v1');
   s = s.replace(
-    '  <script src="${p}js/analytics.js" defer></script>\n  <script src="${p}js/main.js?v=flyer-root-v1" defer></script>',
-    '  <script>window.__eichmannJsBase="${p}js/";</script>\n  <script src="${p}js/cookie-consent.js?v=abs-datenschutz-v2" defer></script>\n  <script src="${p}js/main.js?v=chatgpt-vormerk-v1" defer></script>'
+    '  <script src="${p}js/analytics.js" defer></script>\n  <script src="${p}js/main.js?v=lead-attr-v1" defer></script>',
+    '  <script>window.__eichmannJsBase="${p}js/";</script>\n  <script src="${p}js/cookie-consent.js?v=abs-datenschutz-v2" defer></script>\n  <script src="${p}js/main.js?v=lead-attr-v1" defer></script>'
   );
   await write("scripts/sync-immowelt.mjs", s);
 }
