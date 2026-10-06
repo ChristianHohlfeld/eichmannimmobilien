@@ -1,7 +1,7 @@
 /* expose-lightbox-v2 */
 /* listing-aspect-cls-v1 */
 /* expose-mobile-overflow-v1 */
-/* floating-wa-v1 + sticky-icons-neutral-v1 + flyer-session-once + chatgpt-vormerk-v1 + flyer-layout-sticky-v1 + flyer-cta-cookie-v1 + wa-above-cookie-v1 */
+/* floating-wa-v1 + sticky-icons-neutral-v1 + flyer-session-once + chatgpt-vormerk-v1 + flyer-layout-sticky-v1 + flyer-cta-cookie-v1 + wa-above-cookie-v2 */
 /* cta-script-caveat v1 */
 /* Immobilien Eichmann – Design Brief v1
    Tokens: lake/night blue + sand-gold + neutrals. Calm premium local Makler. */
@@ -1895,7 +1895,8 @@ body.cookie-banner-open .sticky-bar {
 /* Keep WhatsApp one tap while cookie bar is open; sit above the bar, not over Accept */
 body.cookie-banner-open .floating-wa {
   z-index: 1700;
-  bottom: calc(9.25rem + env(safe-area-inset-bottom, 0px));
+  /* Clear cookie bar + avoid covering hero tertiary CTA on narrow phones */
+  bottom: calc(11.5rem + env(safe-area-inset-bottom, 0px));
 }
 .cookie-banner[hidden] { display: none !important; }
 .cookie-banner-inner {
