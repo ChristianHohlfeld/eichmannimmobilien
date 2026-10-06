@@ -29,6 +29,7 @@
   function linkLocation(link) {
     if (link.closest('.sticky-bar, .flyer-sticky-ctas')) return 'sticky';
     if (link.closest('.nav')) return 'nav';
+    if (link.closest('.hero')) return 'hero';
     if (link.closest('.flyer')) return 'flyer';
     return 'content';
   }
