@@ -1,7 +1,7 @@
 /* expose-lightbox-v2 */
 /* listing-aspect-cls-v1 */
 /* expose-mobile-overflow-v1 */
-/* floating-wa-v1 + sticky-icons-neutral-v1 + flyer-session-once + chatgpt-vormerk-v1 + flyer-layout-sticky-v1 + flyer-cta-cookie-v1 + wa-above-cookie-v2 */
+/* floating-wa-v1 + sticky-icons-neutral-v1 + flyer-session-once + chatgpt-vormerk-v1 + flyer-layout-sticky-v1 + flyer-cta-cookie-v1 + wa-cookie-clear-v3 */
 /* cta-script-caveat v1 */
 /* Immobilien Eichmann – Design Brief v1
    Tokens: lake/night blue + sand-gold + neutrals. Calm premium local Makler. */
@@ -1888,6 +1888,10 @@ a.flyer-cta-script:focus-visible {
   color: #f5f7fa;
   box-shadow: 0 -8px 28px rgba(0,0,0,0.18);
 }
+/* Leave room so hero CTAs can scroll clear of the bar */
+body.cookie-banner-open {
+  padding-bottom: min(42vh, 18rem);
+}
 /* Sticky CTA bars must not trap cookie Accept/Reject on mobile */
 body.cookie-banner-open .sticky-bar {
   display: none !important;
@@ -1895,8 +1899,13 @@ body.cookie-banner-open .sticky-bar {
 /* Keep WhatsApp one tap while cookie bar is open; sit above the bar, not over Accept */
 body.cookie-banner-open .floating-wa {
   z-index: 1700;
-  /* Clear cookie bar + avoid covering hero tertiary CTA on narrow phones */
-  bottom: calc(11.5rem + env(safe-area-inset-bottom, 0px));
+  /* Sit well above tall mobile cookie bar + stacked hero CTAs */
+  bottom: calc(18rem + env(safe-area-inset-bottom, 0px));
+}
+@media (max-width: 640px) {
+  body.cookie-banner-open .floating-wa {
+    bottom: calc(22rem + env(safe-area-inset-bottom, 0px));
+  }
 }
 .cookie-banner[hidden] { display: none !important; }
 .cookie-banner-inner {
@@ -1941,8 +1950,29 @@ body.cookie-banner-open .floating-wa {
   background: rgba(255,255,255,0.08);
 }
 @media (max-width: 640px) {
+  .cookie-banner {
+    padding: 0.65rem 0.85rem;
+    padding-bottom: max(0.65rem, env(safe-area-inset-bottom, 0px));
+  }
+  .cookie-banner-title { font-size: 0.88rem; margin-bottom: 0.15rem; }
+  .cookie-banner-desc {
+    font-size: 0.75rem;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
   .cookie-banner-actions { width: 100%; }
-  .cookie-banner-actions .btn { flex: 1 1 auto; justify-content: center; }
+  .cookie-banner-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.9rem;
+  }
+  body.cookie-banner-open {
+    padding-bottom: min(48vh, 20rem);
+  }
 }
 
 
