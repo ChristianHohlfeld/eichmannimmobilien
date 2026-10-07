@@ -131,6 +131,13 @@
     );
   }
 
+
+  function trackForm(name, extra) {
+    try {
+      if (typeof window.eichmannTrack === "function") window.eichmannTrack(name, extra || {});
+    } catch (e) {}
+  }
+
   var form = document.getElementById("contact-form");
   if (form) {
     var success = document.getElementById("form-success");
@@ -168,13 +175,18 @@
 
       if (!form.checkValidity()) {
         form.reportValidity();
+        trackForm("form_submit_attempt", { outcome: "validation_failed" });
+        trackForm("form_submit_error", { error_type: "validation" });
         return;
       }
 
       var bot = form.querySelector('[name="botcheck"]');
       if (bot && bot.checked) {
+        trackForm("form_submit_error", { error_type: "botcheck" });
         return;
       }
+
+      trackForm("form_submit_attempt", { outcome: "send" });
 
       if (submitBtn) {
         submitBtn.disabled = true;
@@ -218,19 +230,30 @@
       })
         .then(function (res) {
           return res.json().catch(function () { return {}; }).then(function (data) {
-            return { ok: res.ok, data: data };
+            return { ok: res.ok, status: res.status, data: data };
           });
         })
         .then(function (result) {
           if (result.ok && result.data && result.data.success === true) {
             show(success, true);
             form.reset();
+            try {
+              if (window.__eichmannFormFunnel && typeof window.__eichmannFormFunnel.markSuccess === "function") {
+                window.__eichmannFormFunnel.markSuccess();
+              }
+            } catch (err) {}
+            trackForm("form_submit_success");
           } else {
             show(error, true);
+            trackForm("form_submit_error", {
+              error_type: "server",
+              http_status: result.status || 0
+            });
           }
         })
         .catch(function () {
           show(error, true);
+          trackForm("form_submit_error", { error_type: "network" });
         })
         .finally(function () {
           if (submitBtn) {
