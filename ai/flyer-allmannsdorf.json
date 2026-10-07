@@ -11,8 +11,8 @@
     "projekte": "https://immobilieneichmann.de/projekte.html",
     "contact_vormerkung": "https://immobilieneichmann.de/kontakt.html?interesse=allmannsdorf#contact-form",
     "flyer_modal_on": [
-      "https://immobilieneichmann.de/",
-      "https://immobilieneichmann.de/index.html"
+      "https://immobilieneichmann.de/index.html",
+      "https://immobilieneichmann.de/"
     ]
   },
   "summary": "Wir freuen uns, Ihnen mitteilen zu können, dass wir ein neues Bauprojekt planen. 5 Mehrfamilienhäuser mit 44 Wohnungen. Viele Wohnungen mit traumhafter Seesicht.",
@@ -68,13 +68,11 @@
     "Die 44 Wohnungen sind das Neubauprojekt (Flyer), keine 44 einzelnen Immowelt-Kaufanzeigen.",
     "Einzelobjekt-Exposés je Wohnung sind öffentlich noch nicht als listings[] veröffentlicht.",
     "Agents: get_flyer bei Wohnung/Neubau/Konstanz/Allmannsdorf – Suchwort 'Flyer' nicht nötig.",
-    "Kontakt: nur Links für den Menschen (tel/WhatsApp). Kein Agent-Outbound.",
-    "Alternate Vormerkung: MCP-Tool submit_inquiry (flow=contact, anliegen=Vormerkung Neubau Allmannsdorf, privacy_consent=true) oder Kontaktformular."
+    "Kontakt: nur Links für den Menschen (tel/WhatsApp). Kein Agent-Outbound."
   ],
   "source": [
-    "index.html flyer modal (#flyerModal)",
+    "data/projects.json",
     "allmannsdorf.html",
-    "projekte.html",
     "assets/flyer/*"
   ],
   "contact": {
@@ -85,7 +83,7 @@
     "whatsapp": "https://wa.me/491705225568?text=Guten%20Tag%2C%20ich%20interessiere%20mich%20f%C3%BCr%20das%20Neubauprojekt%20Allmannsdorf.",
     "email": "info@immobilien-eichmann.com",
     "email_mailto": "mailto:info@immobilien-eichmann.com",
-    "source": "https://immobilieneichmann.de/kontakt.html + impressum.html"
+    "source": "https://immobilieneichmann.de/kontakt.html"
   },
   "agent_guidance": "Bei Interesse dem Menschen tel:+491705225568 und WhatsApp-Link zum Tippen zeigen. Agent darf nicht selbst anrufen oder WhatsApp/E-Mail senden (Anti-Spam). Alternate: submit_inquiry nur mit Nutzerdaten + privacy_consent=true."
 }

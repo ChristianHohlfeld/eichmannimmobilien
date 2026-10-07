@@ -133,10 +133,18 @@ export function toAiListing(L, origin = DEFAULT_SITE_ORIGIN) {
 /**
  * Build public AI index document from the same listing array used for HTML.
  */
-export function buildAiListingsDocument(data, { origin = DEFAULT_SITE_ORIGIN, generatedAt = null } = {}) {
+export function buildAiListingsDocument(
+  data,
+  { origin = DEFAULT_SITE_ORIGIN, generatedAt = null, projects = null, project_unit_count_total = null } = {}
+) {
   const all = Array.isArray(data?.listings) ? data.listings : [];
   const publicDetail = all.filter(hasPublicDetail).map((L) => toAiListing(L, origin));
   const at = generatedAt || new Date().toISOString();
+  const projectRows = Array.isArray(projects) ? projects : [];
+  const unitTotal =
+    project_unit_count_total != null
+      ? project_unit_count_total
+      : projectRows.reduce((n, p) => n + (Number(p.unit_count) || 0), 0);
   return {
     schema: "eichmann.listings.ai/v1",
     description:
@@ -179,30 +187,8 @@ export function buildAiListingsDocument(data, { origin = DEFAULT_SITE_ORIGIN, ge
     },
     listing_count: publicDetail.length,
     listings: publicDetail,
-    projects: [
-      {
-        id: "neubau-allmannsdorf",
-        slug: "allmannsdorf",
-        kind: "neubau_vormerkung",
-        title: "Neubauprojekt Konstanz-Allmannsdorf",
-        unit_count: 44,
-        building_count: 5,
-        location: "Konstanz-Allmannsdorf",
-        living_area_range: "40–124 m²",
-        rooms_range: "2–5",
-        price_range: "295.000–1.450.000 €",
-        provisionsfrei: true,
-        url: absUrl(origin, "allmannsdorf.html"),
-        flyer: absUrl(origin, "ai/flyer-allmannsdorf.json"),
-        vormerkung_url: absUrl(origin, "kontakt.html?interesse=allmannsdorf#contact-form"),
-        short_description:
-          "5 Mehrfamilienhäuser mit 44 Wohnungen, viele mit Seesicht. Vormerkung möglich.",
-        mcp_next: ["get_flyer", "get_contact"],
-        contact_hint:
-          "Mensch: tel:+491705225568 oder WhatsApp wa.me/491705225568 – Agent sendet nicht selbst.",
-      },
-    ],
-    project_unit_count_total: 44,
+    projects: projectRows,
+    project_unit_count_total: unitTotal,
   };
 }
 
@@ -510,7 +496,29 @@ export async function writeAiDiscoveryArtifacts(data, opts = {}) {
   if (!siteRoot) throw new Error("writeAiDiscoveryArtifacts: siteRoot required");
   const origin = opts.origin || DEFAULT_SITE_ORIGIN;
   const dryRun = opts.dryRun === true;
-  const aiDoc = buildAiListingsDocument(data, { origin, generatedAt: opts.generatedAt });
+  let projects = opts.projects;
+  let project_unit_count_total = opts.project_unit_count_total;
+  if (!Array.isArray(projects)) {
+    try {
+      const { loadProjectsDocument, projectsForAiIndex, activeProjects } = await import("./projects.mjs");
+      const sot = await loadProjectsDocument(siteRoot);
+      projects = projectsForAiIndex(sot, { origin });
+      project_unit_count_total = activeProjects(sot).reduce(
+        (n, p) => n + (Number(p.unit_count) || 0),
+        0
+      );
+    } catch (e) {
+      console.warn("AI discovery: projects SoT unavailable:", e.message || e);
+      projects = [];
+      project_unit_count_total = 0;
+    }
+  }
+  const aiDoc = buildAiListingsDocument(data, {
+    origin,
+    generatedAt: opts.generatedAt,
+    projects,
+    project_unit_count_total,
+  });
 
   const paths = {
     listings: path.join(siteRoot, "ai", "listings.json"),

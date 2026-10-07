@@ -17,7 +17,7 @@
     "email": "info@immobilien-eichmann.com",
     "website": "https://immobilieneichmann.de/"
   },
-  "generated_at": "2026-10-02T11:53:41.520Z",
+  "generated_at": "2026-10-07T09:56:37.329Z",
   "source_export": "https://immobilieneichmann.de/data/listings.json",
   "tools": {
     "search_listings": {
@@ -262,7 +262,7 @@
       "url": "https://immobilieneichmann.de/allmannsdorf.html",
       "flyer": "https://immobilieneichmann.de/ai/flyer-allmannsdorf.json",
       "vormerkung_url": "https://immobilieneichmann.de/kontakt.html?interesse=allmannsdorf#contact-form",
-      "short_description": "5 Mehrfamilienhäuser mit 44 Wohnungen, viele mit Seesicht. Vormerkung möglich.",
+      "short_description": "Wir freuen uns, Ihnen mitteilen zu können, dass wir ein neues Bauprojekt planen. 5 Mehrfamilienhäuser mit 44 Wohnungen. Viele Wohnungen mit ",
       "mcp_next": [
         "get_flyer",
         "get_contact"
