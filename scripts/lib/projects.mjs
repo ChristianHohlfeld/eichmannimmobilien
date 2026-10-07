@@ -227,7 +227,7 @@ export function buildProjectSeoHead(project, { origin = DEFAULT_ORIGIN } = {}) {
   const url = absUrl(o, page);
   const title = project.page_title || `${project.title} | Immobilien Eichmann`;
   const desc = project.meta_description || project.summary || project.description || "";
-  const hero = project.images?.hero?.jpg ? absUrl(o, project.images.hero.jpg) : `${o}/assets/share-card-plain-v2.jpg`;
+  const shareImg = `${o}/assets/share-card-plain-v2.jpg`;
   const ld = buildProjectJsonLd(project, { origin: o });
   return `${PROJECT_SEO_START}
   <title>${escapeHtml(title)}</title>
@@ -240,14 +240,14 @@ export function buildProjectSeoHead(project, { origin = DEFAULT_ORIGIN } = {}) {
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(desc)}">
   <meta property="og:url" content="${escapeHtml(url)}">
-  <meta property="og:image" content="${escapeHtml(hero)}">
+  <meta property="og:image" content="${escapeHtml(shareImg)}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="${escapeHtml(title)}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(desc)}">
-  <meta name="twitter:image" content="${escapeHtml(hero)}">
+  <meta name="twitter:image" content="${escapeHtml(shareImg)}">
   <meta name="twitter:image:alt" content="${escapeHtml(title)}">
   <script type="application/ld+json">
 ${JSON.stringify(ld, null, 2)}
