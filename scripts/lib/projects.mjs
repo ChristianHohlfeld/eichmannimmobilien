@@ -273,7 +273,7 @@ export function buildProjectFactsHtml(project) {
         <h1>${escapeHtml(project.h1 || project.title)}</h1>
         <p class="lead">${escapeHtml(project.lead || project.summary || "")}</p>
         <div class="hero-actions">
-          <a class="btn btn-accent" href="#" data-open-flyer>Flyer öffnen</a>
+          <a class="btn btn-accent" href="#flyerModal" data-open-flyer>Flyer öffnen</a>
           <a class="btn btn-outline" href="${escapeHtml(contact)}">Vormerken</a>
         </div>
       </div>
