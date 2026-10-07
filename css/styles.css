@@ -365,6 +365,10 @@ h3, .h3 {
   gap: var(--space-1);
   align-items: center;
 }
+/* Call CTA alone on first row; Flyer/Angebote/Allmannsdorf share second row */
+.hero .hero-actions > .btn-call {
+  flex: 1 1 100%;
+}
 .hero-cta-nowrap {
   white-space: nowrap;
 }
