@@ -32,6 +32,7 @@ import { publicImmoweltSyncReason } from "./lib/immowelt-public-reason.mjs";
 import { hasImmoweltApiKey, readImmoweltCredentials } from "./lib/immowelt-secrets.mjs";
 import { fetchOfficialImmoweltListings } from "./lib/immowelt-official-api.mjs";
 import { writeAiDiscoveryArtifacts } from "./lib/ai-discovery.mjs";
+import { publishProjects } from "./lib/projects.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.EICHMANN_SITE_ROOT
@@ -71,7 +72,6 @@ const STATIC_SITEMAP_PATHS = [
   { loc: "/haus-verkaufen-konstanz.html", priority: "0.8", changefreq: "weekly" },
   { loc: "/konstanz.html", priority: "0.8", changefreq: "weekly" },
   { loc: "/wollmatingen.html", priority: "0.8", changefreq: "weekly" },
-  { loc: "/allmannsdorf.html", priority: "0.8", changefreq: "weekly" },
   { loc: "/ratgeber.html", priority: "0.8", changefreq: "weekly" },
   { loc: "/immobilienbewertung-konstanz.html", priority: "0.8", changefreq: "monthly" },
   { loc: "/mcp.html", priority: "0.7", changefreq: "monthly" },
@@ -1996,6 +1996,17 @@ async function updateSitemap(data) {
   }
   const staticUrls = staticLines.join("\n");
 
+  const projectLines = [];
+  for (const u of data._projectSitemapPaths || []) {
+    const loc = u.loc === "/" ? `${SITE_ORIGIN}/` : `${SITE_ORIGIN}${u.loc}`;
+    const rel = u.loc.replace(/^\//, "");
+    const lastmod = await fileLastmodOr(path.join(ROOT, rel), publishAt);
+    projectLines.push(
+      `  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod><changefreq>${u.changefreq || "weekly"}</changefreq><priority>${u.priority || "0.8"}</priority></url>`
+    );
+  }
+  const projectUrls = projectLines.join("\n");
+
   const objektLines = [];
   for (const L of data.listings.filter(hasPublicDetail)) {
     const loc = `${SITE_ORIGIN}/${L.local_url}`;
@@ -2010,6 +2021,9 @@ async function updateSitemap(data) {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${staticUrls}
+<!-- PROJECT-SITEMAP:START -->
+${projectUrls}
+<!-- PROJECT-SITEMAP:END -->
 ${SITEMAP_OBJEKT_START}
 ${objektUrls}
 ${SITEMAP_OBJEKT_END}
@@ -2056,14 +2070,24 @@ async function renderIntoPages(data) {
   }
 
   await renderExposePages(data);
+  // Flyer/projects SoT → ai/flyer-*.json, project SEO pages, homepage ItemList; orphans removed
+  const projectPub = await publishProjects({
+    siteRoot: ROOT,
+    origin: SITE_ORIGIN,
+    dryRun,
+    listings: data.listings,
+  });
+  data._projectSitemapPaths = projectPub.sitemapPaths || [];
   // AI-Index + Discovery aus derselben Listing-Liste wie HTML (vor Sitemap, damit lastmod greift)
   const ai = await writeAiDiscoveryArtifacts(data, {
     siteRoot: ROOT,
     origin: SITE_ORIGIN,
     dryRun,
+    projects: projectPub.aiProjects,
+    project_unit_count_total: projectPub.project_unit_count_total,
   });
   console.log(
-    `Updated AI discovery (${ai.aiDoc.listing_count} public listings → llms.txt, agents.txt, ai/, .well-known/mcp*)`
+    `Updated AI discovery (${ai.aiDoc.listing_count} public listings, ${ai.aiDoc.projects?.length || 0} projects → llms.txt, agents.txt, ai/, .well-known/mcp*)`
   );
   await updateSitemap(data);
 }

@@ -33,7 +33,10 @@
   "@context": "https://schema.org",
   "@graph": [
     {
-      "@type": ["RealEstateAgent", "LocalBusiness"],
+      "@type": [
+        "RealEstateAgent",
+        "LocalBusiness"
+      ],
       "@id": "https://immobilieneichmann.de/#business",
       "name": "Immobilien Eichmann",
       "alternateName": "Immobilien Eichmann Verkauf, Vermittlung, Projektentwicklung",
@@ -41,7 +44,10 @@
       "logo": "https://immobilieneichmann.de/assets/logo.svg?v=house-orig-v1",
       "image": "https://immobilieneichmann.de/assets/share-card-plain-v2.jpg",
       "description": "Immobilienmakler in Konstanz: Verkauf, Vermittlung und Projektentwicklung am Bodensee.",
-      "telephone": ["+491705225568", "+4975319228848"],
+      "telephone": [
+        "+491705225568",
+        "+4975319228848"
+      ],
       "email": "info@immobilien-eichmann.com",
       "address": {
         "@type": "PostalAddress",
@@ -55,21 +61,52 @@
         "latitude": 47.6779,
         "longitude": 9.1732
       },
-      "areaServed": ["Konstanz", "Wollmatingen", "Allmannsdorf", "Bodensee"],
+      "areaServed": [
+        "Konstanz",
+        "Wollmatingen",
+        "Allmannsdorf",
+        "Bodensee"
+      ],
       "priceRange": "€€€",
       "openingHoursSpecification": {
         "@type": "OpeningHoursSpecification",
         "description": "Termine nach Vereinbarung"
       },
-      "sameAs": ["https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d"],
-      "founder": {"@type": "Person", "name": "Helmut Eichmann"},
+      "sameAs": [
+        "https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d"
+      ],
+      "founder": {
+        "@type": "Person",
+        "name": "Helmut Eichmann"
+      },
       "hasOfferCatalog": {
         "@type": "OfferCatalog",
         "name": "Leistungen von Immobilien Eichmann",
         "itemListElement": [
-          {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Verkauf", "description": "Vermarktung von Immobilien in Konstanz und Umgebung."}},
-          {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Vermittlung", "description": "Persönliche Vermittlung zwischen Eigentümern und Kaufinteressenten."}},
-          {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Projektentwicklung", "description": "Begleitung von Neubau- und Kapitalanlageprojekten am Bodensee."}}
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Verkauf",
+              "description": "Vermarktung von Immobilien in Konstanz und Umgebung."
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Vermittlung",
+              "description": "Persönliche Vermittlung zwischen Eigentümern und Kaufinteressenten."
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Projektentwicklung",
+              "description": "Begleitung von Neubau- und Kapitalanlageprojekten am Bodensee."
+            }
+          }
         ]
       }
     },
@@ -78,7 +115,193 @@
       "@id": "https://immobilieneichmann.de/#website",
       "url": "https://immobilieneichmann.de/",
       "name": "Immobilien Eichmann",
-      "publisher": {"@id": "https://immobilieneichmann.de/#business"}
+      "publisher": {
+        "@id": "https://immobilieneichmann.de/#business"
+      }
+    },
+    {
+      "@type": "ItemList",
+      "@id": "https://immobilieneichmann.de/#angebote-list",
+      "name": "Aktuelle Kaufangebote – Immobilien Eichmann",
+      "numberOfItems": 11,
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "KfW-55 Sonnige 1 Zimmerwohnung Neubau Konstanz (Königsbau)",
+          "url": "https://immobilieneichmann.de/objekt/penthouse-konigsbau-c6b1d820.html",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "KfW-55 Sonnige 1 Zimmerwohnung Neubau Konstanz (Königsbau)",
+            "url": "https://immobilieneichmann.de/objekt/penthouse-konigsbau-c6b1d820.html",
+            "offers": {
+              "@type": "Offer",
+              "price": "199000",
+              "priceCurrency": "EUR"
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Ein Dreifamillienhaus in wunderschöner, grüner Lage",
+          "url": "https://immobilieneichmann.de/objekt/mehrfamilienhaus-wollmatingen-32a8908e.html",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Ein Dreifamillienhaus in wunderschöner, grüner Lage",
+            "url": "https://immobilieneichmann.de/objekt/mehrfamilienhaus-wollmatingen-32a8908e.html",
+            "offers": {
+              "@type": "Offer",
+              "price": "1250000",
+              "priceCurrency": "EUR"
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Wohnung A5 · 3 Zimmer · Neubau Sunside Living",
+          "url": "https://immobilieneichmann.de/objekt/wohnung-wollmatingen-4fed09f2.html",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Wohnung A5 · 3 Zimmer · Neubau Sunside Living",
+            "url": "https://immobilieneichmann.de/objekt/wohnung-wollmatingen-4fed09f2.html",
+            "offers": {
+              "@type": "Offer",
+              "price": "641200",
+              "priceCurrency": "EUR"
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "name": "3 Zimmerwohnung Konstanz Wollmatingen",
+          "url": "https://immobilieneichmann.de/objekt/wohnung-wollmatingen-e7e58fe2.html",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "3 Zimmerwohnung Konstanz Wollmatingen",
+            "url": "https://immobilieneichmann.de/objekt/wohnung-wollmatingen-e7e58fe2.html",
+            "offers": {
+              "@type": "Offer",
+              "price": "330000",
+              "priceCurrency": "EUR"
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "name": "4-Zimmer-Wohnung in neu saniertem 5-Familien-Jugendstil-Haus 1. OG Provisionsfrei",
+          "url": "https://immobilieneichmann.de/objekt/wohnung-petershausen-86a7d4f6.html",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "4-Zimmer-Wohnung in neu saniertem 5-Familien-Jugendstil-Haus 1. OG Provisionsfrei",
+            "url": "https://immobilieneichmann.de/objekt/wohnung-petershausen-86a7d4f6.html",
+            "offers": {
+              "@type": "Offer",
+              "price": "735000",
+              "priceCurrency": "EUR"
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 6,
+          "name": "4 Zimmer Wohnung B9 / Haus B",
+          "url": "https://immobilieneichmann.de/objekt/wohnung-wollmatingen-7bff84e7.html",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "4 Zimmer Wohnung B9 / Haus B",
+            "url": "https://immobilieneichmann.de/objekt/wohnung-wollmatingen-7bff84e7.html",
+            "offers": {
+              "@type": "Offer",
+              "price": "695000",
+              "priceCurrency": "EUR"
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 7,
+          "name": "2 1/2 Zimmer Penthouse Wohnung",
+          "url": "https://immobilieneichmann.de/objekt/penthouse-furstenberg-6fd6062e.html",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "2 1/2 Zimmer Penthouse Wohnung",
+            "url": "https://immobilieneichmann.de/objekt/penthouse-furstenberg-6fd6062e.html",
+            "offers": {
+              "@type": "Offer",
+              "price": "380000",
+              "priceCurrency": "EUR"
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 8,
+          "name": "Wohnung A12 · 4 Zimmer · Neubau Sunside Living",
+          "url": "https://immobilieneichmann.de/objekt/maisonette-wollmatingen-484fee8a.html",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Wohnung A12 · 4 Zimmer · Neubau Sunside Living",
+            "url": "https://immobilieneichmann.de/objekt/maisonette-wollmatingen-484fee8a.html",
+            "offers": {
+              "@type": "Offer",
+              "price": "738100",
+              "priceCurrency": "EUR"
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 9,
+          "name": "Wohnung A9 · 4 Zimmer · Neubau Sunside Living",
+          "url": "https://immobilieneichmann.de/objekt/maisonette-wollmatingen-4ac199b6.html",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Wohnung A9 · 4 Zimmer · Neubau Sunside Living",
+            "url": "https://immobilieneichmann.de/objekt/maisonette-wollmatingen-4ac199b6.html",
+            "offers": {
+              "@type": "Offer",
+              "price": "696200",
+              "priceCurrency": "EUR"
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 10,
+          "name": "Wohnung A3 · 2 Zimmer · Neubau Sunside Living",
+          "url": "https://immobilieneichmann.de/objekt/maisonette-furstenberg-bb241b38.html",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Wohnung A3 · 2 Zimmer · Neubau Sunside Living",
+            "url": "https://immobilieneichmann.de/objekt/maisonette-furstenberg-bb241b38.html",
+            "offers": {
+              "@type": "Offer",
+              "price": "361500",
+              "priceCurrency": "EUR"
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 11,
+          "name": "Wohnung A2 · 2 Zimmer · Neubau Sunside Living",
+          "url": "https://immobilieneichmann.de/objekt/maisonette-furstenberg-ff414db8.html",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Wohnung A2 · 2 Zimmer · Neubau Sunside Living",
+            "url": "https://immobilieneichmann.de/objekt/maisonette-furstenberg-ff414db8.html",
+            "offers": {
+              "@type": "Offer",
+              "price": "363700",
+              "priceCurrency": "EUR"
+            }
+          }
+        }
+      ]
     }
   ]
 }

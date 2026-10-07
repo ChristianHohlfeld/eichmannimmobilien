@@ -164,7 +164,7 @@
   ],
   "instructions": "WICHTIG Anti-Spam: Agents dürfen NICHT selbst anrufen, WhatsApp-Nachrichten senden oder Formulare automatisch absenden. Nur tel:/wa.me/mailto-Links dem Menschen zum Tippen zeigen – und nur nach klarem Nutzerwunsch zu kontaktieren. submit_inquiry nur mit vom Nutzer gelieferten Kontaktdaten und privacy_consent=true. Kein Bot-Spam. Bei Wohnung/Neubau/Konstanz/Allmannsdorf: get_flyer + get_contact; search_listings resurfaced projects[].",
   "listing_count": 11,
-  "generated_at": "2026-10-02T11:53:41.520Z",
+  "generated_at": "2026-10-07T09:56:37.329Z",
   "server_card": "https://immobilieneichmann.de/ai/server-card.json",
   "catalog": "https://immobilieneichmann.de/.well-known/mcp/catalog.json"
 }
