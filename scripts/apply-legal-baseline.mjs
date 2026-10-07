@@ -183,7 +183,7 @@ for (const full of await htmlFiles()) {
           <p>Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsabschlusses.</p>
           <p>Um Ihr Widerrufsrecht auszuüben, müssen Sie uns mittels einer eindeutigen Erklärung, zum Beispiel per Brief oder E-Mail, über Ihren Entschluss informieren:</p>
           <p><strong>Immobilien Eichmann</strong><br>Helmut Eichmann<br>Jacob-Burckhardt-Str. 40<br>78464 Konstanz<br>E-Mail: <a href="mailto:info@immobilien-eichmann.com">info@immobilien-eichmann.com</a><br>Telefon: <a href="tel:+491705225568">+49 170 522 5568</a></p>
-          <p>Zur Wahrung der Widerrufsfrist reicht es aus, dass Sie die Mitteilung über die Ausübung des Widerrufsrechts vor Ablauf der Frist absenden. Ein Muster finden Sie unter <a href="vertrag-widerrufen.html">Vertrag widerrufen</a>; seine Verwendung ist nicht vorgeschrieben.</p>
+          <p>Zur Wahrung der Widerrufsfrist reicht es aus, dass Sie die Mitteilung über die Ausübung des Widerrufsrechts vor Ablauf der Frist absenden. Ein Muster finden Sie unter <a href="vertrag-widerrufen.html">Widerrufsformular</a>; seine Verwendung ist nicht vorgeschrieben.</p>
           <h3>Folgen des Widerrufs</h3>
           <p>Wenn Sie den Vertrag widerrufen, erstatten wir Ihnen alle Zahlungen, die wir von Ihnen aufgrund dieses Vertrags erhalten haben, unverzüglich und spätestens binnen vierzehn Tagen ab dem Tag, an dem Ihre Widerrufserklärung bei uns eingegangen ist. Für die Rückzahlung verwenden wir grundsätzlich dasselbe Zahlungsmittel, das Sie bei der ursprünglichen Transaktion eingesetzt haben, sofern nicht ausdrücklich etwas anderes vereinbart wurde.</p>
           <p>Haben Sie verlangt, dass die Dienstleistung bereits während der Widerrufsfrist beginnen soll, kann für die bis zum Widerruf bereits erbrachten Leistungen ein angemessener, anteiliger Betrag zu zahlen sein.</p>
@@ -212,7 +212,7 @@ for (const full of await htmlFiles()) {
     <section class="page-hero">
       <div class="container page-hero-inner">
         <span class="eyebrow">Verbraucherrechte</span>
-        <h1>Vertrag widerrufen</h1>
+        <h1>Widerrufsformular</h1>
         <p class="lead">Widerruf eines bereits geschlossenen Maklervertrags per E-Mail oder Brief.</p>
       </div>
     </section>

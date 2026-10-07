@@ -1355,11 +1355,11 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
           <a href="${p}impressum.html">Impressum</a>
           <a href="${p}datenschutz.html">Datenschutz</a>
           <a href="${p}widerrufsbelehrung.html">Widerrufsbelehrung</a>
-          <a href="${p}vertrag-widerrufen.html">Vertrag widerrufen</a>
+          <a href="${p}vertrag-widerrufen.html">Widerrufsformular</a>
         </div>
       </div>
       <div class="footer-widerruf">
-        <a class="btn btn-footer-widerruf" href="${p}vertrag-widerrufen.html">Vertrag widerrufen</a>
+        <a class="btn btn-footer-widerruf" href="${p}vertrag-widerrufen.html">Widerrufsformular</a>
         <p class="footer-widerruf-hint">Maklervertrag in Textform widerrufen</p>
       </div>
       <div class="footer-bottom">
