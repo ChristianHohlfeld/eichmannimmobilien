@@ -160,15 +160,52 @@ async function measurePage(page, base, path, vp) {
     }
   }
 
-  // Home flyer: Close button must sit on the flyer's right edge on desktop and mobile.
-  // Clear once-per-session guard so desktop + mobile both see auto-open in one browser context.
-  // Wait for the intentional 800ms auto-open delay before measuring.
+  // Home flyer (flyer-idle-open-v1):
+  //  - [data-open-flyer] opens instantly;
+  //  - no auto-open during load on any viewport;
+  //  - desktop auto-opens only after load + >= 4 s (idle);
+  //  - mobile never auto-opens full-screen on load, only after ~50 % scroll (or 15 s).
+  // Then: Close button must sit on the flyer's right edge on desktop and mobile.
   if (path === '/') {
-    await page.evaluate(() => {
-      try { sessionStorage.removeItem('eichmann_flyer_shown_v1'); } catch (e) {}
+    const isOpen = () => page.evaluate(() => {
+      const m = document.getElementById('flyerModal');
+      return !!(m && !m.hidden);
     });
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(900);
+    const freshHome = async () => {
+      await page.evaluate(() => {
+        try { sessionStorage.removeItem('eichmann_flyer_shown_v1'); } catch (e) {}
+      });
+      await page.reload({ waitUntil: 'load' });
+    };
+
+    // 1) manual opener works instantly
+    await freshHome();
+    await page.evaluate(() => document.querySelector('[data-open-flyer]')?.click());
+    await page.waitForTimeout(150);
+    if (!(await isOpen())) fail(`${label}: [data-open-flyer] must open the flyer instantly`);
+    await page.keyboard.press('Escape');
+
+    // 2) auto-open rules
+    await freshHome();
+    await page.waitForTimeout(2500);
+    if (await isOpen()) fail(`${label}: flyer must not auto-open during/just after load`);
+    if (vp.name === 'mobile') {
+      await page.waitForTimeout(2000);
+      if (await isOpen()) fail(`${label}: mobile flyer must not auto-open without engagement`);
+      await page.evaluate(() => {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        window.scrollTo(0, Math.ceil(max * 0.6));
+      });
+    }
+    let opened = false;
+    for (let i = 0; i < 40 && !opened; i++) {
+      await page.waitForTimeout(200);
+      opened = await isOpen();
+    }
+    if (!opened) {
+      fail(`${label}: flyer did not auto-open per rules (${vp.name === 'mobile' ? 'after 50% scroll' : 'after idle >= 4 s'})`);
+    }
+    await page.evaluate(() => window.scrollTo(0, 0));
     const flyer = await page.evaluate(() => {
       const modal = document.getElementById('flyerModal');
       const dialog = modal?.querySelector('.flyer-dialog');
