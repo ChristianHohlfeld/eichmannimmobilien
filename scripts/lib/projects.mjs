@@ -159,14 +159,95 @@ export function projectsForAiIndex(doc, { origin = DEFAULT_ORIGIN } = {}) {
   }));
 }
 
-export function buildProjectJsonLd(project, { origin = DEFAULT_ORIGIN } = {}) {
+function projectImages(project, o) {
+  const img = project.images || {};
+  const gallery = Array.isArray(project.gallery) && project.gallery.length
+    ? project.gallery
+    : Object.keys(img).map((key) => ({ key }));
+  return gallery
+    .map((g) => ({ ...g, entry: img[g.key] }))
+    .filter((g) => g.entry && g.entry.jpg)
+    .map((g) => ({
+      key: g.key,
+      jpg: g.entry.jpg,
+      webp: g.entry.webp,
+      abs: absUrl(o, g.entry.jpg),
+      alt: g.alt || project.title,
+      caption: g.caption || "",
+    }));
+}
+
+function projectOgImage(project, o) {
+  const og = project.og_image;
+  if (og && og.jpg) {
+    return {
+      url: absUrl(o, og.jpg),
+      width: og.width || 1200,
+      height: og.height || 630,
+      alt: og.alt || project.page_title || project.title,
+    };
+  }
+  return {
+    url: `${o}/assets/share-card-plain-v2.jpg`,
+    width: 1200,
+    height: 630,
+    alt: project.page_title || project.title,
+  };
+}
+
+/** Plain-text FAQ answers only (no HTML) — same text visible on page + FAQPage JSON-LD. */
+function projectFaq(project) {
+  return (project.faq || []).filter((f) => f && f.q && f.a);
+}
+
+export function buildProjectJsonLd(project, { origin = DEFAULT_ORIGIN, updatedAt } = {}) {
   const o = String(origin || DEFAULT_ORIGIN).replace(/\/$/, "");
   const page = projectPagePath(project);
   const url = absUrl(o, page);
-  const hero = project.images?.hero?.jpg ? absUrl(o, project.images.hero.jpg) : `${o}/assets/share-card-plain-v2.jpg`;
+  const images = projectImages(project, o);
+  const hero = images[0]?.abs || `${o}/assets/share-card-plain-v2.jpg`;
+  const imageList = images.length ? images.map((i) => i.abs) : [hero];
+  const og = projectOgImage(project, o);
   const low = project.price_eur?.low;
   const high = project.price_eur?.high;
   const currency = project.price_eur?.currency || "EUR";
+  const modified = project.updated_at || updatedAt || undefined;
+
+  const business = {
+    "@type": ["RealEstateAgent", "LocalBusiness"],
+    "@id": BUSINESS_ID,
+    name: "Immobilien Eichmann",
+    url: `${o}/`,
+    logo: `${o}/assets/logo.svg?v=house-orig-v1`,
+    image: `${o}/assets/share-card-plain-v2.jpg`,
+    telephone: ["+491705225568", "+4975319228848"],
+    email: project.cta?.email || "info@immobilien-eichmann.com",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "Jacob-Burckhardt-Str. 40",
+      addressLocality: "Konstanz",
+      postalCode: "78464",
+      addressCountry: "DE",
+    },
+    founder: { "@type": "Person", name: "Helmut Eichmann" },
+    areaServed: ["Konstanz", "Allmannsdorf", "Bodensee"],
+  };
+
+  const webpage = {
+    "@type": "WebPage",
+    "@id": `${url}#webpage`,
+    url,
+    name: project.page_title || project.title,
+    description: project.meta_description || project.summary || undefined,
+    inLanguage: "de-DE",
+    isPartOf: { "@id": `${o}/#website` },
+    primaryImageOfPage: { "@type": "ImageObject", url: og.url, width: og.width, height: og.height },
+    breadcrumb: { "@id": `${url}#breadcrumb` },
+    about: { "@id": `${url}#complex` },
+    mainEntity: { "@id": `${url}#listing` },
+    publisher: { "@id": BUSINESS_ID },
+    dateModified: modified,
+  };
 
   const listing = {
     "@type": "RealEstateListing",
@@ -174,9 +255,10 @@ export function buildProjectJsonLd(project, { origin = DEFAULT_ORIGIN } = {}) {
     name: project.title,
     description: project.description || project.summary,
     url,
-    image: hero,
-    datePosted: project.updated_at || undefined,
+    image: imageList,
+    inLanguage: "de-DE",
     provider: { "@id": BUSINESS_ID },
+    about: { "@id": `${url}#complex` },
   };
   if (low != null && high != null) {
     listing.offers = {
@@ -186,6 +268,8 @@ export function buildProjectJsonLd(project, { origin = DEFAULT_ORIGIN } = {}) {
       priceCurrency: currency,
       offerCount: String(project.unit_count || 1),
       availability: "https://schema.org/InStock",
+      offeredBy: { "@id": BUSINESS_ID },
+      url: absUrl(o, project.pages?.contact_vormerkung || `kontakt.html?interesse=${project.slug}#contact-form`),
     };
   }
 
@@ -195,7 +279,7 @@ export function buildProjectJsonLd(project, { origin = DEFAULT_ORIGIN } = {}) {
     name: project.title,
     description: project.description || project.summary,
     url,
-    image: hero,
+    image: imageList,
     numberOfAccommodationUnits: project.unit_count,
     address: {
       "@type": "PostalAddress",
@@ -203,54 +287,94 @@ export function buildProjectJsonLd(project, { origin = DEFAULT_ORIGIN } = {}) {
       addressRegion: "Baden-Württemberg",
       postalCode: "78464",
       addressCountry: "DE",
-      addressNeighborhood: project.location || project.specs?.lage || "Allmannsdorf",
+    },
+    // schema.org has no addressNeighborhood → neighbourhood as containing Place.
+    containedInPlace: {
+      "@type": "Place",
+      name: project.location || project.specs?.lage || "Konstanz-Allmannsdorf",
+      containedInPlace: { "@type": "City", name: "Konstanz" },
     },
   };
+  const area = project.area_m2;
+  const rooms = project.rooms;
+  if (area || rooms) {
+    const apt = { "@type": "Apartment", name: `Eigentumswohnungen ${project.location || ""}`.trim() };
+    if (area && area.min != null && area.max != null) {
+      apt.floorSize = { "@type": "QuantitativeValue", minValue: area.min, maxValue: area.max, unitCode: "MTK" };
+    }
+    if (rooms && rooms.min != null && rooms.max != null) {
+      apt.numberOfRooms = { "@type": "QuantitativeValue", minValue: rooms.min, maxValue: rooms.max };
+    }
+    complex.containsPlace = apt;
+  }
+  const amenity = (project.features || []).filter((f) => /lift|tiefgarage|barriere/i.test(f));
+  if (amenity.length) {
+    complex.amenityFeature = amenity.map((name) => ({ "@type": "LocationFeatureSpecification", name, value: true }));
+  }
 
   const crumbs = {
     "@type": "BreadcrumbList",
+    "@id": `${url}#breadcrumb`,
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: `${o}/` },
-      { "@type": "ListItem", position: 2, name: project.h1 || project.title, item: url },
+      { "@type": "ListItem", position: 1, name: "Startseite", item: `${o}/` },
+      { "@type": "ListItem", position: 2, name: "Projekte", item: absUrl(o, project.pages?.projekte || "projekte.html") },
+      { "@type": "ListItem", position: 3, name: project.breadcrumb_name || "Neubau Allmannsdorf", item: url },
     ],
   };
 
+  const graph = [webpage, listing, complex, crumbs, business];
+  const faq = projectFaq(project);
+  if (faq.length) {
+    graph.push({
+      "@type": "FAQPage",
+      "@id": `${url}#faq`,
+      mainEntity: faq.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    });
+  }
+
   return {
     "@context": "https://schema.org",
-    "@graph": [listing, complex, crumbs],
+    "@graph": graph,
   };
 }
 
-export function buildProjectSeoHead(project, { origin = DEFAULT_ORIGIN } = {}) {
+export function buildProjectSeoHead(project, { origin = DEFAULT_ORIGIN, updatedAt } = {}) {
   const o = String(origin || DEFAULT_ORIGIN).replace(/\/$/, "");
   const page = projectPagePath(project);
   const url = absUrl(o, page);
   const title = project.page_title || `${project.title} | Immobilien Eichmann`;
   const desc = project.meta_description || project.summary || project.description || "";
-  const shareImg = `${o}/assets/share-card-plain-v2.jpg`;
-  const ld = buildProjectJsonLd(project, { origin: o });
+  const og = projectOgImage(project, o);
+  const ld = buildProjectJsonLd(project, { origin: o, updatedAt });
+  // JSON-LD inside <script>: escape "<" / "&" (valid JSON, HTML-safe, test-jsonld clean).
+  const ldJson = JSON.stringify(ld, null, 2).replace(/</g, "\\u003c").replace(/&/g, "\\u0026");
   return `${PROJECT_SEO_START}
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(desc)}">
-  <meta name="robots" content="index,follow">
+  <meta name="robots" content="index,follow,max-image-preview:large">
   <link rel="canonical" href="${escapeHtml(url)}">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="de_DE">
+  <meta property="og:locale:alternate" content="de_CH">
   <meta property="og:site_name" content="Immobilien Eichmann">
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(desc)}">
   <meta property="og:url" content="${escapeHtml(url)}">
-  <meta property="og:image" content="${escapeHtml(shareImg)}">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="${escapeHtml(title)}">
+  <meta property="og:image" content="${escapeHtml(og.url)}">
+  <meta property="og:image:width" content="${og.width}">
+  <meta property="og:image:height" content="${og.height}">
+  <meta property="og:image:alt" content="${escapeHtml(og.alt)}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(desc)}">
-  <meta name="twitter:image" content="${escapeHtml(shareImg)}">
-  <meta name="twitter:image:alt" content="${escapeHtml(title)}">
+  <meta name="twitter:image" content="${escapeHtml(og.url)}">
+  <meta name="twitter:image:alt" content="${escapeHtml(og.alt)}">
   <script type="application/ld+json">
-${JSON.stringify(ld, null, 2)}
+${ldJson}
   </script>
 ${PROJECT_SEO_END}`;
 }
@@ -259,17 +383,91 @@ export function buildProjectFactsHtml(project) {
   const specs = project.specs || {};
   const features = project.features || [];
   const contact = project.pages?.contact_vormerkung || `kontakt.html?interesse=${project.slug}#contact-form`;
+  const projekte = project.pages?.projekte || "projekte.html";
+  const crumbName = project.breadcrumb_name || "Neubau Allmannsdorf";
   const cards = [
     { icon: String(project.building_count || specs.gebaeude || ""), h: "Gebäude", p: specs.gebaeude || "" },
     { icon: String(project.unit_count || ""), h: "Wohnungen", p: specs.einheiten || specs.highlight || "" },
     { icon: "m²", h: "Flächen", p: `${specs.flaechen || ""}${specs.zimmer ? `, ${specs.zimmer} Zimmer` : ""}`.trim() },
     { icon: "€", h: "Preise", p: `${specs.preise || ""}${specs.provision ? ` · ${specs.provision.replace(/: JA$/i, "")}` : ""}`.trim() },
   ];
+  if (specs.grundstueck) {
+    cards.push({ icon: "⌂", h: "Grundstück", p: specs.grundstueck });
+  }
   const featureLis = features.map((f) => `            <li>${escapeHtml(f)}</li>`).join("\n");
+  const images = projectImages(project, DEFAULT_ORIGIN);
+  const galleryHtml = images.length
+    ? `
+    <section class="section" aria-labelledby="projekt-bilder-title">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2 id="projekt-bilder-title">Einblicke in den Neubau</h2>
+            <p>Abbildungen aus dem Projektflyer.</p>
+          </div>
+        </div>
+        <div class="project-gallery">
+${images
+  .map((im, i) => {
+    const w = im.key === "hero" ? 520 : 300;
+    const h = im.key === "hero" ? 550 : 260;
+    return `          <figure class="project-gallery-item">
+            <a href="#flyerModal" data-open-flyer aria-label="${escapeHtml(im.alt)} – Flyer öffnen">
+              <picture>
+${im.webp ? `                <source srcset="${escapeHtml(im.webp)}" type="image/webp">\n` : ""}                <img src="${escapeHtml(im.jpg)}" alt="${escapeHtml(im.alt)}" width="${w}" height="${h}" loading="lazy" decoding="async">
+              </picture>
+            </a>
+${im.caption ? `            <figcaption>${escapeHtml(im.caption)}</figcaption>\n` : ""}          </figure>`;
+  })
+  .join("\n")}
+        </div>
+      </div>
+    </section>
+`
+    : "";
+  const locParas = (project.location_text || []).map((t) => `        <p>${escapeHtml(t)}</p>`).join("\n");
+  const locationHtml = locParas
+    ? `
+    <section class="section" aria-labelledby="lage-title">
+      <div class="container narrow prose">
+        <h2 id="lage-title">Wohnen in Konstanz-Allmannsdorf</h2>
+${locParas}
+        <p>Mehr zur Stadt: <a href="konstanz.html">Immobilien in Konstanz</a> · <a href="wohnung-kaufen-konstanz.html">Wohnung kaufen in Konstanz</a> · <a href="${escapeHtml(projekte)}">alle Projekte &amp; Angebote</a>.</p>
+      </div>
+    </section>
+`
+    : "";
+  const faq = projectFaq(project);
+  const faqHtml = faq.length
+    ? `
+    <section class="section section-alt" id="faq" aria-labelledby="faq-title">
+      <div class="container narrow">
+        <h2 id="faq-title">Häufige Fragen zum Neubau Allmannsdorf</h2>
+        <div class="faq-list">
+${faq
+  .map(
+    (f) => `          <details class="faq-item">
+            <summary>${escapeHtml(f.q)}</summary>
+            <p>${escapeHtml(f.a)}</p>
+          </details>`
+  )
+  .join("\n")}
+        </div>
+      </div>
+    </section>
+`
+    : "";
   return `${PROJECT_FACTS_START}
+    <nav class="breadcrumb container" aria-label="Brotkrumen">
+      <ol>
+        <li><a href="index.html">Startseite</a></li>
+        <li><a href="${escapeHtml(projekte)}">Projekte</a></li>
+        <li aria-current="page">${escapeHtml(crumbName)}</li>
+      </ol>
+    </nav>
     <section class="page-hero">
       <div class="container page-hero-inner">
-        <span class="eyebrow">Neubau · ${escapeHtml((project.location || "Allmannsdorf").replace(/^Konstanz-/, ""))}</span>
+        <span class="eyebrow">Neubau · ${escapeHtml((project.location || "Allmannsdorf").replace(/^Konstanz-/, ""))} · Provisionsfrei</span>
         <h1>${escapeHtml(project.h1 || project.title)}</h1>
         <p class="lead">${escapeHtml(project.lead || project.summary || "")}</p>
         <div class="hero-actions">
@@ -303,8 +501,8 @@ ${cards
         </div>
       </div>
     </section>
-
-    <section class="section">
+${galleryHtml}
+    <section class="section${galleryHtml ? " section-alt" : ""}">
       <div class="container">
         <div class="section-head">
           <div>
@@ -318,7 +516,7 @@ ${featureLis}
         <p class="immowelt-note">Angaben ohne Gewähr. Stand aus Projektdaten (Flyer). Vormerkung: <a href="${escapeHtml(contact)}">Kontakt</a>.</p>
       </div>
     </section>
-${PROJECT_FACTS_END}`;
+${locationHtml}${faqHtml}${PROJECT_FACTS_END}`;
 }
 
 function patchBetween(html, start, end, inner) {
@@ -408,7 +606,12 @@ export async function publishProjects(opts = {}) {
     if (!html.includes(PROJECT_FACTS_START) || !html.includes(PROJECT_FACTS_END)) {
       throw new Error(`${pageRel}: missing PROJECT-FACTS markers`);
     }
-    html = patchBetween(html, PROJECT_SEO_START, PROJECT_SEO_END, buildProjectSeoHead(project, { origin }));
+    html = patchBetween(
+      html,
+      PROJECT_SEO_START,
+      PROJECT_SEO_END,
+      buildProjectSeoHead(project, { origin, updatedAt: doc.updated_at })
+    );
     html = patchBetween(html, PROJECT_FACTS_START, PROJECT_FACTS_END, buildProjectFactsHtml(project));
 
     if (!dryRun) await writeFile(pagePath, html, "utf8");
@@ -468,8 +671,12 @@ export async function publishProjects(opts = {}) {
     active,
     sitemapPaths: active.map((p) => ({
       loc: `/${projectPagePath(p)}`,
-      priority: "0.8",
+      priority: "0.9",
       changefreq: "weekly",
+      images: [
+        ...projectImages(p, origin).map((im) => im.abs),
+        ...(p.og_image?.jpg ? [absUrl(origin, p.og_image.jpg)] : []),
+      ],
     })),
     aiProjects: projectsForAiIndex(doc, { origin }),
     project_unit_count_total: active.reduce((n, p) => n + (Number(p.unit_count) || 0), 0),
