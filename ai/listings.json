@@ -17,7 +17,7 @@
     "email": "info@immobilien-eichmann.com",
     "website": "https://immobilieneichmann.de/"
   },
-  "generated_at": "2026-10-08T11:51:21.451Z",
+  "generated_at": "2026-10-08T11:55:09.080Z",
   "source_export": "https://immobilieneichmann.de/data/listings.json",
   "tools": {
     "search_listings": {
@@ -257,7 +257,7 @@
       "url": "https://immobilieneichmann.de/allmannsdorf.html",
       "flyer": "https://immobilieneichmann.de/ai/flyer-allmannsdorf.json",
       "vormerkung_url": "https://immobilieneichmann.de/kontakt.html?interesse=allmannsdorf#contact-form",
-      "short_description": "Wir freuen uns, Ihnen mitteilen zu können, dass wir ein neues Bauprojekt planen. 5 Mehrfamilienhäuser mit 44 Wohnungen. Viele Wohnungen mit ",
+      "short_description": "In Konstanz-Allmannsdorf entsteht ein Neubau – jetzt provisionsfrei vormerken. 5 Mehrfamilienhäuser mit 44 Wohnungen. Viele Wohnungen mit tr",
       "mcp_next": [
         "get_flyer",
         "get_contact"
