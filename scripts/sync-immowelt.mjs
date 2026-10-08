@@ -1980,6 +1980,15 @@ async function fileLastmodOr(filePath, fallbackDate) {
   }
 }
 
+function escapeXml(v) {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
 async function updateSitemap(data) {
   // Publish/render moment — never reuse a frozen scraped_at (e.g. 2026-09-20).
   const publishAt = new Date();
@@ -2001,8 +2010,12 @@ async function updateSitemap(data) {
     const loc = u.loc === "/" ? `${SITE_ORIGIN}/` : `${SITE_ORIGIN}${u.loc}`;
     const rel = u.loc.replace(/^\//, "");
     const lastmod = await fileLastmodOr(path.join(ROOT, rel), publishAt);
+    // Image sitemap entries (Google Images) for project/flyer pages.
+    const imgs = (u.images || [])
+      .map((src) => `<image:image><image:loc>${escapeXml(src)}</image:loc></image:image>`)
+      .join("");
     projectLines.push(
-      `  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod><changefreq>${u.changefreq || "weekly"}</changefreq><priority>${u.priority || "0.8"}</priority></url>`
+      `  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod><changefreq>${u.changefreq || "weekly"}</changefreq><priority>${u.priority || "0.8"}</priority>${imgs}</url>`
     );
   }
   const projectUrls = projectLines.join("\n");
@@ -2019,7 +2032,7 @@ async function updateSitemap(data) {
   const objektUrls = objektLines.join("\n");
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 ${staticUrls}
 <!-- PROJECT-SITEMAP:START -->
 ${projectUrls}
