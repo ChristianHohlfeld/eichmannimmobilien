@@ -24,7 +24,7 @@
 - **agents.txt:** https://immobilieneichmann.de/agents.txt
 - **Sitemap:** https://immobilieneichmann.de/sitemap.xml
 - Anzahl Kaufobjekte im Index: 11
-- generiert: 2026-10-08T11:48:30.156Z
+- generiert: 2026-10-08T11:51:21.451Z
 
 ## MCP (Streamable HTTP)
 
