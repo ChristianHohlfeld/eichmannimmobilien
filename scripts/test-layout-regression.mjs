@@ -216,7 +216,11 @@ async function measurePage(page, base, path, vp) {
         hasVormerken: !!(vormerk && /Vormerken/i.test(vormerk.textContent || '')),
         heroTop: h ? Math.round(h.top) : null,
         introTop: i ? Math.round(i.top) : null,
-        planenOk: /planen/.test(intro?.textContent || ''),
+        // Chris 2026-10-02: Allmannsdorf wording only Vormerken / Neubau / provisionsfrei —
+        // no 'planen' / Bauantrag / Baubeginn / Genehmigungs-Story.
+        wordingOk:
+          /vormerken/i.test(intro?.textContent || '') &&
+          !/planen|geplant|bauantrag|baubeginn|genehmig/i.test(modal.textContent || ''),
       };
     });
     if (!funnel) {
@@ -226,7 +230,7 @@ async function measurePage(page, base, path, vp) {
       if (!funnel.introCtasInFlow) fail(`${label}: flyer intro CTAs must remain in normal flow`);
       if (!funnel.hasAnrufen) fail(`${label}: flyer intro missing Anrufen`);
       if (!funnel.hasVormerken) fail(`${label}: flyer intro missing Vormerken`);
-      if (!funnel.planenOk) fail(`${label}: flyer wording "planen" missing`);
+      if (!funnel.wordingOk) fail(`${label}: flyer wording must say vormerken and contain no planen/Bauantrag/Baubeginn/Genehmigung`);
       if (vp.name === 'mobile' && funnel.heroTop != null && funnel.introTop != null) {
         if (funnel.heroTop >= funnel.introTop - 2) {
           fail(`${label}: mobile flyer hero should appear before intro (heroTop=${funnel.heroTop}, introTop=${funnel.introTop})`);

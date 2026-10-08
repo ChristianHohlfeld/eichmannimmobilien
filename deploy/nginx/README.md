@@ -105,3 +105,9 @@ Managed idempotently by `deploy/patch-nginx-mcp.py` (run from `install-mcp.sh` o
 | `/mcp-gw` (mcprush gateway, token) | `eichmann_mcp_gw` | 300 req/min per IP | 60, nodelay |
 
 `/mcp-gw` is more generous because mcprush forwards all buyers from a few egress IPs. Over-limit requests get `429`.
+
+## HTTP/2 + extensionless → .html (2026-10-08)
+
+- `listen 443 ssl http2;` on both 443 server blocks (nginx 1.24 syntax).
+- `location /`: `if (-f $request_filename.html) { return 301 $uri.html$is_args$args; }` — e.g. `/allmannsdorf` → `/allmannsdorf.html` (query kept). Exact locations (`/mcp`, `/mcp-gw`, `/admin/...`, `/`, `/index`) unaffected. `/projekte/` → `/projekte.html` directly (no chain).
+- Applied manually on eichmann-web (backup `/root/nginx-backup-immobilieneichmann.de.20261008-115809`), `nginx -t` OK, reloaded. Content deploys do not rewrite these lines.
