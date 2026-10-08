@@ -94,3 +94,14 @@ sudo nginx -t && sudo systemctl reload nginx
 ```
 
 `deploy/patch-nginx-admin-api.py` / `patch-nginx-mcp.py` only patch specific locations into the existing site file; they do not replace the full config. Do not rely on content deploys to re-apply www→apex or index.html→/.
+
+## MCP rate limits (`/mcp`, `/mcp-gw`)
+
+Managed idempotently by `deploy/patch-nginx-mcp.py` (run from `install-mcp.sh` on every deploy; it runs `nginx -t` and restores the previous file if validation fails). Limits are keyed on `$binary_remote_addr` (nginx is the edge, no CDN, so client-sent `X-Forwarded-For` is never trusted):
+
+| Path | Zone | Rate | Burst |
+|---|---|---|---|
+| `/mcp` (public, no token) | `eichmann_mcp` | 30 req/min per IP | 15, nodelay |
+| `/mcp-gw` (mcprush gateway, token) | `eichmann_mcp_gw` | 300 req/min per IP | 60, nodelay |
+
+`/mcp-gw` is more generous because mcprush forwards all buyers from a few egress IPs. Over-limit requests get `429`.

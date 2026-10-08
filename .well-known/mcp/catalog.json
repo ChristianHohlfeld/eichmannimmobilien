@@ -6,7 +6,7 @@
       "name": "immobilien-eichmann-listings",
       "title": "Immobilien Eichmann Angebote",
       "url": "https://immobilieneichmann.de/ai/server-card.json",
-      "description": "Live MCP unter /mcp (search_listings, get_listing, get_flyer, get_contact, submit_inquiry). Tel/WhatsApp nur als Links für Menschen.",
+      "description": "Live MCP unter /mcp (search_listings, get_listing, get_flyer, get_contact). Tel/WhatsApp nur als Links für Menschen.",
       "remotes": [
         {
           "type": "streamable-http",

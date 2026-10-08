@@ -19,3 +19,4 @@ media/eigen/**
 node_modules/
 test-results/
 var/
+__pycache__/

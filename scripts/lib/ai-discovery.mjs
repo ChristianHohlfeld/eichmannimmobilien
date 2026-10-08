@@ -60,7 +60,7 @@ export const PUBLIC_CONTACT = Object.freeze({
 export const AGENT_CONTACT_RULES =
   "WICHTIG Anti-Spam: Agents dürfen NICHT selbst anrufen, WhatsApp-Nachrichten senden oder Formulare automatisch absenden. " +
   "Nur tel:/wa.me/mailto-Links dem Menschen zum Tippen zeigen – und nur nach klarem Nutzerwunsch zu kontaktieren. " +
-  "submit_inquiry nur mit vom Nutzer gelieferten Kontaktdaten und privacy_consent=true. Kein Bot-Spam.";
+  "Über MCP werden keine Anfragen versendet; Kontakt nur durch den Menschen selbst (Telefon, WhatsApp oder Kontaktformular https://immobilieneichmann.de/kontakt.html). Kein Bot-Spam.";
 
 const STATIC_PAGE_LINKS = [
   ["Startseite", "/"],
@@ -178,12 +178,6 @@ export function buildAiListingsDocument(
           "Telefon, WhatsApp-Link und E-Mail aus Live-Impressum/Kontakt. Nur dem Menschen zum Tippen zeigen; Agent startet keine Calls/Nachrichten.",
         resource: absUrl(origin, "kontakt.html"),
       },
-      submit_inquiry: {
-        description:
-          "Alternate Lead-Kanal: nur mit Nutzer-Daten + privacy_consent=true. Kein Auto-Spam. Bevorzugt: Mensch tippt tel/WhatsApp aus get_contact/get_flyer.",
-        contact_endpoint: "https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/contact",
-        expose_endpoint: "https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/expose",
-      },
     },
     listing_count: publicDetail.length,
     listings: publicDetail,
@@ -227,7 +221,7 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
   lines.push("");
   lines.push(`- **Endpoint:** ${o}/mcp`);
   lines.push("- **Transport:** streamable-http (JSON-RPC POST)");
-  lines.push("- Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact`, `submit_inquiry` — Listings = Live `ai/listings.json`; Flyer = `ai/flyer-allmannsdorf.json`");
+  lines.push("- Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact` — Listings = Live `ai/listings.json`; Flyer = `ai/flyer-allmannsdorf.json`");
   lines.push(`- ${AGENT_CONTACT_RULES}`);
   lines.push(`- Discovery: ${o}/.well-known/mcp.json`);
   lines.push("");
@@ -250,7 +244,7 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
   lines.push(`- **Projektseite:** ${o}/allmannsdorf.html`);
   lines.push("- 5 Mehrfamilienhäuser · 44 Wohnungen · 40–124 m² · 2–5 Zimmer · 295.000–1.450.000 € · provisionsfrei");
   lines.push("- Bei Wohnung/Neubau/Konstanz/Allmannsdorf: `get_flyer` (kein Suchwort 'Flyer' nötig) → Kontakt-Links dem Menschen zeigen");
-  lines.push("- MCP: `get_flyer` + `get_contact` (tel/WhatsApp nur tippen lassen). Alternate: `submit_inquiry` nur mit Nutzerdaten + privacy_consent, anliegen=\"Vormerkung Neubau Allmannsdorf\"");
+  lines.push("- MCP: `get_flyer` + `get_contact` (tel/WhatsApp nur tippen lassen). Vormerkung macht der Mensch selbst per Telefon, WhatsApp oder Kontaktformular.");
   lines.push("");
   lines.push("## Aktuelle Objekt-URLs");
   lines.push("");
@@ -291,7 +285,7 @@ Allow: /mcp.html
 Disallow: /admin/
 
 # Erlaubt: Lesen der öffentlichen Kaufangebote, Flyer-Fakten und NAP/Kontakt-Links.
-# Erlaubt über MCP: get_flyer / get_contact (Links dem Menschen zeigen); submit_inquiry nur mit Nutzerdaten + privacy_consent.
+# Erlaubt über MCP: get_flyer / get_contact (Links dem Menschen zeigen). Anfragen werden über MCP nicht versendet.
 # Nicht erlaubt: Agent-initiierte Calls/WhatsApp/E-Mails, Formular-Spam, Admin-API, Secrets.
 # Bei Wohnung/Neubau/Konstanz/Allmannsdorf → get_flyer (nicht auf Suchwort "Flyer" warten).
 
@@ -311,7 +305,7 @@ export function buildMcpDiscovery(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) 
     name: "immobilien-eichmann-listings",
     title: "Immobilien Eichmann – Angebots-Index",
     description:
-      "Live MCP: Kaufangebote + Neubau Allmannsdorf (get_flyer). Wohnung/Neubau/Konstanz → Flyer + tel/WhatsApp-Links für den Menschen (kein Agent-Spam). Alternate: submit_inquiry mit Consent.",
+      "Live MCP: Kaufangebote + Neubau Allmannsdorf (get_flyer). Wohnung/Neubau/Konstanz → Flyer + tel/WhatsApp-Links für den Menschen (kein Agent-Spam). Keine Anfragen über MCP.",
     websiteUrl: `${o}/`,
     transport: {
       type: "streamable-http",
@@ -394,31 +388,6 @@ export function buildMcpDiscovery(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) 
           "Telefon, WhatsApp-Link, E-Mail (Live Impressum/Kontakt). Nur dem Menschen zum Tippen; nie Agent-outbound.",
         inputSchema: { type: "object", properties: {} },
       },
-      {
-        name: "submit_inquiry",
-        description:
-          "Alternate zu tel/WhatsApp: Lead nur mit Nutzerdaten + privacy_consent=true. Kein Auto-Spam.",
-        inputSchema: {
-          type: "object",
-          properties: {
-            flow: { type: "string", description: "contact | expose" },
-            name: { type: "string" },
-            email: { type: "string" },
-            phone: { type: "string" },
-            message: { type: "string" },
-            anliegen: { type: "string" },
-            privacy_consent: { type: "boolean" },
-            anrede: { type: "string" },
-            vorname: { type: "string" },
-            strasse: { type: "string" },
-            plz: { type: "string" },
-            ort: { type: "string" },
-            objekt: { type: "string" },
-            objekt_url: { type: "string" },
-          },
-          required: ["flow", "email", "privacy_consent"],
-        },
-      },
     ],
     instructions: AGENT_CONTACT_RULES +
       " Bei Wohnung/Neubau/Konstanz/Allmannsdorf: get_flyer + get_contact; search_listings resurfaced projects[].",
@@ -439,7 +408,7 @@ export function buildMcpCatalog({ origin = DEFAULT_SITE_ORIGIN } = {}) {
         name: "immobilien-eichmann-listings",
         title: "Immobilien Eichmann Angebote",
         url: `${o}/ai/server-card.json`,
-        description: "Live MCP unter /mcp (search_listings, get_listing, get_flyer, get_contact, submit_inquiry). Tel/WhatsApp nur als Links für Menschen.",
+        description: "Live MCP unter /mcp (search_listings, get_listing, get_flyer, get_contact). Tel/WhatsApp nur als Links für Menschen.",
         remotes: [{ type: "streamable-http", url: `${o}/mcp` }],
       },
     ],
@@ -453,7 +422,7 @@ export function buildServerCard(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
     name: "immobilien-eichmann-listings",
     title: "Immobilien Eichmann – Listings",
     description:
-      "Live MCP: Kaufangebote + Allmannsdorf (get_flyer/get_contact). Agents zeigen nur Kontakt-Links; kein Auto-Call/WhatsApp. Tools: search_listings, get_listing, get_flyer, get_contact, submit_inquiry.",
+      "Live MCP: Kaufangebote + Allmannsdorf (get_flyer/get_contact). Agents zeigen nur Kontakt-Links; kein Auto-Call/WhatsApp. Tools: search_listings, get_listing, get_flyer, get_contact.",
     version: "1.0.0",
     websiteUrl: `${o}/`,
     repository: {
@@ -475,7 +444,7 @@ export function buildServerCard(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
         discovery: `${o}/.well-known/mcp.json`,
         listing_count: aiDoc.listing_count,
         generated_at: aiDoc.generated_at,
-        tools: ["search_listings", "get_listing", "get_flyer", "get_contact", "submit_inquiry"],
+        tools: ["search_listings", "get_listing", "get_flyer", "get_contact"],
         flyer: `${o}/ai/flyer-allmannsdorf.json`,
       },
     },

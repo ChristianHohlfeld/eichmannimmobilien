@@ -17,7 +17,7 @@
     "email": "info@immobilien-eichmann.com",
     "website": "https://immobilieneichmann.de/"
   },
-  "generated_at": "2026-10-07T09:56:37.329Z",
+  "generated_at": "2026-10-08T10:35:04.390Z",
   "source_export": "https://immobilieneichmann.de/data/listings.json",
   "tools": {
     "search_listings": {
@@ -38,11 +38,6 @@
     "get_contact": {
       "description": "Telefon, WhatsApp-Link und E-Mail aus Live-Impressum/Kontakt. Nur dem Menschen zum Tippen zeigen; Agent startet keine Calls/Nachrichten.",
       "resource": "https://immobilieneichmann.de/kontakt.html"
-    },
-    "submit_inquiry": {
-      "description": "Alternate Lead-Kanal: nur mit Nutzer-Daten + privacy_consent=true. Kein Auto-Spam. Bevorzugt: Mensch tippt tel/WhatsApp aus get_contact/get_flyer.",
-      "contact_endpoint": "https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/contact",
-      "expose_endpoint": "https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/expose"
     }
   },
   "listing_count": 11,

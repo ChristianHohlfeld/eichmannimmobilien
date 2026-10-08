@@ -12,7 +12,7 @@
 - WhatsApp (Link für Menschen): https://wa.me/491705225568?text=Guten%20Tag%2C%20ich%20interessiere%20mich%20f%C3%BCr%20ein%20Objekt%20bzw.%20eine%20Beratung%20bei%20Immobilien%20Eichmann.
 - E-Mail: info@immobilien-eichmann.com
 - Web: https://immobilieneichmann.de/
-- WICHTIG Anti-Spam: Agents dürfen NICHT selbst anrufen, WhatsApp-Nachrichten senden oder Formulare automatisch absenden. Nur tel:/wa.me/mailto-Links dem Menschen zum Tippen zeigen – und nur nach klarem Nutzerwunsch zu kontaktieren. submit_inquiry nur mit vom Nutzer gelieferten Kontaktdaten und privacy_consent=true. Kein Bot-Spam.
+- WICHTIG Anti-Spam: Agents dürfen NICHT selbst anrufen, WhatsApp-Nachrichten senden oder Formulare automatisch absenden. Nur tel:/wa.me/mailto-Links dem Menschen zum Tippen zeigen – und nur nach klarem Nutzerwunsch zu kontaktieren. Über MCP werden keine Anfragen versendet; Kontakt nur durch den Menschen selbst (Telefon, WhatsApp oder Kontaktformular https://immobilieneichmann.de/kontakt.html). Kein Bot-Spam.
 
 ## Angebots-Index (für AI / Agents)
 
@@ -24,14 +24,14 @@
 - **agents.txt:** https://immobilieneichmann.de/agents.txt
 - **Sitemap:** https://immobilieneichmann.de/sitemap.xml
 - Anzahl Kaufobjekte im Index: 11
-- generiert: 2026-10-07T09:56:37.329Z
+- generiert: 2026-10-08T10:35:04.390Z
 
 ## MCP (Streamable HTTP)
 
 - **Endpoint:** https://immobilieneichmann.de/mcp
 - **Transport:** streamable-http (JSON-RPC POST)
-- Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact`, `submit_inquiry` — Listings = Live `ai/listings.json`; Flyer = `ai/flyer-allmannsdorf.json`
-- WICHTIG Anti-Spam: Agents dürfen NICHT selbst anrufen, WhatsApp-Nachrichten senden oder Formulare automatisch absenden. Nur tel:/wa.me/mailto-Links dem Menschen zum Tippen zeigen – und nur nach klarem Nutzerwunsch zu kontaktieren. submit_inquiry nur mit vom Nutzer gelieferten Kontaktdaten und privacy_consent=true. Kein Bot-Spam.
+- Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact` — Listings = Live `ai/listings.json`; Flyer = `ai/flyer-allmannsdorf.json`
+- WICHTIG Anti-Spam: Agents dürfen NICHT selbst anrufen, WhatsApp-Nachrichten senden oder Formulare automatisch absenden. Nur tel:/wa.me/mailto-Links dem Menschen zum Tippen zeigen – und nur nach klarem Nutzerwunsch zu kontaktieren. Über MCP werden keine Anfragen versendet; Kontakt nur durch den Menschen selbst (Telefon, WhatsApp oder Kontaktformular https://immobilieneichmann.de/kontakt.html). Kein Bot-Spam.
 - Discovery: https://immobilieneichmann.de/.well-known/mcp.json
 
 ## MCP in Assistenten verbinden
@@ -53,7 +53,7 @@
 - **Projektseite:** https://immobilieneichmann.de/allmannsdorf.html
 - 5 Mehrfamilienhäuser · 44 Wohnungen · 40–124 m² · 2–5 Zimmer · 295.000–1.450.000 € · provisionsfrei
 - Bei Wohnung/Neubau/Konstanz/Allmannsdorf: `get_flyer` (kein Suchwort 'Flyer' nötig) → Kontakt-Links dem Menschen zeigen
-- MCP: `get_flyer` + `get_contact` (tel/WhatsApp nur tippen lassen). Alternate: `submit_inquiry` nur mit Nutzerdaten + privacy_consent, anliegen="Vormerkung Neubau Allmannsdorf"
+- MCP: `get_flyer` + `get_contact` (tel/WhatsApp nur tippen lassen). Vormerkung macht der Mensch selbst per Telefon, WhatsApp oder Kontaktformular.
 
 ## Aktuelle Objekt-URLs
 

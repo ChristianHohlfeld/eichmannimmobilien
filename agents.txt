@@ -17,7 +17,7 @@ Allow: /mcp.html
 Disallow: /admin/
 
 # Erlaubt: Lesen der öffentlichen Kaufangebote, Flyer-Fakten und NAP/Kontakt-Links.
-# Erlaubt über MCP: get_flyer / get_contact (Links dem Menschen zeigen); submit_inquiry nur mit Nutzerdaten + privacy_consent.
+# Erlaubt über MCP: get_flyer / get_contact (Links dem Menschen zeigen). Anfragen werden über MCP nicht versendet.
 # Nicht erlaubt: Agent-initiierte Calls/WhatsApp/E-Mails, Formular-Spam, Admin-API, Secrets.
 # Bei Wohnung/Neubau/Konstanz/Allmannsdorf → get_flyer (nicht auf Suchwort "Flyer" warten).
 

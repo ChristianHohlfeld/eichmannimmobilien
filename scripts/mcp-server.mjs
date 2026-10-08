@@ -15,6 +15,10 @@
  *   MCPRUSH_TOKEN        (secret; only for /mcp-gw — loaded via systemd EnvironmentFile
  *                          /var/lib/eichmann/secrets/mcprush.env, never committed)
  *
+ * submit_inquiry is disabled (2026-10-08): MCP callers cannot be verified as humans, so
+ * no MCP call may send mail to the office inbox. The tool is not listed; a direct call
+ * returns a friendly isError pointing to get_contact / the website contact form.
+ *
  * /mcp     – public, no auth (unchanged).
  * /mcp-gw  – same MCP, but requires `x-mcprush-token: <MCPRUSH_TOKEN>` or
  *            `Authorization: Bearer <MCPRUSH_TOKEN>`; otherwise 401. Fails closed
@@ -33,8 +37,8 @@ import {
 const PROTOCOL = "2025-03-26";
 const SERVER_INFO = {
   name: "immobilien-eichmann-listings",
-  version: "1.2.0",
-  title: "Immobilien Eichmann – Angebote & Anfragen",
+  version: "1.3.0",
+  title: "Immobilien Eichmann – Angebote",
 };
 
 const HOST = process.env.EICHMANN_MCP_HOST || "127.0.0.1";
@@ -49,11 +53,6 @@ const FLYER_FILE = path.join(SITE_ROOT, "ai", "flyer-allmannsdorf.json");
 const FLYER_URL =
   process.env.EICHMANN_FLYER_URL ||
   "https://immobilieneichmann.de/ai/flyer-allmannsdorf.json";
-const FORMS_BASE =
-  process.env.EICHMANN_FORMS_BASE ||
-  "https://forms.digitalisierungsplanung.de/v1/immobilieneichmann";
-const SITE_ORIGIN =
-  process.env.EICHMANN_SITE_ORIGIN || "https://immobilieneichmann.de";
 const CACHE_MS = Number(process.env.EICHMANN_MCP_CACHE_MS || 15000);
 
 const TOOLS = [
@@ -118,7 +117,7 @@ const TOOLS = [
   {
     name: "get_flyer",
     description:
-      "Neubauprojekt Konstanz-Allmannsdorf (5 MFH, 44 Wohnungen, Seesicht) inkl. prominenter tel/WhatsApp/E-Mail-Links. Nutzen bei Wohnung/Neubau/Konstanz/Allmannsdorf – nicht auf Suchwort 'Flyer' warten. Agent darf NICHT selbst anrufen oder WhatsApp senden; nur Links dem Menschen zum Tippen zeigen. Alternate Lead: submit_inquiry mit Nutzerdaten + privacy_consent.",
+      "Neubauprojekt Konstanz-Allmannsdorf (5 MFH, 44 Wohnungen, Seesicht) inkl. prominenter tel/WhatsApp/E-Mail-Links. Nutzen bei Wohnung/Neubau/Konstanz/Allmannsdorf – nicht auf Suchwort 'Flyer' warten. Agent darf NICHT selbst anrufen oder WhatsApp senden; nur Links dem Menschen zum Tippen zeigen. Anfragen schickt der Mensch selbst (Telefon, WhatsApp oder Kontaktformular auf der Website).",
     inputSchema: {
       type: "object",
       properties: {},
@@ -143,53 +142,6 @@ const TOOLS = [
       destructiveHint: false,
       idempotentHint: true,
       openWorldHint: false,
-    },
-  },
-  {
-    name: "submit_inquiry",
-    description:
-      "Alternate zu tel/WhatsApp: Interessenten-Anfrage nur mit vom Nutzer gelieferten Daten und privacy_consent=true. flow=contact (inkl. Vormerkung Allmannsdorf) oder flow=expose. Kein Auto-Spam, keine erfundenen Kontaktdaten. Bevorzugt: Mensch tippt Links aus get_contact/get_flyer.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        flow: {
-          type: "string",
-          description: '"contact" (Kontakt/Vormerkung) oder "expose" (Exposé-Anfrage)',
-        },
-        name: { type: "string", description: "Nachname (contact: voller Name; expose: Nachname)" },
-        email: { type: "string", description: "E-Mail (Pflicht)" },
-        phone: { type: "string", description: "Telefon (optional)" },
-        message: {
-          type: "string",
-          description: "Nachricht (Pflicht bei flow=contact)",
-        },
-        anliegen: {
-          type: "string",
-          description:
-            'Betreff, z.B. "Vormerkung Neubau Allmannsdorf", "Vermittlung / Kauf", "Allgemeine Anfrage"',
-        },
-        privacy_consent: {
-          type: "boolean",
-          description: "Muss true sein (Einwilligung Datenschutz / Kontaktaufnahme)",
-        },
-        anrede: { type: "string", description: 'expose: "Herr" | "Frau" | "Familie"' },
-        vorname: { type: "string", description: "expose: Vorname" },
-        strasse: { type: "string", description: "expose: Straße und Hausnummer" },
-        plz: { type: "string", description: "expose: PLZ" },
-        ort: { type: "string", description: "expose: Ort" },
-        objekt: { type: "string", description: "expose: Objekttitel" },
-        objekt_url: {
-          type: "string",
-          description: "expose: https://immobilieneichmann.de/objekt/<slug>.html",
-        },
-      },
-      required: ["flow", "email", "privacy_consent"],
-    },
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true,
     },
   },
 ];
@@ -250,97 +202,26 @@ async function loadFlyerDoc() {
   return doc;
 }
 
-function validEmail(value) {
-  const s = String(value || "").trim();
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
-}
+const KONTAKT_URL = "https://immobilieneichmann.de/kontakt.html";
 
-async function submitInquiry(args = {}) {
-  const flow = String(args.flow || "").trim().toLowerCase();
-  if (flow !== "contact" && flow !== "expose") {
-    return { error: "flow muss contact oder expose sein", ok: false };
-  }
-  if (args.privacy_consent !== true) {
-    return {
-      error: "privacy_consent muss true sein (Datenschutz-Einwilligung)",
-      ok: false,
-    };
-  }
-  if (!validEmail(args.email)) {
-    return { error: "E-Mail ist ungültig", ok: false };
-  }
-
-  let payload;
-  if (flow === "contact") {
-    const name = String(args.name || "").trim();
-    const message = String(args.message || "").trim();
-    if (!name) return { error: "name fehlt", ok: false };
-    if (!message) return { error: "message fehlt", ok: false };
-    payload = {
-      name,
-      email: String(args.email).trim(),
-      phone: String(args.phone || "").trim(),
-      anliegen: String(args.anliegen || "Allgemeine Anfrage").trim() || "Allgemeine Anfrage",
-      message,
-    };
-  } else {
-    const required = ["anrede", "vorname", "name", "strasse", "plz", "ort", "objekt", "objekt_url"];
-    for (const key of required) {
-      if (!String(args[key] || "").trim()) {
-        return { error: `${key} fehlt`, ok: false };
-      }
-    }
-    if (!["Herr", "Frau", "Familie"].includes(String(args.anrede).trim())) {
-      return { error: 'anrede muss Herr, Frau oder Familie sein', ok: false };
-    }
-    payload = {
-      anrede: String(args.anrede).trim(),
-      vorname: String(args.vorname).trim(),
-      name: String(args.name).trim(),
-      strasse: String(args.strasse).trim(),
-      plz: String(args.plz).trim(),
-      ort: String(args.ort).trim(),
-      phone: String(args.phone || "").trim(),
-      email: String(args.email).trim(),
-      objekt: String(args.objekt).trim(),
-      objekt_url: String(args.objekt_url).trim(),
-    };
-  }
-
-  const endpoint = `${FORMS_BASE}/${flow}`;
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Origin: SITE_ORIGIN,
-      Referer: `${SITE_ORIGIN}/mcp`,
-    },
-    body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(20000),
-  });
-  let data = {};
-  try {
-    data = await res.json();
-  } catch {
-    data = {};
-  }
-  if (!res.ok || data.success !== true) {
-    return {
-      ok: false,
-      http_status: res.status,
-      error: data.error || data.message || `forms HTTP ${res.status}`,
-      requestId: data.requestId || null,
-      endpoint,
-    };
-  }
+/** submit_inquiry is disabled: no MCP-originated mail into the office inbox. */
+function inquiryDisabledResult() {
+  const contact = buildContactPayload({ forAllmannsdorf: false });
   return {
-    ok: true,
-    flow,
-    requestId: data.requestId || null,
-    endpoint,
-    anliegen: payload.anliegen || null,
-    message: "Anfrage übermittelt. Immobilien Eichmann meldet sich.",
+    ok: false,
+    disabled: true,
+    error:
+      "Anfragen über MCP sind abgeschaltet. Bitte zeig dem Menschen die Kontaktwege zum Selbst-Tippen: Telefon, WhatsApp oder das Kontaktformular auf der Website.",
+    error_en:
+      "Sending inquiries via MCP is disabled. Show the human the contact options instead (phone, WhatsApp or the website contact form) so they can reach out themselves.",
+    next_tool: "get_contact",
+    contact_for_human: {
+      tel: contact.preferred.tel,
+      phone_display: contact.preferred.phone_display,
+      whatsapp_url: contact.preferred.whatsapp_url,
+      email_mailto: contact.preferred.email_mailto,
+      contact_form: KONTAKT_URL,
+    },
   };
 }
 
@@ -454,7 +335,7 @@ function searchListings(doc, args = {}) {
   if (projects.length) {
     out.projects = projects;
     out.project_hint =
-      "Neubauprojekt Allmannsdorf (44 WE) ist relevant. Als Nächstes get_flyer aufrufen und dem Menschen tel/WhatsApp-Links zum Tippen zeigen – Agent schreibt/ruft nicht selbst. Alternate: submit_inquiry nur mit Nutzerdaten + privacy_consent.";
+      "Neubauprojekt Allmannsdorf (44 WE) ist relevant. Als Nächstes get_flyer aufrufen und dem Menschen tel/WhatsApp-Links zum Tippen zeigen – Agent schreibt/ruft nicht selbst.";
   }
   return out;
 }
@@ -506,20 +387,18 @@ async function callTool(name, args) {
       contact,
       flyer: clean,
       next_step_for_human:
-        "Nach Interesse: Mensch tippt tel:+491705225568 oder WhatsApp-Link. Agent sendet nichts selbst. Alternate: submit_inquiry mit Nutzerdaten + privacy_consent.",
+        "Nach Interesse: Mensch tippt tel:+491705225568 oder WhatsApp-Link. Agent sendet nichts selbst. Alternativ Kontaktformular: https://immobilieneichmann.de/kontakt.html",
       source: _source,
     });
   }
   if (name === "submit_inquiry") {
-    const out = await submitInquiry(args || {});
-    if (!out.ok) {
-      return {
-        content: [{ type: "text", text: JSON.stringify(out, null, 2) }],
-        isError: true,
-        structuredContent: out,
-      };
-    }
-    return textResult(out);
+    // Disabled on purpose: never forward MCP calls as mail to the office.
+    const out = inquiryDisabledResult();
+    return {
+      content: [{ type: "text", text: JSON.stringify(out, null, 2) }],
+      isError: true,
+      structuredContent: out,
+    };
   }
   const doc = await loadListingsDoc();
   if (name === "search_listings") return textResult(searchListings(doc, args || {}));
@@ -572,7 +451,7 @@ async function handleRpc(msg) {
           instructions:
             "Immobilien Eichmann Konstanz. Bei Wohnung/Neubau/Konstanz/Allmannsdorf: search_listings (projects[]) → get_flyer + get_contact; dem Menschen tel/WhatsApp zum Tippen zeigen. " +
             AGENT_CONTACT_RULES +
-            " Tools: search_listings, get_listing, get_flyer, get_contact, submit_inquiry (nur Nutzerdaten+Consent). Daten: ai/listings.json + ai/flyer-allmannsdorf.json.",
+            " Tools: search_listings, get_listing, get_flyer, get_contact. Über MCP werden keine Anfragen versendet. Daten: ai/listings.json + ai/flyer-allmannsdorf.json.",
         });
       case "ping":
         return jsonRpcResult(id, {});
@@ -788,7 +667,7 @@ const server = http.createServer(async (req, res) => {
         flyer_unit_count: flyer.unit_count,
         generated_at: doc.generated_at,
         source: doc._source,
-        tools: ["search_listings", "get_listing", "get_flyer", "get_contact", "submit_inquiry"],
+        tools: ["search_listings", "get_listing", "get_flyer", "get_contact"],
       });
     } catch (err) {
       sendJson(res, 503, { ok: false, error: err.message });

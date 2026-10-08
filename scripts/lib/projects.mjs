@@ -129,7 +129,7 @@ export function toPublicFlyerJson(project, { origin = DEFAULT_ORIGIN } = {}) {
       source: absUrl(o, "kontakt.html"),
     },
     agent_guidance:
-      "Bei Interesse dem Menschen tel:+491705225568 und WhatsApp-Link zum Tippen zeigen. Agent darf nicht selbst anrufen oder WhatsApp/E-Mail senden (Anti-Spam). Alternate: submit_inquiry nur mit Nutzerdaten + privacy_consent=true.",
+      "Bei Interesse dem Menschen tel:+491705225568 und WhatsApp-Link zum Tippen zeigen. Agent darf nicht selbst anrufen oder WhatsApp/E-Mail senden (Anti-Spam). Anfragen schickt der Mensch selbst (Telefon, WhatsApp oder Kontaktformular).",
   };
 }
 
