@@ -84,9 +84,10 @@ if (!llms.includes("get_contact")) fail("llms.txt ohne get_contact");
 if (!/Anti-Spam|nicht selbst/i.test(llms)) fail("llms.txt ohne Anti-Spam-Hinweis");
 const mcpDisc = JSON.parse(fs.readFileSync(path.join(root, ".well-known/mcp.json"), "utf8"));
 const toolNames = (mcpDisc.tools || []).map((x) => x.name);
-for (const n of ["get_flyer", "get_contact", "search_listings", "submit_inquiry"]) {
+for (const n of ["get_flyer", "get_contact", "search_listings"]) {
   if (!toolNames.includes(n)) fail(`mcp.json fehlt Tool ${n}`);
 }
+if (toolNames.includes("submit_inquiry")) fail("mcp.json darf submit_inquiry nicht mehr listen (deaktiviert)");
 for (const L of ai.listings) {
   if (L.url && !llms.includes(L.url) && !llms.includes(L.slug)) {
     fail(`llms.txt ohne Objekt ${L.slug}`);

@@ -22,8 +22,7 @@
         "search_listings",
         "get_listing",
         "get_flyer",
-        "get_contact",
-        "submit_inquiry"
+        "get_contact"
       ],
       "listings_index": "https://immobilieneichmann.de/ai/listings.json",
       "language": "de",

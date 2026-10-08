@@ -2,6 +2,7 @@
 /**
  * Smoke: MCP Streamable-HTTP tools against local ai/listings.json (no network needed).
  */
+import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -114,7 +115,7 @@ try {
 
   const tools = await rpc("tools/list", {}, 2);
   const names = (tools.json?.result?.tools || []).map((t) => t.name).sort();
-  const expected = ["get_contact", "get_flyer", "get_listing", "search_listings", "submit_inquiry"];
+  const expected = ["get_contact", "get_flyer", "get_listing", "search_listings"];
   if (names.join(",") !== expected.join(",")) {
     fail(`tools unexpected: ${names.join(",")}`);
   }
@@ -192,7 +193,8 @@ try {
     fail("initialize instructions missing anti-spam contact rules");
   }
 
-  const badInquiry = await rpc(
+  // submit_inquiry is disabled: even a complete, consented call must not send anything.
+  const inquiry = await rpc(
     "tools/call",
     {
       name: "submit_inquiry",
@@ -201,13 +203,21 @@ try {
         name: "Test",
         email: "test@example.com",
         message: "x",
-        privacy_consent: false,
+        privacy_consent: true,
       },
     },
     6
   );
-  if (!badInquiry.json?.result?.isError) {
-    fail("submit_inquiry without privacy_consent should be error");
+  const inqRes = inquiry.json?.result || {};
+  if (!inqRes.isError) fail("submit_inquiry must be disabled (isError)");
+  if (inqRes.structuredContent?.disabled !== true) fail("submit_inquiry missing disabled:true");
+  if (inqRes.structuredContent?.next_tool !== "get_contact") fail("submit_inquiry should point to get_contact");
+  if (!String(inqRes.structuredContent?.contact_for_human?.contact_form || "").includes("kontakt.html")) {
+    fail("submit_inquiry should link the website contact form");
+  }
+  const serverSrc = fs.readFileSync(path.join(root, "scripts", "mcp-server.mjs"), "utf8");
+  if (/forms\.digitalisierungsplanung\.de|EICHMANN_FORMS_BASE/.test(serverSrc)) {
+    fail("mcp-server.mjs must not reference the forms endpoint (submit_inquiry disabled)");
   }
 
   if (errors.length) {
