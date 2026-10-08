@@ -112,8 +112,22 @@
     return params;
   }
 
+  /* A/B attribution: sticky hero test variant (set by ab-hero-cta.js), no PII */
+  var AB_EXPERIMENTS = ['hero_cta_r1'];
+  function abVariant() {
+    for (var i = 0; i < AB_EXPERIMENTS.length; i++) {
+      try {
+        var v = window.localStorage.getItem('ab_' + AB_EXPERIMENTS[i]);
+        if (v && /^[A-Z]$/.test(v)) return AB_EXPERIMENTS[i] + '_' + v;
+      } catch (e) {}
+    }
+    return '';
+  }
+
   function trackingParams(extra) {
     var params = formContext(document.getElementById('contact-form'));
+    var ab = abVariant();
+    if (ab) params.ab_variant = ab;
     Object.keys(extra || {}).forEach(function (key) {
       if (extra[key] !== undefined && extra[key] !== null && extra[key] !== '') params[key] = extra[key];
     });
@@ -126,6 +140,17 @@
   }
 
   window.eichmannTrack = trackEvent;
+
+  /* Drain events queued before consent/analytics was ready (e.g. ab_assign from ab-hero-cta.js) */
+  var pending = window.__eichmannTrackQueue || [];
+  window.__eichmannTrackQueue = [];
+  pending.forEach(function (item) {
+    if (!item || !item.name) return;
+    trackEvent(item.name, item.params);
+    if (typeof item.onSent === 'function') {
+      try { item.onSent(); } catch (e) {}
+    }
+  });
 
   function linkLocation(link) {
     if (link.closest('.sticky-bar, .flyer-sticky-ctas')) return 'sticky';

@@ -2,24 +2,27 @@
  * A/B/C Hero CTA label test — Round 1 (hero_cta_r1)
  * Dimension: Allmannsdorf Hero button label text only (same href/classes).
  * Variants: A „Allmannsdorf“ | B „Neubau ansehen“ | C „Vormerken“
+ * SEO: static HTML stays A; the label swap happens only in the browser.
  *
  * Sticky assignment: localStorage key ab_hero_cta_r1 (33/33/33 first visit).
- * Events (GA4 / dataLayer):
- *   ab_assign  { experiment, variant } — once per session
- *   cta_click  { experiment, variant, label, location: 'hero' } — on click
+ * Events (GA4, only with Analytics consent — same path as flyer_open):
+ *   ab_assign  { experiment, variant, ab_variant } — once per session, sent as soon as
+ *              analytics.js (consent) is ready; queued until then, never sent without consent
+ *   cta_click  { experiment, variant, ab_variant, label, location: 'hero' } — on click
+ *              (no navigation delay; gtag.js flushes on pagehide via keepalive)
+ * analytics.js additionally attaches ab_variant (e.g. hero_cta_r1_B) to every event, incl.
+ * flyer_open / vormerken_submit / form_submit_success → real leads per variant.
  * Landing correlation: href gets ?ab=hero_cta_r1_<VARIANT>
  *
- * How to read winners in GA4:
- *   Explore → Free form → Rows: custom event parameter "variant"
- *   Metrics: event count for ab_assign (traffic split) and cta_click (CTR)
- *   Filter event_name = cta_click AND experiment = hero_cta_r1
- *   Winner = highest cta_click / ab_assign; then harden that label and start round 2.
- * If GA4 not loaded yet, dataLayer still receives the same payloads for #60 funnel.
+ * How to read winners in GA4 (custom dimensions variant / experiment / ab_variant registered):
+ *   Explore → Free form → Rows: "variant" (or "ab_variant"), Values: Event count
+ *   Filter experiment = hero_cta_r1; compare cta_click / ab_assign per variant,
+ *   and form_submit_success / vormerken_submit per ab_variant.
  */
 (function () {
   var EXPERIMENT = 'hero_cta_r1';
   var STORAGE_KEY = 'ab_hero_cta_r1';
-  var ASSIGN_SESSION_KEY = 'ab_hero_cta_r1_assigned';
+  var ASSIGN_SESSION_KEY = 'ab_hero_cta_r1_assign_sent';
   var VARIANTS = {
     A: 'Allmannsdorf',
     B: 'Neubau ansehen',
@@ -40,21 +43,47 @@
     return chosen;
   }
 
-  function track(name, params) {
-    var payload = params || {};
-    try {
-      window.dataLayer = window.dataLayer || [];
-      var flat = { event: name };
-      Object.keys(payload).forEach(function (k) {
-        flat[k] = payload[k];
-      });
-      window.dataLayer.push(flat);
-    } catch (e) {}
-    try {
-      if (typeof window.gtag === 'function') {
-        window.gtag('event', name, payload);
+  /* Consent-aware: window.eichmannTrack exists only after analytics.js was loaded
+     (cookie-consent.js loads it only with Analytics consent). Until then events wait in
+     window.__eichmannTrackQueue, which analytics.js drains once on load. No consent → no send. */
+  function analyticsReady() {
+    return typeof window.eichmannTrack === 'function';
+  }
+
+  function track(name, params, onSent) {
+    if (analyticsReady()) {
+      window.eichmannTrack(name, params);
+      if (onSent) onSent();
+      return;
+    }
+    window.__eichmannTrackQueue = window.__eichmannTrackQueue || [];
+    window.__eichmannTrackQueue.push({ name: name, params: params, onSent: onSent });
+    watchQueue();
+  }
+
+  /* Fallback drain (e.g. a cached older analytics.js without queue support): check once per
+     second while something is queued; stops when drained or after 30 min. */
+  var watching = false;
+  function watchQueue() {
+    if (watching) return;
+    watching = true;
+    var started = Date.now();
+    var timer = setInterval(function () {
+      var q = window.__eichmannTrackQueue || [];
+      if (!q.length || Date.now() - started > 30 * 60 * 1000) {
+        clearInterval(timer);
+        watching = false;
+        return;
       }
-    } catch (e) {}
+      if (!analyticsReady()) return;
+      window.__eichmannTrackQueue = [];
+      q.forEach(function (item) {
+        window.eichmannTrack(item.name, item.params);
+        if (typeof item.onSent === 'function') {
+          try { item.onSent(); } catch (e) {}
+        }
+      });
+    }, 1000);
   }
 
   function withAbParam(href, variant) {
@@ -78,6 +107,7 @@
 
     var variant = pickVariant();
     var label = VARIANTS[variant];
+    var abVariant = EXPERIMENT + '_' + variant;
 
     el.textContent = label;
     el.setAttribute('data-ab-variant', variant);
@@ -91,18 +121,22 @@
       already = null;
     }
     if (!already) {
-      track('ab_assign', { experiment: EXPERIMENT, variant: variant });
-      try {
-        window.sessionStorage.setItem(ASSIGN_SESSION_KEY, variant);
-      } catch (e) {}
+      track('ab_assign', { experiment: EXPERIMENT, variant: variant, ab_variant: abVariant }, function () {
+        try {
+          window.sessionStorage.setItem(ASSIGN_SESSION_KEY, variant);
+        } catch (e) {}
+      });
     }
 
     el.addEventListener('click', function () {
+      /* No navigation delay: gtag.js flushes its batch on pagehide via fetch(keepalive) */
       track('cta_click', {
         experiment: EXPERIMENT,
         variant: variant,
+        ab_variant: abVariant,
         label: label,
-        location: 'hero'
+        location: 'hero',
+        transport_type: 'beacon'
       });
     });
   }
