@@ -266,8 +266,10 @@
 
   /* Flyer modal */
   var modal = document.getElementById("flyerModal");
+  var flyerReturnFocus = null;
   function openFlyer() {
     if (!modal) return;
+    flyerReturnFocus = document.activeElement;
     modal.hidden = false;
     document.body.style.overflow = "hidden";
     document.body.classList.add("flyer-open");
@@ -276,6 +278,12 @@
       cookie.dataset.flyerHidden = "1";
       cookie.hidden = true;
       document.body.classList.remove("cookie-banner-open");
+    }
+    /* a11y: move focus into the modal dialog */
+    var dlg = modal.querySelector(".flyer-dialog");
+    if (dlg) {
+      if (!dlg.hasAttribute("tabindex")) dlg.setAttribute("tabindex", "-1");
+      try { dlg.focus({ preventScroll: true }); } catch (e) {}
     }
   }
   function closeFlyer() {
@@ -289,6 +297,10 @@
       cookie.hidden = false;
       document.body.classList.add("cookie-banner-open");
     }
+    if (flyerReturnFocus && flyerReturnFocus !== document.body && flyerReturnFocus.focus) {
+      try { flyerReturnFocus.focus({ preventScroll: true }); } catch (e) {}
+    }
+    flyerReturnFocus = null;
   }
   document.querySelectorAll("[data-open-flyer]").forEach(function (el) {
     el.addEventListener("click", function (e) {
@@ -435,6 +447,8 @@
     roots.forEach(function (root) {
       root.querySelectorAll("img").forEach(function (img) {
         if (!img.getAttribute("src")) return;
+        // Thumbnails sit inside <button class="expose-thumb"> (no nested interactive)
+        if (img.closest && img.closest(".expose-thumb")) return;
         sources.push(img);
         img.setAttribute("tabindex", "0");
         img.setAttribute("role", "button");

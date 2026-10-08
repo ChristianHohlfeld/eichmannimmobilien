@@ -1,3 +1,4 @@
+/* a11y-v1: WCAG/Lighthouse 100 fixes (contrast, link underline, tap targets, heading order) */
 /* expose-lightbox-v2 */
 /* listing-aspect-cls-v1 */
 /* expose-mobile-overflow-v1 */
@@ -905,7 +906,8 @@ a.listing-card:focus-visible {
 }
 .footer-brand a:hover { color: var(--accent-soft); text-decoration: underline; }
 .footer-hours { opacity: 0.75 !important; }
-.footer-col h4 {
+.footer-col h4,
+.footer-col .footer-heading {
   margin: 0 0 0.65rem;
   font-size: var(--fs-meta);
   font-family: var(--font-body);
@@ -2308,3 +2310,32 @@ body.cookie-banner-open .floating-wa {
   .project-gallery { grid-template-columns: 1fr 1fr; }
   .project-gallery-item:first-child { grid-column: 1 / -1; }
 }
+
+/* a11y-v1 ------------------------------------------------------------ */
+/* Footer column headings are <h2> (correct heading order) but keep the small caps look */
+.footer-col .footer-heading { line-height: 1.4; letter-spacing: 0.06em; }
+/* Tap targets ≥ 24px for footer phone/mail links */
+.footer-brand p a { display: inline-block; min-height: 24px; line-height: 24px; }
+/* Links inside running text must be distinguishable without colour */
+main p a:not([class]),
+main label a:not([class]),
+main small a:not([class]),
+.flyer p a:not([class]) {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+/* Brand gold, darkened just enough for contrast on white */
+.flyer-intro h2 span { color: #8a6c3d; }
+.flyer-cta-script,
+a.flyer-cta-script:hover,
+a.flyer-cta-script:focus-visible { color: #9f7c47; }
+.project-unit-status.is-free { color: #8a6c3d; }
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0);
+  white-space: nowrap; border: 0;
+}
+.flyer-dialog:focus { outline: none; }
