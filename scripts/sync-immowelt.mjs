@@ -901,13 +901,14 @@ function assetRelPath(base) {
   return `assets/listings/${b}`;
 }
 
-function pictureTag(base, alt, { prefix = "", loading = "lazy", className = "" } = {}) {
+function pictureTag(base, alt, { prefix = "", loading = "lazy", className = "", fetchPriority = "" } = {}) {
   const rel = assetRelPath(base);
   if (!rel) return "";
   const cls = className ? ` class="${className}"` : "";
+  const fp = fetchPriority ? ` fetchpriority="${fetchPriority}"` : "";
   return `<picture>
               <source srcset="${prefix}${escapeHtml(rel)}.webp" type="image/webp">
-              <img src="${prefix}${escapeHtml(rel)}.jpg" alt="${escapeHtml(alt)}" loading="${loading}" width="800" height="600" decoding="async"${cls}>
+              <img src="${prefix}${escapeHtml(rel)}.jpg" alt="${escapeHtml(alt)}" loading="${loading}"${fp} width="800" height="600" decoding="async"${cls}>
             </picture>`;
 }
 
@@ -1000,7 +1001,7 @@ function renderExposeHtml(listing, ogShare = null) {
           .map((b, i) => {
             const alt = `${title} – Foto ${i + 1}`;
             return `<figure class="expose-gallery-item" data-gallery-index="${i}">
-              ${pictureTag(b, alt, { prefix: p, loading: i === 0 ? "eager" : "lazy" })}
+              ${pictureTag(b, alt, { prefix: p, loading: i === 0 ? "eager" : "lazy", fetchPriority: i === 0 ? "high" : "" })}
             </figure>`;
           })
           .join("\n          ")
