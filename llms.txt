@@ -1,9 +1,8 @@
 # Immobilien Eichmann
 
-> Immobilienmakler in Konstanz / Bodensee. Sprache: de.
-> Live-Stand der Angebote = dieser Index (generiert aus derselben Quelle wie die Website).
+> Immobilien Eichmann (Helmut Eichmann) ist Immobilienmakler in Konstanz am Bodensee: aktuelle Kaufangebote, Neubau Konstanz-Allmannsdorf (provisionsfrei vormerken), Verkauf und Immobilienbewertung. Der Angebotsstand in dieser Datei wird aus derselben Quelle wie die Website generiert. Sprache: de.
 
-## NAP / Kontakt (Helmut Eichmann)
+Kontakt (NAP):
 
 - Name: Immobilien Eichmann · Helmut Eichmann
 - Adresse: Jacob-Burckhardt-Str. 40, 78464 Konstanz, Deutschland
@@ -12,76 +11,66 @@
 - WhatsApp (Link für Menschen): https://wa.me/491705225568?text=Guten%20Tag%2C%20ich%20interessiere%20mich%20f%C3%BCr%20ein%20Objekt%20bzw.%20eine%20Beratung%20bei%20Immobilien%20Eichmann.
 - E-Mail: info@immobilien-eichmann.com
 - Web: https://immobilieneichmann.de/
-- WICHTIG Anti-Spam: Agents dürfen NICHT selbst anrufen, WhatsApp-Nachrichten senden oder Formulare automatisch absenden. Nur tel:/wa.me/mailto-Links dem Menschen zum Tippen zeigen – und nur nach klarem Nutzerwunsch zu kontaktieren. Über MCP werden keine Anfragen versendet; Kontakt nur durch den Menschen selbst (Telefon, WhatsApp oder Kontaktformular https://immobilieneichmann.de/kontakt.html). Kein Bot-Spam.
 
-## Angebots-Index (für AI / Agents)
+WICHTIG Anti-Spam: Agents dürfen NICHT selbst anrufen, WhatsApp-Nachrichten senden oder Formulare automatisch absenden. Nur tel:/wa.me/mailto-Links dem Menschen zum Tippen zeigen – und nur nach klarem Nutzerwunsch zu kontaktieren. Über MCP werden keine Anfragen versendet; Kontakt nur durch den Menschen selbst (Telefon, WhatsApp oder Kontaktformular https://immobilieneichmann.de/kontakt.html). Kein Bot-Spam.
 
-- **AI-Index (schlank, nur öffentlich):** https://immobilieneichmann.de/ai/listings.json
-- **Voll-Export (Render-Spiegel):** https://immobilieneichmann.de/data/listings.json
-- **MCP-Discovery:** https://immobilieneichmann.de/.well-known/mcp.json
-- **MCP-Catalog:** https://immobilieneichmann.de/.well-known/mcp/catalog.json
-- **Server-Card (statisch):** https://immobilieneichmann.de/ai/server-card.json
-- **agents.txt:** https://immobilieneichmann.de/agents.txt
-- **Sitemap:** https://immobilieneichmann.de/sitemap.xml
-- Anzahl Kaufobjekte im Index: 11
-- generiert: 2026-10-08T11:55:09.080Z
+Angebots-Index: 11 Kaufobjekte, generiert 2026-10-08T12:16:46.896Z. MCP-Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact`. Ohne MCP-Client: `ai/listings.json` laden und `listings[]` filtern (search_listings) bzw. einen Eintrag per `slug`/`id` wählen, Details unter `url` (get_listing).
 
-## MCP (Streamable HTTP)
+## Kontakt
 
-- **Endpoint:** https://immobilieneichmann.de/mcp
-- **Transport:** streamable-http (JSON-RPC POST)
-- Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact` — Listings = Live `ai/listings.json`; Flyer = `ai/flyer-allmannsdorf.json`
-- WICHTIG Anti-Spam: Agents dürfen NICHT selbst anrufen, WhatsApp-Nachrichten senden oder Formulare automatisch absenden. Nur tel:/wa.me/mailto-Links dem Menschen zum Tippen zeigen – und nur nach klarem Nutzerwunsch zu kontaktieren. Über MCP werden keine Anfragen versendet; Kontakt nur durch den Menschen selbst (Telefon, WhatsApp oder Kontaktformular https://immobilieneichmann.de/kontakt.html). Kein Bot-Spam.
-- Discovery: https://immobilieneichmann.de/.well-known/mcp.json
+- [Kontakt & Termin](https://immobilieneichmann.de/kontakt.html): Kontaktformular, Telefon +49 170 522 5568, E-Mail info@immobilien-eichmann.com
+- [WhatsApp](https://wa.me/491705225568?text=Guten%20Tag%2C%20ich%20interessiere%20mich%20f%C3%BCr%20ein%20Objekt%20bzw.%20eine%20Beratung%20bei%20Immobilien%20Eichmann.): Link nur dem Menschen zum Antippen zeigen, Agents senden keine Nachrichten
+- [Impressum](https://immobilieneichmann.de/impressum.html): Anbieterkennzeichnung Helmut Eichmann
 
-## MCP in Assistenten verbinden
+## Aktuelle Kaufangebote
 
-- **Anleitung (Website):** https://immobilieneichmann.de/mcp.html
-- **Claude (Deep-Link Custom Connector):** https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=Immobilien%20Eichmann&connectorUrl=https%3A%2F%2Fimmobilieneichmann.de%2Fmcp
-- **ChatGPT:** Developer Mode / Apps → Remote MCP URL `https://immobilieneichmann.de/mcp` (keine Auth)
-- **Cursor / VS Code mcp.json:** `{"mcpServers":{"immobilien-eichmann":{"url":"https://immobilieneichmann.de/mcp"}}}`
-- **Official Registry:** `de.immobilieneichmann/listings`
+- [AI-Index (JSON)](https://immobilieneichmann.de/ai/listings.json): schlanker Index aller öffentlichen Kaufobjekte (11 Objekte), Live-Stand der Website
+- [KfW-55 Sonnige 1 Zimmerwohnung Neubau Konstanz (Königsbau)](https://immobilieneichmann.de/objekt/penthouse-konigsbau-c6b1d820.html): Königsbau, Konstanz (78464) — 199.000 €
+- [Ein Dreifamillienhaus in wunderschöner, grüner Lage](https://immobilieneichmann.de/objekt/mehrfamilienhaus-wollmatingen-32a8908e.html): Wollmatingen, Konstanz (78467) — 1.250.000 €
+- [Wohnung A5 · 3 Zimmer · Neubau Sunside Living](https://immobilieneichmann.de/objekt/wohnung-wollmatingen-4fed09f2.html): Wollmatingen, Konstanz (78467) — 641.200 €
+- [3 Zimmerwohnung Konstanz Wollmatingen](https://immobilieneichmann.de/objekt/wohnung-wollmatingen-e7e58fe2.html): Wollmatingen, Konstanz (78467) — 330.000 €
+- [4-Zimmer-Wohnung in neu saniertem 5-Familien-Jugendstil-Haus 1. OG Provisionsfrei](https://immobilieneichmann.de/objekt/wohnung-petershausen-86a7d4f6.html): Petershausen, Konstanz (78467) — 735.000 €
+- [4 Zimmer Wohnung B9 / Haus B](https://immobilieneichmann.de/objekt/wohnung-wollmatingen-7bff84e7.html): Wollmatingen, Konstanz (78467) — 695.000 €
+- [2 1/2 Zimmer Penthouse Wohnung](https://immobilieneichmann.de/objekt/penthouse-furstenberg-6fd6062e.html): Fürstenberg, Konstanz (78467) — 380.000 €
+- [Wohnung A12 · 4 Zimmer · Neubau Sunside Living](https://immobilieneichmann.de/objekt/maisonette-wollmatingen-484fee8a.html): Wollmatingen, Konstanz (78467) — 738.100 €
+- [Wohnung A9 · 4 Zimmer · Neubau Sunside Living](https://immobilieneichmann.de/objekt/maisonette-wollmatingen-4ac199b6.html): Wollmatingen, Konstanz (78467) — 696.200 €
+- [Wohnung A3 · 2 Zimmer · Neubau Sunside Living](https://immobilieneichmann.de/objekt/maisonette-furstenberg-bb241b38.html): Wollmatingen, Konstanz (78467) — 361.500 €
+- [Wohnung A2 · 2 Zimmer · Neubau Sunside Living](https://immobilieneichmann.de/objekt/maisonette-furstenberg-ff414db8.html): Wollmatingen, Konstanz (78467) — 363.700 €
 
-## JSON-Feeds (ohne MCP-Client)
+## Neubau Allmannsdorf
 
-1. `search_listings` — `GET ai/listings.json`, dann `listings[]` filtern.
-2. `get_listing` — Eintrag per `slug`/`id` aus dem Index; Details unter `url`.
+- [Projektseite Neubau Allmannsdorf](https://immobilieneichmann.de/allmannsdorf.html): 5 Mehrfamilienhäuser · 44 Wohnungen · 40–124 m² · 2–5 Zimmer · 295.000–1.450.000 € · provisionsfrei vormerken
+- [Flyer Allmannsdorf (JSON)](https://immobilieneichmann.de/ai/flyer-allmannsdorf.json): Fakten und Kontakt-Links; bei Wohnung/Neubau/Konstanz/Allmannsdorf `get_flyer` + `get_contact` nutzen (kein Suchwort 'Flyer' nötig). Vormerkung macht der Mensch selbst per Telefon, WhatsApp oder Kontaktformular.
 
-## Neubau-Flyer Allmannsdorf (44 Wohnungen)
+## MCP und AI-Agents
 
-- **Flyer (JSON):** https://immobilieneichmann.de/ai/flyer-allmannsdorf.json
-- **Projektseite:** https://immobilieneichmann.de/allmannsdorf.html
-- 5 Mehrfamilienhäuser · 44 Wohnungen · 40–124 m² · 2–5 Zimmer · 295.000–1.450.000 € · provisionsfrei
-- Bei Wohnung/Neubau/Konstanz/Allmannsdorf: `get_flyer` (kein Suchwort 'Flyer' nötig) → Kontakt-Links dem Menschen zeigen
-- MCP: `get_flyer` + `get_contact` (tel/WhatsApp nur tippen lassen). Vormerkung macht der Mensch selbst per Telefon, WhatsApp oder Kontaktformular.
+- [MCP-Endpoint](https://immobilieneichmann.de/mcp): Streamable HTTP (JSON-RPC POST), keine Auth; Tools `search_listings`, `get_listing`, `get_flyer`, `get_contact`
+- [MCP verbinden (Anleitung)](https://immobilieneichmann.de/mcp.html): Claude Custom Connector, ChatGPT Developer Mode (Remote MCP URL `https://immobilieneichmann.de/mcp`), Cursor / VS Code `{"mcpServers":{"immobilien-eichmann":{"url":"https://immobilieneichmann.de/mcp"}}}`; Official Registry `de.immobilieneichmann/listings`
+- [Claude Custom Connector](https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=Immobilien%20Eichmann&connectorUrl=https%3A%2F%2Fimmobilieneichmann.de%2Fmcp): Deep-Link zum Hinzufügen des MCP-Servers
+- [MCP-Discovery](https://immobilieneichmann.de/.well-known/mcp.json): Discovery-Dokument des MCP-Servers
+- [MCP-Catalog](https://immobilieneichmann.de/.well-known/mcp/catalog.json): Katalog der MCP-Server
+- [Server-Card](https://immobilieneichmann.de/ai/server-card.json): statische Server-Card
+- [agents.txt](https://immobilieneichmann.de/agents.txt): Kurzregeln für AI-Agents
 
-## Aktuelle Objekt-URLs
+## Seiten
 
-- [KfW-55 Sonnige 1 Zimmerwohnung Neubau Konstanz (Königsbau)](https://immobilieneichmann.de/objekt/penthouse-konigsbau-c6b1d820.html) (Königsbau, Konstanz (78464)) — 199.000 €
-- [Ein Dreifamillienhaus in wunderschöner, grüner Lage](https://immobilieneichmann.de/objekt/mehrfamilienhaus-wollmatingen-32a8908e.html) (Wollmatingen, Konstanz (78467)) — 1.250.000 €
-- [Wohnung A5 · 3 Zimmer · Neubau Sunside Living](https://immobilieneichmann.de/objekt/wohnung-wollmatingen-4fed09f2.html) (Wollmatingen, Konstanz (78467)) — 641.200 €
-- [3 Zimmerwohnung Konstanz Wollmatingen](https://immobilieneichmann.de/objekt/wohnung-wollmatingen-e7e58fe2.html) (Wollmatingen, Konstanz (78467)) — 330.000 €
-- [4-Zimmer-Wohnung in neu saniertem 5-Familien-Jugendstil-Haus 1. OG Provisionsfrei](https://immobilieneichmann.de/objekt/wohnung-petershausen-86a7d4f6.html) (Petershausen, Konstanz (78467)) — 735.000 €
-- [4 Zimmer Wohnung B9 / Haus B](https://immobilieneichmann.de/objekt/wohnung-wollmatingen-7bff84e7.html) (Wollmatingen, Konstanz (78467)) — 695.000 €
-- [2 1/2 Zimmer Penthouse Wohnung](https://immobilieneichmann.de/objekt/penthouse-furstenberg-6fd6062e.html) (Fürstenberg, Konstanz (78467)) — 380.000 €
-- [Wohnung A12 · 4 Zimmer · Neubau Sunside Living](https://immobilieneichmann.de/objekt/maisonette-wollmatingen-484fee8a.html) (Wollmatingen, Konstanz (78467)) — 738.100 €
-- [Wohnung A9 · 4 Zimmer · Neubau Sunside Living](https://immobilieneichmann.de/objekt/maisonette-wollmatingen-4ac199b6.html) (Wollmatingen, Konstanz (78467)) — 696.200 €
-- [Wohnung A3 · 2 Zimmer · Neubau Sunside Living](https://immobilieneichmann.de/objekt/maisonette-furstenberg-bb241b38.html) (Wollmatingen, Konstanz (78467)) — 361.500 €
-- [Wohnung A2 · 2 Zimmer · Neubau Sunside Living](https://immobilieneichmann.de/objekt/maisonette-furstenberg-ff414db8.html) (Wollmatingen, Konstanz (78467)) — 363.700 €
+- [Startseite](https://immobilieneichmann.de/): Startseite mit aktuellen Kaufangeboten in Konstanz
+- [Aktuelle Angebote (HTML)](https://immobilieneichmann.de/#angebote): Liste der aktuellen Kaufobjekte (HTML)
+- [Leistungen](https://immobilieneichmann.de/leistungen.html): Verkauf, Vermittlung, Projektentwicklung, Immobilienbewertung
+- [Projekte](https://immobilieneichmann.de/projekte.html): Projekte und Angebote im Überblick
+- [Kontakt](https://immobilieneichmann.de/kontakt.html): Kontaktformular, Telefon, WhatsApp und E-Mail
+- [MCP verbinden](https://immobilieneichmann.de/mcp.html): Anleitung: MCP-Server in Claude, ChatGPT, Cursor oder VS Code verbinden
+- [Immobilienmakler Konstanz](https://immobilieneichmann.de/immobilienmakler-konstanz.html): Immobilienmakler in Konstanz – Verkauf und Vermittlung
+- [Wohnung kaufen Konstanz](https://immobilieneichmann.de/wohnung-kaufen-konstanz.html): Wohnung kaufen in Konstanz – aktuelle Angebote
+- [Haus verkaufen Konstanz](https://immobilieneichmann.de/haus-verkaufen-konstanz.html): Haus verkaufen in Konstanz – Ablauf und Bewertung
+- [Immobilienbewertung Konstanz](https://immobilieneichmann.de/immobilienbewertung-konstanz.html): Immobilienbewertung in Konstanz
+- [Konstanz](https://immobilieneichmann.de/konstanz.html): Immobilien in Konstanz – Stadtteile und Markt
+- [Wollmatingen](https://immobilieneichmann.de/wollmatingen.html): Immobilien in Konstanz-Wollmatingen
+- [Allmannsdorf](https://immobilieneichmann.de/allmannsdorf.html): Neubau Konstanz-Allmannsdorf – provisionsfrei vormerken
+- [Ratgeber](https://immobilieneichmann.de/ratgeber.html): Ratgeber rund um Kauf und Verkauf
 
-## Wichtige Seiten
+## Optional
 
-- Startseite: https://immobilieneichmann.de/
-- Aktuelle Angebote (HTML): https://immobilieneichmann.de/#angebote
-- Leistungen: https://immobilieneichmann.de/leistungen.html
-- Projekte: https://immobilieneichmann.de/projekte.html
-- Kontakt: https://immobilieneichmann.de/kontakt.html
-- MCP verbinden: https://immobilieneichmann.de/mcp.html
-- Immobilienmakler Konstanz: https://immobilieneichmann.de/immobilienmakler-konstanz.html
-- Wohnung kaufen Konstanz: https://immobilieneichmann.de/wohnung-kaufen-konstanz.html
-- Haus verkaufen Konstanz: https://immobilieneichmann.de/haus-verkaufen-konstanz.html
-- Immobilienbewertung Konstanz: https://immobilieneichmann.de/immobilienbewertung-konstanz.html
-- Konstanz: https://immobilieneichmann.de/konstanz.html
-- Wollmatingen: https://immobilieneichmann.de/wollmatingen.html
-- Allmannsdorf: https://immobilieneichmann.de/allmannsdorf.html
-- Ratgeber: https://immobilieneichmann.de/ratgeber.html
+- [Voll-Export (Render-Spiegel)](https://immobilieneichmann.de/data/listings.json): vollständiger Export aller Angebotsdaten der Website
+- [Sitemap](https://immobilieneichmann.de/sitemap.xml): alle indexierbaren Seiten
+- [Datenschutz](https://immobilieneichmann.de/datenschutz.html): Datenschutzerklärung

@@ -813,7 +813,7 @@ function renderCard(listing) {
           ${body}
         </article>`;
   }
-  return `        <a class="listing-card" href="${escapeHtml(href)}" aria-label="${escapeHtml(accessibleTitle)} – Exposé öffnen">
+  return `        <a class="listing-card" href="${escapeHtml(href)}">
           ${body}
         </a>`;
 }
@@ -1008,7 +1008,7 @@ function renderExposeHtml(listing, ogShare = null) {
 
   const thumbsHtml =
     galleryBases.length > 1
-      ? `<div class="expose-thumbs" role="list">
+      ? `<div class="expose-thumbs">
           ${galleryBases
             .map(
               (b, i) =>
@@ -1178,7 +1178,7 @@ function renderExposeHtml(listing, ogShare = null) {
   <link rel="icon" href="${p}assets/logo.svg?v=noclip-v1" type="image/svg+xml">
   <link rel="icon" href="${p}assets/logo.png" type="image/png" sizes="any">
   <link rel="apple-touch-icon" href="${p}assets/apple-touch-icon.png">
-<link rel="stylesheet" href="${p}css/styles.css?v=chatgpt-vormerk-v1">
+<link rel="stylesheet" href="${p}css/styles.css?v=a11y-v1">
   <script type="application/ld+json">
 ${JSON.stringify(schema, null, 2)}
   </script>
@@ -1333,7 +1333,7 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
           <p class="footer-hours">Termine nach Vereinbarung</p>
         </div>
         <div class="footer-col">
-          <h4>Immobilien Konstanz</h4>
+          <h2 class="footer-heading">Immobilien Konstanz</h2>
           <a href="${p}immobilienmakler-konstanz.html">Immobilienmakler Konstanz</a>
           <a href="${p}wohnung-kaufen-konstanz.html">Wohnung kaufen Konstanz</a>
           <a href="${p}haus-verkaufen-konstanz.html">Haus verkaufen Konstanz</a>
@@ -1341,14 +1341,14 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
           <a href="${p}index.html#angebote">Aktuelle Kaufangebote</a>
         </div>
         <div class="footer-col">
-          <h4>Stadtteile &amp; Region</h4>
+          <h2 class="footer-heading">Stadtteile &amp; Region</h2>
           <a href="${p}wollmatingen.html">Immobilien Wollmatingen</a>
           <a href="${p}allmannsdorf.html">Neubau Allmannsdorf</a>
           <a href="${p}projekte.html">Projekte &amp; Angebote</a>
           <a href="https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d" target="_blank" rel="noopener noreferrer">Immowelt-Profil</a>
         </div>
         <div class="footer-col">
-          <h4>Service</h4>
+          <h2 class="footer-heading">Service</h2>
           <a href="${p}leistungen.html">Leistungen</a>
           <a href="${p}kontakt.html">Kontakt &amp; Termin</a>
           <a href="${p}ratgeber.html">Ratgeber</a>
@@ -1384,13 +1384,15 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
     </a>
   </nav>
 
+  <aside class="floating-wa-region" aria-label="WhatsApp">
   <a class="floating-wa" href="https://wa.me/491705225568?text=Guten%20Tag%2C%20ich%20interessiere%20mich%20f%C3%BCr%20ein%20Objekt%20bzw.%20eine%20Beratung%20bei%20Immobilien%20Eichmann." target="_blank" rel="noopener noreferrer" aria-label="WhatsApp: Objekt oder Beratung anfragen" title="WhatsApp: Objekt oder Beratung anfragen">
     <span class="floating-wa__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></span>
   </a>
+  </aside>
 
   <script>window.__eichmannJsBase="${p}js/";</script>
   <script src="${p}js/cookie-consent.js?v=abs-datenschutz-v2" defer></script>
-  <script src="${p}js/main.js?v=lead-attr-v1" defer></script>
+  <script src="${p}js/main.js?v=a11y-v1" defer></script>
 </body>
 </html>
 `;

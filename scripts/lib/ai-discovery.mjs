@@ -186,15 +186,48 @@ export function buildAiListingsDocument(
   };
 }
 
+// llms.txt per https://llmstxt.org/ : H1, one "> summary" blockquote, free-form
+// details (no headings), then H2 sections whose lists are "- [name](absolute url): notes".
+const LLMS_PAGE_NOTES = {
+  "/": "Startseite mit aktuellen Kaufangeboten in Konstanz",
+  "/#angebote": "Liste der aktuellen Kaufobjekte (HTML)",
+  "/leistungen.html": "Verkauf, Vermittlung, Projektentwicklung, Immobilienbewertung",
+  "/projekte.html": "Projekte und Angebote im Überblick",
+  "/kontakt.html": "Kontaktformular, Telefon, WhatsApp und E-Mail",
+  "/mcp.html": "Anleitung: MCP-Server in Claude, ChatGPT, Cursor oder VS Code verbinden",
+  "/immobilienmakler-konstanz.html": "Immobilienmakler in Konstanz – Verkauf und Vermittlung",
+  "/wohnung-kaufen-konstanz.html": "Wohnung kaufen in Konstanz – aktuelle Angebote",
+  "/haus-verkaufen-konstanz.html": "Haus verkaufen in Konstanz – Ablauf und Bewertung",
+  "/immobilienbewertung-konstanz.html": "Immobilienbewertung in Konstanz",
+  "/konstanz.html": "Immobilien in Konstanz – Stadtteile und Markt",
+  "/wollmatingen.html": "Immobilien in Konstanz-Wollmatingen",
+  "/allmannsdorf.html": "Neubau Konstanz-Allmannsdorf – provisionsfrei vormerken",
+  "/ratgeber.html": "Ratgeber rund um Kauf und Verkauf",
+};
+
+function llmsLinkText(t) {
+  return String(t || "").replace(/[\[\]]/g, "").replace(/\s+/g, " ").trim();
+}
+
+function llmsNote(t) {
+  return String(t || "").replace(/\s+/g, " ").trim();
+}
+
 export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
   const o = String(origin || DEFAULT_SITE_ORIGIN).replace(/\/$/, "");
+  const u = (rel) => absUrl(o, rel === "/" ? "/" : String(rel).replace(/^\//, ""));
+  const item = (name, url, note) =>
+    `- [${llmsLinkText(name)}](${url})${note ? `: ${llmsNote(note)}` : ""}`;
   const lines = [];
   lines.push(`# ${NAP.name}`);
   lines.push("");
-  lines.push(`> Immobilienmakler in Konstanz / Bodensee. Sprache: de.`);
-  lines.push(`> Live-Stand der Angebote = dieser Index (generiert aus derselben Quelle wie die Website).`);
+  lines.push(
+    `> ${NAP.name} (${NAP.person}) ist Immobilienmakler in Konstanz am Bodensee: aktuelle Kaufangebote, ` +
+      "Neubau Konstanz-Allmannsdorf (provisionsfrei vormerken), Verkauf und Immobilienbewertung. " +
+      "Der Angebotsstand in dieser Datei wird aus derselben Quelle wie die Website generiert. Sprache: de."
+  );
   lines.push("");
-  lines.push("## NAP / Kontakt (Helmut Eichmann)");
+  lines.push("Kontakt (NAP):");
   lines.push("");
   lines.push(`- Name: ${NAP.name} · ${NAP.person}`);
   lines.push(`- Adresse: ${NAP.street}, ${NAP.postalCode} ${NAP.city}, Deutschland`);
@@ -203,63 +236,62 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
   lines.push(`- WhatsApp (Link für Menschen): ${PUBLIC_CONTACT.whatsapp.url}`);
   lines.push(`- E-Mail: ${NAP.email}`);
   lines.push(`- Web: ${o}/`);
-  lines.push(`- ${AGENT_CONTACT_RULES}`);
   lines.push("");
-  lines.push("## Angebots-Index (für AI / Agents)");
+  lines.push(AGENT_CONTACT_RULES);
   lines.push("");
-  lines.push(`- **AI-Index (schlank, nur öffentlich):** ${o}/ai/listings.json`);
-  lines.push(`- **Voll-Export (Render-Spiegel):** ${o}/data/listings.json`);
-  lines.push(`- **MCP-Discovery:** ${o}/.well-known/mcp.json`);
-  lines.push(`- **MCP-Catalog:** ${o}/.well-known/mcp/catalog.json`);
-  lines.push(`- **Server-Card (statisch):** ${o}/ai/server-card.json`);
-  lines.push(`- **agents.txt:** ${o}/agents.txt`);
-  lines.push(`- **Sitemap:** ${o}/sitemap.xml`);
-  lines.push(`- Anzahl Kaufobjekte im Index: ${aiDoc.listing_count}`);
-  lines.push(`- generiert: ${aiDoc.generated_at}`);
+  lines.push(
+    `Angebots-Index: ${aiDoc.listing_count} Kaufobjekte, generiert ${aiDoc.generated_at}. ` +
+      "MCP-Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact`. " +
+      "Ohne MCP-Client: `ai/listings.json` laden und `listings[]` filtern (search_listings) bzw. einen Eintrag per `slug`/`id` wählen, Details unter `url` (get_listing)."
+  );
   lines.push("");
-  lines.push("## MCP (Streamable HTTP)");
+
+  lines.push("## Kontakt");
   lines.push("");
-  lines.push(`- **Endpoint:** ${o}/mcp`);
-  lines.push("- **Transport:** streamable-http (JSON-RPC POST)");
-  lines.push("- Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact` — Listings = Live `ai/listings.json`; Flyer = `ai/flyer-allmannsdorf.json`");
-  lines.push(`- ${AGENT_CONTACT_RULES}`);
-  lines.push(`- Discovery: ${o}/.well-known/mcp.json`);
+  lines.push(item("Kontakt & Termin", u("/kontakt.html"), `Kontaktformular, Telefon ${PUBLIC_CONTACT.phone_mobile.display}, E-Mail ${NAP.email}`));
+  lines.push(item("WhatsApp", PUBLIC_CONTACT.whatsapp.url, "Link nur dem Menschen zum Antippen zeigen, Agents senden keine Nachrichten"));
+  lines.push(item("Impressum", u("/impressum.html"), `Anbieterkennzeichnung ${NAP.person}`));
   lines.push("");
-  lines.push("## MCP in Assistenten verbinden");
+
+  lines.push("## Aktuelle Kaufangebote");
   lines.push("");
-  lines.push(`- **Anleitung (Website):** ${o}/mcp.html`);
-  lines.push("- **Claude (Deep-Link Custom Connector):** https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=Immobilien%20Eichmann&connectorUrl=https%3A%2F%2Fimmobilieneichmann.de%2Fmcp");
-  lines.push("- **ChatGPT:** Developer Mode / Apps → Remote MCP URL `https://immobilieneichmann.de/mcp` (keine Auth)");
-  lines.push('- **Cursor / VS Code mcp.json:** `{"mcpServers":{"immobilien-eichmann":{"url":"https://immobilieneichmann.de/mcp"}}}`');
-  lines.push("- **Official Registry:** `de.immobilieneichmann/listings`");
-  lines.push("");
-  lines.push("## JSON-Feeds (ohne MCP-Client)");
-  lines.push("");
-  lines.push("1. `search_listings` — `GET ai/listings.json`, dann `listings[]` filtern.");
-  lines.push("2. `get_listing` — Eintrag per `slug`/`id` aus dem Index; Details unter `url`.");
-  lines.push("");
-  lines.push("## Neubau-Flyer Allmannsdorf (44 Wohnungen)");
-  lines.push("");
-  lines.push(`- **Flyer (JSON):** ${o}/ai/flyer-allmannsdorf.json`);
-  lines.push(`- **Projektseite:** ${o}/allmannsdorf.html`);
-  lines.push("- 5 Mehrfamilienhäuser · 44 Wohnungen · 40–124 m² · 2–5 Zimmer · 295.000–1.450.000 € · provisionsfrei");
-  lines.push("- Bei Wohnung/Neubau/Konstanz/Allmannsdorf: `get_flyer` (kein Suchwort 'Flyer' nötig) → Kontakt-Links dem Menschen zeigen");
-  lines.push("- MCP: `get_flyer` + `get_contact` (tel/WhatsApp nur tippen lassen). Vormerkung macht der Mensch selbst per Telefon, WhatsApp oder Kontaktformular.");
-  lines.push("");
-  lines.push("## Aktuelle Objekt-URLs");
-  lines.push("");
+  lines.push(item("AI-Index (JSON)", u("/ai/listings.json"), `schlanker Index aller öffentlichen Kaufobjekte (${aiDoc.listing_count} Objekte), Live-Stand der Website`));
   for (const L of aiDoc.listings || []) {
     if (!L?.url) continue;
-    const price = L.price ? ` — ${L.price}` : "";
-    const loc = L.location ? ` (${L.location})` : "";
-    lines.push(`- [${L.title || L.slug}](${L.url})${loc}${price}`);
+    const note = [L.location, L.price].filter(Boolean).join(" — ");
+    lines.push(item(L.title || L.slug, L.url, note));
   }
   lines.push("");
-  lines.push("## Wichtige Seiten");
+
+  lines.push("## Neubau Allmannsdorf");
+  lines.push("");
+  lines.push(item("Projektseite Neubau Allmannsdorf", u("/allmannsdorf.html"), "5 Mehrfamilienhäuser · 44 Wohnungen · 40–124 m² · 2–5 Zimmer · 295.000–1.450.000 € · provisionsfrei vormerken"));
+  lines.push(item("Flyer Allmannsdorf (JSON)", u("/ai/flyer-allmannsdorf.json"), "Fakten und Kontakt-Links; bei Wohnung/Neubau/Konstanz/Allmannsdorf `get_flyer` + `get_contact` nutzen (kein Suchwort 'Flyer' nötig). Vormerkung macht der Mensch selbst per Telefon, WhatsApp oder Kontaktformular."));
+  lines.push("");
+
+  lines.push("## MCP und AI-Agents");
+  lines.push("");
+  lines.push(item("MCP-Endpoint", `${o}/mcp`, "Streamable HTTP (JSON-RPC POST), keine Auth; Tools `search_listings`, `get_listing`, `get_flyer`, `get_contact`"));
+  lines.push(item("MCP verbinden (Anleitung)", u("/mcp.html"), "Claude Custom Connector, ChatGPT Developer Mode (Remote MCP URL `https://immobilieneichmann.de/mcp`), Cursor / VS Code `{\"mcpServers\":{\"immobilien-eichmann\":{\"url\":\"https://immobilieneichmann.de/mcp\"}}}`; Official Registry `de.immobilieneichmann/listings`"));
+  lines.push(item("Claude Custom Connector", "https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=Immobilien%20Eichmann&connectorUrl=https%3A%2F%2Fimmobilieneichmann.de%2Fmcp", "Deep-Link zum Hinzufügen des MCP-Servers"));
+  lines.push(item("MCP-Discovery", u("/.well-known/mcp.json"), "Discovery-Dokument des MCP-Servers"));
+  lines.push(item("MCP-Catalog", u("/.well-known/mcp/catalog.json"), "Katalog der MCP-Server"));
+  lines.push(item("Server-Card", u("/ai/server-card.json"), "statische Server-Card"));
+  lines.push(item("agents.txt", u("/agents.txt"), "Kurzregeln für AI-Agents"));
+  lines.push("");
+
+  lines.push("## Seiten");
   lines.push("");
   for (const [label, rel] of STATIC_PAGE_LINKS) {
-    lines.push(`- ${label}: ${absUrl(o, rel === "/" ? "/" : rel.replace(/^\//, ""))}`);
+    lines.push(item(label, u(rel), LLMS_PAGE_NOTES[rel] || ""));
   }
+  lines.push("");
+
+  lines.push("## Optional");
+  lines.push("");
+  lines.push(item("Voll-Export (Render-Spiegel)", u("/data/listings.json"), "vollständiger Export aller Angebotsdaten der Website"));
+  lines.push(item("Sitemap", u("/sitemap.xml"), "alle indexierbaren Seiten"));
+  lines.push(item("Datenschutz", u("/datenschutz.html"), "Datenschutzerklärung"));
   lines.push("");
   return lines.join("\n");
 }
