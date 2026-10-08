@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Install/refresh localhost MCP Streamable-HTTP + nginx /mcp proxy on eichmann-web.
+# Install/refresh localhost MCP Streamable-HTTP + nginx /mcp and /mcp-gw proxies on eichmann-web.
+# /mcp-gw needs MCPRUSH_TOKEN in /var/lib/eichmann/secrets/mcprush.env (mode 600, droplet only).
 set -euo pipefail
 
 APP=/var/lib/eichmann/app
@@ -29,6 +30,7 @@ Environment=NODE_ENV=production
 Environment=EICHMANN_SITE_ROOT=/var/www/immobilieneichmann.de
 Environment=EICHMANN_MCP_HOST=127.0.0.1
 Environment=EICHMANN_MCP_PORT=3848
+EnvironmentFile=-/var/lib/eichmann/secrets/mcprush.env
 ExecStart=/usr/bin/node /var/lib/eichmann/app/scripts/mcp-server.mjs
 Restart=on-failure
 RestartSec=3
