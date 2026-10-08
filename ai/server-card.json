@@ -23,7 +23,7 @@
       "listings_full": "https://immobilieneichmann.de/data/listings.json",
       "discovery": "https://immobilieneichmann.de/.well-known/mcp.json",
       "listing_count": 11,
-      "generated_at": "2026-10-08T12:16:46.896Z",
+      "generated_at": "2026-10-08T13:00:09.004Z",
       "tools": [
         "search_listings",
         "get_listing",
