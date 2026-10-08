@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Public Streamable-HTTP MCP for Immobilien Eichmann listings.
- * Bound to 127.0.0.1; nginx reverse-proxies /mcp.
+ * Bound to 127.0.0.1; nginx reverse-proxies /mcp (open) and /mcp-gw (mcprush gateway).
  *
  * Data source: same ai/listings.json the website publishes (no second list).
  *
@@ -12,8 +12,16 @@
  *   EICHMANN_LISTINGS_URL (optional override; default $SITE_ROOT/ai/listings.json via file,
  *                          fallback https://immobilieneichmann.de/ai/listings.json)
  *   EICHMANN_MCP_CACHE_MS (default 15000)
+ *   MCPRUSH_TOKEN        (secret; only for /mcp-gw — loaded via systemd EnvironmentFile
+ *                          /var/lib/eichmann/secrets/mcprush.env, never committed)
+ *
+ * /mcp     – public, no auth (unchanged).
+ * /mcp-gw  – same MCP, but requires `x-mcprush-token: <MCPRUSH_TOKEN>` or
+ *            `Authorization: Bearer <MCPRUSH_TOKEN>`; otherwise 401. Fails closed
+ *            (503) if MCPRUSH_TOKEN is not configured.
  */
 import http from "node:http";
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -687,6 +695,29 @@ function isMcpPath(pathname) {
   return pathname === "/mcp" || pathname === "/mcp/" || pathname === "/";
 }
 
+// mcprush gateway endpoint: same MCP, token-protected. /mcp stays open.
+function isGatewayPath(pathname) {
+  return pathname === "/mcp-gw" || pathname === "/mcp-gw/";
+}
+
+function gatewayTokenFromRequest(req) {
+  const direct = req.headers["x-mcprush-token"];
+  if (typeof direct === "string" && direct.trim()) return direct.trim();
+  const auth = req.headers.authorization;
+  if (typeof auth === "string") {
+    const m = /^Bearer\s+(.+)$/i.exec(auth.trim());
+    if (m) return m[1].trim();
+  }
+  return "";
+}
+
+function tokenMatches(given, expected) {
+  // Constant-time: compare fixed-length digests so length differences don't leak.
+  const a = crypto.createHash("sha256").update(String(given), "utf8").digest();
+  const b = crypto.createHash("sha256").update(String(expected), "utf8").digest();
+  return crypto.timingSafeEqual(a, b);
+}
+
 async function readBody(req) {
   const chunks = [];
   let size = 0;
@@ -718,10 +749,32 @@ const server = http.createServer(async (req, res) => {
 
   const url = new URL(req.url || "/", `http://${HOST}:${PORT}`);
   const pathname = url.pathname;
+  const gateway = isGatewayPath(pathname);
+  if (gateway) {
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version, Last-Event-ID, Authorization, x-mcprush-token"
+    );
+  }
 
   if (req.method === "OPTIONS") {
     res.writeHead(204).end();
     return;
+  }
+
+  if (gateway) {
+    const expected = process.env.MCPRUSH_TOKEN || "";
+    if (!expected) {
+      sendJson(res, 503, jsonRpcError(null, -32000, "Gateway not configured"));
+      return;
+    }
+    const given = gatewayTokenFromRequest(req);
+    if (!given || !tokenMatches(given, expected)) {
+      sendJson(res, 401, jsonRpcError(null, -32001, "Unauthorized"), {
+        "WWW-Authenticate": 'Bearer realm="mcp-gw"',
+      });
+      return;
+    }
   }
 
   if (pathname === "/health" || pathname === "/mcp/health") {
@@ -743,7 +796,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (!isMcpPath(pathname)) {
+  if (!gateway && !isMcpPath(pathname)) {
     res.writeHead(404).end("Not Found");
     return;
   }
