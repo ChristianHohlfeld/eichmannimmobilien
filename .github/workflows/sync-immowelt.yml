@@ -82,11 +82,14 @@ jobs:
           # render-only also refreshes the shared source and AI discovery files.
           # Keep every generated output staged so the rebase/push cannot leave
           # a dirty worktree (and so the deploy ships the same source of truth).
-          git add -A -- index.html projekte.html partials/listings-grid.html objekt sitemap.xml data/listings.json agents.txt llms.txt ai .well-known/mcp.json .well-known/mcp/catalog.json
+          # Project pages (allmannsdorf.html, …) are re-rendered too — commit them with the rest.
+          git add -A -- index.html projekte.html allmannsdorf.html partials/listings-grid.html objekt sitemap.xml data/listings.json agents.txt llms.txt ai .well-known/mcp.json .well-known/mcp/catalog.json
+          git status --short
           if git diff --staged --quiet; then
             echo "Generated output already current."
           else
             git commit -m "chore: render Immowelt attribution"
-            git pull --rebase origin main
+            # Any other incidental render output must never block the rebase.
+            git pull --rebase --autostash origin main
             git push
           fi

@@ -1634,6 +1634,10 @@ a.flyer-cta-script:focus-visible {
   .hero-actions .btn {
     width: 100%;
   }
+  /* hero-call-mobile-v1: in the column stack, flex-basis 100% would be height → 224px button
+     and the other CTAs wrapped into an off-screen column. Natural height, no wrapping. */
+  .hero-actions { flex-wrap: nowrap; }
+  .hero .hero-actions > .btn-call { flex: 0 0 auto; }
 
   /* Cards: keep body padding readable; avoid CTA squeeze */
   .listing-body { padding: var(--space-2); }

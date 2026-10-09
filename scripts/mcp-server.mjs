@@ -355,6 +355,52 @@ function getListing(doc, args = {}) {
   return { listing: hit, generated_at: doc.generated_at, source: doc._source };
 }
 
+/* Outbound attribution: page links handed to agents/humans via MCP get UTM params
+   (utm_source=mcp, utm_medium=mcp, utm_campaign=<project slug|objekte>, utm_content=<tool>).
+   Only HTML pages on immobilieneichmann.de; data files (ai/*.json, llms.txt), images,
+   existing query params, existing utm_* and #fragments stay untouched. */
+const SITE_LINK_RE = /https:\/\/(?:www\.)?immobilieneichmann\.de(?:\/[^\s"'<>)\]]*)?/g;
+
+function addUtm(url, { campaign = "objekte", content = "", medium = "mcp" } = {}) {
+  let u;
+  try {
+    u = new URL(url);
+  } catch {
+    return url;
+  }
+  if (!/^(www\.)?immobilieneichmann\.de$/.test(u.hostname)) return url;
+  const path = u.pathname || "/";
+  if (!(path.endsWith("/") || path.endsWith(".html"))) return url;
+  if (u.searchParams.has("utm_source")) return url;
+  const camp = /allmannsdorf/i.test(path + u.search) ? "allmannsdorf" : campaign;
+  u.searchParams.append("utm_source", "mcp");
+  u.searchParams.append("utm_medium", medium);
+  u.searchParams.append("utm_campaign", camp);
+  if (content) u.searchParams.append("utm_content", content);
+  return u.toString();
+}
+
+function utmifyDeep(value, opts) {
+  if (typeof value === "string") {
+    return value.replace(SITE_LINK_RE, (m) => {
+      // keep trailing sentence punctuation outside the URL
+      const trail = (m.match(/[.,;:!?]+$/) || [""])[0];
+      const core = trail ? m.slice(0, -trail.length) : m;
+      return addUtm(core, opts) + trail;
+    });
+  }
+  if (Array.isArray(value)) return value.map((v) => utmifyDeep(v, opts));
+  if (value && typeof value === "object") {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      // canonical / data identifiers stay canonical
+      out[k] = k === "canonical" || k === "uri" ? v : utmifyDeep(v, opts);
+    }
+    return out;
+  }
+  return value;
+}
+
 function textResult(obj) {
   return {
     content: [{ type: "text", text: JSON.stringify(obj, null, 2) }],
@@ -363,6 +409,21 @@ function textResult(obj) {
 }
 
 async function callTool(name, args) {
+  const result = await callToolRaw(name, args);
+  const campaign = name === "get_flyer" ? "allmannsdorf" : "objekte";
+  const opts = { campaign, content: name, medium: "mcp" };
+  if (result && result.structuredContent) {
+    const tagged = utmifyDeep(result.structuredContent, opts);
+    return {
+      ...result,
+      content: [{ type: "text", text: JSON.stringify(tagged, null, 2) }],
+      structuredContent: tagged,
+    };
+  }
+  return result;
+}
+
+async function callToolRaw(name, args) {
   if (name === "get_contact") {
     return textResult({
       contact: buildContactPayload({ forAllmannsdorf: false }),

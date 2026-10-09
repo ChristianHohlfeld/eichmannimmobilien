@@ -145,6 +145,22 @@ try {
   if (flyerObj.flyer?.unit_count !== 44) {
     fail(`get_flyer unit_count expected 44 got ${flyerObj.flyer?.unit_count}`);
   }
+  // UTM attribution on outbound page links (mcp-utm-v1)
+  {
+    const lUrl = String(getObj.listing?.url || "");
+    if (!/[?&]utm_source=mcp&utm_medium=mcp&utm_campaign=objekte&utm_content=get_listing$/.test(lUrl)) fail(`get_listing url lacks UTM: ${lUrl}`);
+    if (!lUrl.startsWith("https://immobilieneichmann.de/objekt/")) fail(`get_listing url host/path changed: ${lUrl}`);
+    if (/utm_/.test(String(getObj.listing?.image || ""))) fail("image URL must not get UTM");
+    const pages = flyerObj.flyer?.pages || {};
+    const vorm = String(pages.contact_vormerkung || "");
+    if (!/^https:\/\/immobilieneichmann\.de\/kontakt\.html\?interesse=allmannsdorf&utm_source=mcp&utm_medium=mcp&utm_campaign=allmannsdorf&utm_content=get_flyer#contact-form$/.test(vorm)) fail(`flyer vormerkung url wrong (query/fragment must stay): ${vorm}`);
+    if (/utm_/.test(JSON.stringify(flyerObj.flyer?.images || {}))) fail("flyer image URLs must not get UTM");
+    const rawText = flyer.json?.result?.content?.[0]?.text || "";
+    if (/ai\/flyer-allmannsdorf\.json\?utm|llms\.txt\?utm/.test(rawText)) fail("data file URLs must stay canonical");
+    if (!/kontakt\.html\?utm_source=mcp/.test(String(flyerObj.next_step_for_human || ""))) fail("free-text contact link lacks UTM");
+    const listingsFile = fs.readFileSync(path.join(root, "ai", "listings.json"), "utf8");
+    if (/utm_source=mcp/.test(listingsFile)) fail("ai/listings.json (canonical data) must not contain UTM");
+  }
   if (!flyerObj.contact?.preferred?.tel?.includes("491705225568")) {
     fail("get_flyer missing prominent contact.preferred.tel");
   }

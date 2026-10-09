@@ -1186,7 +1186,7 @@ function renderExposeHtml(listing, ogShare = null) {
   <link rel="icon" href="${p}assets/logo.svg?v=noclip-v1" type="image/svg+xml">
   <link rel="icon" href="${p}assets/logo.png" type="image/png" sizes="any">
   <link rel="apple-touch-icon" href="${p}assets/apple-touch-icon.png">
-<link rel="stylesheet" href="${p}css/styles.css?v=devcheck-v1">
+<link rel="stylesheet" href="${p}css/styles.css?v=hero-call-v1">
   <script type="application/ld+json">
 ${JSON.stringify(schema, null, 2)}
   </script>
