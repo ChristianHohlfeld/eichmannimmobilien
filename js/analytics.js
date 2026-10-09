@@ -153,24 +153,33 @@
   });
 
   function linkLocation(link) {
-    if (link.closest('.sticky-bar, .flyer-sticky-ctas')) return 'sticky';
+    if (link.closest('.sticky-bar, .flyer-sticky-ctas, .floating-wa-region') || link.classList.contains('floating-wa')) return 'sticky';
     if (link.closest('.nav')) return 'nav';
     if (link.closest('.hero')) return 'hero';
     if (link.closest('.flyer')) return 'flyer';
+    if (link.closest('.site-footer')) return 'footer';
     return 'content';
   }
 
-  document.querySelectorAll('a[href^="tel:"]').forEach(function (link) {
-    link.addEventListener('click', function () {
-      trackEvent('click_call', { location: linkLocation(link) });
-    });
-  });
-
-  document.querySelectorAll('a[href*="wa.me/"]').forEach(function (link) {
-    link.addEventListener('click', function () {
-      trackEvent('click_whatsapp', { location: linkLocation(link) });
-    });
-  });
+  /* Click-to-call / WhatsApp: delegated (covers every tel:/wa.me link on all pages).
+     Beacon transport so the hit survives the app switch / navigation. */
+  document.addEventListener('click', function (e) {
+    var link = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!link) return;
+    var href = link.getAttribute('href') || '';
+    if (/^tel:/i.test(href)) {
+      trackEvent('click_phone', {
+        location: linkLocation(link),
+        phone_target: href.replace(/^tel:/i, '').replace(/[^\d+]/g, '').slice(0, 20),
+        transport_type: 'beacon'
+      });
+    } else if (href.indexOf('wa.me/') !== -1) {
+      trackEvent('click_whatsapp', {
+        location: linkLocation(link),
+        transport_type: 'beacon'
+      });
+    }
+  }, true);
 
   var flyer = document.getElementById('flyerModal');
   if (flyer) {

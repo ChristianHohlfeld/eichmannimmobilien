@@ -17,7 +17,10 @@ const requiredEvents = [
   'form_submit_success',
   'form_submit_error',
   'form_abandon',
-  'vormerken_submit'
+  'vormerken_submit',
+  'generate_lead',
+  'click_phone',
+  'click_whatsapp'
 ];
 
 const missing = requiredEvents.filter((name) => {

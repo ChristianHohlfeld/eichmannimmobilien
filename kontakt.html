@@ -27,7 +27,7 @@
   <link rel="icon" href="assets/logo.png?v=house-orig-v1" type="image/png" sizes="any">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="preload" href="assets/logo.svg?v=house-orig-v1" as="image" type="image/svg+xml">
-<link rel="stylesheet" href="css/styles.css?v=a11y-v1">
+<link rel="stylesheet" href="css/styles.css?v=devcheck-v1">
   
   <script type="application/ld+json">
 {
@@ -96,12 +96,8 @@
             <input type="text" id="name" name="name" required autocomplete="name">
           </div>
           <div class="form-group">
-            <label for="email">E-Mail *</label>
-            <input type="email" id="email" name="email" required autocomplete="email">
-          </div>
-          <div class="form-group">
-            <label for="phone">Telefon</label>
-            <input type="tel" id="phone" name="phone" autocomplete="tel">
+            <label for="phone">Telefon *</label>
+            <input type="tel" id="phone" name="phone" required autocomplete="tel" inputmode="tel" placeholder="Für den Rückruf">
           </div>
           <div class="form-group">
             <label for="subject">Betreff</label>
@@ -115,10 +111,17 @@
               <option value="Projektentwicklung">Projektentwicklung</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="message">Ihre Nachricht *</label>
-            <textarea id="message" name="message" required placeholder="Beschreiben Sie kurz Ihr Anliegen …"></textarea>
-          </div>
+          <details class="form-more">
+            <summary>Mehr Angaben (optional)</summary>
+            <div class="form-group">
+              <label for="email">E-Mail</label>
+              <input type="email" id="email" name="email" autocomplete="email">
+            </div>
+            <div class="form-group">
+              <label for="message">Ihre Nachricht</label>
+              <textarea id="message" name="message" placeholder="Beschreiben Sie kurz Ihr Anliegen …"></textarea>
+            </div>
+          </details>
           <p class="form-note legal-request-note">Informationen zur Verarbeitung Ihrer Angaben finden Sie in der <a href="datenschutz.html">Datenschutzerklärung</a>. Durch das Absenden kommt kein Maklervertrag zustande.</p>
           
           <button type="submit" class="btn btn-accent" id="contact-submit">Nachricht senden</button>
@@ -342,8 +345,8 @@
         </div>
     </div>
   </div>
-  <script src="js/cookie-consent.js?v=flyer-cta-cookie-v1" defer></script>
-  <script src="js/main.js?v=flyer-idle-v1" defer></script>
+  <script src="js/cookie-consent.js?v=devcheck-v1" defer></script>
+  <script src="js/main.js?v=devcheck-v1" defer></script>
 
 </body>
 </html>
