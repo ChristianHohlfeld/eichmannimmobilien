@@ -26,6 +26,13 @@ export const SITEMAP_PROJECT_END = "<!-- PROJECT-SITEMAP:END -->";
 const DEFAULT_ORIGIN = "https://immobilieneichmann.de";
 const BUSINESS_ID = `${DEFAULT_ORIGIN}/#business`;
 
+/* Escaped text → known office numbers become click-to-call links (never other numbers). */
+function linkifyContactPhones(html) {
+  return String(html || "")
+    .replace(/(?<![\d+])(?:\+49|0049|0)\s?170[\s\/-]?522[\s-]?55\s?68(?!\d)/g, (m) => `<a href="tel:+491705225568">${m}</a>`)
+    .replace(/(?<![\d+])(?:\+49|0049|0)\s?7531[\s\/-]?9228848(?!\d)/g, (m) => `<a href="tel:+4975319228848">${m}</a>`);
+}
+
 function escapeHtml(s) {
   return String(s ?? "")
     .replace(/&/g, "&amp;")
@@ -448,7 +455,7 @@ ${faq
   .map(
     (f) => `          <details class="faq-item">
             <summary>${escapeHtml(f.q)}</summary>
-            <p>${escapeHtml(f.a)}</p>
+            <p>${linkifyContactPhones(escapeHtml(f.a))}</p>
           </details>`
   )
   .join("\n")}
