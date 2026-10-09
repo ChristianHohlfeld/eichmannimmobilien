@@ -15,8 +15,11 @@ Keine Kontaktdaten (Name, E-Mail, Telefon, Nachricht) in Events — nur Feldname
 | `form_submit_error` | Validierung / Server / Netzwerk | + `error_type`, ggf. `http_status` |
 | `form_abandon` | `pagehide` nach Start ohne Success | |
 | `vormerken_submit` | Submit mit Anliegen Allmannsdorf (Alias) | `project=allmannsdorf` |
+| `generate_lead` | Nur nach bestätigtem Erfolg (gleiche Stelle wie `form_submit_success`) | + `form_id`, `form_type` (`contact` \| `expose`), `ab_variant` |
+| `click_phone` | Klick auf jeden `tel:`-Link | + `location` (`sticky` \| `nav` \| `hero` \| `flyer` \| `footer` \| `content`), `phone_target`, `ab_variant` |
+| `click_whatsapp` | Klick auf jeden `wa.me`-Link | + `location` (schwebender WhatsApp-Knopf = `sticky`) |
 
-Zusätzlich unverändert: `click_call`, `click_whatsapp`, `flyer_open`.
+Zusätzlich: `flyer_open`. `click_call` wurde am 2026-10-09 durch `click_phone` ersetzt.
 
 ### Parameter (kein PII)
 
@@ -33,7 +36,9 @@ Zusätzlich unverändert: `click_call`, `click_whatsapp`, `flyer_open`.
 2. **Admin** → **Data display** → **Events** (bzw. *Ereignisse*)
 3. Nach Deploy 24–48 h warten, bis die Custom-Events erscheinen
 4. Als **Key event** (früher Conversion) markieren:
-   - `form_submit_success` (Haupt-Conversion)
+   - `generate_lead` (Haupt-Conversion, GA4-Standard-Lead-Event)
+   - `click_phone`, `click_whatsapp`
+   - `form_submit_success` (gleichwertig zu `generate_lead`, nicht beide doppelt zählen)
    - optional `vormerken_submit` (Allmannsdorf)
    - optional `form_start` / `form_abandon` für Funnel-Analysen (kein Muss als Key Event)
 5. Funnel-Exploration: **Explore** → **Funnel exploration** mit Schritten  

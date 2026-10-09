@@ -1,6 +1,6 @@
 (function () {
   var KEY = "eichmann_cookie_consent_v1";
-  var ANALYTICS_SRC = (window.__eichmannJsBase || "js/") + "analytics.js?v=ab-queue-v1";
+  var ANALYTICS_SRC = (window.__eichmannJsBase || "js/") + "analytics.js?v=devcheck-v1";
 
   function read() {
     try {

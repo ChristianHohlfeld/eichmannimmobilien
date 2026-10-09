@@ -376,6 +376,13 @@ function contentFingerprint(value) {
   return [...hashes].sort().slice(0, 64);
 }
 
+/* Escaped prose → known office numbers become click-to-call links (never other numbers). */
+function linkifyContactPhones(html) {
+  return String(html || "")
+    .replace(/(?<![\d+])(?:\+49|0049|0)\s?170[\s\/-]?522[\s-]?55\s?68(?!\d)/g, (m) => `<a href="tel:+491705225568">${m}</a>`)
+    .replace(/(?<![\d+])(?:\+49|0049|0)\s?7531[\s\/-]?9228848(?!\d)/g, (m) => `<a href="tel:+4975319228848">${m}</a>`);
+}
+
 function normalizeContactPhoneDisplay(value) {
   return String(value || "")
     .replace(/\b0170\s+522\s+55\s+68\b/g, "+49 170 522 55 68")
@@ -1043,7 +1050,7 @@ function renderExposeHtml(listing, ogShare = null) {
     .split(/\n{2,}/)
     .map((para) => para.trim())
     .filter(Boolean)
-    .map((para) => `<p>${escapeHtml(normalizeContactPhoneDisplay(para)).replace(/\n/g, "<br>")}</p>`)
+    .map((para) => `<p>${linkifyContactPhones(escapeHtml(normalizeContactPhoneDisplay(para))).replace(/\n/g, "<br>")}</p>`)
     .join("\n          ");
 
   const descriptionHtml = proseHtml(listing.description);
@@ -1179,7 +1186,7 @@ function renderExposeHtml(listing, ogShare = null) {
   <link rel="icon" href="${p}assets/logo.svg?v=noclip-v1" type="image/svg+xml">
   <link rel="icon" href="${p}assets/logo.png" type="image/png" sizes="any">
   <link rel="apple-touch-icon" href="${p}assets/apple-touch-icon.png">
-<link rel="stylesheet" href="${p}css/styles.css?v=a11y-v1">
+<link rel="stylesheet" href="${p}css/styles.css?v=devcheck-v1">
   <script type="application/ld+json">
 ${JSON.stringify(schema, null, 2)}
   </script>
@@ -1392,8 +1399,8 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
   </aside>
 
   <script>window.__eichmannJsBase="${p}js/";</script>
-  <script src="${p}js/cookie-consent.js?v=abs-datenschutz-v2" defer></script>
-  <script src="${p}js/main.js?v=flyer-idle-v1" defer></script>
+  <script src="${p}js/cookie-consent.js?v=devcheck-v1" defer></script>
+  <script src="${p}js/main.js?v=devcheck-v1" defer></script>
 </body>
 </html>
 `;

@@ -157,6 +157,14 @@
       }
     }
 
+    /* Kurzformular: optionale Felder in <details class="form-more">; bei Validierungsfehler aufklappen */
+    var more = form.querySelector("details.form-more");
+    if (more) {
+      form.addEventListener("invalid", function (e) {
+        if (more.contains(e.target)) more.open = true;
+      }, true);
+    }
+
     if (mailtoBtn) {
       mailtoBtn.addEventListener("click", function () {
         window.location.href = buildMailto(form);
@@ -236,13 +244,19 @@
         .then(function (result) {
           if (result.ok && result.data && result.data.success === true) {
             show(success, true);
-            form.reset();
             try {
               if (window.__eichmannFormFunnel && typeof window.__eichmannFormFunnel.markSuccess === "function") {
                 window.__eichmannFormFunnel.markSuccess();
               }
             } catch (err) {}
+            /* Track before reset so anliegen/project reflect the sent form. generate_lead = confirmed success only. */
             trackForm("form_submit_success");
+            trackForm("generate_lead", {
+              form_id: form.id || "contact-form",
+              form_type: isExpose ? "expose" : "contact",
+              transport_type: "beacon"
+            });
+            form.reset();
           } else {
             show(error, true);
             trackForm("form_submit_error", {
@@ -426,6 +440,12 @@
     if (msgW && !msgW.value) {
       msgW.placeholder = "Hiermit widerrufe ich den Vertrag vom … über …";
     }
+    /* Widerruf braucht Text + E-Mail (Eingangsbestätigung): Felder zeigen und Pflicht machen */
+    var moreW = form.querySelector("details.form-more");
+    if (moreW) moreW.open = true;
+    var mailW = form.querySelector('[name="email"]');
+    if (mailW) mailW.required = true;
+    if (msgW) msgW.required = true;
   }
 
   /* Prefill Anliegen + Fokus Formular bei ?interesse=allmannsdorf */
