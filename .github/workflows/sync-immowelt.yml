@@ -89,7 +89,16 @@ jobs:
             echo "Generated output already current."
           else
             git commit -m "chore: render Immowelt attribution"
-            # Any other incidental render output must never block the rebase.
-            git pull --rebase --autostash origin main
-            git push
+            # Any other incidental render output must never block the rebase. Other
+            # workflows (layout-regression render) may push at the same moment: retry,
+            # and on overlapping generated files keep this fresh render (-X theirs).
+            for attempt in 1 2 3 4; do
+              if git pull --rebase --autostash -X theirs origin main && git push; then
+                exit 0
+              fi
+              git rebase --abort 2>/dev/null || true
+              echo "push attempt ${attempt} lost a race; retrying"
+              sleep $((attempt * 5))
+            done
+            exit 1
           fi

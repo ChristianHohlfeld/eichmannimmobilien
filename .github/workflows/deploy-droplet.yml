@@ -36,10 +36,6 @@ on:
     types: [completed]
     branches: [main]
 
-concurrency:
-  group: deploy-eichmann-droplet
-  cancel-in-progress: true
-
 permissions:
   contents: read
 
@@ -51,6 +47,11 @@ jobs:
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Job-level (not workflow-level): a skipped workflow_run (failed sync) must not
+    # cancel an in-progress push deploy. Only deploys that actually run queue/cancel.
+    concurrency:
+      group: deploy-eichmann-droplet
+      cancel-in-progress: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
