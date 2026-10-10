@@ -1,6 +1,6 @@
 (function () {
   var KEY = "eichmann_cookie_consent_v1";
-  var ANALYTICS_SRC = (window.__eichmannJsBase || "js/") + "analytics.js?v=claude-plan-v1";
+  var ANALYTICS_SRC = (window.__eichmannJsBase || "js/") + "analytics.js?v=claude-v2";
 
   function read() {
     try {
@@ -56,7 +56,19 @@
     bar.setAttribute("role", "dialog");
     bar.setAttribute("aria-labelledby", "cookie-banner-title");
     bar.setAttribute("aria-describedby", "cookie-banner-desc");
-    bar.innerHTML =
+    var en = /^en/i.test(document.documentElement.getAttribute("lang") || "");
+    bar.innerHTML = en
+      ? '<div class="cookie-banner-inner">' +
+        '<div class="cookie-banner-copy">' +
+        '<p id="cookie-banner-title" class="cookie-banner-title">Cookies &amp; privacy</p>' +
+        '<p id="cookie-banner-desc" class="cookie-banner-desc">We only store what is technically necessary to remember your privacy choice. Statistics (Google Analytics) are used only with your consent. Details in our <a href="/datenschutz.html" hreflang="de">privacy policy (in German)</a>.</p>' +
+        "</div>" +
+        '<div class="cookie-banner-actions">' +
+        '<button type="button" class="btn btn-outline btn-sm" data-cookie="necessary">Necessary only</button>' +
+        '<button type="button" class="btn btn-accent btn-sm" data-cookie="all">Accept all</button>' +
+        "</div>" +
+        "</div>"
+      : '<div class="cookie-banner-inner">' +
       '<div class="cookie-banner-inner">' +
       '<div class="cookie-banner-copy">' +
       '<p id="cookie-banner-title" class="cookie-banner-title">Cookies &amp; Datenschutz</p>' +

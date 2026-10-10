@@ -13,8 +13,8 @@
       "meta_description": "Neubau in Konstanz-Allmannsdorf: 44 Eigentumswohnungen, 2–5 Zimmer, 40–124 m², viele mit Seeblick auf den Bodensee. Provisionsfrei – jetzt vormerken.",
       "h1": "Neubau Konstanz-Allmannsdorf: Wohnungen mit Seesicht",
       "lead": "44 Eigentumswohnungen in 5 Mehrfamilienhäusern, viele mit Blick auf den Bodensee – provisionsfrei vormerken.",
-      "summary": "In Konstanz-Allmannsdorf entsteht ein Neubau – jetzt provisionsfrei vormerken. 5 Mehrfamilienhäuser mit 44 Wohnungen. Viele Wohnungen mit traumhafter Seesicht.",
-      "description": "In einer der gefragtesten Wohnlagen Konstanz entsteht ein modernes Wohnensemble mit 5 Mehrfamilienhäusern und insgesamt 44 hochwertigen Wohnungen. Freuen Sie sich auf durchdachte Grundrisse, lichtdurchflutete Räume und eine Architektur, die Design, Komfort und Lebensqualität vereint. Viele Wohnungen bieten einen einzigartigen Blick auf den Bodensee.",
+      "summary": "Neubau in Konstanz-Allmannsdorf – jetzt provisionsfrei vormerken. 5 Mehrfamilienhäuser mit 44 Wohnungen. Viele Wohnungen mit traumhafter Seesicht.",
+      "description": "Der Neubau Allmannsdorf ist ein modernes Wohnensemble mit 5 Mehrfamilienhäusern und insgesamt 44 hochwertigen Wohnungen in einer der gefragtesten Wohnlagen von Konstanz. Freuen Sie sich auf durchdachte Grundrisse, lichtdurchflutete Räume und eine Architektur, die Design, Komfort und Lebensqualität vereint. Viele Wohnungen bieten einen einzigartigen Blick auf den Bodensee.",
       "unit_count": 44,
       "building_count": 5,
       "building_type": "Mehrfamilienhäuser",
@@ -75,7 +75,8 @@
         "flyer_modal_on": [
           "index.html",
           "/"
-        ]
+        ],
+        "html_en": "en/allmannsdorf.html"
       },
       "notes": [
         "Die 44 Wohnungen sind das Neubauprojekt (Flyer), keine 44 einzelnen Immowelt-Kaufanzeigen.",
@@ -93,7 +94,7 @@
       },
       "location_text": [
         "Allmannsdorf ist ein Stadtteil im Osten von Konstanz (PLZ 78464). Er liegt rechtsrheinisch auf einem Höhenrücken oberhalb von Staad – zwischen Innenstadt, Universität und Insel Mainau, nah am Bodensee.",
-        "Das Neubauensemble entsteht in dieser ruhigen und gefragten Lage. Viele der 44 Wohnungen bieten einen Blick auf den Bodensee. Konstanz grenzt direkt an Kreuzlingen – auch für Käuferinnen und Käufer aus der Schweiz ist Allmannsdorf gut erreichbar."
+        "Das Neubauensemble liegt in dieser ruhigen und gefragten Lage. Viele der 44 Wohnungen bieten einen Blick auf den Bodensee. Konstanz grenzt direkt an Kreuzlingen – auch für Käuferinnen und Käufer aus der Schweiz ist Allmannsdorf gut erreichbar."
       ],
       "gallery": [
         {

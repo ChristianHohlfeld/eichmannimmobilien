@@ -56,3 +56,9 @@ Zusätzlich: `flyer_open`. `click_call` wurde am 2026-10-09 durch `click_phone` 
 - Lead-KPI = `generate_lead` (genau 1× pro bestätigter Übermittlung). `vormerken_submit`/`form_submit_success` bleiben Hilfs-Signale, nicht als Conversion zählen.
 - `click_phone` hat `device_hint` (mobile/desktop, Viewport ≤768px) → in GA4 nur `device_hint=mobile` als Anruf-Signal werten.
 - Sticky-Leiste nur mobil (Anrufen + WhatsApp, `location=sticky`); Desktop: keine Leiste.
+
+## Update 2026-10-10 (claude-v2)
+- Neue Vormerk-Kurzformulare (`form[data-vormerk-form]`, js/vormerk.js): Start-Hero (`location=home_hero`), Flyer-Modal (`flyer_modal`), allmannsdorf.html + /en/allmannsdorf.html (`project_inline`). Erst bei Server-Erfolg: `vormerken_submit` + `form_submit_success` + genau ein `generate_lead` (`form_type=vormerken`).
+- `generate_lead` und `vormerken_submit` tragen `lang` (de|en); alle Events zusätzlich `page_lang`. Neues Event `lang_switch` (from, to, location).
+- Exposé-Formular: nur Name + Telefon Pflicht (Rest unter „Mehr Angaben (optional)“); Gateway akzeptiert das (PR digitalisierungsplanung.de #221). Formulare senden `lang`; EN-Anfragen kommen mit Betreff-Präfix „[EN]“.
+- GA4: `lang`, `page_lang`, `location`, `form_type`, `device_hint` als benutzerdefinierte Dimensionen (Ereignis) registrieren.

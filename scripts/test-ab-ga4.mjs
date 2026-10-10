@@ -69,9 +69,10 @@ try {
     const hero = await page.evaluate(() => {
       const h = document.querySelector('.hero');
       const call = h.querySelector('.hero-actions a[href^="tel:"]');
-      const vorm = h.querySelector('.hero-actions a[href*="interesse=allmannsdorf"]');
+      const vorm = h.querySelector('.hero-actions .hero-cta-vormerken');
       return {
         h1: h.querySelector('h1').textContent.trim(),
+        big: (h.querySelector('.hero-title') || {}).textContent,
         text: h.innerText,
         abEl: !!document.querySelector('[data-ab-hero-cta], [data-ab-variant]'),
         abScript: !!document.querySelector('script[src*="ab-hero-cta"]'),
@@ -83,7 +84,8 @@ try {
         vormLabel: vorm && vorm.textContent.trim(),
       };
     });
-    if (hero.h1 !== 'Neubau Allmannsdorf – jetzt provisionsfrei vormerken') fail(`hero h1 wrong: ${hero.h1}`);
+    if (hero.h1 !== 'Immobilienmakler Konstanz · Bodensee') fail(`hero h1 wrong: ${hero.h1}`);
+    if ((hero.big || '').trim() !== 'Neubau Allmannsdorf – jetzt provisionsfrei vormerken') fail(`hero title wrong: ${hero.big}`);
     if (hero.abEl || hero.abScript) fail('A/B markup or script still on the home page');
     if (hero.callLabel !== 'Anrufen' || hero.vormLabel !== 'Vormerken') fail(`hero CTA labels wrong: ${hero.callLabel} / ${hero.vormLabel}`);
     if (!(hero.callX < hero.vormX) || Math.abs(hero.callTop - hero.vormTop) > 2) fail(`mobile: Anrufen must be first, side by side (${hero.callX}/${hero.vormX}, ${hero.callTop}/${hero.vormTop})`);
@@ -103,7 +105,7 @@ try {
     const d = await page.evaluate(() => {
       const h = document.querySelector('.hero');
       const call = h.querySelector('.hero-actions a[href^="tel:"]').getBoundingClientRect();
-      const vorm = h.querySelector('.hero-actions a[href*="interesse=allmannsdorf"]').getBoundingClientRect();
+      const vorm = h.querySelector('.hero-actions .hero-cta-vormerken').getBoundingClientRect();
       return { vormFirst: vorm.left < call.left, sameRow: Math.abs(vorm.top - call.top) < 2, sticky: getComputedStyle(document.querySelector('.sticky-bar')).display };
     });
     if (!d.vormFirst || !d.sameRow) fail(`desktop: Vormerken must be first, side by side ${JSON.stringify(d)}`);

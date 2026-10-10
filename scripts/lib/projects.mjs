@@ -10,6 +10,7 @@
  *
  * Listings remain origin=immowelt|eigen via SQLite; this module never touches them.
  */
+import { vormerkFormHtml } from "./vormerk-form.mjs";
 import { readFile, writeFile, readdir, unlink, access } from "node:fs/promises";
 import path from "node:path";
 
@@ -274,7 +275,6 @@ export function buildProjectJsonLd(project, { origin = DEFAULT_ORIGIN, updatedAt
       highPrice: String(high),
       priceCurrency: currency,
       offerCount: String(project.unit_count || 1),
-      availability: "https://schema.org/InStock",
       offeredBy: { "@id": BUSINESS_ID },
       url: absUrl(o, project.pages?.contact_vormerkung || `kontakt.html?interesse=${project.slug}#contact-form`),
     };
@@ -364,9 +364,13 @@ export function buildProjectSeoHead(project, { origin = DEFAULT_ORIGIN, updatedA
   <meta name="description" content="${escapeHtml(desc)}">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <link rel="canonical" href="${escapeHtml(url)}">
-  <meta property="og:type" content="website">
+${project.pages?.html_en ? `  <link rel="alternate" hreflang="de" href="${escapeHtml(url)}">
+  <link rel="alternate" hreflang="en" href="${escapeHtml(absUrl(o, project.pages.html_en))}">
+  <link rel="alternate" hreflang="x-default" href="${escapeHtml(url)}">
+` : ""}  <meta property="og:type" content="website">
   <meta property="og:locale" content="de_DE">
-  <meta property="og:locale:alternate" content="de_CH">
+  <meta property="og:locale:alternate" content="de_CH">${project.pages?.html_en ? `
+  <meta property="og:locale:alternate" content="en_GB">` : ""}
   <meta property="og:site_name" content="Immobilien Eichmann">
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(desc)}">
@@ -477,10 +481,17 @@ ${faq
         <span class="eyebrow">Neubau · ${escapeHtml((project.location || "Allmannsdorf").replace(/^Konstanz-/, ""))} · Provisionsfrei</span>
         <h1>${escapeHtml(project.h1 || project.title)}</h1>
         <p class="lead">${escapeHtml(project.lead || project.summary || "")}</p>
-        <div class="hero-actions">
-          <a class="btn btn-accent" href="#flyerModal" data-open-flyer>Flyer öffnen</a>
-          <a class="btn btn-outline" href="${escapeHtml(contact)}">Vormerken</a>
+        <div class="hero-actions project-hero-actions">
+          <a class="btn btn-accent" href="tel:+491705225568" aria-label="Anrufen: +49 170 522 5568">Anrufen</a>
+          <a class="btn btn-outline" href="#vormerken">Vormerken</a>
         </div>
+        <p class="hero-links"><button type="button" class="linkish" data-open-flyer>Flyer öffnen</button> · <a href="tel:+491705225568">+49 170 522 5568</a> · Festnetz <a href="tel:+4975319228848">+49 7531 9228848</a></p>
+      </div>
+    </section>
+
+    <section class="section vormerk-section" id="vormerken" aria-label="Vormerken">
+      <div class="container narrow">
+${vormerkFormHtml({ id: "vormerk-projekt", location: "project_inline", lang: "de", heading: "h2", indent: "        " })}
       </div>
     </section>
 

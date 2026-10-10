@@ -122,6 +122,7 @@
     var params = formContext(document.getElementById('contact-form'));
     var ab = abVariant();
     if (ab) params.ab_variant = ab;
+    if (!params.page_lang) params.page_lang = (document.documentElement.getAttribute('lang') || 'de').slice(0, 2).toLowerCase();
     Object.keys(extra || {}).forEach(function (key) {
       if (extra[key] !== undefined && extra[key] !== null && extra[key] !== '') params[key] = extra[key];
     });
@@ -163,6 +164,15 @@
     var link = e.target && e.target.closest ? e.target.closest('a[href]') : null;
     if (!link) return;
     var href = link.getAttribute('href') || '';
+    if (link.hasAttribute('data-lang-switch')) {
+      trackEvent('lang_switch', {
+        from: (document.documentElement.getAttribute('lang') || 'de').slice(0, 2).toLowerCase(),
+        to: link.getAttribute('data-lang-switch'),
+        location: link.closest('.site-footer') ? 'footer' : (link.closest('.nav') ? 'header' : 'content'),
+        transport_type: 'beacon'
+      });
+      return;
+    }
     if (/^tel:/i.test(href)) {
       var mobile = false;
       try { mobile = window.matchMedia('(max-width: 768px)').matches; } catch (err) {}
@@ -228,7 +238,7 @@
     form.addEventListener('submit', function () {
       var subject = form.querySelector('[name="anliegen"]');
       if (subject && /allmannsdorf/i.test(subject.value || '')) {
-        trackEvent('vormerken_submit', { form: formKind(form), project: 'allmannsdorf' });
+        trackEvent('vormerken_submit', { form: formKind(form), project: 'allmannsdorf', lang: (document.documentElement.getAttribute('lang') || 'de').slice(0, 2) });
       }
     });
 
