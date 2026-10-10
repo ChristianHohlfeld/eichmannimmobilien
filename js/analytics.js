@@ -112,15 +112,9 @@
     return params;
   }
 
-  /* A/B attribution: sticky hero test variant (set by ab-hero-cta.js), no PII */
-  var AB_EXPERIMENTS = ['hero_cta_r1'];
+  /* A/B test hero_cta_r1 ended 2026-10-10: no ab_variant is attached any more
+     (trackingParams only adds it when non-empty). */
   function abVariant() {
-    for (var i = 0; i < AB_EXPERIMENTS.length; i++) {
-      try {
-        var v = window.localStorage.getItem('ab_' + AB_EXPERIMENTS[i]);
-        if (v && /^[A-Z]$/.test(v)) return AB_EXPERIMENTS[i] + '_' + v;
-      } catch (e) {}
-    }
     return '';
   }
 
@@ -146,6 +140,8 @@
   window.__eichmannTrackQueue = [];
   pending.forEach(function (item) {
     if (!item || !item.name) return;
+    /* ended A/B test: ignore events queued by a cached old ab-hero-cta.js */
+    if (item.name === 'ab_assign' || item.name === 'cta_click') return;
     trackEvent(item.name, item.params);
     if (typeof item.onSent === 'function') {
       try { item.onSent(); } catch (e) {}
@@ -168,8 +164,11 @@
     if (!link) return;
     var href = link.getAttribute('href') || '';
     if (/^tel:/i.test(href)) {
+      var mobile = false;
+      try { mobile = window.matchMedia('(max-width: 768px)').matches; } catch (err) {}
       trackEvent('click_phone', {
         location: linkLocation(link),
+        device_hint: mobile ? 'mobile' : 'desktop',
         phone_target: href.replace(/^tel:/i, '').replace(/[^\d+]/g, '').slice(0, 20),
         transport_type: 'beacon'
       });

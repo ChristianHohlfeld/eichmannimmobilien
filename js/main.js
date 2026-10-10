@@ -251,11 +251,17 @@
             } catch (err) {}
             /* Track before reset so anliegen/project reflect the sent form. generate_lead = confirmed success only. */
             trackForm("form_submit_success");
+            /* generate_lead = the single lead KPI: exactly once per successful submission
+               (vormerken_submit / form_submit_success are separate, non-KPI signals). */
+            var leadKey = (result.data && result.data.requestId) || String(Date.now());
+            if (form.__eichmannLeadKey !== leadKey) {
+            form.__eichmannLeadKey = leadKey;
             trackForm("generate_lead", {
               form_id: form.id || "contact-form",
               form_type: isExpose ? "expose" : "contact",
               transport_type: "beacon"
             });
+            }
             form.reset();
           } else {
             show(error, true);

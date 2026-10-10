@@ -50,3 +50,9 @@ Zusätzlich: `flyer_open`. `click_call` wurde am 2026-10-09 durch `click_phone` 
 - Events nur nach Opt-in (Analytics-Consent)
 - Keine Partial-Leads / keine Speicherung abgebrochener Formulare an Helmut
 - Forms POST unverändert an `forms.digitalisierungsplanung.de`
+
+## Update 2026-10-10 (claude-plan-v1)
+- Hero-A/B-Test `hero_cta_r1` beendet: kein `ab_assign`/`cta_click`, kein `ab_variant` mehr. Statischer Hero ist die einzige Version.
+- Lead-KPI = `generate_lead` (genau 1× pro bestätigter Übermittlung). `vormerken_submit`/`form_submit_success` bleiben Hilfs-Signale, nicht als Conversion zählen.
+- `click_phone` hat `device_hint` (mobile/desktop, Viewport ≤768px) → in GA4 nur `device_hint=mobile` als Anruf-Signal werten.
+- Sticky-Leiste nur mobil (Anrufen + WhatsApp, `location=sticky`); Desktop: keine Leiste.
