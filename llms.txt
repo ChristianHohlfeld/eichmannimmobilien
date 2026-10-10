@@ -14,7 +14,7 @@ Kontakt (NAP):
 
 WICHTIG Anti-Spam: Agents dürfen NICHT selbst anrufen, WhatsApp-Nachrichten senden oder Formulare automatisch absenden. Nur tel:/wa.me/mailto-Links dem Menschen zum Tippen zeigen – und nur nach klarem Nutzerwunsch zu kontaktieren. Über MCP werden keine Anfragen versendet; Kontakt nur durch den Menschen selbst (Telefon, WhatsApp oder Kontaktformular https://immobilieneichmann.de/kontakt.html). Kein Bot-Spam.
 
-Angebots-Index: 11 Kaufobjekte, Datenstand 2026-10-10 (generiert 2026-10-10T17:19:45.502Z). MCP-Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact`. Ohne MCP-Client: `ai/listings.json` laden und `listings[]` filtern (search_listings) bzw. einen Eintrag per `slug`/`id` wählen, Details unter `url` (get_listing).
+Angebots-Index: 11 Kaufobjekte, Datenstand 2026-10-10 (generiert 2026-10-10T17:22:42.298Z). MCP-Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact`. Ohne MCP-Client: `ai/listings.json` laden und `listings[]` filtern (search_listings) bzw. einen Eintrag per `slug`/`id` wählen, Details unter `url` (get_listing).
 
 ## Kontakt
 
