@@ -2631,7 +2631,8 @@ body:has(form:focus-within) .floating-wa { opacity: 0; pointer-events: none; }
 @media (min-width: 769px) { .vormerk-fold > summary { display: none; } }
 .expose-hero-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: .75rem 0 0; }
 .expose-hero-actions .btn { min-height: 44px; }
-.sticky-bar--3 .sticky-item > span:not(.sticky-ico) { font-size: .78rem; }
+.sticky-bar.sticky-bar--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sticky-bar--3 .sticky-item > span:not(.sticky-ico) { font-size: .74rem; line-height: 1.15; text-align: center; }
 @media (max-width: 768px) {
   .hero .hero-subline { display: none; } /* Nummer steht jetzt im Anruf-Knopf */
   .vormerk-fold > summary { padding: 10px 14px; background: transparent; color: inherit; border: 1px solid rgba(255,255,255,.45); font-weight: 600; }
