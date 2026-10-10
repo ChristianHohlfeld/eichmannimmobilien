@@ -6,7 +6,7 @@
   "last_valid_count": 11,
   "reason": "Immowelt-Zugang fehlt. Bitte Kundennummer und API-Schlüssel im Admin unter Immowelt eintragen. Der letzte bekannte Stand bleibt online.",
   "policy": "fail_closed_last_known_good",
-  "last_verified_at": "2026-10-10T11:21:57.250Z",
+  "last_verified_at": "2026-10-10T11:29:03.614Z",
   "last_verified_via": "immobilien.sparkasse.de (öffentlicher Spiegel derselben Angebote): alle aktiven Objekte online, Preise identisch; inaktive offline",
   "last_verified_count": 11
 }
