@@ -550,8 +550,10 @@ async function callTool(name, args) {
 }
 
 async function callToolRaw(name, args) {
+  const dataAsOfNow = async () => { try { return (await loadListingsDoc()).data_as_of || null; } catch { return null; } };
   if (name === "get_contact") {
     return textResult({
+      data_as_of: await dataAsOfNow(),
       contact: buildContactPayload({ forAllmannsdorf: false }),
       how_to_use:
         "Zeig dem Menschen preferred.tel und preferred.whatsapp_url zum Tippen. Starte keine Calls/WhatsApp/E-Mails als Agent.",
@@ -573,6 +575,7 @@ async function callToolRaw(name, args) {
       contact_form_en: "https://immobilieneichmann.de/en/contact.html?interesse=allmannsdorf",
     };
     return textResult({
+      data_as_of: await dataAsOfNow(),
       contact,
       flyer: clean,
       next_step_for_human:
