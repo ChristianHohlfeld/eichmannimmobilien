@@ -2618,3 +2618,5 @@ body:has(form:focus-within) .floating-wa { opacity: 0; pointer-events: none; }
   .project-hero-grid > .project-hero-media { grid-column: 1; grid-row: auto; min-height: 0; margin: 0.25rem 0 1rem; }
   .project-hero-media img { height: auto; max-height: 240px; aspect-ratio: 16 / 10; }
 }
+/* Flyer ≤980px: Figur nicht höher als das Bild, damit „Visualisierung“ auf dem Bild sitzt */
+@media (max-width: 980px) { .flyer-hero-img { min-height: 0; } }
