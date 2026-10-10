@@ -22,7 +22,7 @@ const rules = compileRules(sot.wording);
 const today = new Date().toISOString().slice(0, 10);
 
 // Was öffentlich ausgeliefert wird
-const PUBLIC_DIRS = ["", "en", "objekt", "ai", ".well-known", "partials"];
+const PUBLIC_DIRS = ["", "en", "en/property", "objekt", "ai", ".well-known", "partials"];
 const files = [];
 for (const d of PUBLIC_DIRS) {
   const dir = path.join(root, d);
@@ -75,6 +75,24 @@ for (const p of sot.pages.pages.filter((x) => x.paths?.en)) {
     for (const [l, target] of [["de", p.paths.de], ["en", p.paths.en], ["x-default", p.paths.de]])
       if (!head.includes(`hreflang="${l}" href="${O}${target}"`))
         problems.push({ where: f, rule: "hreflang", hit: l, message: `hreflang ${l} → ${target} fehlt im <head>` });
+  }
+}
+// Konsistenz: EN-Objektseiten (Claude global) – je aktives Objekt ein Paar, hreflang gegenseitig, Canonical selbst
+{
+  const enDir = path.join(root, "en/property");
+  const enFiles = existsSync(enDir) ? readdirSync(enDir).filter((f) => f.endsWith(".html")) : [];
+  if (enFiles.length !== sot.activeListings.length)
+    problems.push({ where: "en/property", rule: "consistency", hit: String(enFiles.length), message: `EN-Objektseiten ≠ aktive Objekte (${sot.activeListings.length})` });
+  for (const f of enFiles) {
+    const slug = f.replace(/\.html$/, "");
+    const de = `${O}/objekt/${slug}.html`, en = `${O}/en/property/${slug}.html`;
+    const eh = readFileSync(path.join(enDir, f), "utf8"), dp = path.join(root, "objekt", f);
+    if (!existsSync(dp)) { problems.push({ where: `en/property/${f}`, rule: "hreflang", hit: "", message: "deutsche Objektseite fehlt" }); continue; }
+    const dh = readFileSync(dp, "utf8");
+    if (!eh.includes(`<link rel="canonical" href="${en}">`)) problems.push({ where: `en/property/${f}`, rule: "canonical", hit: "", message: "Canonical nicht selbstreferenzierend" });
+    if (!dh.includes(`<link rel="canonical" href="${de}">`)) problems.push({ where: `objekt/${f}`, rule: "canonical", hit: "", message: "Canonical nicht selbstreferenzierend" });
+    for (const h of [eh, dh]) for (const [l, t] of [["de", de], ["en", en], ["x-default", en]])
+      if (!h.slice(0, h.indexOf("</head>")).includes(`hreflang="${l}" href="${t}"`)) problems.push({ where: f, rule: "hreflang", hit: l, message: `hreflang ${l} fehlt (${h === eh ? "EN" : "DE"})` });
   }
 }
 // Konsistenz: Objektzahl + Datenstand

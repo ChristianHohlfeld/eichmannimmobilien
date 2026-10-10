@@ -1,9 +1,9 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.ChristianHohlfeld/immobilien-eichmann-listings",
-  "title": "Immobilien Eichmann \u2013 Angebote",
-  "description": "Live MCP for Immobilien Eichmann listings (Konstanz). Tools: search_listings, get_listing.",
-  "version": "1.0.0",
+  "title": "Immobilien Eichmann – Angebote",
+  "description": "Konstanz property listings (DE/EN pages), Allmannsdorf new-build, contact links for humans.",
+  "version": "1.3.0",
   "websiteUrl": "https://immobilieneichmann.de/",
   "repository": {
     "url": "https://github.com/ChristianHohlfeld/eichmannimmobilien",
@@ -23,8 +23,21 @@
         "get_listing"
       ],
       "listings_index": "https://immobilieneichmann.de/ai/listings.json",
-      "language": "de",
-      "region": "Konstanz"
+      "language": "de,en",
+      "region": "Konstanz",
+      "languages": [
+        "de",
+        "en"
+      ],
+      "english_pages": {
+        "home": "https://immobilieneichmann.de/en/",
+        "listing_pattern": "https://immobilieneichmann.de/en/property/<slug>.html",
+        "buying_from_abroad": "https://immobilieneichmann.de/en/buying-from-abroad.html"
+      },
+      "listing_fields_en": [
+        "title_en",
+        "url_en"
+      ]
     }
   }
 }

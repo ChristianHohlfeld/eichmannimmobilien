@@ -123,6 +123,31 @@
       }
     },
     {
+      "id": "kaufen-aus-der-schweiz",
+      "paths": {
+        "de": "/kaufen-aus-der-schweiz.html",
+        "en": "/en/buying-from-abroad.html"
+      },
+      "file": {
+        "de": "kaufen-aus-der-schweiz.html",
+        "en": "en/buying-from-abroad.html"
+      },
+      "title": {
+        "de": "Wohnung in Konstanz kaufen aus der Schweiz | Eichmann",
+        "en": "Buying property in Konstanz from abroad | Eichmann"
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.7",
+          "changefreq": "monthly"
+        },
+        "en": {
+          "priority": "0.7",
+          "changefreq": "monthly"
+        }
+      }
+    },
+    {
       "id": "impressum",
       "paths": {
         "de": "/impressum.html"

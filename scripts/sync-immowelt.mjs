@@ -34,6 +34,7 @@ import { fetchOfficialImmoweltListings } from "./lib/immowelt-official-api.mjs";
 import { writeAiDiscoveryArtifacts, dataAsOf } from "./lib/ai-discovery.mjs";
 import { publishProjects } from "./lib/projects.mjs";
 import { stripProjectStatus } from "./lib/listing-text.mjs";
+import { publishEnListings, enPath, hreflangHead } from "./lib/listing-en.mjs";
 import { loadSot, sitemapStatic, hreflangPairs, dataAsOfLabel, applyListingLayer, saveListingsLayer } from "./lib/sot.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -1329,6 +1330,7 @@ function renderExposeHtml(listing, ogShare = null) {
   <meta name="description" content="${escapeHtml(metaDesc)}">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="${escapeHtml(canonical)}">
+${hreflangHead(canonical, `${SITE_ORIGIN}${enPath(listing.slug)}`)}
   <meta property="og:type" content="website">
   <meta property="og:locale" content="de_DE">
   <meta property="og:site_name" content="Immobilien Eichmann">
@@ -2233,6 +2235,12 @@ function hreflangXml(locPath) {
   return a("de", pair.de) + a("en", pair.en) + a("x-default", pair.de);
 }
 
+function objektHreflang(L) {
+  const a = (lang, href) => `<xhtml:link rel="alternate" hreflang="${lang}" href="${href}"/>`;
+  const de = `${SITE_ORIGIN}/${L.local_url}`;
+  return a("de", de) + a("en", `${SITE_ORIGIN}${enPath(L.slug)}`) + a("x-default", `${SITE_ORIGIN}${enPath(L.slug)}`);
+}
+
 async function updateSitemap(data) {
   // Publish/render moment — never reuse a frozen scraped_at (e.g. 2026-09-20).
   const publishAt = new Date();
@@ -2270,7 +2278,12 @@ async function updateSitemap(data) {
     // Exposé HTML is written in this publish pass → prefer file mtime, else publish time.
     const lastmod = await fileLastmodOr(path.join(ROOT, L.local_url), publishAt);
     objektLines.push(
-      `  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>`
+      `  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority>${objektHreflang(L)}</url>`
+    );
+    const enRel = enPath(L.slug).slice(1);
+    const enLastmod = await fileLastmodOr(path.join(ROOT, enRel), publishAt);
+    objektLines.push(
+      `  <url><loc>${SITE_ORIGIN}/${enRel}</loc><lastmod>${enLastmod}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority>${objektHreflang(L)}</url>`
     );
   }
   const objektUrls = objektLines.join("\n");
@@ -2362,6 +2375,9 @@ async function renderIntoPages(data) {
   console.log(
     `Updated AI discovery (${ai.aiDoc.listing_count} public listings, ${ai.aiDoc.projects?.length || 0} projects → llms.txt, agents.txt, ai/, .well-known/mcp*)`
   );
+  // Claude global concept: English page per listing (/en/property/<slug>.html), before the sitemap (lastmod)
+  data._enModels = publishEnListings(data, { siteRoot: ROOT, dryRun });
+  console.log(`Updated EN property pages (${data._enModels.length} → en/property/)`);
   await updateSitemap(data);
 }
 

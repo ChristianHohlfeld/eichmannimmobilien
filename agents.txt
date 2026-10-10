@@ -6,6 +6,7 @@ Allow: /
 Allow: /ai/listings.json
 Allow: /ai/flyer-allmannsdorf.json
 Allow: /en/
+Allow: /en/property/
 Allow: /objekt/
 Allow: /allmannsdorf.html
 Allow: /llms.txt
