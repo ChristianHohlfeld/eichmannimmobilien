@@ -17,8 +17,8 @@
       "https://immobilieneichmann.de/"
     ]
   },
-  "summary": "Neubau Allmannsdorf in Konstanz – jetzt provisionsfrei vormerken. 5 Mehrfamilienhäuser mit 44 Wohnungen.",
-  "description": "Der Neubau Allmannsdorf ist ein modernes Wohnensemble mit 5 Mehrfamilienhäusern und insgesamt 44 hochwertigen Wohnungen in einer der gefragtesten Wohnlagen von Konstanz. Freuen Sie sich auf durchdachte Grundrisse, lichtdurchflutete Räume und eine Architektur, die Design, Komfort und Lebensqualität vereint.",
+  "summary": "Neubau Allmannsdorf in Konstanz – jetzt provisionsfrei vormerken. 5 Mehrfamilienhäuser mit 44 Wohnungen. Viele Wohnungen mit traumhafter Seesicht.",
+  "description": "Der Neubau Allmannsdorf ist ein modernes Wohnensemble mit 5 Mehrfamilienhäusern und insgesamt 44 hochwertigen Wohnungen in einer der gefragtesten Wohnlagen von Konstanz. Freuen Sie sich auf durchdachte Grundrisse, lichtdurchflutete Räume und eine Architektur, die Design, Komfort und Lebensqualität vereint. Viele Wohnungen bieten einen einzigartigen Blick auf den Bodensee.",
   "unit_count": 44,
   "building_count": 5,
   "building_type": "Mehrfamilienhäuser",
@@ -26,6 +26,7 @@
     "lage": "Konstanz-Allmannsdorf",
     "gebaeude": "5 Mehrfamilienhäuser",
     "einheiten": "44 Wohnungen",
+    "highlight": "Viele Wohnungen mit traumhafter Seesicht",
     "flaechen": "40–124 m²",
     "zimmer": "2–5",
     "grundstueck": "ca. 4.000 m²",
@@ -42,6 +43,7 @@
   ],
   "checks": [
     "5 Mehrfamilienhäuser mit 44 Wohnungen",
+    "Viele Wohnungen mit traumhafter Seesicht",
     "2–5 Zimmer · 40–124 m²"
   ],
   "images": {
@@ -59,7 +61,7 @@
     }
   },
   "cta": {
-    "phone": "+49 170 5225568",
+    "phone": "+49 170 522 5568",
     "email": "info@immobilien-eichmann.com",
     "email_subject": "Vormerkung Neubau Allmannsdorf",
     "anliegen": "Vormerkung Neubau Allmannsdorf",
@@ -73,7 +75,7 @@
     "Kontakt: nur Links für den Menschen (tel/WhatsApp). Kein Agent-Outbound."
   ],
   "source": [
-    "data/projects.json",
+    "data/sot/projects.json",
     "allmannsdorf.html",
     "assets/flyer/*"
   ],

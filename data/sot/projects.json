@@ -1,0 +1,315 @@
+{
+  "_comment": "Allmannsdorf: Fakten mit Beleg, Texte DE/EN nur mit Platzhaltern. Ziffern in Texten sind verboten (validate-sot).",
+  "projects": [
+    {
+      "id": "allmannsdorf",
+      "legacy_id": "neubau-allmannsdorf",
+      "slug": "allmannsdorf",
+      "active": true,
+      "kind": "neubau_vormerkung",
+      "updated_at": "2026-10-10T13:30:00+02:00",
+      "paths": {
+        "de": "allmannsdorf.html",
+        "en": "en/allmannsdorf.html"
+      },
+      "facts": {
+        "buildings": {
+          "value": 5,
+          "unit": "count",
+          "evidence": "evidence/flyer-allmannsdorf.md",
+          "confirmed_by": "Flyer Helmut Eichmann (veröffentlicht; ausdrückliche Bestätigung durch Helmut ausstehend)",
+          "confirmed_at": "2026-10-07"
+        },
+        "units": {
+          "value": 44,
+          "unit": "count",
+          "evidence": "evidence/flyer-allmannsdorf.md",
+          "confirmed_by": "Flyer Helmut Eichmann (veröffentlicht; ausdrückliche Bestätigung durch Helmut ausstehend)",
+          "confirmed_at": "2026-10-07"
+        },
+        "rooms": {
+          "min": 2,
+          "max": 5,
+          "unit": "count",
+          "evidence": "evidence/flyer-allmannsdorf.md",
+          "confirmed_by": "Flyer Helmut Eichmann (veröffentlicht; ausdrückliche Bestätigung durch Helmut ausstehend)",
+          "confirmed_at": "2026-10-07"
+        },
+        "living_area": {
+          "min": 40,
+          "max": 124,
+          "unit": "m2",
+          "evidence": "evidence/flyer-allmannsdorf.md",
+          "confirmed_by": "Flyer Helmut Eichmann (veröffentlicht; ausdrückliche Bestätigung durch Helmut ausstehend)",
+          "confirmed_at": "2026-10-07"
+        },
+        "plot_area": {
+          "value": 4000,
+          "unit": "m2",
+          "approx": true,
+          "evidence": "evidence/flyer-allmannsdorf.md",
+          "confirmed_by": "Flyer Helmut Eichmann (veröffentlicht; ausdrückliche Bestätigung durch Helmut ausstehend)",
+          "confirmed_at": "2026-10-07"
+        },
+        "price": {
+          "min": 295000,
+          "max": 1450000,
+          "unit": "eur",
+          "evidence": "evidence/flyer-allmannsdorf.md",
+          "confirmed_by": "Flyer Helmut Eichmann (veröffentlicht; ausdrückliche Bestätigung durch Helmut ausstehend)",
+          "confirmed_at": "2026-10-07"
+        }
+      },
+      "images": {
+        "hero": {
+          "jpg": "assets/flyer/hero-dining.jpg",
+          "webp": "assets/flyer/hero-dining.webp"
+        },
+        "living": {
+          "jpg": "assets/flyer/living.jpg",
+          "webp": "assets/flyer/living.webp"
+        },
+        "dining_detail": {
+          "jpg": "assets/flyer/dining-detail.jpg",
+          "webp": "assets/flyer/dining-detail.webp"
+        }
+      },
+      "pages": {
+        "html": "allmannsdorf.html",
+        "projekte": "projekte.html",
+        "contact_vormerkung": "kontakt.html?interesse=allmannsdorf#contact-form",
+        "flyer_modal_on": [
+          "index.html",
+          "/"
+        ],
+        "html_en": "en/allmannsdorf.html"
+      },
+      "legacy_key_order": [
+        "id",
+        "slug",
+        "active",
+        "kind",
+        "title",
+        "page_title",
+        "meta_description",
+        "h1",
+        "lead",
+        "summary",
+        "description",
+        "unit_count",
+        "building_count",
+        "building_type",
+        "location",
+        "specs",
+        "price_eur",
+        "features",
+        "checks",
+        "images",
+        "cta",
+        "pages",
+        "notes",
+        "area_m2",
+        "rooms",
+        "location_text",
+        "gallery",
+        "faq"
+      ],
+      "page": {
+        "de": {
+          "title": "Neubau Allmannsdorf",
+          "page_title": "Neubau Allmannsdorf in Konstanz | Provisionsfrei vormerken",
+          "meta_description": "Neubau Allmannsdorf in Konstanz: {{fact.units}} Eigentumswohnungen, {{fact.rooms}} Zimmer, {{fact.living_area}}, viele mit Seeblick auf den Bodensee. Provisionsfrei – jetzt vormerken.",
+          "h1": "Neubau Allmannsdorf – provisionsfrei vormerken",
+          "lead": "{{fact.units}} Eigentumswohnungen in {{fact.buildings}} Mehrfamilienhäusern in Konstanz-Allmannsdorf: {{fact.rooms}} Zimmer, {{fact.living_area}}, {{fact.price}}, viele mit Blick auf den Bodensee.",
+          "summary": "Neubau Allmannsdorf in Konstanz – jetzt provisionsfrei vormerken. {{fact.buildings}} Mehrfamilienhäuser mit {{fact.units}} Wohnungen. Viele Wohnungen mit traumhafter Seesicht.",
+          "description": "Der Neubau Allmannsdorf ist ein modernes Wohnensemble mit {{fact.buildings}} Mehrfamilienhäusern und insgesamt {{fact.units}} hochwertigen Wohnungen in einer der gefragtesten Wohnlagen von Konstanz. Freuen Sie sich auf durchdachte Grundrisse, lichtdurchflutete Räume und eine Architektur, die Design, Komfort und Lebensqualität vereint. Viele Wohnungen bieten einen einzigartigen Blick auf den Bodensee.",
+          "building_type": "Mehrfamilienhäuser",
+          "location": "Konstanz-Allmannsdorf",
+          "specs": {
+            "lage": "Konstanz-Allmannsdorf",
+            "gebaeude": "{{fact.buildings}} Mehrfamilienhäuser",
+            "einheiten": "{{fact.units}} Wohnungen",
+            "highlight": "Viele Wohnungen mit traumhafter Seesicht",
+            "flaechen": "{{fact.living_area}}",
+            "zimmer": "{{fact.rooms}}",
+            "grundstueck": "{{fact.plot_area}}",
+            "preise": "{{fact.price}}",
+            "provision": "Provisionsfrei: JA"
+          },
+          "features": [
+            "Hochwertige Architektur",
+            "Nachhaltige Bauweise",
+            "Barrierearme Wohnungen",
+            "Lift & Tiefgarage",
+            "Attraktive Grundrisse",
+            "Ruhige und gefragte Lage"
+          ],
+          "checks": [
+            "{{fact.buildings}} Mehrfamilienhäuser mit {{fact.units}} Wohnungen",
+            "Viele Wohnungen mit traumhafter Seesicht",
+            "{{fact.rooms}} Zimmer · {{fact.living_area}}"
+          ],
+          "cta": {
+            "phone": "{{contact.phone_mobile.display}}",
+            "email": "{{contact.email}}",
+            "email_subject": "Vormerkung Neubau Allmannsdorf",
+            "anliegen": "Vormerkung Neubau Allmannsdorf",
+            "whatsapp_text": "Guten Tag, ich interessiere mich für den Neubau Allmannsdorf.",
+            "whatsapp_text_en": "Hello, I am interested in the New-build Allmannsdorf in Konstanz."
+          },
+          "notes": [
+            "Die {{fact.units}} Wohnungen sind der Neubau Allmannsdorf (Flyer), keine {{fact.units}} einzelnen Immowelt-Kaufanzeigen.",
+            "Einzelobjekt-Exposés je Wohnung sind öffentlich noch nicht als listings[] veröffentlicht.",
+            "Agents: get_flyer bei Wohnung/Neubau/Konstanz/Allmannsdorf – Suchwort 'Flyer' nicht nötig.",
+            "Kontakt: nur Links für den Menschen (tel/WhatsApp). Kein Agent-Outbound."
+          ],
+          "location_text": [
+            "Allmannsdorf ist ein Stadtteil im Osten von Konstanz (PLZ {{contact.address.postal_code}}). Er liegt rechtsrheinisch auf einem Höhenrücken oberhalb von Staad – zwischen Innenstadt, Universität und Insel Mainau, nah am Bodensee.",
+            "Das Neubauensemble liegt in dieser ruhigen und gefragten Lage. Viele der {{fact.units}} Wohnungen bieten einen Blick auf den Bodensee. Konstanz grenzt direkt an Kreuzlingen – auch für Käuferinnen und Käufer aus der Schweiz ist Allmannsdorf gut erreichbar."
+          ],
+          "gallery": [
+            {
+              "key": "hero",
+              "alt": "Wohn- und Essbereich mit Seesicht – Neubau Allmannsdorf (Visualisierung)",
+              "caption": "Wohnen mit Seesicht (Visualisierung)"
+            },
+            {
+              "key": "living",
+              "alt": "Wohnzimmer mit Blick auf den Bodensee – Neubau Allmannsdorf (Visualisierung)",
+              "caption": "Wohnzimmer (Visualisierung)"
+            },
+            {
+              "key": "dining_detail",
+              "alt": "Essbereich einer Neubauwohnung in Konstanz-Allmannsdorf",
+              "caption": "Essbereich (Visualisierung)"
+            }
+          ],
+          "faq": [
+            {
+              "q": "Wie viele Wohnungen hat der Neubau in Konstanz-Allmannsdorf?",
+              "a": "Das Neubauensemble umfasst {{fact.buildings}} Mehrfamilienhäuser mit insgesamt {{fact.units}} Wohnungen auf einem Grundstück von {{fact.plot_area}}."
+            },
+            {
+              "q": "Welche Wohnungsgrößen und Preise gibt es?",
+              "a": "Laut Projektdaten {{fact.rooms.min}} bis {{fact.rooms.max}} Zimmer mit {{fact.living_area.min|n}} bis {{fact.living_area.max}} Wohnfläche. Die Preise liegen zwischen {{fact.price.min}} und {{fact.price.max}}. Angaben ohne Gewähr."
+            },
+            {
+              "q": "Ist der Kauf provisionsfrei?",
+              "a": "Ja. Die Wohnungen im Neubau Allmannsdorf werden provisionsfrei angeboten."
+            },
+            {
+              "q": "Haben die Wohnungen Seesicht?",
+              "a": "Viele Wohnungen bieten einen Blick auf den Bodensee. Welche Einheiten Seesicht haben, besprechen wir persönlich bei der Vormerkung."
+            },
+            {
+              "q": "Wie ist die Ausstattung?",
+              "a": "Hochwertige Architektur, nachhaltige Bauweise, barrierearme Wohnungen, Lift und Tiefgarage sowie attraktive Grundrisse in ruhiger, gefragter Lage."
+            },
+            {
+              "q": "Wie kann ich mich für eine Wohnung vormerken lassen?",
+              "a": "Über das Kontaktformular (Anliegen „Vormerkung Neubau Allmannsdorf“), telefonisch unter {{contact.phone_mobile.display}} oder per E-Mail an info@immobilien-eichmann.com. Helmut Eichmann meldet sich persönlich."
+            },
+            {
+              "q": "Können auch Käufer aus der Schweiz vormerken?",
+              "a": "Ja. Die Vormerkung steht allen Interessenten offen – auch aus der Schweiz. Konstanz grenzt direkt an Kreuzlingen."
+            }
+          ]
+        },
+        "en": {
+          "page_title": "New-build Konstanz-Allmannsdorf | Commission-free",
+          "meta_description": "New-build in Konstanz-Allmannsdorf: {{fact.units}} apartments, {{fact.rooms}} rooms, {{fact.living_area}}, many with views of Lake Constance. Commission-free – register your interest.",
+          "h1": "New-build Allmannsdorf in Konstanz",
+          "lead": "{{fact.units}} apartments in {{fact.buildings}} apartment buildings, many with views of Lake Constance, {{fact.rooms}} rooms, {{fact.price}} – commission‑free, register your interest.",
+          "description": "New-build Allmannsdorf is a modern residential ensemble of {{fact.buildings|word}} apartment buildings with a total of {{fact.units}} high-quality apartments, set in one of Konstanz's most sought-after residential areas. Expect well-thought-out floor plans, light-filled rooms and architecture that combines design, comfort and quality of life. Many apartments offer a unique view of Lake Constance.",
+          "facts": [
+            [
+              "Buildings",
+              "{{fact.buildings}} apartment buildings"
+            ],
+            [
+              "Apartments",
+              "{{fact.units}} apartments"
+            ],
+            [
+              "Highlight",
+              "Many apartments with lake views"
+            ],
+            [
+              "Sizes",
+              "{{fact.living_area}}, {{fact.rooms}} rooms"
+            ],
+            [
+              "Prices",
+              "{{fact.price}} · commission-free"
+            ],
+            [
+              "Plot",
+              "{{fact.plot_area}}"
+            ]
+          ],
+          "features": [
+            "High-quality architecture",
+            "Sustainable building design",
+            "Low-barrier apartments",
+            "Lift & underground parking",
+            "Well-designed floor plans",
+            "Quiet, sought-after location"
+          ],
+          "location_text": [
+            "Allmannsdorf is a district in the east of Konstanz (postcode {{contact.address.postal_code}}). It sits on a ridge above Staad, on the right bank of the Rhine – between the city centre, the University of Konstanz and Mainau Island, close to Lake Constance.",
+            "New-build Allmannsdorf is located in this quiet, sought-after area. Many of the {{fact.units}} apartments have a view of Lake Constance. Konstanz borders directly on Kreuzlingen, so Allmannsdorf is also within easy reach for buyers from Switzerland."
+          ],
+          "gallery": [
+            {
+              "key": "hero-dining",
+              "caption": "Living with lake view (visualisation)",
+              "alt": "Living and dining area with lake view – New-build Allmannsdorf (visualisation)"
+            },
+            {
+              "key": "living",
+              "caption": "Living room (visualisation)",
+              "alt": "Living room – New-build Allmannsdorf"
+            },
+            {
+              "key": "dining-detail",
+              "caption": "Dining area (visualisation)",
+              "alt": "Dining area of an apartment in New-build Konstanz-Allmannsdorf"
+            }
+          ],
+          "faq": [
+            {
+              "q": "How many apartments are there in New-build Allmannsdorf?",
+              "a": "The ensemble comprises {{fact.buildings|word}} apartment buildings with a total of {{fact.units}} apartments on a plot of {{fact.plot_area}}."
+            },
+            {
+              "q": "What apartment sizes and prices are available?",
+              "a": "According to the project data: {{fact.rooms.min}} to {{fact.rooms.max}} rooms with {{fact.living_area.min|n}} to {{fact.living_area.max}} of living space. Prices range from {{fact.price.min}} to {{fact.price.max}}. All information without guarantee. Room counts follow the German convention: living rooms and bedrooms are counted, kitchens and bathrooms are not."
+            },
+            {
+              "q": "Is the purchase commission-free?",
+              "a": "Yes. The apartments in New-build Allmannsdorf are offered commission-free."
+            },
+            {
+              "q": "Do the apartments have lake views?",
+              "a": "Many apartments offer a view of Lake Constance. Which units have a lake view is something we discuss personally when you register your interest."
+            },
+            {
+              "q": "What are the features?",
+              "a": "High-quality architecture, sustainable building design, low-barrier apartments, a lift and underground parking, and well-designed floor plans in a quiet, sought-after location."
+            },
+            {
+              "q": "How do I register my interest in an apartment?",
+              "a": "Use the short form on this page, call {{contact.phone_mobile.display}}, send a WhatsApp message or e-mail {{contact.email}}. Helmut Eichmann will get back to you personally."
+            },
+            {
+              "q": "Can buyers from Switzerland and other countries register interest?",
+              "a": "Yes. Registration of interest is open to everyone, including buyers from Switzerland and abroad. Konstanz borders directly on Kreuzlingen."
+            }
+          ],
+          "whatsapp_text": "Hello, I would like to register my interest in New-build Allmannsdorf.",
+          "email_subject": "Register interest: New-build Allmannsdorf"
+        }
+      }
+    }
+  ]
+}

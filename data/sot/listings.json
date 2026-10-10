@@ -1,0 +1,143 @@
+{
+  "_comment": "Objekt-Schicht, die uns gehört (Slug eingefroren, Status, Prüfdatum, Overrides, Ausnahmen). Felder + Exposé-Wortlaut liefert der Importer in data/listings.json. Pflege ohne Immowelt-Key: node scripts/sot-cli.mjs verify --all | price <slug> <betrag> | sold <slug>.",
+  "listings": [
+    {
+      "id": "c6b1d820-4e82-416d-95ad-22472a129955",
+      "slug": "penthouse-konigsbau-c6b1d820",
+      "status": "active",
+      "source": "immowelt",
+      "verified_at": "2026-10-10",
+      "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
+      "overrides": {},
+      "waivers": []
+    },
+    {
+      "id": "32a8908e-c8e0-4944-b44f-f203ccdaa8a9",
+      "slug": "mehrfamilienhaus-wollmatingen-32a8908e",
+      "status": "active",
+      "source": "immowelt",
+      "verified_at": "2026-10-10",
+      "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
+      "overrides": {},
+      "waivers": [
+        {
+          "rule": "construction_status",
+          "match": "Genehmigung",
+          "reason": "Exposé-Wortlaut: Vorbehalt „vorbehaltlich der Genehmigung durch die Stadt“ zu einem möglichen Anbau – keine Aussage zum Baustand (Claude Runde 2, Chris).",
+          "by": "Chris",
+          "until": "2027-03-31"
+        }
+      ]
+    },
+    {
+      "id": "4fed09f2-bcef-4e96-ba56-810037b569c0",
+      "slug": "wohnung-wollmatingen-4fed09f2",
+      "status": "active",
+      "source": "immowelt",
+      "verified_at": "2026-10-10",
+      "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
+      "overrides": {},
+      "waivers": []
+    },
+    {
+      "id": "d6860062-651b-4f72-a26e-b3719e525241",
+      "slug": "wohnung-wollmatingen-d6860062",
+      "status": "hidden",
+      "source": "immowelt",
+      "verified_at": "2026-09-20",
+      "verified_by": "sync (nicht mehr online)",
+      "overrides": {},
+      "waivers": []
+    },
+    {
+      "id": "e7e58fe2-a93f-44f2-bc73-dabd3c7208b3",
+      "slug": "wohnung-wollmatingen-e7e58fe2",
+      "status": "active",
+      "source": "immowelt",
+      "verified_at": "2026-10-10",
+      "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
+      "overrides": {},
+      "waivers": []
+    },
+    {
+      "id": "aebb3257-3317-4452-bc9c-a5dbc5ed3838",
+      "slug": "wohnung-wollmatingen-aebb3257",
+      "status": "hidden",
+      "source": "immowelt",
+      "verified_at": "2026-09-20",
+      "verified_by": "sync (nicht mehr online)",
+      "overrides": {},
+      "waivers": []
+    },
+    {
+      "id": "86a7d4f6-0118-45fa-addc-ef5fe9edf21d",
+      "slug": "wohnung-petershausen-86a7d4f6",
+      "status": "active",
+      "source": "immowelt",
+      "verified_at": "2026-10-10",
+      "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
+      "overrides": {},
+      "waivers": []
+    },
+    {
+      "id": "7bff84e7-8370-471d-b359-5319c8df10ef",
+      "slug": "wohnung-wollmatingen-7bff84e7",
+      "status": "active",
+      "source": "immowelt",
+      "verified_at": "2026-10-10",
+      "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
+      "overrides": {},
+      "waivers": []
+    },
+    {
+      "id": "6fd6062e-32f4-4f02-af80-d854bd090279",
+      "slug": "penthouse-furstenberg-6fd6062e",
+      "status": "active",
+      "source": "immowelt",
+      "verified_at": "2026-10-10",
+      "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
+      "overrides": {},
+      "waivers": []
+    },
+    {
+      "id": "484fee8a-e3f0-4f06-8d26-d740c290b320",
+      "slug": "maisonette-wollmatingen-484fee8a",
+      "status": "active",
+      "source": "immowelt",
+      "verified_at": "2026-10-10",
+      "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
+      "overrides": {},
+      "waivers": []
+    },
+    {
+      "id": "4ac199b6-606e-470b-bb7e-d8646d47ea80",
+      "slug": "maisonette-wollmatingen-4ac199b6",
+      "status": "active",
+      "source": "immowelt",
+      "verified_at": "2026-10-10",
+      "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
+      "overrides": {},
+      "waivers": []
+    },
+    {
+      "id": "bb241b38-d292-4047-98fd-4352b841bc5a",
+      "slug": "maisonette-furstenberg-bb241b38",
+      "status": "active",
+      "source": "immowelt",
+      "verified_at": "2026-10-10",
+      "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
+      "overrides": {},
+      "waivers": []
+    },
+    {
+      "id": "ff414db8-7e3d-4a01-99f8-029fe15a4d55",
+      "slug": "maisonette-furstenberg-ff414db8",
+      "status": "active",
+      "source": "immowelt",
+      "verified_at": "2026-10-10",
+      "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
+      "overrides": {},
+      "waivers": []
+    }
+  ]
+}

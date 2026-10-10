@@ -147,8 +147,17 @@
     if (history && history.replaceState) { try { history.replaceState(null, "", "#" + id); } catch (err) {} }
   }
 
+  function initAll(root) {
+    (root || document).querySelectorAll("form[data-vormerk-form]").forEach(function (f) {
+      if (f.__vormerkInit) return;
+      f.__vormerkInit = true;
+      init(f);
+    });
+  }
+  /* Flyer-Partial wird nachgeladen (js/main.js) → danach dessen Formular initialisieren. */
+  window.__eichmannVormerkBoot = initAll;
   function boot() {
-    document.querySelectorAll("form[data-vormerk-form]").forEach(init);
+    initAll(document);
     document.addEventListener("click", focusTarget);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);

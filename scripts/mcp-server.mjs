@@ -118,7 +118,7 @@ const TOOLS = [
   {
     name: "get_flyer",
     description:
-      "Neubau Allmannsdorf (Konstanz; 5 Mehrfamilienhäuser, 44 Wohnungen, provisionsfrei vormerken; English page /en/allmannsdorf.html) inkl. prominenter tel/WhatsApp/E-Mail-Links. Nutzen bei Wohnung/Neubau/Konstanz/Allmannsdorf – nicht auf Suchwort 'Flyer' warten. Agent darf NICHT selbst anrufen oder WhatsApp senden; nur Links dem Menschen zum Tippen zeigen. Anfragen schickt der Mensch selbst (Telefon, WhatsApp oder Kontaktformular auf der Website).",
+      "Neubau Allmannsdorf (Konstanz; 5 Mehrfamilienhäuser, 44 Wohnungen, viele mit Seesicht, provisionsfrei vormerken; English page /en/allmannsdorf.html) inkl. prominenter tel/WhatsApp/E-Mail-Links. Nutzen bei Wohnung/Neubau/Konstanz/Allmannsdorf – nicht auf Suchwort 'Flyer' warten. Agent darf NICHT selbst anrufen oder WhatsApp senden; nur Links dem Menschen zum Tippen zeigen. Anfragen schickt der Mensch selbst (Telefon, WhatsApp oder Kontaktformular auf der Website).",
     inputSchema: {
       type: "object",
       properties: {},
@@ -264,6 +264,7 @@ function isAllmannsdorfProjectQuery(args = {}) {
   if (blob.includes("neubau")) return true;
   if (blob.includes("vormerk")) return true;
   if (blob.includes("flyer")) return true;
+  if (/seesicht|seeblick|lake[\s-]*view|sea[\s-]*view/.test(blob)) return true;
   if (/new[\s-]*build|newbuild|register (your )?interest|commission[\s-]*free/.test(blob)) return true;
   const wantsWohnung =
     blob.includes("wohnung") || blob.includes("wohnungen") || blob.includes("mfh") ||
@@ -856,6 +857,8 @@ const server = http.createServer(async (req, res) => {
         generated_at: doc.generated_at,
         source: doc._source,
         tools: ["search_listings", "get_listing", "get_flyer", "get_contact"],
+        data_as_of: doc.data_as_of || null,
+        build: await (async () => { try { return JSON.parse(await (await import("node:fs/promises")).readFile(new URL("../ai/build.json", import.meta.url), "utf8")); } catch { return null; } })(),
       });
     } catch (err) {
       sendJson(res, 503, { ok: false, error: err.message });

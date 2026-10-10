@@ -34,6 +34,7 @@ import { fetchOfficialImmoweltListings } from "./lib/immowelt-official-api.mjs";
 import { writeAiDiscoveryArtifacts, dataAsOf } from "./lib/ai-discovery.mjs";
 import { publishProjects } from "./lib/projects.mjs";
 import { stripProjectStatus } from "./lib/listing-text.mjs";
+import { loadSot, sitemapStatic, hreflangPairs, dataAsOfLabel, applyListingLayer, saveListingsLayer } from "./lib/sot.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.EICHMANN_SITE_ROOT
@@ -59,27 +60,7 @@ const COUNT_END = "<!-- IMMWELT-COUNT:END -->";
 const SITEMAP_OBJEKT_START = "<!-- IMMWELT-OBJEKT:START -->";
 const SITEMAP_OBJEKT_END = "<!-- IMMWELT-OBJEKT:END -->";
 
-const STATIC_SITEMAP_PATHS = [
-  { loc: "/", priority: "1.0", changefreq: "weekly" },
-  { loc: "/leistungen.html", priority: "0.8", changefreq: "weekly" },
-  { loc: "/projekte.html", priority: "0.8", changefreq: "weekly" },
-  { loc: "/kontakt.html", priority: "0.8", changefreq: "weekly" },
-  { loc: "/impressum.html", priority: "0.5", changefreq: "yearly" },
-  { loc: "/datenschutz.html", priority: "0.5", changefreq: "yearly" },
-  { loc: "/widerrufsbelehrung.html", priority: "0.4", changefreq: "yearly" },
-  { loc: "/vertrag-widerrufen.html", priority: "0.4", changefreq: "yearly" },
-  { loc: "/immobilienmakler-konstanz.html", priority: "0.8", changefreq: "weekly" },
-  { loc: "/wohnung-kaufen-konstanz.html", priority: "0.8", changefreq: "weekly" },
-  { loc: "/haus-verkaufen-konstanz.html", priority: "0.8", changefreq: "weekly" },
-  { loc: "/konstanz.html", priority: "0.8", changefreq: "weekly" },
-  { loc: "/wollmatingen.html", priority: "0.8", changefreq: "weekly" },
-  { loc: "/ratgeber.html", priority: "0.8", changefreq: "weekly" },
-  { loc: "/immobilienbewertung-konstanz.html", priority: "0.8", changefreq: "monthly" },
-  { loc: "/mcp.html", priority: "0.7", changefreq: "monthly" },
-  { loc: "/en/", priority: "0.7", changefreq: "weekly" },
-  { loc: "/en/allmannsdorf.html", priority: "0.7", changefreq: "weekly" },
-  { loc: "/en/contact.html", priority: "0.6", changefreq: "monthly" },
-];
+const STATIC_SITEMAP_PATHS = sitemapStatic(loadSot(ROOT)); // SSOT: data/sot/pages.json
 // Sitemap = HTML pages only (llms.txt/agents.txt/JSON are referenced from robots.txt/llms.txt instead).
 
 const args = new Set(process.argv.slice(2));
@@ -963,11 +944,32 @@ function siblingListings(listing) {
 }
 
 /** "dd.mm.yyyy" of the real data state: verified_at (mirror check) or scraped_at (last change). */
+/** Hero-Zeile der Objektseite: nur vorhandene Felder, Trenner nur zwischen Werten, € nie allein umbrechen. */
+function nbspEuro(v) {
+  return escapeHtml(String(v || "").trim()).replace(/\s+€/g, "&nbsp;€");
+}
+function heroFactsHtml(listing) {
+  const parts = [];
+  if (String(listing.reference_number || "").trim()) parts.push(`<strong>${escapeHtml(String(listing.reference_number).trim())}</strong>`);
+  const loc = String(listing.location || "").trim() || "Konstanz";
+  parts.push(escapeHtml(loc));
+  if (String(listing.price || "").trim()) parts.push(`<strong class="nowrap">${nbspEuro(listing.price)}</strong>`);
+  return parts.join(" · ");
+}
+/** Datenstand + Käuferprovision – letztere nur so, wie sie in den Objektdaten steht. */
+function heroMetaHtml(listing) {
+  const parts = [`<span class="nowrap">Stand: ${escapeHtml(dataAsOfLabel(loadSot(ROOT), "de"))}</span>`];
+  const prov = String(listing?.facts?.["Käuferprovision"] || "").trim();
+  if (prov) parts.push(`<span class="nowrap">Käuferprovision: ${escapeHtml(prov)}</span>`);
+  return parts.join(" · ");
+}
+
+/* Datenstand rückt nur vor, wenn ALLE aktiven Objekte beim Abgleich mit den öffentlichen Exposés übereinstimmen
+   (scripts/verify-listings-mirror.mjs, fail-closed). */
+const STAND_NOTE = " (mit den öffentlichen Exposés abgeglichen)";
 function dataStandLabel(data) {
-  const raw = dataAsOf(data, ROOT);
-  const d = raw ? new Date(raw) : null;
-  if (!d || Number.isNaN(d.getTime())) return "unbekannt";
-  return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Berlin" });
+  // SSOT: ältestes Prüfdatum der aktiven Objekte (data/sot/listings.json)
+  return dataAsOfLabel(loadSot(ROOT), "de");
 }
 
 /* Themen-/Stadtteilseiten verlinken passende Objektseiten (Marker-Block, beim Render erneuert). */
@@ -1000,7 +1002,7 @@ async function renderTopicObjektLinks(data) {
         <div class="section-head">
           <div>
             <h2>${escapeHtml(t.heading)}</h2>
-            <p>${rows.length} ${rows.length === 1 ? "Objekt" : "Objekte"} · Stand der Angebote: ${stand}. <a href="/#angebote">Alle Angebote</a></p>
+            <p>${rows.length} ${rows.length === 1 ? "Objekt" : "Objekte"} · Stand der Angebote: ${stand}${STAND_NOTE}. <a href="/#angebote">Alle Angebote</a></p>
           </div>
         </div>
         <div class="listings-grid">
@@ -1141,12 +1143,16 @@ function renderExposeHtml(listing, ogShare = null) {
       </section>`
       : "";
 
-  const proseHtml = (value) => stripProjectStatus(value)
-    .split(/\n{2,}/)
-    .map((para) => para.trim())
-    .filter(Boolean)
-    .map((para) => `<p>${linkifyContactPhones(escapeHtml(normalizeContactPhoneDisplay(para))).replace(/\n/g, "<br>")}</p>`)
-    .join("\n          ");
+  // Zitierter Exposé-Wortlaut (Importer): eingefasst, damit check-output ihn nicht als eigenen Text wertet.
+  const proseHtml = (value) => {
+    const inner = stripProjectStatus(value)
+      .split(/\n{2,}/)
+      .map((para) => para.trim())
+      .filter(Boolean)
+      .map((para) => `<p>${linkifyContactPhones(escapeHtml(normalizeContactPhoneDisplay(para))).replace(/\n/g, "<br>")}</p>`)
+      .join("\n          ");
+    return inner ? `<!-- SOURCE-TEXT:START -->${inner}<!-- SOURCE-TEXT:END -->` : "";
+  };
 
   const descriptionHtml = proseHtml(listing.description);
   const descriptionSection = descriptionHtml
@@ -1333,8 +1339,9 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
     <section class="page-hero expose-hero">
       <div class="container">
         <p class="eyebrow"><a href="/#angebote">← Alle Angebote</a></p>
-        <h1 class="expose-title">${ref ? `<span class="expose-reference">${escapeHtml(ref)}</span><span class="expose-title-sep"> · </span>` : ""}<span>${escapeHtml(title)}</span></h1>
-        <p>${listing.reference_number ? `<strong>${escapeHtml(listing.reference_number)}</strong> · ` : ""}${escapeHtml(listing.location || "Konstanz")}${listing.price ? ` · <strong>${escapeHtml(listing.price)}</strong>` : ""}</p>
+        <h1 class="expose-title">${ref ? `<span class="expose-reference">${escapeHtml(ref)}</span><span class="sr-only"> · </span>` : ""}<span>${escapeHtml(title)}</span></h1>
+        <p class="expose-hero-facts">${heroFactsHtml(listing)}</p>
+        <p class="expose-hero-meta">${heroMetaHtml(listing)}</p>
         <span class="${badge.className}" style="position:static;display:inline-block;margin-top:0.5rem">${escapeHtml(badge.text)}</span>
       </div>
     </section>
@@ -2174,11 +2181,7 @@ function escapeXml(v) {
 }
 
 /* hreflang pairs (de ↔ en); x-default = German. Only pages that exist in both languages. */
-const HREFLANG_PAIRS = [
-  { de: "/", en: "/en/" },
-  { de: "/allmannsdorf.html", en: "/en/allmannsdorf.html" },
-  { de: "/kontakt.html", en: "/en/contact.html" },
-];
+const HREFLANG_PAIRS = hreflangPairs(loadSot(ROOT)); // SSOT: data/sot/pages.json
 function hreflangXml(locPath) {
   const pair = HREFLANG_PAIRS.find((x) => x.de === locPath || x.en === locPath);
   if (!pair) return "";
@@ -2247,6 +2250,23 @@ ${SITEMAP_OBJEKT_END}
 }
 
 async function renderIntoPages(data) {
+  {
+    // SSOT-Objektschicht (Status, Prüfdatum, Overrides). Neue Importer-Objekte bekommen einen Eintrag (Slug eingefroren).
+    const sot = loadSot(ROOT, { fresh: true });
+    const known = new Set(sot.listings.map((l) => l.id));
+    const fresh = (data.listings || []).filter((L) => !known.has(String(L.immowelt_id || L.id)) && L.slug);
+    if (fresh.length && !dryRun) {
+      const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
+      saveListingsLayer(sot, [...sot.listings, ...fresh.map((L) => ({
+        id: String(L.immowelt_id || L.id), slug: L.slug,
+        status: L.active !== false && L.site_hidden !== true ? "active" : "hidden",
+        source: String(L.origin || "immowelt") === "eigen" ? "eigen" : "immowelt",
+        verified_at: today, verified_by: "import", overrides: {}, waivers: [],
+      }))]);
+      console.log(`SSOT: ${fresh.length} neue(s) Objekt(e) in data/sot/listings.json aufgenommen`);
+    }
+    applyListingLayer(loadSot(ROOT, { fresh: true }), data);
+  }
   const publicListings = data.listings.filter(isPublicListing);
   const grid = renderGrid(publicListings);
   const n = publicListings.length;
@@ -2270,8 +2290,8 @@ async function renderIntoPages(data) {
     // Echtes Datum des Datenstands (zuletzt geprüft bzw. zuletzt geändert), nicht die Render-Zeit.
     const stand = dataStandLabel(data);
     html = html.replace(
-      /Stand(?: der Angebote)?:\s*(?:[A-Za-zäöüÄÖÜß]+\s+\d{4}|\d{2}\.\d{2}\.\d{4})\./,
-      `Stand der Angebote: ${stand}.`
+      /Stand(?: der Angebote)?:\s*(?:[A-Za-zäöüÄÖÜß]+\s+\d{4}|\d{2}\.\d{2}\.\d{4})(?: \([^)]*\))?\./,
+      `Stand der Angebote: ${stand}${STAND_NOTE}.`
     );
     if (!dryRun) await writeFile(fp, html, "utf8");
     console.log(`Updated ${file} (${n} listings)`);

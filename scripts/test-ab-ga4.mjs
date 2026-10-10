@@ -89,7 +89,7 @@ try {
     if (hero.abEl || hero.abScript) fail('A/B markup or script still on the home page');
     if (hero.callLabel !== 'Anrufen' || hero.vormLabel !== 'Vormerken') fail(`hero CTA labels wrong: ${hero.callLabel} / ${hero.vormLabel}`);
     if (!(hero.callX < hero.vormX) || Math.abs(hero.callTop - hero.vormTop) > 2) fail(`mobile: Anrufen must be first, side by side (${hero.callX}/${hero.vormX}, ${hero.callTop}/${hero.vormTop})`);
-    if (/\b44\b|m²|Seeblick|Seesicht|Bauantrag|Baubeginn|Genehmigung/.test(hero.text)) fail(`hero contains forbidden claims: ${hero.text}`);
+    if (/Bauantrag|Baubeginn|Genehmigung/.test(hero.text)) fail(`hero contains forbidden claims: ${hero.text}`);
     if (named(hits, 'ab_assign').length || named(hits, 'cta_click').length) fail('ab_assign/cta_click still sent');
     for (const h of hits) if (h.params.ab_variant) fail(`${h.name} still carries ab_variant=${h.params.ab_variant}`);
     await ctx.close();

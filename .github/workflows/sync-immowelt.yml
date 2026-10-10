@@ -74,8 +74,8 @@ jobs:
         continue-on-error: true
         run: node scripts/verify-listings-mirror.mjs
 
-      - name: Render current last-known-good snapshot
-        run: node scripts/sync-immowelt.mjs --render-only
+      - name: Build from SSOT (validate → render → EN → flyer → cache hashes → output rules)
+        run: node scripts/build.mjs
 
       - name: Legal baseline
         run: node scripts/test-legal-baseline.mjs
@@ -91,7 +91,7 @@ jobs:
           # Keep every generated output staged so the rebase/push cannot leave
           # a dirty worktree (and so the deploy ships the same source of truth).
           # Project pages (allmannsdorf.html, …) are re-rendered too — commit them with the rest.
-          git add -A -- index.html projekte.html allmannsdorf.html wollmatingen.html wohnung-kaufen-konstanz.html partials/listings-grid.html objekt sitemap.xml data/listings.json data/immowelt-sync-status.json data/sitemap-lastmod.json agents.txt llms.txt ai .well-known/mcp.json .well-known/mcp/catalog.json
+          git add -A -- data/sot data/projects.json en partials *.html index.html projekte.html allmannsdorf.html wollmatingen.html wohnung-kaufen-konstanz.html partials/listings-grid.html objekt sitemap.xml data/listings.json data/immowelt-sync-status.json data/sitemap-lastmod.json agents.txt llms.txt ai .well-known/mcp.json .well-known/mcp/catalog.json css js
           git status --short
           if git diff --staged --quiet; then
             echo "Generated output already current."

@@ -10,11 +10,12 @@
  *
  * Listings remain origin=immowelt|eigen via SQLite; this module never touches them.
  */
+import { loadSot, projectsDocument } from "./sot.mjs";
 import { vormerkFormHtml } from "./vormerk-form.mjs";
 import { readFile, writeFile, readdir, unlink, access } from "node:fs/promises";
 import path from "node:path";
 
-export const PROJECTS_SOT_PATH = "data/projects.json";
+export const PROJECTS_SOT_PATH = "data/sot/projects.json";
 export const PROJECT_SEO_START = "<!-- PROJECT-SEO:START -->";
 export const PROJECT_SEO_END = "<!-- PROJECT-SEO:END -->";
 export const PROJECT_FACTS_START = "<!-- PROJECT-FACTS:START -->";
@@ -55,15 +56,9 @@ function whatsappUrl(text, phoneE164 = "491705225568") {
 }
 
 export async function loadProjectsDocument(siteRoot) {
-  const fp = path.join(siteRoot, PROJECTS_SOT_PATH);
-  const raw = await readFile(fp, "utf8");
-  const doc = JSON.parse(raw);
-  if (!doc || doc.schema !== "eichmann.projects.sot/v1") {
-    throw new Error(`Invalid projects SoT schema at ${fp}`);
-  }
-  if (!Array.isArray(doc.projects)) {
-    throw new Error(`projects[] missing in ${fp}`);
-  }
+  // SSOT: data/sot/projects.json (Fakten mit Beleg + Platzhalter-Texte) → Kompatibilitäts-Dokument.
+  const doc = projectsDocument(loadSot(siteRoot));
+  if (!Array.isArray(doc.projects)) throw new Error("projects[] missing in SSOT");
   return doc;
 }
 
@@ -501,7 +496,7 @@ ${faq
           <a class="btn btn-accent hero-cta-call" href="tel:+491705225568" aria-label="Anrufen: +49 170 522 5568">Anrufen</a>
           <a class="btn btn-outline hero-cta-vormerken" href="#vormerken" data-focus-form="vormerk-projekt">Vormerken</a>
         </div>
-        <p class="hero-links"><button type="button" class="linkish" data-open-flyer>Flyer öffnen</button> · <a href="tel:+491705225568">+49 170 522 5568</a> · Festnetz <a href="tel:+4975319228848">+49 7531 9228848</a></p>
+        <p class="hero-links"><button type="button" class="linkish" data-open-flyer>Flyer öffnen</button> · <a href="tel:+491705225568">+49 170 522 5568</a> · <span class="nowrap">Festnetz <a href="tel:+4975319228848">+49 7531 9228848</a></span></p>
       </div>
     </section>
 

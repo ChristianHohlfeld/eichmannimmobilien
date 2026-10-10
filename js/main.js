@@ -291,9 +291,38 @@
   /* Flyer modal */
   var modal = document.getElementById("flyerModal");
   var flyerReturnFocus = null;
+  /* Flyer-Inhalt kommt aus EINEM erzeugten Partial (partials/flyer-modal.html, SSOT) und wird
+     beim ersten Öffnen geladen – nicht mehr in jeder Seite dupliziert. */
+  var flyerLoading = null;
+  function loadFlyer() {
+    if (!modal || modal.querySelector(".flyer-dialog")) return Promise.resolve();
+    var src = modal.getAttribute("data-flyer-src");
+    if (!src || !window.fetch) return Promise.resolve();
+    if (!flyerLoading) {
+      flyerLoading = fetch(src, { credentials: "same-origin" })
+        .then(function (r) { if (!r.ok) throw new Error("flyer " + r.status); return r.text(); })
+        .then(function (html) {
+          modal.innerHTML = html;
+          if (typeof window.__eichmannVormerkBoot === "function") window.__eichmannVormerkBoot(modal);
+        })
+        .catch(function () { flyerLoading = null; });
+    }
+    return flyerLoading;
+  }
   function openFlyer() {
     if (!modal) return;
-    flyerReturnFocus = document.activeElement;
+    if (!modal.querySelector(".flyer-dialog")) {
+      var ret = document.activeElement;
+      loadFlyer().then(function () {
+        if (modal.querySelector(".flyer-dialog")) { openFlyerNow(ret); }
+        else { location.href = "/allmannsdorf.html"; }
+      });
+      return;
+    }
+    openFlyerNow(document.activeElement);
+  }
+  function openFlyerNow(ret) {
+    flyerReturnFocus = ret;
     modal.hidden = false;
     document.body.style.overflow = "hidden";
     document.body.classList.add("flyer-open");
@@ -332,8 +361,8 @@
       openFlyer();
     });
   });
-  document.querySelectorAll("[data-close-flyer]").forEach(function (el) {
-    el.addEventListener("click", function () { closeFlyer(); });
+  if (modal) modal.addEventListener("click", function (e) {
+    if (e.target && e.target.closest && e.target.closest("[data-close-flyer]")) closeFlyer();
   });
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && modal && !modal.hidden) closeFlyer();
@@ -709,3 +738,38 @@
   })();
 
 })();
+
+/* Stadtteil-Filter für das Angebots-Raster: /?ort=petershausen#angebote (ohne JS: alle Angebote). */
+(function () {
+  var m = /[?&]ort=([a-z\-]+)/i.exec(location.search || "");
+  if (!m) return;
+  var key = m[1].toLowerCase();
+  var NAMES = { petershausen: "Petershausen", fuerstenberg: "Fürstenberg", koenigsbau: "Königsbau", wollmatingen: "Wollmatingen", allmannsdorf: "Allmannsdorf" };
+  if (!NAMES[key]) return;
+  function norm(t) { return String(t || "").toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss"); }
+  function run() {
+    var sec = document.getElementById("angebote");
+    if (!sec) return;
+    var cards = sec.querySelectorAll(".listing-card");
+    var shown = 0;
+    cards.forEach(function (c) {
+      var hay = norm(c.textContent) + " " + norm(c.getAttribute("href")).replace(/konigsbau/g, "koenigsbau").replace(/furstenberg/g, "fuerstenberg");
+      var hit = hay.indexOf(key) !== -1;
+      if (hit) shown++;
+    });
+    if (!shown) return;
+    cards.forEach(function (c) {
+      var hay = norm(c.textContent) + " " + norm(c.getAttribute("href")).replace(/konigsbau/g, "koenigsbau").replace(/furstenberg/g, "fuerstenberg");
+      if (hay.indexOf(key) === -1) c.hidden = true;
+    });
+    var grid = cards[0] && cards[0].parentNode;
+    if (grid) {
+      var note = document.createElement("p");
+      note.className = "listing-filter-note";
+      note.innerHTML = "Angebote in " + NAMES[key] + " (" + shown + ") · <a href=\"/#angebote\">Alle Angebote anzeigen</a>";
+      grid.parentNode.insertBefore(note, grid);
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();
+

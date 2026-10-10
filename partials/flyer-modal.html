@@ -1,0 +1,142 @@
+    <div class="flyer-backdrop" data-close-flyer aria-hidden="true"></div>
+    <div class="flyer-dialog" role="dialog" aria-modal="true" aria-labelledby="flyerTitle">
+      <button type="button" class="flyer-close" data-close-flyer aria-label="Schließen">×</button>
+      <div class="flyer">
+        <div class="flyer-top">
+          <div class="flyer-brand">
+            <img src="/assets/logo.png?v=43210083" alt="Immobilien Eichmann" width="320" height="56" loading="lazy">
+          </div>
+          <figure class="flyer-hero-img">
+            <picture>
+              <source srcset="/assets/flyer/hero-dining.webp" type="image/webp">
+              <img src="/assets/flyer/hero-dining.jpg" alt="Wohn- und Essbereich mit Seesicht – Neubau Allmannsdorf (Visualisierung)" width="520" height="550">
+            </picture>
+            <figcaption class="flyer-img-note">Visualisierung</figcaption>
+          </figure>
+          <div class="flyer-intro">
+            <h2 id="flyerTitle">NEUBAU<br><span>ALLMANNSDORF</span></h2>
+            <p>Neubau Allmannsdorf in Konstanz – jetzt provisionsfrei vormerken.</p>
+            <ul class="flyer-checks">
+              <li>5 Mehrfamilienhäuser mit 44 Wohnungen</li>
+              <li>Viele Wohnungen mit traumhafter Seesicht</li>
+              <li>2–5 Zimmer · 40–124 m²</li>
+            </ul>
+            <p class="flyer-cta-script">Jetzt vormerken lassen!</p>
+            <div class="flyer-intro-ctas">
+              <a class="btn btn-accent" href="tel:+491705225568">Anrufen +49 170 522 5568</a>
+            </div>
+            <div class="flyer-form">
+            <form class="vormerk-form" id="vormerk-flyer" data-vormerk-form data-form-location="flyer_modal" action="https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/contact" method="POST">
+              <h3 class="vormerk-title">Provisionsfrei vormerken</h3>
+              <p class="vormerk-sub">Helmut Eichmann meldet sich persönlich bei Ihnen.</p>
+              <input type="hidden" name="anliegen" value="Vormerkung Neubau Allmannsdorf">
+              <input type="hidden" name="lang" value="de">
+              <input type="checkbox" name="botcheck" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+              <div class="vormerk-fields">
+                <div class="form-group">
+                  <label for="vormerk-flyer-name">Name *</label>
+                  <input type="text" id="vormerk-flyer-name" name="name" required autocomplete="name">
+                </div>
+                <div class="form-group">
+                  <label for="vormerk-flyer-phone">Telefon *</label>
+                  <input type="tel" id="vormerk-flyer-phone" name="phone" required autocomplete="tel" inputmode="tel" placeholder="Für den Rückruf">
+                </div>
+                <div class="form-group">
+                  <label for="vormerk-flyer-email">E-Mail (optional)</label>
+                  <input type="email" id="vormerk-flyer-email" name="email" autocomplete="email">
+                </div>
+              </div>
+              <button type="submit" class="btn btn-accent vormerk-submit">Vormerken</button>
+              <p class="vormerk-note">Hinweise zur Verarbeitung Ihrer Angaben: <a href="/datenschutz.html">Datenschutzerklärung</a>. Durch das Absenden kommt kein Maklervertrag zustande.</p>
+              <p class="vormerk-success" role="status" hidden>Vielen Dank – Ihre Vormerkung ist angekommen. Helmut Eichmann meldet sich persönlich bei Ihnen.</p>
+              <p class="vormerk-error" role="alert" hidden>Senden hat gerade nicht geklappt. Bitte rufen Sie an: <a href="tel:+491705225568">+49 170 522 5568</a>.</p>
+            </form>
+            </div>
+          </div>
+        </div>
+        <div class="flyer-mid">
+          <ul class="flyer-specs">
+            <li>
+              <span class="flyer-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.2"/></svg></span>
+              <span class="flyer-spec-label">Lage</span>
+              <span class="flyer-spec-val">Konstanz-Allmannsdorf</span>
+            </li>
+            <li>
+              <span class="flyer-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="10" width="7" height="11" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg></span>
+              <span class="flyer-spec-label">Gebäude</span>
+              <span class="flyer-spec-val">5 Mehrfamilienhäuser</span>
+            </li>
+            <li>
+              <span class="flyer-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg></span>
+              <span class="flyer-spec-label">Einheiten</span>
+              <span class="flyer-spec-val">44 Wohnungen</span>
+            </li>
+            <li>
+              <span class="flyer-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg></span>
+              <span class="flyer-spec-label">Highlight</span>
+              <span class="flyer-spec-val">Viele Wohnungen mit traumhafter Seesicht</span>
+            </li>
+            <li>
+              <span class="flyer-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 8h6v6H4zM14 4h6v6h-6zM14 14h6v6h-6zM4 16h4v4H4z"/></svg></span>
+              <span class="flyer-spec-label">Flächen</span>
+              <span class="flyer-spec-val">40–124 m²</span>
+            </li>
+            <li>
+              <span class="flyer-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6"/></svg></span>
+              <span class="flyer-spec-label">Zimmer</span>
+              <span class="flyer-spec-val">2–5</span>
+            </li>
+            <li>
+              <span class="flyer-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 20h16M6 20V9l6-4 6 4v11"/><path d="M9 20v-5h6v5"/></svg></span>
+              <span class="flyer-spec-label">Grundstück</span>
+              <span class="flyer-spec-val">ca. 4.000 m²</span>
+            </li>
+            <li>
+              <span class="flyer-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 2v20M16 6H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H7"/></svg></span>
+              <span class="flyer-spec-label">Preise</span>
+              <span class="flyer-spec-val">295.000–1.450.000 €</span>
+            </li>
+            <li>
+              <span class="flyer-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+              <span class="flyer-spec-label">Provision</span>
+              <span class="flyer-spec-val">Provisionsfrei: JA</span>
+            </li>
+          </ul>
+          <div class="flyer-mid-right">
+            <div class="flyer-thumbs">
+              <picture>
+                <source srcset="/assets/flyer/living.webp" type="image/webp">
+                <img src="/assets/flyer/living.jpg" alt="Wohnzimmer mit Blick auf den Bodensee – Neubau Allmannsdorf (Visualisierung)" width="300" height="260" loading="lazy">
+              </picture>
+              <picture>
+                <source srcset="/assets/flyer/dining-detail.webp" type="image/webp">
+                <img src="/assets/flyer/dining-detail.jpg" alt="Essbereich einer Neubauwohnung in Konstanz-Allmannsdorf" width="300" height="260" loading="lazy">
+              </picture>
+            </div>
+            <p class="flyer-img-note">Visualisierungen aus dem Projektflyer</p>
+            <div class="flyer-copy">
+              <p>Der Neubau Allmannsdorf ist ein modernes Wohnensemble mit 5 Mehrfamilienhäusern und insgesamt 44 hochwertigen Wohnungen in einer der gefragtesten Wohnlagen von Konstanz. Freuen Sie sich auf durchdachte Grundrisse, lichtdurchflutete Räume und eine Architektur, die Design, Komfort und Lebensqualität vereint. Viele Wohnungen bieten einen einzigartigen Blick auf den Bodensee.</p>
+              <ul class="flyer-features">
+                <li>Hochwertige Architektur</li>
+                <li>Nachhaltige Bauweise</li>
+                <li>Barrierearme Wohnungen</li>
+                <li>Lift &amp; Tiefgarage</li>
+                <li>Attraktive Grundrisse</li>
+                <li>Ruhige und gefragte Lage</li>
+              </ul>
+              <div class="flyer-actions">
+                <a class="btn btn-outline" href="mailto:info@immobilien-eichmann.com?subject=Vormerkung%20Neubau%20Allmannsdorf">E-Mail Vormerken</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flyer-foot">
+          <div class="flyer-foot-contact">
+            <a href="tel:+491705225568">Tel +49 170 522 5568</a>
+            <a href="mailto:info@immobilien-eichmann.com">info@immobilien-eichmann.com</a>
+            <a href="https://immobilieneichmann.de">www.immobilieneichmann.de</a>
+          </div>
+          <p class="flyer-slogan">Ihr Partner für Neubauimmobilien in Konstanz und am Bodensee.</p>
+        </div>
+      </div>
+    </div>

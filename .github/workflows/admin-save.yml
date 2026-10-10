@@ -74,7 +74,7 @@ jobs:
           github.event.client_payload.trigger_render != false
         run: |
           npm ci || npm install
-          node scripts/sync-immowelt.mjs --render-only
+          node scripts/build.mjs
 
       - name: Commit SoT + generated outputs
         env:
@@ -82,7 +82,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/listings.json data/sitemap-lastmod.json assets/listings partials/listings-grid.html index.html projekte.html wollmatingen.html wohnung-kaufen-konstanz.html objekt sitemap.xml || true
+          git add data/listings.json data/sot data/projects.json data/sitemap-lastmod.json assets/listings partials *.html en objekt sitemap.xml llms.txt agents.txt ai .well-known || true
           if git diff --staged --quiet; then
             echo "No changes."
           else
