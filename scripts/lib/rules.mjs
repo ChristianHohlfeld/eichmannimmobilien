@@ -50,6 +50,7 @@ export function allowedNumberSet(sot, compiled) {
   for (const ph of [c.phone_mobile, c.phone_landline]) {
     add(ph.e164); ph.display.split(/\s+/).forEach(add);
     add("0" + ph.e164.slice(3));                       // national spelling 0170…
+    add("0" + ph.display.split(/\s+/)[1]);             // national prefix 0170 (Claude R4: „Jetzt anrufen 0170 522 5568“)
   }
   add(c.address.postal_code); (c.address.street.match(/\d+/g) ?? []).forEach(add);
   add(sot.activeListings.length);

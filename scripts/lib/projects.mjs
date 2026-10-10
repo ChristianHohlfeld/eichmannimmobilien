@@ -504,7 +504,7 @@ ${faq
           <figcaption>Visualisierung</figcaption>
         </figure>
         <div class="hero-actions project-hero-actions">
-          <a class="btn btn-accent hero-cta-call" href="tel:+491705225568" aria-label="Anrufen: +49 170 522 5568">Anrufen</a>
+          <a class="btn btn-accent hero-cta-call btn-call" href="tel:+491705225568" data-location="hero_number">Jetzt anrufen <span class="nowrap">0170 522 5568</span></a>
           <a class="btn btn-outline hero-cta-vormerken" href="#vormerken" data-focus-form="vormerk-projekt">Vormerken</a>
         </div>
         <p class="hero-links"><button type="button" class="linkish" data-open-flyer>Flyer öffnen</button> · <a href="tel:+491705225568">+49 170 522 5568</a> · <span class="nowrap">Festnetz <a href="tel:+4975319228848">+49 7531 9228848</a></span></p>

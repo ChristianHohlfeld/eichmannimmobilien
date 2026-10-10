@@ -103,7 +103,7 @@ ${ld(jsonld)}
         <a href="/en/allmannsdorf.html"${key === "allmannsdorf" ? ' class="active"' : ""}>New-build Allmannsdorf</a>
         <a href="/en/contact.html"${key === "contact" ? ' class="active"' : ""}>Contact</a>
         <a href="${p.de}" hreflang="de" lang="de" class="lang-switch" data-lang-switch="de">Deutsch</a>
-        <a href="${TEL}" class="nav-cta">Call</a>
+        <a href="${TEL}" class="nav-cta btn-call" data-location="header_number">Call<span class="nav-cta-num"> +49 170 522 5568</span></a>
       </nav>
     </div>
   </header>
@@ -197,7 +197,7 @@ async function homePage() {
           <p class="hero-title">New-build Allmannsdorf – register your interest, commission‑free</p>
           <p class="lead" data-sot-lead="allmannsdorf">${esc(AL.lead)}</p>
           <div class="hero-actions hero-actions--dual">
-            <a class="btn btn-accent hero-cta-call" href="${TEL}" aria-label="Call: ${C.phone_mobile.display}">Call</a>
+            <a class="btn btn-accent hero-cta-call btn-call" href="${TEL}" data-location="hero_number">Call <span class="nowrap">${C.phone_mobile.display}</span></a>
             <a class="btn btn-accent hero-cta-vormerken" href="#vormerk-hero-en">Register interest</a>
           </div>
           <p class="hero-subline">
@@ -225,7 +225,8 @@ ${vormerkFormHtml({ id: "vormerk-hero-en", location: "home_hero", lang: "en", pr
     <section class="section section-alt">
       <div class="container narrow">
         <h2>New-build Allmannsdorf</h2>
-        <p>A new-build ensemble in Konstanz-Allmannsdorf – commission‑free, register your interest.</p>
+        <p>${esc(AL.description)}</p>
+        <p>Commission‑free – register your interest and Helmut Eichmann will get back to you personally.</p>
         <p class="hero-actions"><a class="btn btn-accent" href="/en/allmannsdorf.html">View project</a> <a class="btn btn-outline" href="#vormerk-hero-en">Register interest</a></p>
       </div>
     </section>
@@ -336,7 +337,7 @@ function allmannsdorfPage() {
           <figcaption>Visualisation</figcaption>
         </figure>
         <div class="hero-actions project-hero-actions">
-          <a class="btn btn-accent hero-cta-call" href="${TEL}" aria-label="Call: ${C.phone_mobile.display}">Call</a>
+          <a class="btn btn-accent hero-cta-call btn-call" href="${TEL}" data-location="hero_number">Call <span class="nowrap">${C.phone_mobile.display}</span></a>
           <a class="btn btn-outline hero-cta-vormerken" href="#register">Register interest</a>
         </div>
         <p class="hero-links"><a href="${esc(WA_ALL)}" target="_blank" rel="noopener noreferrer">WhatsApp</a> · <a href="${TEL}">${C.phone_mobile.display}</a> · <span class="nowrap">Landline <a href="tel:${C.phone_landline.e164}">${C.phone_landline.display}</a></span> · <a href="/allmannsdorf.html" hreflang="de" lang="de" data-lang-switch="de">Deutsch</a></p>

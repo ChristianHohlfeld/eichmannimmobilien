@@ -123,7 +123,7 @@ try {
       const a = document.querySelector('.page-hero .hero-actions a');
       return { href: a.getAttribute('href'), text: a.textContent.trim(), flyerBtn: !!document.querySelector('.page-hero .hero-actions [data-open-flyer]'), inline: !!document.getElementById('vormerk-projekt') };
     });
-    if (first.href !== 'tel:+491705225568' || first.text !== 'Anrufen') fail(`allmannsdorf hero first CTA ${JSON.stringify(first)}`);
+    if (first.href !== 'tel:+491705225568' || first.text !== 'Jetzt anrufen 0170 522 5568') fail(`allmannsdorf hero first CTA ${JSON.stringify(first)}`);
     if (first.flyerBtn) fail('allmannsdorf hero: Flyer öffnen should be a text link, not a button');
     if (!first.inline) fail('allmannsdorf: inline vormerk form missing');
     await submitVormerk(page, '#vormerk-projekt');

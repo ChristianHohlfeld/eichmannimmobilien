@@ -13,7 +13,7 @@ Disallow: /admin/
 # - llms.txt  → Einstieg + Objekt-URLs + NAP
 # - agents.txt → Leserechte für Angebote
 # - ai/listings.json → maschinenlesbarer Angebots-Index (eine Quelle mit der Website)
-# - .well-known/mcp.json + /mcp → Live MCP Streamable-HTTP (search_listings, get_listing)
+# - .well-known/mcp.json + /mcp → MCP Streamable-HTTP (Datenstand data_as_of) (search_listings, get_listing)
 
 
 # OpenAI search / ads crawlers (ChatGPT discovery)

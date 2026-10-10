@@ -18,7 +18,11 @@
       "source": "immowelt",
       "verified_at": "2026-10-10",
       "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
-      "overrides": {},
+      "overrides": {
+        "title": {
+          "de": "Dreifamilienhaus in grüner Lage, Konstanz-Wollmatingen"
+        }
+      },
       "waivers": [
         {
           "rule": "construction_status",
@@ -179,5 +183,31 @@
       },
       "waivers": []
     }
-  ]
+  ],
+  "text_fixes": {
+    "_comment": "Claude R4 #10/#27: nur Anzeige; Immowelt-Wortlaut bleibt Quelle (data/listings.json). Sätze-Ersetzungen zuerst, dann Schreibfehler.",
+    "sentences": {
+      "Der Baubegin aller 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen ist Anfang 2025 geplant..": "Insgesamt umfasst das Projekt 18 Eigentumswohnungen im Herzen von Konstanz-Wollmatingen.",
+      "Die Informationen zur Bauausführung der beiden Mehrfamilienhäuser, finden sie in den Anlagen unter Baubeschreibung als PDF.": "Die Baubeschreibung erhalten Sie mit dem Exposé.",
+      "Siehe Expose/Grundrisse in den Anlagen.": "Die Grundrisse finden Sie in der Bildergalerie.",
+      "Die Grundrisse finden Sie im Exposé auf Immowelt.": "Die Grundrisse finden Sie in der Bildergalerie."
+    },
+    "words": {
+      "Effizenzhaus": "Effizienzhaus",
+      "KW 55": "KfW 55",
+      "Fahhrad": "Fahrrad",
+      "füssläufig": "fußläufig",
+      "Stadteil": "Stadtteil",
+      "in der nähe": "in der Nähe",
+      "finden sie": "finden Sie",
+      "für sie da": "für Sie da",
+      "Markler": "Makler",
+      "mit grossen Balkon": "mit großem Balkon",
+      "(z.? B.": "(z. B.",
+      "zur Recht": "zu Recht",
+      "Dreifamillienhaus": "Dreifamilienhaus",
+      "Die Attraktive": "Die attraktive",
+      "Fussbodenheizung": "Fußbodenheizung"
+    }
+  }
 }

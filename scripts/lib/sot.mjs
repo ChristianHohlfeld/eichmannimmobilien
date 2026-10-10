@@ -211,8 +211,24 @@ export function applyListingLayer(sot, data) {
       }
     }
   }
+  // Claude R4 #10/#27: globale Text-Fixes (nur Anzeige), erst ganze Sätze, dann Schreibfehler
+  const tf = sot.listingsDoc?.text_fixes || readListingsDoc(sot)?.text_fixes;
+  if (tf) for (const L of data?.listings || []) applyTextFixes(L, tf);
   if (sot.dataAsOf) data.data_as_of = sot.dataAsOf;
   return data;
+}
+function readListingsDoc(sot) {
+  try { return JSON.parse(readFileSync(path.join(sot.dir, "listings.json"), "utf8")); } catch { return null; }
+}
+export function fixText(str, tf) {
+  let s = String(str);
+  for (const [a, b] of Object.entries(tf.sentences || {})) s = s.split(a).join(b);
+  for (const [a, b] of Object.entries(tf.words || {})) s = s.split(a).join(b);
+  return s;
+}
+export function applyTextFixes(L, tf) {
+  for (const f of ["description", "location_description", "title", "short_description"]) if (typeof L[f] === "string") L[f] = fixText(L[f], tf);
+  return L;
 }
 /** "dd.mm.yyyy" – ältestes Prüfdatum der aktiven Objekte. */
 export function dataAsOfLabel(sot = loadSot(), lang = "de") {

@@ -927,8 +927,20 @@ function siblingKey(listing) {
   return loc.length >= 80 ? loc.slice(0, 160) : "";
 }
 let __siblingIndex = null;
+let __publicListings = [];
+/** Claude R4 #13: drei weitere Objekte nach Preisnähe (für Objekte ohne Geschwister im selben Neubau). */
+function nearbyByPrice(listing, n = 3) {
+  const eur = (L) => Number(String(L.price_eur ?? L.price ?? "").replace(/[^\d]/g, "")) || null;
+  const me = eur(listing);
+  if (!me) return [];
+  return __publicListings
+    .filter((L) => L.slug !== listing.slug && eur(L))
+    .sort((a, b) => Math.abs(eur(a) - me) - Math.abs(eur(b) - me))
+    .slice(0, n);
+}
 function setSiblingIndex(listings) {
   __siblingIndex = new Map();
+  __publicListings = (listings || []).filter((L) => hasPublicDetail(L));
   for (const L of listings || []) {
     if (!hasPublicDetail(L)) continue;
     const k = siblingKey(L);
@@ -960,7 +972,7 @@ function heroFactsHtml(listing) {
 function heroMetaHtml(listing) {
   const parts = [`<span class="nowrap">Stand: ${escapeHtml(dataAsOfLabel(loadSot(ROOT), "de"))}</span>`];
   const prov = String(listing?.facts?.["Käuferprovision"] || "").trim();
-  if (prov) parts.push(`<span class="nowrap">Käuferprovision: ${escapeHtml(prov)}</span>`);
+  parts.push(`<span class="nowrap">Käuferprovision: ${escapeHtml(prov || "auf Anfrage")}</span>`); // Claude R4 #4: nie leer, keine erfundene Quote
   return parts.join(" · ");
 }
 
@@ -1027,13 +1039,27 @@ ${rows.map(renderCard).join("\n")}
   }
 }
 
+/** Claude R4 #18: „A2: 2-Zimmer-Wohnung Konstanz-Wollmatingen | Eichmann“ – Typwort aus dem Immowelt-Titel. */
+function shortPageTitle(listing, ref) {
+  const src = String(listing.title || "") + " " + String(listing.type || "");
+  const typ = /dreifamil/i.test(src) ? "Dreifamilienhaus" : /maisonette/i.test(src) ? "Maisonette" : /penthouse/i.test(String(listing.title || "")) ? "Penthouse" : /haus/i.test(String(listing.type || "")) ? "Haus" : "Wohnung";
+  const rooms = String(listing.rooms || "").match(/[\d,]+/)?.[0];
+  const district = (String(listing.location || "").split(",")[0] || "").trim();
+  const place = district && district !== "Konstanz" ? `Konstanz-${district}` : "Konstanz";
+  const core = typ === "Dreifamilienhaus" || !rooms ? typ : `${rooms}-Zimmer-${typ}`;
+  let t = `${ref ? ref + ": " : ""}${core} ${place} | Eichmann`;
+  if (t.length > 60) t = `${ref ? ref + ": " : ""}${core} ${place}`;
+  if (t.length > 60) t = `${ref ? ref + ": " : ""}${core} Konstanz`;
+  return t;
+}
+
 function renderExposeHtml(listing, ogShare = null) {
   const p = "../";
   const badge = badgeFor(listing);
   const ref = listingReference(listing);
   const title = listingDisplayTitle(listing);
   const fullTitle = ref ? ref + " · " + title : title;
-  const pageTitle = `${fullTitle} | Exposé – Immobilien Eichmann Konstanz`;
+  const pageTitle = shortPageTitle(listing, ref); // Claude R4 #18: ≤ 60 Zeichen
   const metaDesc = exposeMetaDescription(listing);
 
   const canonical = `${SITE_ORIGIN}/${listing.local_url}`;
@@ -1151,7 +1177,8 @@ function renderExposeHtml(listing, ogShare = null) {
       .filter(Boolean)
       .map((para) => `<p>${linkifyContactPhones(escapeHtml(normalizeContactPhoneDisplay(para))).replace(/\n/g, "<br>")}</p>`)
       .join("\n          ");
-    return inner ? `<!-- SOURCE-TEXT:START -->${inner}<!-- SOURCE-TEXT:END -->` : "";
+    const linked = inner.replace("Die Grundrisse finden Sie in der Bildergalerie.", 'Die Grundrisse finden Sie in der <a href="#expose-gallery">Bildergalerie</a>.');
+    return linked ? `<!-- SOURCE-TEXT:START -->${linked}<!-- SOURCE-TEXT:END -->` : "";
   };
 
   const descriptionHtml = proseHtml(listing.description);
@@ -1199,7 +1226,23 @@ function renderExposeHtml(listing, ogShare = null) {
                 .join("\n              ")}
             </ul>
           </section>`
-    : "";
+    : (() => {
+        const near = nearbyByPrice(listing);
+        if (!near.length) return "";
+        return `<section class="expose-section expose-siblings" id="weitere-angebote">
+            <h2>Weitere Angebote</h2>
+            <ul class="expose-sibling-list">
+              ${near
+                .map((L) => {
+                  const r = listingReference(L);
+                  const t = listingDisplayTitle(L);
+                  const bits = [L.living_area, L.price].filter(Boolean).join(" · ");
+                  return `<li><a href="${p}${escapeHtml(L.local_url)}">${escapeHtml(r ? r + " · " + t : t)}</a>${bits ? ` <span>${escapeHtml(bits)}</span>` : ""}</li>`;
+                })
+                .join("\n              ")}
+            </ul>
+          </section>`;
+      })();
   const anfrageSubject = `Exposé-Anfrage: ${title}`;
   const prefillMsg = `Guten Tag,\\nich interessiere mich für: ${title}${listing.location ? ` (${listing.location})` : ""}.\\nBitte senden Sie mir das Exposé / weitere Informationen.\\n\\nMit freundlichen Grüßen`;
 
@@ -1330,7 +1373,7 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
         <a href="${p}immobilienbewertung-konstanz.html">Bewertung</a>
         <a href="${p}projekte.html">Projekte</a>
         <a href="${p}kontakt.html">Kontakt</a>
-        <a href="tel:+491705225568" class="nav-cta">Anrufen</a>
+        <a href="tel:+491705225568" class="nav-cta btn-call" data-location="header_number">Anrufen<span class="nav-cta-num"> 0170 522 5568</span></a>
       </nav>
     </div>
   </header>
@@ -1342,6 +1385,7 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
         <h1 class="expose-title">${ref ? `<span class="expose-reference">${escapeHtml(ref)}</span><span class="sr-only"> · </span>` : ""}<span>${escapeHtml(title)}</span></h1>
         <p class="expose-hero-facts">${heroFactsHtml(listing)}</p>
         <p class="expose-hero-meta">${heroMetaHtml(listing)}</p>
+        <p class="expose-hero-actions"><a class="btn btn-accent expose-jump" href="#anfragen" data-location="expose_jump">Exposé anfragen</a> <a class="btn btn-outline btn-call" href="tel:+491705225568" data-location="hero_number">Jetzt anrufen <span class="nowrap">0170 522 5568</span></a></p>
         <span class="${badge.className}" style="position:static;display:inline-block;margin-top:0.5rem">${escapeHtml(badge.text)}</span>
       </div>
     </section>
