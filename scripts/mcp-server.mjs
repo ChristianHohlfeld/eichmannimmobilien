@@ -861,7 +861,7 @@ const server = http.createServer(async (req, res) => {
         source: doc._source,
         tools: ["search_listings", "get_listing", "get_flyer", "get_contact"],
         data_as_of: doc.data_as_of || null,
-        build: await (async () => { try { return JSON.parse(await (await import("node:fs/promises")).readFile(new URL("../ai/build.json", import.meta.url), "utf8")); } catch { return null; } })(),
+        build: await (async () => { try { return JSON.parse(await (await import("node:fs/promises")).readFile(path.join(SITE_ROOT, "ai", "build.json"), "utf8")); } catch { return null; } })(),
       });
     } catch (err) {
       sendJson(res, 503, { ok: false, error: err.message });
