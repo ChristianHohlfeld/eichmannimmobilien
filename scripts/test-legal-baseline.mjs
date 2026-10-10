@@ -35,7 +35,8 @@ for (const file of html) {
 const impressum = await readFile(path.join(ROOT, "impressum.html"), "utf8");
 assert.ok(impressum.includes("Industrie- und Handelskammer Hochrhein-Bodensee"), "Impressum: §34c authority missing");
 const datenschutz = await readFile(path.join(ROOT, "datenschutz.html"), "utf8");
-for (const needle of ["GitHub Pages","forms.digitalisierungsplanung.de","Amazon Simple Email Service","Google Analytics","Local Storage","Landesbeauftragte"]) assert.ok(datenschutz.includes(needle), "Datenschutz missing " + needle);
+assert.ok(!datenschutz.includes("GitHub Pages"), "Datenschutz: veraltetes GitHub-Pages-Hosting");
+for (const needle of ["DigitalOcean","Amazon Web Services EMEA SARL","Data Privacy Framework","Christian Heinrich Hohlfeld","forms.digitalisierungsplanung.de","Amazon Simple Email Service","Google Analytics","Local Storage","Landesbeauftragte"]) assert.ok(datenschutz.includes(needle), "Datenschutz missing " + needle);
 assert.ok(!datenschutz.includes("FormSubmit"), "Datenschutz: retired FormSubmit reference");
 const immoweltAttribution = "Immobilien-Daten bereitgestellt von immowelt.de";
 for (const rel of ["index.html", "projekte.html"]) {

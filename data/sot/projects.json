@@ -117,9 +117,9 @@
       "page": {
         "de": {
           "title": "Neubau Allmannsdorf",
-          "page_title": "Neubau Allmannsdorf in Konstanz | Provisionsfrei vormerken",
+          "page_title": "Neubau Allmannsdorf in Konstanz | provisionsfrei – Immobilien Eichmann",
           "meta_description": "Neubau Allmannsdorf in Konstanz: {{fact.units}} Eigentumswohnungen, {{fact.rooms}} Zimmer, {{fact.living_area}}, viele mit Seeblick auf den Bodensee. Provisionsfrei – jetzt vormerken.",
-          "h1": "Neubau Allmannsdorf – provisionsfrei vormerken",
+          "h1": "Neubau Allmannsdorf in Konstanz – provisionsfrei vormerken",
           "lead": "{{fact.units}} Eigentumswohnungen in {{fact.buildings}} Mehrfamilienhäusern in Konstanz-Allmannsdorf: {{fact.rooms}} Zimmer, {{fact.living_area}}, {{fact.price}}, viele mit Blick auf den Bodensee.",
           "summary": "Neubau Allmannsdorf in Konstanz – jetzt provisionsfrei vormerken. {{fact.buildings}} Mehrfamilienhäuser mit {{fact.units}} Wohnungen. Viele Wohnungen mit traumhafter Seesicht.",
           "description": "Der Neubau Allmannsdorf ist ein modernes Wohnensemble mit {{fact.buildings}} Mehrfamilienhäusern und insgesamt {{fact.units}} hochwertigen Wohnungen in einer der gefragtesten Wohnlagen von Konstanz. Freuen Sie sich auf durchdachte Grundrisse, lichtdurchflutete Räume und eine Architektur, die Design, Komfort und Lebensqualität vereint. Viele Wohnungen bieten einen einzigartigen Blick auf den Bodensee.",
@@ -180,7 +180,7 @@
             },
             {
               "key": "dining_detail",
-              "alt": "Essbereich einer Neubauwohnung in Konstanz-Allmannsdorf",
+              "alt": "Essbereich einer Neubauwohnung in Konstanz-Allmannsdorf (Visualisierung)",
               "caption": "Essbereich (Visualisierung)"
             }
           ],
@@ -216,7 +216,7 @@
           ]
         },
         "en": {
-          "page_title": "New-build Konstanz-Allmannsdorf | Commission-free",
+          "page_title": "New-build Konstanz-Allmannsdorf | Commission-free – Immobilien Eichmann",
           "meta_description": "New-build in Konstanz-Allmannsdorf: {{fact.units}} apartments, {{fact.rooms}} rooms, {{fact.living_area}}, many with views of Lake Constance. Commission-free – register your interest.",
           "h1": "New-build Allmannsdorf in Konstanz",
           "lead": "{{fact.units}} apartments in {{fact.buildings}} apartment buildings, many with views of Lake Constance, {{fact.rooms}} rooms, {{fact.price}} – commission‑free, register your interest.",

@@ -204,6 +204,12 @@ export function applyListingLayer(sot, data) {
     if (lay.overrides?.title?.de) L.title = lay.overrides.title.de;
     if (lay.overrides?.meta_description?.de) L.meta_description_override = lay.overrides.meta_description.de;
     if (lay.waivers?.length) L.waivers = lay.waivers;
+    // overrides.text_replace: [{find, replace}] – exakte Textersetzung im Exposé-Wortlaut (überlebt jeden Sync)
+    for (const r of lay.overrides?.text_replace || []) {
+      for (const f of ["description", "description_raw", "text"]) {
+        if (typeof L[f] === "string" && r.find && L[f].includes(r.find)) L[f] = L[f].split(r.find).join(r.replace ?? "");
+      }
+    }
   }
   if (sot.dataAsOf) data.data_as_of = sot.dataAsOf;
   return data;

@@ -49,15 +49,30 @@
   "images": {
     "hero": {
       "jpg": "https://immobilieneichmann.de/assets/flyer/hero-dining.jpg",
-      "webp": "https://immobilieneichmann.de/assets/flyer/hero-dining.webp"
+      "webp": "https://immobilieneichmann.de/assets/flyer/hero-dining.webp",
+      "kind": "visualisierung",
+      "caption": {
+        "de": "Visualisierung",
+        "en": "Visualisation"
+      }
     },
     "living": {
       "jpg": "https://immobilieneichmann.de/assets/flyer/living.jpg",
-      "webp": "https://immobilieneichmann.de/assets/flyer/living.webp"
+      "webp": "https://immobilieneichmann.de/assets/flyer/living.webp",
+      "kind": "visualisierung",
+      "caption": {
+        "de": "Visualisierung",
+        "en": "Visualisation"
+      }
     },
     "dining_detail": {
       "jpg": "https://immobilieneichmann.de/assets/flyer/dining-detail.jpg",
-      "webp": "https://immobilieneichmann.de/assets/flyer/dining-detail.webp"
+      "webp": "https://immobilieneichmann.de/assets/flyer/dining-detail.webp",
+      "kind": "visualisierung",
+      "caption": {
+        "de": "Visualisierung",
+        "en": "Visualisation"
+      }
     }
   },
   "cta": {

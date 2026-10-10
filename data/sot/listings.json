@@ -36,7 +36,15 @@
       "source": "immowelt",
       "verified_at": "2026-10-10",
       "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
-      "overrides": {},
+      "overrides": {
+        "text_replace": [
+          {
+            "find": "Alle Wohnungen können noch vor Baubegin in den Grundrissen umgestaltet werden, sofern es die Statik erlaubt. Siehe Expose/Grundrisse in den Anlagen.",
+            "replace": "Die Grundrisse können nach Absprache noch umgestaltet werden, sofern die Statik es erlaubt. Die Grundrisse finden Sie im Exposé auf Immowelt.",
+            "reason": "Verkaufsargument aus Helmuts Exposé ohne Baustands-/Terminwort; verwaisten Anlagen-Verweis ersetzt (Vorher/Nachher-Audit #1)."
+          }
+        ]
+      },
       "waivers": []
     },
     {
@@ -106,7 +114,15 @@
       "source": "immowelt",
       "verified_at": "2026-10-10",
       "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
-      "overrides": {},
+      "overrides": {
+        "text_replace": [
+          {
+            "find": "Alle Wohnungen können noch vor Baubegin in den Grundrissen umgestaltet werden, sofern es die Statik erlaubt. Siehe Expose/Grundrisse in den Anlagen.",
+            "replace": "Die Grundrisse können nach Absprache noch umgestaltet werden, sofern die Statik es erlaubt. Die Grundrisse finden Sie im Exposé auf Immowelt.",
+            "reason": "Verkaufsargument aus Helmuts Exposé ohne Baustands-/Terminwort; verwaisten Anlagen-Verweis ersetzt (Vorher/Nachher-Audit #1)."
+          }
+        ]
+      },
       "waivers": []
     },
     {
@@ -116,7 +132,15 @@
       "source": "immowelt",
       "verified_at": "2026-10-10",
       "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
-      "overrides": {},
+      "overrides": {
+        "text_replace": [
+          {
+            "find": "Alle Wohnungen können noch vor Baubegin in den Grundrissen umgestaltet werden, sofern es die Statik erlaubt. Siehe Expose/Grundrisse in den Anlagen.",
+            "replace": "Die Grundrisse können nach Absprache noch umgestaltet werden, sofern die Statik es erlaubt. Die Grundrisse finden Sie im Exposé auf Immowelt.",
+            "reason": "Verkaufsargument aus Helmuts Exposé ohne Baustands-/Terminwort; verwaisten Anlagen-Verweis ersetzt (Vorher/Nachher-Audit #1)."
+          }
+        ]
+      },
       "waivers": []
     },
     {
@@ -126,7 +150,15 @@
       "source": "immowelt",
       "verified_at": "2026-10-10",
       "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
-      "overrides": {},
+      "overrides": {
+        "text_replace": [
+          {
+            "find": "Alle Wohnungen können noch vor Baubegin in den Grundrissen umgestaltet werden, sofern es die Statik erlaubt. Siehe Expose/Grundrisse in den Anlagen.",
+            "replace": "Die Grundrisse können nach Absprache noch umgestaltet werden, sofern die Statik es erlaubt. Die Grundrisse finden Sie im Exposé auf Immowelt.",
+            "reason": "Verkaufsargument aus Helmuts Exposé ohne Baustands-/Terminwort; verwaisten Anlagen-Verweis ersetzt (Vorher/Nachher-Audit #1)."
+          }
+        ]
+      },
       "waivers": []
     },
     {
@@ -136,7 +168,15 @@
       "source": "immowelt",
       "verified_at": "2026-10-10",
       "verified_by": "mirror-check (öffentliche Exposés, alle Objekte identisch)",
-      "overrides": {},
+      "overrides": {
+        "text_replace": [
+          {
+            "find": "Alle Wohnungen können noch vor Baubegin in den Grundrissen umgestaltet werden, sofern es die Statik erlaubt. Siehe Expose/Grundrisse in den Anlagen.",
+            "replace": "Die Grundrisse können nach Absprache noch umgestaltet werden, sofern die Statik es erlaubt. Die Grundrisse finden Sie im Exposé auf Immowelt.",
+            "reason": "Verkaufsargument aus Helmuts Exposé ohne Baustands-/Terminwort; verwaisten Anlagen-Verweis ersetzt (Vorher/Nachher-Audit #1)."
+          }
+        ]
+      },
       "waivers": []
     }
   ]

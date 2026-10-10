@@ -46,7 +46,7 @@ export function flyerModalInner(sot = loadSot()) {
       <div class="flyer">
         <div class="flyer-top">
           <div class="flyer-brand">
-            <img src="/assets/logo.png?v=house-orig-v1" alt="${esc(c.name)}" width="320" height="56" loading="lazy">
+            <img src="/assets/logo.png?v=house-orig-v1" alt="${esc(c.name)}" width="320" height="56" decoding="async">
           </div>
           <figure class="flyer-hero-img">
             <picture>

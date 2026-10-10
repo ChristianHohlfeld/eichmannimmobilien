@@ -350,6 +350,11 @@ export function buildMcpDiscovery(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) 
       url: `${o}/mcp`,
       note: "POST JSON-RPC an /mcp. Quelle = ai/listings.json (Publish-Pipeline), Datenstand = data_as_of.",
     },
+    health: {
+      url: `${o}/mcp/health`,
+      method: "GET",
+      description: "Öffentlicher Read-only-Status: Objektzahl, Datenstand (data_as_of), SSOT-Hash und Build-Info.",
+    },
     remotes: [
       {
         type: "streamable-http",
@@ -476,6 +481,7 @@ export function buildServerCard(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
         endpoint: `${o}/mcp`,
         listings_index: `${o}/ai/listings.json`,
         discovery: `${o}/.well-known/mcp.json`,
+        health: `${o}/mcp/health`,
         listing_count: aiDoc.listing_count,
         data_as_of: aiDoc.data_as_of,
         generated_at: aiDoc.generated_at,
