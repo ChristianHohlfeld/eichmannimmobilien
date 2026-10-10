@@ -118,6 +118,7 @@ export function toAiListing(L, origin = DEFAULT_SITE_ORIGIN) {
     type: L.type || null,
     status: L.status || "Kauf",
     short_description: L.short_description || null,
+    commission: (L.facts && L.facts["Käuferprovision"]) || null,
     origin: L.origin || L.source || null,
     image: L.main_image_url || null,
   };
@@ -263,7 +264,7 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
 
   lines.push("## Neubau Allmannsdorf");
   lines.push("");
-  lines.push(item("Projektseite Neubau Allmannsdorf", u("/allmannsdorf.html"), "5 Mehrfamilienhäuser · 44 Wohnungen · 40–124 m² · 2–5 Zimmer · 295.000–1.450.000 € · provisionsfrei vormerken"));
+  lines.push(item("Projektseite Neubau Allmannsdorf", u("/allmannsdorf.html"), "5 Mehrfamilienhäuser · 44 Wohnungen · 40–124 m² · 2–5 Zimmer · viele mit Seeblick auf den Bodensee · 295.000–1.450.000 € · provisionsfrei vormerken"));
   lines.push(item("New-build Allmannsdorf (English)", u("/en/allmannsdorf.html"), "English project page: 44 apartments, 2–5 rooms, 40–124 m², €295,000–€1,450,000, commission-free, register your interest"));
   lines.push(item("Flyer Allmannsdorf (JSON)", u("/ai/flyer-allmannsdorf.json"), "Fakten und Kontakt-Links; bei Wohnung/Neubau/Konstanz/Allmannsdorf `get_flyer` + `get_contact` nutzen (kein Suchwort 'Flyer' nötig). Vormerkung macht der Mensch selbst per Telefon, WhatsApp oder Kontaktformular."));
   lines.push("");

@@ -34,7 +34,7 @@ for (const f of htmlFiles) {
   check(!/href="#"(?![^>]*data-open-cookie-settings)/.test(h), `${f}: link to bare #`);
   const nav = (h.match(/<nav class="nav"[\s\S]*?<\/nav>/) || [""])[0];
   if (nav && !f.startsWith("en/")) {
-    check(/<a href="tel:\+491705225568" class="nav-cta">Anrufen<\/a>/.test(nav), `${f}: nav CTA must be Anrufen`);
+    check(/<a href="tel:\+491705225568" class="nav-cta btn-call" data-location="header_number">Anrufen<span class="nav-cta-num"> 0170 522 5568<\/span><\/a>/.test(nav), `${f}: nav CTA must be Anrufen`);
     check(/>Kontakt<\/a>/.test(nav), `${f}: nav Kontakt link missing`);
     check(!/href="(\.\.\/)?index\.html/.test(nav), `${f}: nav links index.html instead of /`);
   }

@@ -150,6 +150,8 @@
   });
 
   function linkLocation(link) {
+    var dl = link.getAttribute('data-location');
+    if (dl && /^[a-z_]{2,32}$/.test(dl)) return dl; /* Claude R4 #28: hero_number, header_number, expose_jump, sticky_bewertung */
     if (link.closest('.sticky-bar, .flyer-sticky-ctas, .floating-wa-region') || link.classList.contains('floating-wa')) return 'sticky';
     if (link.closest('.nav')) return 'nav';
     if (link.closest('.hero')) return 'hero';
@@ -171,6 +173,10 @@
         location: link.closest('.site-footer') ? 'footer' : (link.closest('.nav') ? 'header' : 'content'),
         transport_type: 'beacon'
       });
+      return;
+    }
+    if (link.getAttribute('data-location') === 'expose_jump' || link.getAttribute('data-location') === 'sticky_bewertung') {
+      trackEvent('cta_click', { location: link.getAttribute('data-location'), label: (link.textContent || '').trim().slice(0, 40), transport_type: 'beacon' });
       return;
     }
     if (/^tel:/i.test(href)) {

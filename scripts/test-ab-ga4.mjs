@@ -87,7 +87,7 @@ try {
     if (hero.h1 !== 'Immobilienmakler Konstanz · Bodensee') fail(`hero h1 wrong: ${hero.h1}`);
     if ((hero.big || '').trim() !== 'Neubau Allmannsdorf – jetzt provisionsfrei vormerken') fail(`hero title wrong: ${hero.big}`);
     if (hero.abEl || hero.abScript) fail('A/B markup or script still on the home page');
-    if (hero.callLabel !== 'Anrufen' || hero.vormLabel !== 'Vormerken') fail(`hero CTA labels wrong: ${hero.callLabel} / ${hero.vormLabel}`);
+    if (hero.callLabel !== 'Jetzt anrufen 0170 522 5568' || hero.vormLabel !== 'Vormerken') fail(`hero CTA labels wrong: ${hero.callLabel} / ${hero.vormLabel}`);
     if (!(hero.callX < hero.vormX) || Math.abs(hero.callTop - hero.vormTop) > 2) fail(`mobile: Anrufen must be first, side by side (${hero.callX}/${hero.vormX}, ${hero.callTop}/${hero.vormTop})`);
     if (/Bauantrag|Baubeginn|Genehmigung/.test(hero.text)) fail(`hero contains forbidden claims: ${hero.text}`);
     if (named(hits, 'ab_assign').length || named(hits, 'cta_click').length) fail('ab_assign/cta_click still sent');
@@ -114,7 +114,7 @@ try {
     await page.click('.hero .hero-actions a[href^="tel:"]');
     await page.waitForTimeout(300);
     const c = named(hits, 'click_phone');
-    if (c.length !== 1 || c[0].params.device_hint !== 'desktop' || c[0].params.location !== 'hero') fail(`desktop click_phone wrong: ${JSON.stringify(c)}`);
+    if (c.length !== 1 || c[0].params.device_hint !== 'desktop' || c[0].params.location !== 'hero_number') fail(`desktop click_phone wrong: ${JSON.stringify(c)}`);
     await ctx.close();
   }
   // 3) "Nur notwendige": never any event

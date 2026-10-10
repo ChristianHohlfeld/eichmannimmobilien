@@ -13,7 +13,7 @@
   <meta property="og:locale" content="de_DE">
   <meta property="og:site_name" content="Immobilien Eichmann">
   <meta property="og:title" content="MCP verbinden | Immobilien Eichmann">
-  <meta property="og:description" content="Live-Kaufangebote per MCP in Claude, ChatGPT und Cursor laden.">
+  <meta property="og:description" content="Kaufangebote per MCP in Claude, ChatGPT und Cursor laden.">
   <meta property="og:url" content="https://immobilieneichmann.de/mcp.html">
   <meta property="og:image" content="https://immobilieneichmann.de/assets/share-card-plain-v2.jpg">
   <meta property="og:image:width" content="1200">
@@ -21,14 +21,14 @@
   <meta property="og:image:alt" content="Immobilien Eichmann – Neubau und Immobilien in Konstanz">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="MCP verbinden | Immobilien Eichmann">
-  <meta name="twitter:description" content="Live-Kaufangebote per MCP in Claude, ChatGPT und Cursor laden.">
+  <meta name="twitter:description" content="Kaufangebote per MCP in Claude, ChatGPT und Cursor laden.">
   <meta name="twitter:image" content="https://immobilieneichmann.de/assets/share-card-plain-v2.jpg">
   <meta name="twitter:image:alt" content="Immobilien Eichmann – Neubau und Immobilien in Konstanz">
   <link rel="icon" href="assets/logo.png?v=43210083" type="image/png">
   <link rel="icon" href="assets/logo.png?v=43210083" type="image/png" sizes="any">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="preload" href="assets/logo.svg?v=12fc0052" as="image" type="image/svg+xml">
-<link rel="stylesheet" href="css/styles.css?v=2fc42a40">
+<link rel="stylesheet" href="css/styles.css?v=14441b8d">
   
   <script type="application/ld+json">
 {
@@ -71,17 +71,20 @@
         <a href="projekte.html">Projekte</a>
         <a href="ratgeber.html">Ratgeber</a>
         <a href="kontakt.html">Kontakt</a>
-        <a href="tel:+491705225568" class="nav-cta">Anrufen</a>
+        <a href="tel:+491705225568" class="nav-cta btn-call" data-location="header_number">Anrufen<span class="nav-cta-num"> 0170 522 5568</span></a>
       </nav>
     </div>
   </header>
 
     <main>
-    <section class="page-hero"><div class="container"><h1>Angebote in AI-Assistenten</h1><p>Live-Kaufangebote von Immobilien Eichmann (Konstanz) per MCP verbinden — ohne Login am Server.</p></div></section>
+    <section class="page-hero"><div class="container"><h1>Angebote in AI-Assistenten</h1><p>Kaufangebote von Immobilien Eichmann (Konstanz) per MCP verbinden, ohne Login.</p></div></section>
     <section class="section section-alt"><div class="container prose content-card">
       <p><strong>Endpoint:</strong> <code>https://immobilieneichmann.de/mcp</code><br>
-      Tools: <code>search_listings</code>, <code>get_listing</code>, <code>get_flyer</code>, <code>get_contact</code> · Quelle = Live <a href="ai/listings.json">ai/listings.json</a> + <a href="ai/flyer-allmannsdorf.json">ai/flyer-allmannsdorf.json</a><br>
+      Tools: <code>search_listings</code>, <code>get_listing</code>, <code>get_flyer</code>, <code>get_contact</code> · Quelle: <a href="ai/listings.json">ai/listings.json</a> und <a href="ai/flyer-allmannsdorf.json">ai/flyer-allmannsdorf.json</a><br>
+      Datenstand: jede Antwort nennt ihn im Feld <code>data_as_of</code>; den aktuellen Stand des Servers zeigt <a href="https://immobilieneichmann.de/mcp/health"><code>/mcp/health</code></a>.<br>
       Registry: <code>de.immobilieneichmann/listings</code> · <a href="datenschutz.html">Datenschutz</a></p>
+      <p><strong>Hinweis:</strong> Der Server ist nur lesend. Assistenten rufen nicht an, schreiben keine Nachrichten und senden keine Formulare. Sie zeigen nur Telefon- und WhatsApp-Links, die der Mensch selbst antippt.</p>
+      <p lang="en"><strong>English:</strong> Read-only MCP server for properties for sale in Konstanz and New-build Allmannsdorf. Search works in German and English. No enquiries are sent via MCP.</p>
 
       <h2>Claude</h2>
       <p>Ein Klick öffnet Claude mit vorausgefülltem Custom Connector (kein Team-Abo nötig für Custom Connectors):</p>
@@ -196,11 +199,11 @@
   </aside>
 
   <!-- FLYER-MODAL:START (erzeugt aus data/sot, scripts/lib/flyer-modal.mjs) -->
-  <div class="flyer-overlay" id="flyerModal" hidden data-flyer-src="/partials/flyer-modal.html?v=4dfa63b4"></div>
+  <div class="flyer-overlay" id="flyerModal" hidden data-flyer-src="/partials/flyer-modal.html?v=a691168a"></div>
   <!-- FLYER-MODAL:END -->
   <script src="js/cookie-consent.js?v=9c04b61d" defer></script>
-  <script src="js/main.js?v=5562be3e" defer></script>
-  <script src="js/vormerk.js?v=2453f661" defer></script>
+  <script src="js/main.js?v=847c90ca" defer></script>
+  <script src="js/vormerk.js?v=71254c35" defer></script>
 
 </body>
 </html>

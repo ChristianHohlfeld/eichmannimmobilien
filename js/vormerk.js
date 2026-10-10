@@ -24,7 +24,9 @@
 
   function init(form) {
     var location = form.getAttribute("data-form-location") || "inline";
-    var base = { form: "vormerken", project: "allmannsdorf", location: location, lang: LANG };
+    var kind = form.getAttribute("data-form-kind") || "vormerken";
+    var project = form.getAttribute("data-form-project") || "allmannsdorf";
+    var base = { form: kind, project: project, location: location, lang: LANG };
     var ok = form.querySelector(".vormerk-success");
     var err = form.querySelector(".vormerk-error");
     var btn = form.querySelector('button[type="submit"]');
@@ -60,12 +62,12 @@
       });
       if (!form.checkValidity()) {
         form.reportValidity();
-        track("form_submit_attempt", { form: "vormerken", location: location, outcome: "validation_failed" });
+        track("form_submit_attempt", { form: kind, location: location, outcome: "validation_failed" });
         return;
       }
       var bot = form.querySelector('[name="botcheck"]');
       if (bot && bot.checked) return;
-      track("form_submit_attempt", { form: "vormerken", location: location, outcome: "send" });
+      track("form_submit_attempt", { form: kind, location: location, outcome: "send" });
 
       var payload = {
         name: val(form, "name"),
@@ -98,12 +100,12 @@
             var key = r.data.requestId || String(Date.now());
             if (form.__eichmannLeadKey === key) return;
             form.__eichmannLeadKey = key;
-            track("vormerken_submit", base);
+            if (kind === "vormerken") track("vormerken_submit", base);
             track("form_submit_success", base);
             track("generate_lead", {
               form_id: form.id || "vormerk",
-              form_type: "vormerken",
-              project: "allmannsdorf",
+              form_type: kind,
+              project: project,
               location: location,
               lang: LANG,
               transport_type: "beacon"
@@ -113,12 +115,12 @@
             if (ok) ok.hidden = false;
           } else {
             if (err) err.hidden = false;
-            track("form_submit_error", { form: "vormerken", location: location, error_type: "server", http_status: r.status || 0 });
+            track("form_submit_error", { form: kind, location: location, error_type: "server", http_status: r.status || 0 });
           }
         })
         .catch(function () {
           if (err) err.hidden = false;
-          track("form_submit_error", { form: "vormerken", location: location, error_type: "network" });
+          track("form_submit_error", { form: kind, location: location, error_type: "network" });
         })
         .finally(function () {
           if (btn) { btn.disabled = false; btn.textContent = label; }

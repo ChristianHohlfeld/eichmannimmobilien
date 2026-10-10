@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="google-site-verification" content="JfJcIYJlJ35z_JP1EQVgZMfUSOJdWHwZqwDTy6EDmjs">
   <title>Immobilienbewertung Konstanz | Markteinschätzung am Bodensee</title>
-  <meta name="description" content="Immobilienbewertung Konstanz: maklerische Markteinschätzung für Verkauf und Erbschaft am Bodensee – persönlich, ohne Online-Schnelltool. Kein Verkehrswertgutachten.">
+  <meta name="description" content="Immobilienbewertung Konstanz: maklerische Markteinschätzung für Verkauf und Erbschaft am Bodensee – persönlich, kein Online-Tool. Kein Verkehrswertgutachten.">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="https://immobilieneichmann.de/immobilienbewertung-konstanz.html">
   <meta property="og:type" content="website">
@@ -27,7 +27,7 @@
   <link rel="icon" href="assets/logo.png?v=43210083" type="image/png" sizes="any">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="preload" href="assets/logo.svg?v=12fc0052" as="image" type="image/svg+xml">
-<link rel="stylesheet" href="css/styles.css?v=2fc42a40">
+<link rel="stylesheet" href="css/styles.css?v=14441b8d">
 
   <script type="application/ld+json">
 {
@@ -84,7 +84,7 @@
         <a href="immobilienbewertung-konstanz.html" class="active">Bewertung</a>
         <a href="projekte.html">Projekte</a>
         <a href="kontakt.html">Kontakt</a>
-        <a href="tel:+491705225568" class="nav-cta">Anrufen</a>
+        <a href="tel:+491705225568" class="nav-cta btn-call" data-location="header_number">Anrufen<span class="nav-cta-num"> 0170 522 5568</span></a>
       </nav>
     </div>
   </header>
@@ -95,7 +95,7 @@
         <h1>Immobilienbewertung Konstanz &amp; Bodensee</h1>
         <p class="lead">Markteinschätzung für Eigentümer in Konstanz, Wollmatingen, Allmannsdorf und am Bodensee</p>
         <div class="hero-actions">
-          <a class="btn btn-accent" href="kontakt.html#bewertung">Bewertung anfragen</a>
+          <a class="btn btn-accent" href="kontakt.html?interesse=bewertung#contact-form">Bewertung anfragen</a>
           <a class="btn btn-outline" href="haus-verkaufen-konstanz.html">Zum Verkauf</a>
         </div>
       </div>
@@ -205,13 +205,43 @@
       </div>
     </section>
 
+    <section class="section section-alt" id="bewertung-anfragen">
+      <div class="container" style="max-width:640px">
+        <form class="vormerk-form" id="bewertung-bewertung_page" data-vormerk-form data-form-kind="bewertung" data-form-project="verkauf" data-form-location="bewertung_page" action="https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/contact" method="POST">
+          <h2 class="vormerk-title">Bewertung anfragen</h2>
+          <p class="vormerk-sub">Name und Telefon genügen. Helmut Eichmann meldet sich persönlich bei Ihnen.</p>
+          <input type="hidden" name="anliegen" value="Immobilienbewertung">
+          <input type="hidden" name="lang" value="de">
+          <input type="checkbox" name="botcheck" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <div class="vormerk-fields">
+            <div class="form-group">
+              <label for="bewertung-bewertung_page-name">Name *</label>
+              <input type="text" id="bewertung-bewertung_page-name" name="name" required autocomplete="name">
+            </div>
+            <div class="form-group">
+              <label for="bewertung-bewertung_page-phone">Telefon *</label>
+              <input type="tel" id="bewertung-bewertung_page-phone" name="phone" required autocomplete="tel" inputmode="tel" placeholder="Für den Rückruf">
+            </div>
+            <div class="form-group">
+              <label for="bewertung-bewertung_page-email">E-Mail (optional)</label>
+              <input type="email" id="bewertung-bewertung_page-email" name="email" autocomplete="email">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-accent vormerk-submit">Bewertung anfragen</button>
+          <p class="vormerk-note">Hinweise zur Verarbeitung Ihrer Angaben: <a href="datenschutz.html">Datenschutzerklärung</a>. Durch das Absenden kommt kein Maklervertrag zustande.</p>
+          <p class="vormerk-success" role="status" hidden>Vielen Dank – Ihre Anfrage ist angekommen. Helmut Eichmann meldet sich persönlich bei Ihnen.</p>
+          <p class="vormerk-error" role="alert" hidden>Senden hat gerade nicht geklappt. Bitte rufen Sie an: <a href="tel:+491705225568">+49 170 522 5568</a>.</p>
+        </form>
+      </div>
+    </section>
+
     <section class="contact-strip" id="kontakt">
       <div class="container contact-grid">
         <div>
           <h2>Nächster Schritt</h2>
           <p>Unverbindliche Markteinschätzung anfragen – wir melden uns persönlich.</p>
           <div class="hero-actions" style="margin-top:1rem">
-            <a class="btn btn-outline" href="kontakt.html#bewertung">Zur Bewertungsanfrage</a>
+            <a class="btn btn-outline" href="kontakt.html?interesse=bewertung#contact-form">Zur Bewertungsanfrage</a>
             <a class="btn btn-outline" href="haus-verkaufen-konstanz.html">Haus verkaufen</a>
             <a class="btn btn-outline" href="kontakt.html#tippgeber">Tippgeber</a>
           </div>
@@ -275,7 +305,11 @@
     </div>
   </footer>
 
-<nav class="sticky-bar" aria-label="Schnellkontakt">
+<nav class="sticky-bar sticky-bar--3" aria-label="Schnellkontakt">
+    <a href="#bewertung-anfragen" class="sticky-item sticky-item--bewertung" data-location="sticky_bewertung">
+      <span class="sticky-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span>
+      <span>Bewertung anfragen</span>
+    </a>
     <a href="tel:+491705225568" class="sticky-item sticky-accent">
       <span class="sticky-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 1.27 4.27 2 2 0 0 1 3.25 2h3a2 2 0 0 1 2 1.72c.12.86.32 1.7.59 2.5a2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.58-1.3a2 2 0 0 1 2.11-.45c.8.27 1.64.47 2.5.59A2 2 0 0 1 22 16.92z"/></svg></span>
       <span>Anrufen</span>
@@ -293,12 +327,12 @@
   </aside>
 
   <!-- FLYER-MODAL:START (erzeugt aus data/sot, scripts/lib/flyer-modal.mjs) -->
-  <div class="flyer-overlay" id="flyerModal" hidden data-flyer-src="/partials/flyer-modal.html?v=4dfa63b4"></div>
+  <div class="flyer-overlay" id="flyerModal" hidden data-flyer-src="/partials/flyer-modal.html?v=a691168a"></div>
   <!-- FLYER-MODAL:END -->
 
   <script src="js/cookie-consent.js?v=9c04b61d" defer></script>
-  <script src="js/main.js?v=5562be3e" defer></script>
-  <script src="js/vormerk.js?v=2453f661" defer></script>
+  <script src="js/main.js?v=847c90ca" defer></script>
+  <script src="js/vormerk.js?v=71254c35" defer></script>
 
 </body>
 </html>

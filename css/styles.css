@@ -2620,3 +2620,21 @@ body:has(form:focus-within) .floating-wa { opacity: 0; pointer-events: none; }
 }
 /* Flyer ≤980px: Figur nicht höher als das Bild, damit „Visualisierung“ auf dem Bild sitzt */
 @media (max-width: 980px) { .flyer-hero-img { min-height: 0; } }
+
+/* Claude R4: Nummer im Anruf-Knopf (Kopfzeile ab 1024 px), eingeklapptes Vormerk-Formular, Sprung-Knopf Objektseite */
+.nav-cta-num { display: none; }
+@media (min-width: 1024px) { .nav-cta-num { display: inline; } }
+.btn-call .nowrap { white-space: nowrap; }
+.vormerk-fold > summary { cursor: pointer; padding: 14px 16px; font-weight: 600; list-style: none; background: var(--accent, #b8860b); color: #fff; border-radius: 10px; text-align: center; }
+.vormerk-fold > summary::-webkit-details-marker { display: none; }
+.vormerk-fold[open] > summary { margin-bottom: 12px; }
+@media (min-width: 769px) { .vormerk-fold > summary { display: none; } }
+.expose-hero-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: .75rem 0 0; }
+.expose-hero-actions .btn { min-height: 44px; }
+.sticky-bar--3 .sticky-item > span:not(.sticky-ico) { font-size: .78rem; }
+@media (max-width: 768px) {
+  .hero .hero-subline { display: none; } /* Nummer steht jetzt im Anruf-Knopf */
+  .vormerk-fold > summary { padding: 10px 14px; background: transparent; color: inherit; border: 1px solid rgba(255,255,255,.45); font-weight: 600; }
+  .vormerk-fold > summary::after { content: " ▾"; }
+  .vormerk-fold[open] > summary::after { content: " ▴"; }
+}

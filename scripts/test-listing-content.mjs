@@ -8,6 +8,9 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const data = JSON.parse(await readFile(path.join(ROOT, "data/listings.json"), "utf8"));
 const listings = Array.isArray(data) ? data : data.listings || [];
+// Anzeige-Schicht (SSOT overrides.text_replace + text_fixes) wie beim Rendern anwenden (Claude R4 #10/#27)
+const displayBySlug = new Map();
+{ const { loadSot, applyListingLayer } = await import("./lib/sot.mjs"); const copy = JSON.parse(JSON.stringify(listings)); applyListingLayer(loadSot(ROOT, { fresh: true }), { listings: copy }); for (const L of copy) displayBySlug.set(L.slug, L); }
 
 function flat(value) { return String(value || "").replace(/\s+/g, " ").trim(); }
 
@@ -178,7 +181,7 @@ for (const item of listings) {
   }
 
   // Rendered text omits project-status sentences (Baubeginn/Fertigstellung …, Chris rule) – compare against that.
-  const expectedWords = wordSet(stripProjectStatus(description));
+  const expectedWords = wordSet(stripProjectStatus(displayBySlug.get(item.slug)?.description ?? description));
   const renderedWords = wordSet(rendered);
   let overlap = 0;
   for (const word of expectedWords) {

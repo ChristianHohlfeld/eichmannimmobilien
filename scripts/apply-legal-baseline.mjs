@@ -118,7 +118,10 @@ for (const full of await htmlFiles()) {
       <p>Helmut Eichmann<br>Jacob-Burckhardt-Str. 40<br>78464 Konstanz</p>
 
       <h2>Urheberrecht</h2>
-      <p>Die auf dieser Website veröffentlichten Inhalte, Bilder und sonstigen Werke unterliegen den jeweils anwendbaren urheberrechtlichen Bestimmungen. Eine Nutzung außerhalb der gesetzlichen Schranken bedarf der Zustimmung des jeweiligen Rechteinhabers.</p>`;
+      <p>Die auf dieser Website veröffentlichten Inhalte, Bilder und sonstigen Werke unterliegen den jeweils anwendbaren urheberrechtlichen Bestimmungen. Eine Nutzung außerhalb der gesetzlichen Schranken bedarf der Zustimmung des jeweiligen Rechteinhabers.</p>
+
+      <h2>Bildnachweis</h2>
+      <p>Die Bilder zum Neubau Allmannsdorf sind Visualisierungen; Ausführung und Ausstattung können abweichen.</p>`;
   s = replaceLegalCard(s, inner);
   await write("impressum.html", s);
 }

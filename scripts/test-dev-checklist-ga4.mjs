@@ -90,7 +90,7 @@ try {
       if (!/allmannsdorf/.test(p.page_path || '')) fail(`click_phone lacks page_path: ${p.page_path}`);
       if (p.transport_type !== 'beacon') fail('click_phone must use beacon transport');
       if (p.phone_target !== '+491705225568') fail(`click_phone phone_target wrong: ${p.phone_target}`);
-      if (calls[1].params.location !== 'content') fail(`in-content tel location wrong: ${calls[1].params.location}`);
+      if (!['content','hero_number'].includes(calls[1].params.location)) fail(`in-content tel location wrong: ${calls[1].params.location}`);
     }
     const wa = named(hits, 'click_whatsapp');
     if (wa.length !== 1 || wa[0].params.location !== 'sticky') fail(`click_whatsapp from sticky bar wrong: ${JSON.stringify(wa)}`);

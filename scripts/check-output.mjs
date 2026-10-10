@@ -11,6 +11,7 @@
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import path from "node:path";
 import { loadSot, dataAsOfLabel } from "./lib/sot.mjs";
+import { checkPage } from "./lib/page-checks.mjs";
 import { compileRules, checkWording, allowedNumberSet, checkNumbersInOutput } from "./lib/rules.mjs";
 
 const args = process.argv.slice(2);
@@ -55,6 +56,7 @@ for (const file of files) {
   const skip = page?.rule_exempt || [];
   // Rohdatei → JSON-LD, Meta, alt-Texte, JSON/TXT sind abgedeckt
   problems.push(...checkWording(raw, rules, { where: rel, waivers: allWaivers, today, skip }));
+  if (/\.html$/.test(rel) && !rel.startsWith("partials/") && !/^(admin|mcp-static)\//.test(rel)) problems.push(...checkPage(readFileSync(file, "utf8"), rel)); // Claude R4 Code 3
   const isProjectPage = sot.projects.some((p) => Object.values(p.paths).includes(rel));
   if (isProjectPage) {
     const text = visibleText(raw.replace(/<footer[\s\S]*?<\/footer>/, " ").replace(/<header[\s\S]*?<\/header>/, " "));

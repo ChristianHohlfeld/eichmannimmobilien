@@ -487,6 +487,12 @@
     if (msgW) msgW.required = true;
   }
 
+  /* Prefill Betreff bei ?interesse=bewertung (Claude R4 #14) */
+  if (form && location.search.indexOf("interesse=bewertung") !== -1) {
+    var bsel = form.querySelector('[name="anliegen"]');
+    if (bsel) for (var bi = 0; bi < bsel.options.length; bi++) if (bsel.options[bi].value === "Immobilienbewertung") { bsel.selectedIndex = bi; break; }
+  }
+
   /* Prefill Anliegen + Fokus Formular bei ?interesse=allmannsdorf */
   if (form && location.search.indexOf("interesse=allmannsdorf") !== -1) {
     var sel = form.querySelector('[name="anliegen"]');
@@ -773,3 +779,13 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
 })();
 
+/* Startseite: Vormerk-Formular mobil eingeklappt, am Desktop offen; „Vormerken“ öffnet es (Claude R4 #2/#3) */
+(function () {
+  var fold = document.getElementById("vormerk-fold");
+  if (!fold) return;
+  if (window.matchMedia && window.matchMedia("(min-width: 769px)").matches) fold.open = true;
+  document.querySelectorAll('a[href="#vormerk-hero"]').forEach(function (a) {
+    a.addEventListener("click", function () { fold.open = true; });
+  });
+  if (location.hash === "#vormerk-hero") fold.open = true;
+})();
