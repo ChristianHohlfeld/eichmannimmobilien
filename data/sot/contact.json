@@ -1,0 +1,28 @@
+{
+  "name": "Immobilien Eichmann",
+  "person": "Helmut Eichmann",
+  "address": {
+    "street": "Jacob-Burckhardt-Str. 40",
+    "postal_code": "78464",
+    "city": "Konstanz",
+    "country": "DE"
+  },
+  "phone_mobile": {
+    "e164": "+491705225568",
+    "display": "+49 170 522 5568"
+  },
+  "phone_landline": {
+    "e164": "+4975319228848",
+    "display": "+49 7531 9228848"
+  },
+  "email": "info@immobilien-eichmann.com",
+  "website": "https://immobilieneichmann.de",
+  "whatsapp_text": {
+    "de": "Guten Tag, ich interessiere mich für ein Objekt bzw. eine Beratung bei Immobilien Eichmann.",
+    "en": "Hello, I am interested in a property or a consultation with Immobilien Eichmann."
+  },
+  "whatsapp_text_project": {
+    "de": "Guten Tag, ich interessiere mich für den Neubau Allmannsdorf.",
+    "en": "Hello, I am interested in the New-build Allmannsdorf in Konstanz."
+  }
+}

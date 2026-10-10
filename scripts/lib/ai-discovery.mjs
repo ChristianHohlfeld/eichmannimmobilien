@@ -6,6 +6,7 @@
  *
  * Geschrieben beim Publish (renderIntoPages) und via `npm run ai:index`.
  */
+import { loadSot, publicContact } from "./sot.mjs";
 import fs from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -28,38 +29,7 @@ export const NAP = Object.freeze({
  * Live Kontakt-URLs aus Impressum/Kontakt (nicht erfinden).
  * Nur zum Anzeigen als Links für den Menschen – Agents dürfen nicht selbst anrufen/WhatsAppen.
  */
-export const PUBLIC_CONTACT = Object.freeze({
-  source_pages: {
-    kontakt: DEFAULT_SITE_ORIGIN + "/kontakt.html",
-    impressum: DEFAULT_SITE_ORIGIN + "/impressum.html",
-  },
-  person: "Helmut Eichmann",
-  company: "Immobilien Eichmann",
-  address: "Jacob-Burckhardt-Str. 40, 78464 Konstanz",
-  email: "info@immobilien-eichmann.com",
-  email_mailto: "mailto:info@immobilien-eichmann.com",
-  phone_mobile: {
-    display: "+49 170 522 5568",
-    e164: "+491705225568",
-    tel: "tel:+491705225568",
-  },
-  phone_landline: {
-    display: "+49 7531 9228848",
-    e164: "+4975319228848",
-    tel: "tel:+4975319228848",
-  },
-  whatsapp: {
-    display: "+49 170 522 5568",
-    url:
-      "https://wa.me/491705225568?text=Guten%20Tag%2C%20ich%20interessiere%20mich%20f%C3%BCr%20ein%20Objekt%20bzw.%20eine%20Beratung%20bei%20Immobilien%20Eichmann.",
-    url_allmannsdorf:
-      "https://wa.me/491705225568?text=Guten%20Tag%2C%20ich%20interessiere%20mich%20f%C3%BCr%20den%20Neubau%20Allmannsdorf.",
-    url_allmannsdorf_en:
-      "https://wa.me/491705225568?text=Hello%2C%20I%20am%20interested%20in%20the%20New-build%20Allmannsdorf%20in%20Konstanz.",
-    url_en:
-      "https://wa.me/491705225568?text=Hello%2C%20I%20am%20interested%20in%20a%20property%20or%20a%20consultation%20with%20Immobilien%20Eichmann.",
-  },
-});
+export const PUBLIC_CONTACT = Object.freeze(publicContact(loadSot()));
 
 /** Single version for MCP server (serverInfo) and server-card. */
 export const MCP_SERVER_VERSION = "1.4.0";
@@ -93,14 +63,12 @@ const STATIC_PAGE_LINKS = [
  * and scraped_at (last semantic change). Never the render time.
  */
 export function dataAsOf(data, siteRoot = null) {
-  const cands = [data?.verified_at, data?.scraped_at];
-  if (siteRoot) {
-    try {
-      const st = JSON.parse(readFileSync(path.join(siteRoot, "data", "immowelt-sync-status.json"), "utf8"));
-      cands.push(st?.last_verified_at, st?.last_valid_at);
-    } catch {}
-  }
-  const ts = cands.map((v) => (v ? Date.parse(v) : NaN)).filter((n) => Number.isFinite(n));
+  // SSOT: ältestes Prüfdatum der aktiven Objekte (data/sot/listings.json verified_at).
+  try {
+    const sot = loadSot(siteRoot || undefined);
+    if (sot.dataAsOf) return sot.dataAsOf; // ISO-Datum (Prüftag), keine erfundene Uhrzeit
+  } catch {}
+  const ts = [data?.verified_at, data?.scraped_at].map((v) => (v ? Date.parse(v) : NaN)).filter((n) => Number.isFinite(n));
   return ts.length ? new Date(Math.max(...ts)).toISOString() : null;
 }
 

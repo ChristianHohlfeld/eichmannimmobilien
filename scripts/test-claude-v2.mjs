@@ -53,7 +53,7 @@ async function newCtx({ consent = true, mobile = true, formStatus = 200 } = {}) 
 }
 
 const named = (hits, n) => hits.filter((h) => h.name === n);
-const FORBIDDEN_EN = /lake view|sea view|views? (of|across|over) (the )?lake|Seeblick|Seesicht|under construction|construction (start|begins)|completion|reserve|pre-order|off-plan|InStock|Bauantrag|Baubeginn|Genehmigung|planning permission|building permit|countdown|entsteht|days left/i;
+const FORBIDDEN_EN = /construction (start|begins)|Bauantrag|Baubeginn|Genehmigung|planning permission|building permit|countdown|days left|only \d+ left/i; // Chris 10.10.: nur harte Regeln
 
 async function submitVormerk(page, sel, { name = 'Test Vormerk', phone = '+41 79 000 00 00' } = {}) {
   await page.fill(`${sel} [name="name"]`, name);

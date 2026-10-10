@@ -1,0 +1,402 @@
+{
+  "_comment": "Seitenregister: Pfade DE/EN, <title>/description (Build schreibt sie in die Seiten), Sitemap, hreflang-Paare, Regel-Ausnahmen je Seite. Objektseiten kommen dynamisch aus den Objekten dazu.",
+  "pages": [
+    {
+      "id": "home",
+      "paths": {
+        "de": "/",
+        "en": "/en/"
+      },
+      "file": {
+        "de": "index.html",
+        "en": "en/index.html"
+      },
+      "title": {
+        "de": "Immobilienmakler Konstanz | Wohnung &amp; Haus kaufen – Immobilien Eichmann",
+        "en": "Real Estate Agent in Konstanz | Immobilien Eichmann"
+      },
+      "description": {
+        "de": "Immobilien Eichmann in Konstanz: aktuelle Kaufangebote, Verkauf &amp; Vermittlung am Bodensee. Persönliche Beratung mit Helmut Eichmann – Mobil +49 170 522 5568.",
+        "en": "Immobilien Eichmann in Konstanz on Lake Constance: properties for sale and New-build Allmannsdorf – commission-free, register your interest. +49 170 522 5568."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "1.0",
+          "changefreq": "weekly"
+        },
+        "en": {
+          "priority": "0.7",
+          "changefreq": "weekly"
+        }
+      }
+    },
+    {
+      "id": "leistungen",
+      "paths": {
+        "de": "/leistungen.html"
+      },
+      "file": {
+        "de": "leistungen.html"
+      },
+      "title": {
+        "de": "Leistungen | Verkauf, Vermittlung, Projektentwicklung – Immobilien Eichmann"
+      },
+      "description": {
+        "de": "Leistungen von Immobilien Eichmann in Konstanz: Immobilienverkauf, Vermittlung und Projektentwicklung am Bodensee."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.8",
+          "changefreq": "weekly"
+        }
+      }
+    },
+    {
+      "id": "projekte",
+      "paths": {
+        "de": "/projekte.html"
+      },
+      "file": {
+        "de": "projekte.html"
+      },
+      "title": {
+        "de": "Projekte &amp; Angebote Konstanz | Immobilien Eichmann"
+      },
+      "description": {
+        "de": "Neubau Allmannsdorf (Vormerkung, provisionsfrei) und aktuelle Kaufangebote von Immobilien Eichmann in Konstanz und am Bodensee."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.8",
+          "changefreq": "weekly"
+        }
+      }
+    },
+    {
+      "id": "allmannsdorf",
+      "paths": {
+        "de": "/allmannsdorf.html",
+        "en": "/en/allmannsdorf.html"
+      },
+      "file": {
+        "de": "allmannsdorf.html",
+        "en": "en/allmannsdorf.html"
+      },
+      "sitemap": {
+        "de": false,
+        "en": {
+          "priority": "0.7",
+          "changefreq": "weekly"
+        }
+      },
+      "project": "allmannsdorf",
+      "sitemap_note": "DE-Projektseite kommt mit Bildern über scripts/lib/projects.mjs in die Sitemap",
+      "meta_from": "data/sot/projects.json (page.de/page.en: page_title, meta_description)"
+    },
+    {
+      "id": "kontakt",
+      "paths": {
+        "de": "/kontakt.html",
+        "en": "/en/contact.html"
+      },
+      "file": {
+        "de": "kontakt.html",
+        "en": "en/contact.html"
+      },
+      "title": {
+        "de": "Kontakt | Immobilien Eichmann Konstanz – Helmut Eichmann",
+        "en": "Contact | Immobilien Eichmann Konstanz – Helmut Eichmann"
+      },
+      "description": {
+        "de": "Kontakt zu Immobilien Eichmann / Helmut Eichmann in Konstanz: Mobil +49 170 522 5568, info@immobilien-eichmann.com, Termine nach Vereinbarung.",
+        "en": "Contact Helmut Eichmann, Immobilien Eichmann in Konstanz: phone and WhatsApp +49 170 522 5568, info@immobilien-eichmann.com. Appointments by arrangement."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.8",
+          "changefreq": "weekly"
+        },
+        "en": {
+          "priority": "0.6",
+          "changefreq": "monthly"
+        }
+      }
+    },
+    {
+      "id": "impressum",
+      "paths": {
+        "de": "/impressum.html"
+      },
+      "file": {
+        "de": "impressum.html"
+      },
+      "title": {
+        "de": "Impressum | Immobilien Eichmann – Helmut Eichmann, Konstanz"
+      },
+      "description": {
+        "de": "Impressum und Anbieterkennzeichnung von Immobilien Eichmann, Helmut Eichmann, Einzelunternehmen in Konstanz."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.5",
+          "changefreq": "yearly"
+        }
+      },
+      "rule_exempt": [
+        "construction_status",
+        "action_wording",
+        "countdown"
+      ],
+      "exempt_reason": "Rechtstext: Begriffe wie „Genehmigung“/Fristen sind dort Pflichtinhalt."
+    },
+    {
+      "id": "datenschutz",
+      "paths": {
+        "de": "/datenschutz.html"
+      },
+      "file": {
+        "de": "datenschutz.html"
+      },
+      "title": {
+        "de": "Datenschutz | Immobilien Eichmann Konstanz"
+      },
+      "description": {
+        "de": "Datenschutzerklärung von Immobilien Eichmann (Helmut Eichmann) – Informationen zur DSGVO und Nutzung dieser Website."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.5",
+          "changefreq": "yearly"
+        }
+      },
+      "rule_exempt": [
+        "construction_status",
+        "action_wording",
+        "countdown"
+      ],
+      "exempt_reason": "Rechtstext: Begriffe wie „Genehmigung“/Fristen sind dort Pflichtinhalt."
+    },
+    {
+      "id": "widerrufsbelehrung",
+      "paths": {
+        "de": "/widerrufsbelehrung.html"
+      },
+      "file": {
+        "de": "widerrufsbelehrung.html"
+      },
+      "title": {
+        "de": "Widerrufsbelehrung | Immobilien Eichmann"
+      },
+      "description": {
+        "de": "Widerrufsbelehrung für Verbraucherinnen und Verbraucher bei Maklerdienstleistungen von Immobilien Eichmann, Konstanz."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.4",
+          "changefreq": "yearly"
+        }
+      },
+      "rule_exempt": [
+        "construction_status",
+        "action_wording",
+        "countdown"
+      ],
+      "exempt_reason": "Rechtstext: Begriffe wie „Genehmigung“/Fristen sind dort Pflichtinhalt."
+    },
+    {
+      "id": "vertrag-widerrufen",
+      "paths": {
+        "de": "/vertrag-widerrufen.html"
+      },
+      "file": {
+        "de": "vertrag-widerrufen.html"
+      },
+      "title": {
+        "de": "Widerrufsformular | Immobilien Eichmann"
+      },
+      "description": {
+        "de": "Widerruf eines Maklervertrags oder einer Einwilligung in Textform an Immobilien Eichmann, Konstanz – "
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.4",
+          "changefreq": "yearly"
+        }
+      },
+      "rule_exempt": [
+        "construction_status",
+        "action_wording",
+        "countdown"
+      ],
+      "exempt_reason": "Rechtstext: Begriffe wie „Genehmigung“/Fristen sind dort Pflichtinhalt."
+    },
+    {
+      "id": "immobilienmakler-konstanz",
+      "paths": {
+        "de": "/immobilienmakler-konstanz.html"
+      },
+      "file": {
+        "de": "immobilienmakler-konstanz.html"
+      },
+      "title": {
+        "de": "Immobilienmakler Konstanz | Persönlich vermitteln am Bodensee"
+      },
+      "description": {
+        "de": "Immobilienmakler Konstanz: Helmut Eichmann – Verkauf, Wertermittlung und Kauf am Bodensee. Persönlich erreichbar unter +49 170 522 5568."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.8",
+          "changefreq": "weekly"
+        }
+      }
+    },
+    {
+      "id": "wohnung-kaufen-konstanz",
+      "paths": {
+        "de": "/wohnung-kaufen-konstanz.html"
+      },
+      "file": {
+        "de": "wohnung-kaufen-konstanz.html"
+      },
+      "title": {
+        "de": "Wohnung kaufen Konstanz | Neubau Allmannsdorf &amp; Angebote"
+      },
+      "description": {
+        "de": "Wohnung kaufen in Konstanz: aktuelle Angebote und Neubau Allmannsdorf (provisionsfrei vormerken). Persönliche Beratung – Mobil +49 170 522 5568."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.8",
+          "changefreq": "weekly"
+        }
+      }
+    },
+    {
+      "id": "haus-verkaufen-konstanz",
+      "paths": {
+        "de": "/haus-verkaufen-konstanz.html"
+      },
+      "file": {
+        "de": "haus-verkaufen-konstanz.html"
+      },
+      "title": {
+        "de": "Haus verkaufen Konstanz | Markteinschätzung &amp; Vermittlung"
+      },
+      "description": {
+        "de": "Haus verkaufen in Konstanz und am Bodensee: Markteinschätzung, Exposé, Interessenten und Notarbegleitung mit Immobilien Eichmann. Mobil +49 170 522 5568."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.8",
+          "changefreq": "weekly"
+        }
+      }
+    },
+    {
+      "id": "konstanz",
+      "paths": {
+        "de": "/konstanz.html"
+      },
+      "file": {
+        "de": "konstanz.html"
+      },
+      "title": {
+        "de": "Immobilien Konstanz &amp; Bodensee | Immobilien Eichmann"
+      },
+      "description": {
+        "de": "Immobilien in Konstanz und am Bodensee: Stadtteile, Kauf und Verkauf – inkl. Neubau Allmannsdorf (provisionsfrei vormerken)."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.8",
+          "changefreq": "weekly"
+        }
+      }
+    },
+    {
+      "id": "wollmatingen",
+      "paths": {
+        "de": "/wollmatingen.html"
+      },
+      "file": {
+        "de": "wollmatingen.html"
+      },
+      "title": {
+        "de": "Immobilien Wollmatingen Konstanz | Immobilien Eichmann"
+      },
+      "description": {
+        "de": "Immobilien in Konstanz-Wollmatingen: Kaufangebote und Beratung durch Immobilien Eichmann."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.8",
+          "changefreq": "weekly"
+        }
+      }
+    },
+    {
+      "id": "ratgeber",
+      "paths": {
+        "de": "/ratgeber.html"
+      },
+      "file": {
+        "de": "ratgeber.html"
+      },
+      "title": {
+        "de": "Ratgeber Immobilien Kauf &amp; Verkauf Konstanz | Immobilien Eichmann"
+      },
+      "description": {
+        "de": "Kurzer Ratgeber zu Immobilienkauf und -verkauf in Konstanz – Tipps von Immobilien Eichmann."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.8",
+          "changefreq": "weekly"
+        }
+      }
+    },
+    {
+      "id": "immobilienbewertung-konstanz",
+      "paths": {
+        "de": "/immobilienbewertung-konstanz.html"
+      },
+      "file": {
+        "de": "immobilienbewertung-konstanz.html"
+      },
+      "title": {
+        "de": "Immobilienbewertung Konstanz | Markteinschätzung am Bodensee"
+      },
+      "description": {
+        "de": "Immobilienbewertung Konstanz: maklerische Markteinschätzung für Verkauf und Erbschaft am Bodensee – persönlich, ohne Online-Schnelltool. Kein Verkehrswertgutachten."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.8",
+          "changefreq": "monthly"
+        }
+      }
+    },
+    {
+      "id": "mcp",
+      "paths": {
+        "de": "/mcp.html"
+      },
+      "file": {
+        "de": "mcp.html"
+      },
+      "title": {
+        "de": "MCP verbinden | Immobilien Eichmann Konstanz"
+      },
+      "description": {
+        "de": "Angebote von Immobilien Eichmann in Claude, ChatGPT, Cursor und VS Code per MCP verbinden. Endpoint: https://immobilieneichmann.de/mcp"
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.7",
+          "changefreq": "monthly"
+        }
+      }
+    }
+  ]
+}

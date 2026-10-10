@@ -25,7 +25,6 @@ const htmlFiles = [
 for (const f of htmlFiles) {
   const h = await read(f);
   if (/^(admin|google|yandex)/.test(f)) continue;
-  check(!/seesicht|seeblick|lake view|views of lake/i.test(h), `${f}: lake-view wording`);
   check(!/Neubauprojekt Konstanz-Allmannsdorf|NEUBAUPROJEKT/.test(h), `${f}: old project name`);
   check(!/Baubegin|Fertigstellung|Bauantrag|Baugenehmigung/i.test(h), `${f}: project status/date wording`);
   check(!/InStock/.test(h), `${f}: InStock`);
@@ -40,7 +39,9 @@ for (const f of htmlFiles) {
     check(!/href="(\.\.\/)?index\.html/.test(nav), `${f}: nav links index.html instead of /`);
   }
   if (h.includes('id="flyerModal"')) {
-    const fl0 = h.slice(h.indexOf('id="flyerModal"'));
+    // Flyer kommt aus EINEM Partial (SSOT); Seiten enthalten nur den Container
+    check(/id="flyerModal" hidden data-flyer-src="\/partials\/flyer-modal\.html\?v=[0-9a-f]{8}"><\/div>/.test(h), `${f}: flyer container/partial missing`);
+    const fl0 = await read("partials/flyer-modal.html");
     const fl = fl0.slice(0, fl0.indexOf('<div class="flyer-foot">'));
     check(/NEUBAU<br><span>ALLMANNSDORF<\/span>/.test(fl), `${f}: flyer title`);
     check(fl.includes('<p class="flyer-cta-script">Jetzt vormerken lassen!</p>'), `${f}: flyer heading`);
@@ -76,7 +77,7 @@ const wk = await read("wohnung-kaufen-konstanz.html");
 for (const L of listings.filter((x) => /Wohnung|Penthouse|Maisonette/.test(x.type + " " + x.title))) check(wk.includes(`href="${L.local_url}"`), `wohnung-kaufen-konstanz.html: missing ${L.slug}`);
 // stand
 const idx = await read("index.html");
-check(/Stand der Angebote: \d{2}\.\d{2}\.\d{4}\./.test(idx), "index.html: Stand date missing");
+check(/Stand der Angebote: \d{2}\.\d{2}\.\d{4} \(mit den öffentlichen Exposés abgeglichen\)\./.test(idx), "index.html: Stand date missing");
 check(!/Stand: Oktober 2026/.test(idx), "index.html: month-only Stand");
 // sitemap
 const sm = await read("sitemap.xml");
@@ -91,7 +92,7 @@ const card = JSON.parse(await read("ai/server-card.json"));
 const mcpSrc = await read("scripts/mcp-server.mjs");
 check(/version: MCP_SERVER_VERSION/.test(mcpSrc) && card.version === (await import("./lib/ai-discovery.mjs")).MCP_SERVER_VERSION, "version mismatch server-card vs MCP");
 const flyer = JSON.parse(await read("ai/flyer-allmannsdorf.json"));
-check(flyer.title === "Neubau Allmannsdorf" && !/seesicht|bodensee\./i.test(JSON.stringify(flyer)) && flyer.pages.project_en && flyer.cta.whatsapp_en, "flyer json: name/seesicht/en");
+check(flyer.title === "Neubau Allmannsdorf" && /Seesicht/.test(JSON.stringify(flyer)) && flyer.pages.project_en && flyer.cta.whatsapp_en, "flyer json: name/seesicht/en");
 const ai = JSON.parse(await read("ai/listings.json"));
 check(!/[A-Za-zäöü]$/.test(ai.projects[0].short_description) || ai.projects[0].short_description.endsWith("."), "project short_description cut mid-word");
 // EN

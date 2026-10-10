@@ -1,0 +1,33 @@
+{
+  "terms": {
+    "project": {
+      "de": "Neubau Allmannsdorf",
+      "en": "New-build Allmannsdorf"
+    },
+    "commission_free": {
+      "de": "provisionsfrei",
+      "en": "commission-free"
+    },
+    "register": {
+      "de": "Vormerken",
+      "en": "Register interest"
+    }
+  },
+  "rules": [
+    {
+      "id": "construction_status",
+      "pattern": "Bauantr[aä]g\\w*|Baugenehmigung\\w*|Genehmigung\\w*|genehmigt\\w*|Baubegin+\\w*|Baustart\\w*|Spatenstich|Fertigstellung\\w*|planning permission|building permit|construction (start|begins)|ground-?breaking",
+      "message": "Hart: nichts zu Bauantrag, Baubeginn, Genehmigung oder Fertigstellungsterminen."
+    },
+    {
+      "id": "countdown",
+      "pattern": "nur noch \\d+|noch \\d+ (Tage|Stunden|Wohnungen|Einheiten)|letzte[nr]? (Wohnungen|Einheiten|Chance)|endet (am|in)\\b|only \\d+ left|last (units|chance)|limited time|\\bhurry\\b|countdown",
+      "message": "Hart: keine Countdowns oder künstliche Verknappung."
+    }
+  ],
+  "number_words": "zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve",
+  "allowed_numbers": {
+    "2026": "Copyright-Jahr / Datenstand"
+  },
+  "_comment": "HARTE Regeln (Chris, 10.10.2026): nichts zu Bauantrag/Baubeginn/Genehmigung, keine Zahlen ohne Beleg (validate-sot/check-output), keine Countdowns, keine Bot-Anfragen (MCP sendet nichts). Alles Wahre und Verkaufsrelevante (z. B. Seesicht laut Flyer) ist erlaubt – keine zusätzlichen Vorsichts-Regeln."
+}

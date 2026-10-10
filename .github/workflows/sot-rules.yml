@@ -1,0 +1,28 @@
+name: SSOT rules
+# Regelprüfung auf Quelle (data/sot/) und Ausgabe. Bricht bei jedem Verstoß ab (Chris' Wording-Regeln,
+# Zahlen nur mit Beleg, Ausnahmen mit Ablaufdatum, Slugs eingefroren, hreflang/Objektzahl/Datenstand konsistent).
+on:
+  pull_request: {}
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Unit tests (rules, SSOT, flyer, output)
+        run: node --test test/
+      - name: Validate source (slugs frozen vs origin/main)
+        run: node scripts/validate-sot.mjs
+      - name: Build from SSOT and check output
+        run: node scripts/build.mjs
+      - name: SSOT-derived files committed and in sync
+        run: |
+          # Objektseiten hängen zusätzlich von Bilddateien ab, die der Runner nicht hat (og/Galerie) – hier nur SSOT-Ausgaben vergleichen.
+          CHANGED=$(git diff --name-only -- data/projects.json en partials/flyer-modal.html allmannsdorf.html)
+          if [ -n "$CHANGED" ]; then echo "Nicht neu gebaut: $CHANGED"; git diff -- $CHANGED | head -80; exit 1; fi

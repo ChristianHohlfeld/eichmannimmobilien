@@ -13,6 +13,7 @@
  */
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { loadSot, saveListingsLayer } from "./lib/sot.mjs";
 import { fileURLToPath } from "node:url";
 
 const ROOT = process.env.EICHMANN_SITE_ROOT
@@ -70,11 +71,24 @@ if (failed.length) {
   console.error(`Mirror check FAILED for ${failed.length} listing(s) – status file unchanged (fail-closed).`);
   process.exit(2);
 }
+// Datum rückt nur vor, wenn JEDES aktive Objekt der SSOT abgeglichen wurde und übereinstimmt.
+const sot = loadSot(ROOT, { fresh: true });
+const checkedPublic = new Set(results.filter((x) => x.public && x.ok).map((x) => x.slug));
+const missing = sot.activeListings.filter((l) => !checkedPublic.has(l.slug));
+if (missing.length) {
+  console.error(`Mirror check incomplete: ${missing.length} active listing(s) without match (${missing.map((l) => l.slug).join(", ")}) – data date unchanged (fail-closed).`);
+  process.exit(2);
+}
 if (!DRY) {
+  const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
+  saveListingsLayer(sot, sot.listings.map((l) => l.status === "active"
+    ? { ...l, verified_at: today, verified_by: "mirror-check (öffentliche Exposés, alle Objekte identisch)" }
+    : l));
+  console.log(`SSOT: verified_at=${today} für ${sot.activeListings.length} aktive Objekte (data/sot/listings.json)`);
   let st = {};
   try { st = JSON.parse(await readFile(STATUS, "utf8")); } catch {}
   st.last_verified_at = new Date().toISOString();
-  st.last_verified_via = "immobilien.sparkasse.de (öffentlicher Spiegel derselben Angebote): alle aktiven Objekte online, Preise identisch; inaktive offline";
+  st.last_verified_via = "öffentliche Exposés derselben Angebote (immobilien.sparkasse.de, Immowelt-Syndikation): alle aktiven Objekte online, Preise identisch; inaktive offline";
   st.last_verified_count = results.filter((x) => x.public).length;
   await writeFile(STATUS, JSON.stringify(st, null, 2) + "\n", "utf8");
   console.log(`Verified ${st.last_verified_count} public listings → last_verified_at ${st.last_verified_at}`);

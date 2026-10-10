@@ -11,15 +11,21 @@
 import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { vormerkFormHtml } from "./lib/vormerk-form.mjs";
+import { vormerkFormHtml, EN_PRIVACY } from "./lib/vormerk-form.mjs";
+import { loadSot, projectTexts, projectFacts, whatsappUrl } from "./lib/sot.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const O = "https://immobilieneichmann.de";
 const V = "claude-final";
-const TEL = "tel:+491705225568";
-const WA_GEN = "https://wa.me/491705225568?text=" + encodeURIComponent("Hello, I am interested in a property or a consultation with Immobilien Eichmann.");
-const WA_ALL = "https://wa.me/491705225568?text=" + encodeURIComponent("Hello, I would like to register my interest in New-build Allmannsdorf.");
-const MAIL_ALL = "mailto:info@immobilien-eichmann.com?subject=" + encodeURIComponent("Register interest: New-build Allmannsdorf");
+// SSOT: Kontakt + Allmannsdorf-Texte/Fakten aus data/sot/ (scripts/lib/sot.mjs)
+const SOT = loadSot(ROOT);
+const C = SOT.contact;
+const AL = projectTexts(SOT, "allmannsdorf", "en");
+const F = projectFacts(SOT, "allmannsdorf");
+const TEL = `tel:${C.phone_mobile.e164}`;
+const WA_GEN = whatsappUrl(SOT, C.whatsapp_text.en);
+const WA_ALL = whatsappUrl(SOT, AL.whatsapp_text);
+const MAIL_ALL = `mailto:${C.email}?subject=` + encodeURIComponent(AL.email_subject);
 
 const PAIRS = { home: { de: "/", en: "/en/" }, allmannsdorf: { de: "/allmannsdorf.html", en: "/en/allmannsdorf.html" }, contact: { de: "/kontakt.html", en: "/en/contact.html" } };
 
@@ -33,8 +39,8 @@ const BUSINESS = {
   url: `${O}/`,
   logo: `${O}/assets/logo.svg?v=house-orig-v1`,
   image: `${O}/assets/share-card-plain-v2.jpg`,
-  telephone: ["+491705225568", "+4975319228848"],
-  email: "info@immobilien-eichmann.com",
+  telephone: [C.phone_mobile.e164, C.phone_landline.e164],
+  email: C.email,
   address: { "@type": "PostalAddress", streetAddress: "Jacob-Burckhardt-Str. 40", addressLocality: "Konstanz", postalCode: "78464", addressCountry: "DE" },
   founder: { "@type": "Person", name: "Helmut Eichmann" },
   areaServed: ["Konstanz", "Allmannsdorf", "Lake Constance"],
@@ -112,10 +118,10 @@ function foot(key, waHref = WA_GEN) {
       <div class="footer-grid footer-grid-seo">
         <div class="footer-brand">
           <p class="footer-name">Immobilien Eichmann</p>
-          <p>Helmut Eichmann<br>Jacob-Burckhardt-Str. 40<br>78464 Konstanz, Germany</p>
-          <p><a href="${TEL}">+49 170 522 5568</a><br>
-          <a href="tel:+4975319228848">+49 7531 9228848</a><br>
-          <a href="mailto:info@immobilien-eichmann.com">info@immobilien-eichmann.com</a></p>
+          <p>Helmut Eichmann<br>${C.address.street}<br>${C.address.postal_code} ${C.address.city}, Germany</p>
+          <p><a href="${TEL}">${C.phone_mobile.display}</a><br>
+          <a href="tel:${C.phone_landline.e164}">${C.phone_landline.display}</a><br>
+          <a href="mailto:${C.email}">${C.email}</a></p>
           <p class="footer-hours">Appointments by arrangement</p>
         </div>
         <div class="footer-col">
@@ -127,11 +133,11 @@ function foot(key, waHref = WA_GEN) {
         </div>
         <div class="footer-col">
           <h2 class="footer-heading">Legal (German)</h2>
-          <a href="/impressum.html" hreflang="de">Legal notice (Impressum)</a>
-          <a href="/datenschutz.html" hreflang="de">Privacy policy (Datenschutz)</a>
+          <a href="/impressum.html" hreflang="de">Legal notice (German)</a>
+          <a href="/datenschutz.html" hreflang="de">Privacy policy (German)</a>
           <a href="#" data-open-cookie-settings>Cookie settings</a>
-          <a href="/widerrufsbelehrung.html" hreflang="de">Cancellation policy (Widerrufsbelehrung)</a>
-          <a href="/vertrag-widerrufen.html" hreflang="de">Cancellation form (Widerrufsformular)</a>
+          <a href="/widerrufsbelehrung.html" hreflang="de">Cancellation policy (German)</a>
+          <a href="/vertrag-widerrufen.html" hreflang="de">Cancellation form (German)</a>
         </div>
       </div>
       <div class="footer-bottom">
@@ -188,14 +194,14 @@ async function homePage() {
       <div class="hero-grid">
         <div class="hero-copy">
           <h1 class="hero-kicker">Real estate agent in Konstanz · Lake Constance</h1>
-          <p class="hero-title">New-build Allmannsdorf – register your interest now, commission‑free</p>
+          <p class="hero-title">New-build Allmannsdorf – register your interest, commission‑free</p>
           <p class="lead">Immobilien Eichmann in Konstanz: homes for sale, property sales and project development. Personal advice from Helmut Eichmann.</p>
           <div class="hero-actions hero-actions--dual">
-            <a class="btn btn-accent hero-cta-call" href="${TEL}" aria-label="Call: +49 170 522 5568">Call</a>
+            <a class="btn btn-accent hero-cta-call" href="${TEL}" aria-label="Call: ${C.phone_mobile.display}">Call</a>
             <a class="btn btn-accent hero-cta-vormerken" href="#vormerk-hero-en">Register interest</a>
           </div>
           <p class="hero-subline">
-            <a href="${TEL}">+49 170 522 5568</a> · Landline <a href="tel:+4975319228848">+49 7531 9228848</a>
+            <a href="${TEL}">${C.phone_mobile.display}</a> · <span class="nowrap">Landline <a href="tel:${C.phone_landline.e164}">${C.phone_landline.display}</a></span>
           </p>
           <p class="hero-links">
             <a href="/en/allmannsdorf.html">New-build Allmannsdorf</a> · <a href="/#angebote" hreflang="de">Listings (German)</a> · <a href="/" hreflang="de" lang="de" data-lang-switch="de">Deutsch</a>
@@ -238,8 +244,8 @@ ${vormerkFormHtml({ id: "vormerk-hero-en", location: "home_hero", lang: "en", pr
     <section class="section section-alt" id="contact">
       <div class="container narrow">
         <h2>Contact</h2>
-        <p>Immobilien Eichmann · Helmut Eichmann · Jacob-Burckhardt-Str. 40, 78464 Konstanz, Germany</p>
-        <p>Mobile &amp; WhatsApp <a href="${TEL}">+49 170 522 5568</a> · Landline <a href="tel:+4975319228848">+49 7531 9228848</a> · <a href="mailto:info@immobilien-eichmann.com">info@immobilien-eichmann.com</a></p>
+        <p>Immobilien Eichmann · Helmut Eichmann · ${C.address.street}, ${C.address.postal_code} ${C.address.city}, Germany</p>
+        <p>Mobile &amp; WhatsApp <a href="${TEL}">${C.phone_mobile.display}</a> · <span class="nowrap">Landline <a href="tel:${C.phone_landline.e164}">${C.phone_landline.display}</a></span> · <a href="mailto:${C.email}">${C.email}</a></p>
         <p>Appointments by arrangement (Konstanz time, CET/CEST).</p>
         <p><a class="btn btn-outline" href="/en/contact.html">Contact form</a></p>
       </div>
@@ -249,25 +255,14 @@ ${vormerkFormHtml({ id: "vormerk-hero-en", location: "home_hero", lang: "en", pr
 }
 
 /* ---------- /en/allmannsdorf.html ---------- */
-const FAQ = [
-  { q: "How many apartments are there in New-build Allmannsdorf?", a: "The ensemble comprises five apartment buildings with a total of 44 apartments on a plot of approx. 4,000 m²." },
-  { q: "What apartment sizes and prices are available?", a: "According to the project data: 2 to 5 rooms with 40 to 124 m² of living space. Prices range from €295,000 to €1,450,000. All information without guarantee. Room counts follow the German convention: living rooms and bedrooms are counted, kitchens and bathrooms are not." },
-  { q: "Is the purchase commission-free?", a: "Yes. The apartments in New-build Allmannsdorf are offered commission-free." },
-  { q: "What are the features?", a: "High-quality architecture, sustainable building design, low-barrier apartments, a lift and underground parking, and well-designed floor plans in a quiet, sought-after location." },
-  { q: "How do I register my interest in an apartment?", a: "Use the short form on this page, call +49 170 522 5568, send a WhatsApp message or e-mail info@immobilien-eichmann.com. Helmut Eichmann will get back to you personally." },
-  { q: "Can buyers from Switzerland and other countries register interest?", a: "Yes. Registration of interest is open to everyone, including buyers from Switzerland and abroad. Konstanz borders directly on Kreuzlingen." },
-];
-const DESC_ALL = "New-build Allmannsdorf is a modern residential ensemble of five apartment buildings with a total of 44 high-quality apartments, set in one of Konstanz's most sought-after residential areas. Expect well-thought-out floor plans, light-filled rooms and architecture that combines design, comfort and quality of life.";
-const IMGS = [
-  { k: "hero-dining", caption: "Living and dining", alt: "Living and dining area – New-build Konstanz-Allmannsdorf" },
-  { k: "living", caption: "Living room", alt: "Living room – New-build Allmannsdorf" },
-  { k: "dining-detail", caption: "Dining area", alt: "Dining area of an apartment in New-build Konstanz-Allmannsdorf" },
-];
+const FAQ = AL.faq;
+const DESC_ALL = AL.description;
+const IMGS = AL.gallery.map((g) => ({ k: g.key, caption: g.caption, alt: g.alt }));
 
 function allmannsdorfPage() {
   const url = `${O}/en/allmannsdorf.html`;
-  const title = "New-build Konstanz-Allmannsdorf | Commission-free";
-  const desc = "New-build in Konstanz-Allmannsdorf: 44 apartments, 2–5 rooms, 40–124 m². Commission-free – register your interest with Helmut Eichmann.";
+  const title = AL.page_title;
+  const desc = AL.meta_description;
   const imgs = IMGS.map((i) => `${O}/assets/flyer/${i.k}.jpg`);
   const jsonld = {
     "@context": "https://schema.org",
@@ -283,19 +278,19 @@ function allmannsdorfPage() {
         "@type": "RealEstateListing", "@id": `${url}#listing`, name: "New-build Allmannsdorf", description: DESC_ALL, url, image: imgs, inLanguage: "en",
         provider: { "@id": `${O}/#business` }, about: { "@id": `${url}#complex` },
         offers: {
-          "@type": "AggregateOffer", lowPrice: "295000", highPrice: "1450000", priceCurrency: "EUR", offerCount: "44",
+          "@type": "AggregateOffer", lowPrice: String(F.price.min), highPrice: String(F.price.max), priceCurrency: "EUR", offerCount: String(F.units.value),
           offeredBy: { "@id": `${O}/#business` }, url: `${url}#register`,
         },
       },
       {
         "@type": "ApartmentComplex", "@id": `${url}#complex`, name: "New-build Allmannsdorf", description: DESC_ALL, url, image: imgs,
-        numberOfAccommodationUnits: 44,
+        numberOfAccommodationUnits: F.units.value,
         address: { "@type": "PostalAddress", addressLocality: "Konstanz", addressRegion: "Baden-Württemberg", postalCode: "78464", addressCountry: "DE" },
         containedInPlace: { "@type": "Place", name: "Konstanz-Allmannsdorf", containedInPlace: { "@type": "City", name: "Konstanz" } },
         containsPlace: {
           "@type": "Apartment", name: "Apartments in Konstanz-Allmannsdorf",
-          floorSize: { "@type": "QuantitativeValue", minValue: 40, maxValue: 124, unitCode: "MTK" },
-          numberOfRooms: { "@type": "QuantitativeValue", minValue: 2, maxValue: 5 },
+          floorSize: { "@type": "QuantitativeValue", minValue: F.living_area.min, maxValue: F.living_area.max, unitCode: "MTK" },
+          numberOfRooms: { "@type": "QuantitativeValue", minValue: F.rooms.min, maxValue: F.rooms.max },
         },
         amenityFeature: [
           { "@type": "LocationFeatureSpecification", name: "Low-barrier apartments", value: true },
@@ -316,14 +311,8 @@ function allmannsdorfPage() {
       },
     ],
   };
-  const facts = [
-    ["Buildings", "5 apartment buildings"],
-    ["Apartments", "44 apartments"],
-    ["Sizes", "40–124 m², 2–5 rooms"],
-    ["Prices", "€295,000–€1,450,000 · commission-free"],
-    ["Plot", "approx. 4,000 m²"],
-  ];
-  const features = ["High-quality architecture", "Sustainable building design", "Low-barrier apartments", "Lift & underground parking", "Well-designed floor plans", "Quiet, sought-after location"];
+  const facts = AL.facts;
+  const features = AL.features;
   return head({ key: "allmannsdorf", title, desc, jsonld }) + `
   <main id="main">
     <nav class="breadcrumb container" aria-label="Breadcrumb">
@@ -335,13 +324,13 @@ function allmannsdorfPage() {
     <section class="page-hero">
       <div class="container page-hero-inner">
         <span class="eyebrow">New-build · Allmannsdorf · Commission-free</span>
-        <h1>New-build Allmannsdorf in Konstanz</h1>
-        <p class="lead">44 apartments in 5 apartment buildings, 2–5 rooms, €295,000–€1,450,000 – commission‑free, register your interest.</p>
+        <h1>${esc(AL.h1)}</h1>
+        <p class="lead">${esc(AL.lead)}</p>
         <div class="hero-actions project-hero-actions">
-          <a class="btn btn-accent hero-cta-call" href="${TEL}" aria-label="Call: +49 170 522 5568">Call</a>
+          <a class="btn btn-accent hero-cta-call" href="${TEL}" aria-label="Call: ${C.phone_mobile.display}">Call</a>
           <a class="btn btn-outline hero-cta-vormerken" href="#register">Register interest</a>
         </div>
-        <p class="hero-links"><a href="${esc(WA_ALL)}" target="_blank" rel="noopener noreferrer">WhatsApp</a> · <a href="${TEL}">+49 170 522 5568</a> · Landline <a href="tel:+4975319228848">+49 7531 9228848</a> · <a href="/allmannsdorf.html" hreflang="de" lang="de" data-lang-switch="de">Deutsch</a></p>
+        <p class="hero-links"><a href="${esc(WA_ALL)}" target="_blank" rel="noopener noreferrer">WhatsApp</a> · <a href="${TEL}">${C.phone_mobile.display}</a> · <span class="nowrap">Landline <a href="tel:${C.phone_landline.e164}">${C.phone_landline.display}</a></span> · <a href="/allmannsdorf.html" hreflang="de" lang="de" data-lang-switch="de">Deutsch</a></p>
       </div>
     </section>
 
@@ -394,8 +383,7 @@ ${features.map((f) => `          <li>${esc(f)}</li>`).join("\n")}
     <section class="section">
       <div class="container narrow prose">
         <h2>Living in Konstanz-Allmannsdorf</h2>
-        <p>Allmannsdorf is a district in the east of Konstanz (postcode 78464). It sits on a ridge above Staad, on the right bank of the Rhine – between the city centre, the University of Konstanz and Mainau Island, close to Lake Constance.</p>
-        <p>New-build Allmannsdorf is located in this quiet, sought-after area. Konstanz borders directly on Kreuzlingen, so Allmannsdorf is also within easy reach for buyers from Switzerland.</p>
+${AL.location_text.map((t) => `        <p>${esc(t)}</p>`).join("\n")}
       </div>
     </section>
 
@@ -405,7 +393,7 @@ ${features.map((f) => `          <li>${esc(f)}</li>`).join("\n")}
         <div class="faq-list">
 ${FAQ.map((f) => `          <details class="faq-item">
             <summary>${esc(f.q)}</summary>
-            <p>${esc(f.a).replace("+49 170 522 5568", `<a href="${TEL}">+49 170 522 5568</a>`)}</p>
+            <p>${esc(f.a).replace("+49 170 522 5568", `<a href="${TEL}">${C.phone_mobile.display}</a>`)}</p>
           </details>`).join("\n")}
         </div>
       </div>
@@ -459,10 +447,10 @@ function contactPage() {
           <h2>Immobilien Eichmann</h2>
           <ul class="helmut-contact">
             <li>Contact person: <strong>Helmut Eichmann</strong></li>
-            <li>Address: Jacob-Burckhardt-Str. 40, 78464 Konstanz, Germany</li>
-            <li>Mobile &amp; WhatsApp: <a href="${TEL}">+49 170 522 5568</a></li>
-            <li>Landline: <a href="tel:+4975319228848">+49 7531 9228848</a></li>
-            <li>E-mail: <a href="mailto:info@immobilien-eichmann.com">info@immobilien-eichmann.com</a></li>
+            <li>Address: ${C.address.street}, ${C.address.postal_code} ${C.address.city}, Germany</li>
+            <li>Mobile &amp; WhatsApp: <a href="${TEL}">${C.phone_mobile.display}</a></li>
+            <li>Landline: <a href="tel:${C.phone_landline.e164}">${C.phone_landline.display}</a></li>
+            <li>E-mail: <a href="mailto:${C.email}">${C.email}</a></li>
             <li>Appointments by arrangement (Konstanz time, CET/CEST)</li>
           </ul>
         </div>
@@ -501,11 +489,11 @@ function contactPage() {
                 <textarea id="message" name="message" placeholder="Briefly describe your request …"></textarea>
               </div>
             </details>
-            <p class="form-note legal-request-note">Information on how we process your data can be found in our <a href="/datenschutz.html" hreflang="de">privacy policy (in German)</a>. Submitting this form does not create a brokerage agreement.</p>
+            <p class="form-note legal-request-note">${EN_PRIVACY("/")}</p>
             <button type="submit" class="btn btn-accent" id="contact-submit">Send message</button>
             <div id="form-success" class="form-success" role="status" hidden>Thank you. Helmut Eichmann will get back to you personally.</div>
             <div id="form-error" class="form-error" role="alert" hidden>
-              Your message could not be sent. Please call or use WhatsApp: <a href="${TEL}">+49 170 522 5568</a>.
+              Your message could not be sent. Please call or use WhatsApp: <a href="${TEL}">${C.phone_mobile.display}</a>.
               <button type="button" class="linkish" id="mailto-fallback">Open your e-mail program instead</button>
             </div>
           </form>
@@ -516,7 +504,7 @@ function contactPage() {
     <section class="section section-alt">
       <div class="container narrow">
         <h2>How to find us</h2>
-        <p>Jacob-Burckhardt-Str. 40, 78464 Konstanz – appointments by arrangement.</p>
+        <p>${C.address.street}, ${C.address.postal_code} ${C.address.city} – appointments by arrangement.</p>
         <p><a href="https://www.google.com/maps/search/?api=1&amp;query=Jacob-Burckhardt-Str.+40%2C+78464+Konstanz" target="_blank" rel="noopener noreferrer">Open in Google Maps</a></p>
       </div>
     </section>

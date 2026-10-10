@@ -23,7 +23,7 @@ const T = {
     phone: "Phone",
     phonePh: "With country code, e.g. +41 …",
     email: "E-mail (optional)",
-    note: (p) => `How we process your data: <a href="${p}datenschutz.html" hreflang="de">privacy policy (in German)</a>. Submitting this form does not create a brokerage agreement.`,
+    note: (p) => EN_PRIVACY(p),
     submit: "Register interest",
     ok: "Thank you – your registration of interest has been received. Helmut Eichmann will get back to you personally.",
     err: 'Your message could not be sent. Please call: <a href="tel:+491705225568">+49 170 522 5568</a>.',
@@ -58,4 +58,9 @@ export function vormerkFormHtml({ id = "vormerk", location = "inline", lang = "d
   <p class="vormerk-error" role="alert" hidden>${t.err}</p>
 </form>`;
   return indent ? html.split("\n").map((l) => indent + l).join("\n") : html;
+}
+
+/** Short English privacy note under EN forms (the full privacy policy is in German). */
+export function EN_PRIVACY(p = "/") {
+  return `Privacy: your details are sent via our form service to Helmut Eichmann (Immobilien Eichmann, Konstanz) and used solely to answer your enquiry and contact you about it – never for advertising. Details and your rights: <a href="${p}datenschutz.html" hreflang="de">privacy policy (German)</a>. Submitting this form does not create a brokerage agreement.`;
 }
