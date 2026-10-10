@@ -1532,7 +1532,7 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
 
   <script>window.__eichmannJsBase="${p}js/";</script>
   <script src="${p}js/cookie-consent.js?v=claude-final" defer></script>
-  <script src="${p}js/main.js?v=claude-final" defer></script>
+  <script src="${p}js/main.js?v=lead-attr-v1" defer></script>
 </body>
 </html>
 `;
