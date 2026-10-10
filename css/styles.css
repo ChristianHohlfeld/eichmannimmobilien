@@ -2604,3 +2604,17 @@ body:has(form:focus-within) .floating-wa { opacity: 0; pointer-events: none; }
 @media (min-width: 769px) and (max-width: 1100px) {
   .hero .hero-form .vormerk-form { margin-bottom: 72px; }
 }
+
+/* Allmannsdorf: Seeblick-Visualisierung im Hero (Claude R3 #3) – Desktop rechts, mobil unter dem Lead */
+.page-hero-inner.project-hero-grid { max-width: none; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); column-gap: var(--space-4, 2rem); align-items: start; }
+.project-hero-grid > * { grid-column: 1; }
+.project-hero-grid > .project-hero-media { grid-column: 2; grid-row: 1 / span 6; align-self: stretch; }
+.project-hero-media { margin: 0; position: relative; border-radius: 12px; overflow: hidden; min-height: 280px; }
+.project-hero-media a, .project-hero-media picture { display: block; height: 100%; }
+.project-hero-media img { display: block; width: 100%; height: 100%; max-height: 460px; object-fit: cover; }
+.project-hero-media figcaption { position: absolute; right: 0.5rem; bottom: 0.5rem; margin: 0; padding: 0.1rem 0.45rem; border-radius: 4px; background: rgba(255,255,255,0.88); color: #444b53; font-size: 0.75rem; }
+@media (max-width: 860px) {
+  .page-hero-inner.project-hero-grid { grid-template-columns: minmax(0, 1fr); }
+  .project-hero-grid > .project-hero-media { grid-column: 1; grid-row: auto; min-height: 0; margin: 0.25rem 0 1rem; }
+  .project-hero-media img { height: auto; max-height: 240px; aspect-ratio: 16 / 10; }
+}

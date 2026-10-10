@@ -16,7 +16,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadSot, projectsDocument } from "./lib/sot.mjs";
+import { loadSot, projectsDocument, projectTexts } from "./lib/sot.mjs";
 import { publishFlyerModal } from "./lib/flyer-modal.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -32,6 +32,15 @@ if (!process.argv.includes("--no-render")) {
 }
 const fl = await publishFlyerModal({ siteRoot: ROOT });
 console.log(`Flyer: ${fl.partial} (${fl.pages} Seiten mit Container)`);
+
+// Startseite: Hero-Unterzeile = Allmannsdorf-Lead aus der SSOT (Zahlen nur aus Fakten, Claude R3 #4)
+{
+  const fp = path.join(ROOT, "index.html");
+  const s0 = readFileSync(fp, "utf8");
+  const lead = projectTexts(sot, "allmannsdorf", "de").lead;
+  const s1 = s0.replace(/(<p class="lead" data-sot-lead="allmannsdorf">)[\s\S]*?(<\/p>)/, `$1${esc(lead)}$2`);
+  if (s1 !== s0) writeFileSync(fp, s1);
+}
 
 // Seiten-Meta aus dem Register
 let metaChanged = 0;

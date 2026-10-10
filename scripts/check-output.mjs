@@ -86,6 +86,8 @@ try {
 const idx = readFileSync(path.join(root, "index.html"), "utf8");
 if (!idx.includes(`Stand der Angebote: ${dataAsOfLabel(sot, "de")}`))
   problems.push({ where: "index.html", rule: "consistency", hit: "", message: "sichtbarer Datenstand ≠ SSOT" });
+if (!readFileSync(path.join(root, "projekte.html"), "utf8").includes(`Stand der Angebote: ${dataAsOfLabel(sot, "de")}`))
+  problems.push({ where: "projekte.html", rule: "consistency", hit: "", message: "sichtbarer Datenstand ≠ SSOT" });
 
 if (problems.length) {
   for (const p of problems) console.error(`✗ ${p.where} [${p.rule}] „${p.hit}“ ${p.message}`);

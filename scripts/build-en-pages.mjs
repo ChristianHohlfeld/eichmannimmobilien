@@ -195,7 +195,7 @@ async function homePage() {
         <div class="hero-copy">
           <h1 class="hero-kicker">Real estate agent in Konstanz · Lake Constance</h1>
           <p class="hero-title">New-build Allmannsdorf – register your interest, commission‑free</p>
-          <p class="lead">Immobilien Eichmann in Konstanz: homes for sale, property sales and project development. Personal advice from Helmut Eichmann.</p>
+          <p class="lead" data-sot-lead="allmannsdorf">${esc(AL.lead)}</p>
           <div class="hero-actions hero-actions--dual">
             <a class="btn btn-accent hero-cta-call" href="${TEL}" aria-label="Call: ${C.phone_mobile.display}">Call</a>
             <a class="btn btn-accent hero-cta-vormerken" href="#vormerk-hero-en">Register interest</a>
@@ -322,10 +322,19 @@ function allmannsdorfPage() {
       </ol>
     </nav>
     <section class="page-hero">
-      <div class="container page-hero-inner">
+      <div class="container page-hero-inner project-hero-grid">
         <span class="eyebrow">New-build · Allmannsdorf · Commission-free</span>
         <h1>${esc(AL.h1)}</h1>
         <p class="lead">${esc(AL.lead)}</p>
+        <figure class="project-hero-media">
+          <a href="#flyerModal" data-open-flyer aria-label="Living and dining area with lake view – New-build Allmannsdorf (visualisation)">
+            <picture>
+              <source srcset="/assets/flyer/hero-dining.webp" type="image/webp">
+              <img src="/assets/flyer/hero-dining.jpg" alt="Living and dining area with lake view – New-build Allmannsdorf (visualisation)" width="520" height="550" fetchpriority="high" decoding="async">
+            </picture>
+          </a>
+          <figcaption>Visualisation</figcaption>
+        </figure>
         <div class="hero-actions project-hero-actions">
           <a class="btn btn-accent hero-cta-call" href="${TEL}" aria-label="Call: ${C.phone_mobile.display}">Call</a>
           <a class="btn btn-outline hero-cta-vormerken" href="#register">Register interest</a>

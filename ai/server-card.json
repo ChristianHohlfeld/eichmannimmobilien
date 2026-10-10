@@ -21,9 +21,10 @@
       "endpoint": "https://immobilieneichmann.de/mcp",
       "listings_index": "https://immobilieneichmann.de/ai/listings.json",
       "discovery": "https://immobilieneichmann.de/.well-known/mcp.json",
+      "health": "https://immobilieneichmann.de/mcp/health",
       "listing_count": 11,
       "data_as_of": "2026-10-10",
-      "generated_at": "2026-10-10T12:14:21.008Z",
+      "generated_at": "2026-10-10T12:33:32.981Z",
       "pages_en": {
         "home": "https://immobilieneichmann.de/en/",
         "allmannsdorf": "https://immobilieneichmann.de/en/allmannsdorf.html",

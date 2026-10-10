@@ -121,11 +121,13 @@ export function toPublicFlyerJson(project, { origin = DEFAULT_ORIGIN } = {}) {
     specs: project.specs,
     features: project.features || [],
     checks: project.checks || [],
-    images: {
-      hero: absImg(img.hero),
-      living: absImg(img.living),
-      dining_detail: absImg(img.dining_detail),
-    },
+    images: Object.fromEntries(
+      [["hero", img.hero], ["living", img.living], ["dining_detail", img.dining_detail]].map(([k, v]) => {
+        const a = absImg(v);
+        // Flyerbilder sind Visualisierungen (kein Foto des Baustands) – maschinenlesbar kennzeichnen.
+        return [k, a ? { ...a, kind: "visualisierung", caption: { de: "Visualisierung", en: "Visualisation" } } : a];
+      })
+    ),
     cta: {
       phone: project.cta?.phone || "+49 170 5225568",
       email: project.cta?.email || "info@immobilien-eichmann.com",
@@ -488,10 +490,19 @@ ${faq
       </ol>
     </nav>
     <section class="page-hero">
-      <div class="container page-hero-inner">
+      <div class="container page-hero-inner project-hero-grid">
         <span class="eyebrow">Neubau · ${escapeHtml((project.location || "Allmannsdorf").replace(/^Konstanz-/, ""))} · Provisionsfrei</span>
         <h1>${escapeHtml(project.h1 || project.title)}</h1>
         <p class="lead">${escapeHtml(project.lead || project.summary || "")}</p>
+        <figure class="project-hero-media">
+          <a href="#flyerModal" data-open-flyer aria-label="Wohn- und Essbereich mit Seeblick – Neubau Allmannsdorf (Visualisierung)">
+            <picture>
+              <source srcset="/assets/flyer/hero-dining.webp" type="image/webp">
+              <img src="/assets/flyer/hero-dining.jpg" alt="Wohn- und Essbereich mit Seeblick – Neubau Allmannsdorf (Visualisierung)" width="520" height="550" fetchpriority="high" decoding="async">
+            </picture>
+          </a>
+          <figcaption>Visualisierung</figcaption>
+        </figure>
         <div class="hero-actions project-hero-actions">
           <a class="btn btn-accent hero-cta-call" href="tel:+491705225568" aria-label="Anrufen: +49 170 522 5568">Anrufen</a>
           <a class="btn btn-outline hero-cta-vormerken" href="#vormerken" data-focus-form="vormerk-projekt">Vormerken</a>
