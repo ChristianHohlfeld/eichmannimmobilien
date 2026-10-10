@@ -2589,3 +2589,5 @@ p a[href^="tel:"], .helmut-contact a[href^="tel:"], .flyer-foot a[href^="tel:"] 
 }
 
 a[href^="mailto:"] { overflow-wrap: anywhere; }
+/* a11y (Lighthouse color-contrast): muted text on white needs ≥ 4.5:1 */
+.vormerk-form .vormerk-sub, .vormerk-form .vormerk-note, .expose-sibling-list span, .expose-title-sep { color: #5b6472; }

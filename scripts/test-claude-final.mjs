@@ -106,6 +106,7 @@ check(/href="kontakt\.html\?interesse=allmannsdorf#contact-form" data-open-flyer
 
 /* ---------- MCP search ---------- */
 async function rpc(url, method, params) {
+  if (process.env.MCP_URL) await new Promise((r) => setTimeout(r, 2500)); // live nginx limit: 30 req/min
   const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
   const txt = await res.text();
   const json = JSON.parse(txt.startsWith("event:") || txt.startsWith("data:") ? txt.split("\n").find((l) => l.startsWith("data:")).slice(5) : txt);
