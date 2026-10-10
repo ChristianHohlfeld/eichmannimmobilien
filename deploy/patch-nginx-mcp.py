@@ -107,6 +107,29 @@ for head, lines in LIMITS.items():
     changed = True
     print(f"nginx: added limit_req to {head.strip()}")
 
+# data-private-v1: raw render mirror (internal fields) + project SoT are not public.
+# Public machine-readable index = /ai/listings.json. Admin reads files locally;
+# only /data/immowelt-sync-status.json stays reachable (admin status widget).
+import re as _re
+if "data-private-v1" not in text:
+    priv = """    # data-private-v1 (managed by deploy/patch-nginx-mcp.py)
+    location = /data/listings.json {
+        return 404;
+    }
+    location = /data/projects.json {
+        return 404;
+    }
+"""
+    pat = _re.compile(r"    location = /data/listings\.json \{[^}]*\}\n", _re.S)
+    if pat.search(text):
+        text = pat.sub(priv, text, count=1)
+    else:
+        marker = "    location ~* \\.(css|js|mjs|"
+        text = text.replace(marker, priv + "\n" + marker, 1) if marker in text else text.replace("\n    location / {\n", "\n" + priv + "\n    location / {\n", 1)
+    changed = True
+    print("nginx: /data/listings.json + /data/projects.json → 404 (data-private-v1)")
+
+
 if changed:
     # Write, validate, and roll back on failure so a bad patch can never leave nginx unloadable.
     import shutil, subprocess

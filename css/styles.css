@@ -2563,3 +2563,29 @@ a.flyer-cta-script:focus-visible { color: #9f7c47; }
 .lang-switch { font-size: var(--fs-sm); font-weight: 600; }
 /* claude-v2: aside now holds Exposé form + Ansprechpartner + Teaser → taller than the viewport; no sticky (else bottom unreachable) */
 .expose-aside { position: static; }
+
+/* claude-final: Projektseite – Desktop: „Vormerken“ primär & zuerst; mobil: „Anrufen“ zuerst */
+@media (min-width: 769px) {
+  .project-hero-actions .hero-cta-vormerken { order: -1; background: var(--accent); color: var(--primary); border-color: var(--accent); }
+  .project-hero-actions .hero-cta-vormerken:hover { background: var(--accent-hover); }
+  .project-hero-actions .hero-cta-call { background: transparent; color: var(--primary); border-color: var(--primary); }
+}
+/* Telefonnummern nie mitten umbrechen */
+p a[href^="tel:"], .helmut-contact a[href^="tel:"], .flyer-foot a[href^="tel:"] { white-space: nowrap; }
+.nowrap { white-space: nowrap; }
+/* Objektseite: Textlinks unter den zwei Buttons, H1-Trenner, „Weitere Wohnungen“ */
+.expose-textlinks { margin: 0.6rem 0 0; font-size: var(--fs-sm); }
+.expose-title-sep { color: var(--muted, #6b7280); font-weight: 400; }
+.expose-sibling-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
+.expose-sibling-list li { display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; align-items: baseline; }
+.expose-sibling-list span { color: var(--muted, #6b7280); font-size: var(--fs-sm); }
+/* Start/EN mobil: Formularkarte bündig mit Hero-Text */
+@media (max-width: 899px) {
+  .hero .hero-form { padding-left: var(--space-3); padding-right: var(--space-3); }
+  .hero .hero-form .vormerk-form { margin-inline: 0; max-width: none; }
+}
+@media (max-width: 980px) {
+  .hero .hero-form { padding-left: var(--space-2); padding-right: var(--space-2); }
+}
+
+a[href^="mailto:"] { overflow-wrap: anywhere; }

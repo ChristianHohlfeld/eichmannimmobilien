@@ -126,8 +126,30 @@
     });
   }
 
+  /* "Vormerken"-Links (#vormerk…, #vormerken): Formular in den Blick holen und Namensfeld fokussieren,
+     damit der Klick auch dann sichtbar etwas tut, wenn das Formular schon im Viewport steht. */
+  function focusTarget(e) {
+    var link = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
+    if (!link) return;
+    var id = (link.getAttribute("href") || "").slice(1);
+    if (!id) return;
+    var target = document.getElementById(id);
+    if (!target) return;
+    var form = target.matches && target.matches("form[data-vormerk-form]") ? target : target.querySelector && target.querySelector("form[data-vormerk-form]");
+    if (!form) return;
+    var field = form.querySelector('[name="name"]');
+    if (!field) return;
+    e.preventDefault();
+    try { form.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (err) { form.scrollIntoView(); }
+    setTimeout(function () {
+      try { field.focus({ preventScroll: true }); } catch (err) { field.focus(); }
+    }, 350);
+    if (history && history.replaceState) { try { history.replaceState(null, "", "#" + id); } catch (err) {} }
+  }
+
   function boot() {
     document.querySelectorAll("form[data-vormerk-form]").forEach(init);
+    document.addEventListener("click", focusTarget);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();

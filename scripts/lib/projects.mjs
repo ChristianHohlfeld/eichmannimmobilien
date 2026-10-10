@@ -67,6 +67,18 @@ export async function loadProjectsDocument(siteRoot) {
   return doc;
 }
 
+/** Shorten at a word boundary (never mid-word), add … only if cut. */
+export function shortenAtWord(text, max = 140) {
+  const t = String(text || "").replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max + 1);
+  const sentence = cut.lastIndexOf(". ");
+  if (sentence >= max * 0.5) return cut.slice(0, sentence + 1);
+  const sp = cut.lastIndexOf(" ");
+  return (sp > 0 ? cut.slice(0, sp) : t.slice(0, max)).replace(/[\s,;:–-]+$/, "") + " …";
+}
+
 export function activeProjects(doc) {
   return (doc?.projects || []).filter((p) => p && p.active !== false && p.slug);
 }
@@ -80,6 +92,7 @@ export function toPublicFlyerJson(project, { origin = DEFAULT_ORIGIN } = {}) {
   const page = projectPagePath(project);
   const contactPath = project.pages?.contact_vormerkung || `kontakt.html?interesse=${project.slug}#contact-form`;
   const wa = whatsappUrl(project.cta?.whatsapp_text);
+  const waEn = project.cta?.whatsapp_text_en ? whatsappUrl(project.cta.whatsapp_text_en) : null;
   const img = project.images || {};
   const absImg = (entry) => {
     if (!entry) return null;
@@ -98,6 +111,7 @@ export function toPublicFlyerJson(project, { origin = DEFAULT_ORIGIN } = {}) {
     site: `${o}/`,
     pages: {
       project: absUrl(o, page),
+      ...(project.pages?.html_en ? { project_en: absUrl(o, project.pages.html_en), contact_en: absUrl(o, "en/contact.html?interesse=" + project.slug) } : {}),
       projekte: absUrl(o, project.pages?.projekte || "projekte.html"),
       contact_vormerkung: absUrl(o, contactPath),
       flyer_modal_on: (project.pages?.flyer_modal_on || ["index.html"]).map((p) =>
@@ -123,6 +137,7 @@ export function toPublicFlyerJson(project, { origin = DEFAULT_ORIGIN } = {}) {
       email_subject: project.cta?.email_subject || project.title,
       anliegen: project.cta?.anliegen || project.title,
       whatsapp: wa,
+      ...(waEn ? { whatsapp_en: waEn } : {}),
     },
     notes: project.notes || [],
     source: [PROJECTS_SOT_PATH, page, "assets/flyer/*"],
@@ -156,10 +171,11 @@ export function projectsForAiIndex(doc, { origin = DEFAULT_ORIGIN } = {}) {
     price_range: p.specs?.preise,
     provisionsfrei: /JA/i.test(String(p.specs?.provision || "")),
     url: absUrl(o, projectPagePath(p)),
+    ...(p.pages?.html_en ? { url_en: absUrl(o, p.pages.html_en) } : {}),
     flyer: absUrl(o, `ai/flyer-${p.slug}.json`),
     vormerkung_url: absUrl(o, p.pages?.contact_vormerkung || `kontakt.html?interesse=${p.slug}#contact-form`),
     short_description:
-      p.summary?.slice(0, 140) ||
+      shortenAtWord(p.summary, 140) ||
       `${p.building_count || ""} ${p.building_type || ""} mit ${p.unit_count || ""} Wohnungen`.trim(),
     mcp_next: ["get_flyer", "get_contact"],
     contact_hint:
@@ -471,7 +487,7 @@ ${faq
   return `${PROJECT_FACTS_START}
     <nav class="breadcrumb container" aria-label="Brotkrumen">
       <ol>
-        <li><a href="index.html">Startseite</a></li>
+        <li><a href="/">Startseite</a></li>
         <li><a href="${escapeHtml(projekte)}">Projekte</a></li>
         <li aria-current="page">${escapeHtml(crumbName)}</li>
       </ol>
@@ -482,8 +498,8 @@ ${faq
         <h1>${escapeHtml(project.h1 || project.title)}</h1>
         <p class="lead">${escapeHtml(project.lead || project.summary || "")}</p>
         <div class="hero-actions project-hero-actions">
-          <a class="btn btn-accent" href="tel:+491705225568" aria-label="Anrufen: +49 170 522 5568">Anrufen</a>
-          <a class="btn btn-outline" href="#vormerken">Vormerken</a>
+          <a class="btn btn-accent hero-cta-call" href="tel:+491705225568" aria-label="Anrufen: +49 170 522 5568">Anrufen</a>
+          <a class="btn btn-outline hero-cta-vormerken" href="#vormerken" data-focus-form="vormerk-projekt">Vormerken</a>
         </div>
         <p class="hero-links"><button type="button" class="linkish" data-open-flyer>Flyer öffnen</button> · <a href="tel:+491705225568">+49 170 522 5568</a> · Festnetz <a href="tel:+4975319228848">+49 7531 9228848</a></p>
       </div>

@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json",
   "name": "immobilien-eichmann-listings",
   "title": "Immobilien Eichmann – Listings",
-  "description": "Live MCP: Kaufangebote + Allmannsdorf (get_flyer/get_contact). Agents zeigen nur Kontakt-Links; kein Auto-Call/WhatsApp. Tools: search_listings, get_listing, get_flyer, get_contact.",
-  "version": "1.0.0",
+  "description": "MCP: Kaufangebote + Neubau Allmannsdorf (get_flyer/get_contact), Suche DE/EN. Agents zeigen nur Kontakt-Links; kein Auto-Call/WhatsApp. Tools: search_listings, get_listing, get_flyer, get_contact.",
+  "version": "1.4.0",
   "websiteUrl": "https://immobilieneichmann.de/",
   "repository": {
     "url": "https://github.com/ChristianHohlfeld/eichmannimmobilien",
@@ -20,10 +20,15 @@
       "mode": "streamable-http",
       "endpoint": "https://immobilieneichmann.de/mcp",
       "listings_index": "https://immobilieneichmann.de/ai/listings.json",
-      "listings_full": "https://immobilieneichmann.de/data/listings.json",
       "discovery": "https://immobilieneichmann.de/.well-known/mcp.json",
       "listing_count": 11,
-      "generated_at": "2026-10-10T10:37:42.791Z",
+      "data_as_of": "2026-10-10T11:21:57.250Z",
+      "generated_at": "2026-10-10T11:25:48.746Z",
+      "pages_en": {
+        "home": "https://immobilieneichmann.de/en/",
+        "allmannsdorf": "https://immobilieneichmann.de/en/allmannsdorf.html",
+        "contact": "https://immobilieneichmann.de/en/contact.html"
+      },
       "tools": [
         "search_listings",
         "get_listing",

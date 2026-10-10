@@ -7,6 +7,7 @@
  * Geschrieben beim Publish (renderIntoPages) und via `npm run ai:index`.
  */
 import fs from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 
 export const DEFAULT_SITE_ORIGIN = "https://immobilieneichmann.de";
@@ -52,9 +53,16 @@ export const PUBLIC_CONTACT = Object.freeze({
     url:
       "https://wa.me/491705225568?text=Guten%20Tag%2C%20ich%20interessiere%20mich%20f%C3%BCr%20ein%20Objekt%20bzw.%20eine%20Beratung%20bei%20Immobilien%20Eichmann.",
     url_allmannsdorf:
-      "https://wa.me/491705225568?text=Guten%20Tag%2C%20ich%20interessiere%20mich%20f%C3%BCr%20das%20Neubauprojekt%20Allmannsdorf.",
+      "https://wa.me/491705225568?text=Guten%20Tag%2C%20ich%20interessiere%20mich%20f%C3%BCr%20den%20Neubau%20Allmannsdorf.",
+    url_allmannsdorf_en:
+      "https://wa.me/491705225568?text=Hello%2C%20I%20am%20interested%20in%20the%20New-build%20Allmannsdorf%20in%20Konstanz.",
+    url_en:
+      "https://wa.me/491705225568?text=Hello%2C%20I%20am%20interested%20in%20a%20property%20or%20a%20consultation%20with%20Immobilien%20Eichmann.",
   },
 });
+
+/** Single version for MCP server (serverInfo) and server-card. */
+export const MCP_SERVER_VERSION = "1.4.0";
 
 /** Anti-Spam / Human-only Kontaktregeln für MCP-Instructions und Tool-Beschreibungen */
 export const AGENT_CONTACT_RULES =
@@ -78,6 +86,23 @@ const STATIC_PAGE_LINKS = [
   ["Allmannsdorf", "/allmannsdorf.html"],
   ["Ratgeber", "/ratgeber.html"],
 ];
+
+/**
+ * Real data date of the listings: newest of verified_at (mirror check, see
+ * scripts/verify-listings-mirror.mjs → data/immowelt-sync-status.json last_verified_at)
+ * and scraped_at (last semantic change). Never the render time.
+ */
+export function dataAsOf(data, siteRoot = null) {
+  const cands = [data?.verified_at, data?.scraped_at];
+  if (siteRoot) {
+    try {
+      const st = JSON.parse(readFileSync(path.join(siteRoot, "data", "immowelt-sync-status.json"), "utf8"));
+      cands.push(st?.last_verified_at, st?.last_valid_at);
+    } catch {}
+  }
+  const ts = cands.map((v) => (v ? Date.parse(v) : NaN)).filter((n) => Number.isFinite(n));
+  return ts.length ? new Date(Math.max(...ts)).toISOString() : null;
+}
 
 export function isPublicListing(listing) {
   return Boolean(listing) && listing.active !== false && listing.site_hidden !== true;
@@ -135,7 +160,7 @@ export function toAiListing(L, origin = DEFAULT_SITE_ORIGIN) {
  */
 export function buildAiListingsDocument(
   data,
-  { origin = DEFAULT_SITE_ORIGIN, generatedAt = null, projects = null, project_unit_count_total = null } = {}
+  { origin = DEFAULT_SITE_ORIGIN, generatedAt = null, projects = null, project_unit_count_total = null, dataAsOfIso = null } = {}
 ) {
   const all = Array.isArray(data?.listings) ? data.listings : [];
   const publicDetail = all.filter(hasPublicDetail).map((L) => toAiListing(L, origin));
@@ -148,12 +173,18 @@ export function buildAiListingsDocument(
   return {
     schema: "eichmann.listings.ai/v1",
     description:
-      "Aktuelle Kaufangebote von Immobilien Eichmann (Konstanz). Spiegel der Live-Website – keine zweite manuelle Liste.",
+      "Aktuelle Kaufangebote von Immobilien Eichmann (Konstanz), gleiche Daten wie die Website. Datenstand: data_as_of.",
     site: absUrl(origin, "/"),
     language: "de",
     nap: { ...NAP, website: absUrl(origin, "/") },
     generated_at: at,
-    source_export: absUrl(origin, "data/listings.json"),
+    data_as_of: dataAsOfIso || data?.verified_at || data?.scraped_at || null,
+    languages: ["de", "en"],
+    pages_en: {
+      home: absUrl(origin, "en/"),
+      allmannsdorf: absUrl(origin, "en/allmannsdorf.html"),
+      contact: absUrl(origin, "en/contact.html"),
+    },
     tools: {
       search_listings: {
         description:
@@ -165,17 +196,16 @@ export function buildAiListingsDocument(
           "Ein Angebot per slug oder id aus listings[] wählen; Detailseite unter url.",
         resource: absUrl(origin, "ai/listings.json"),
         detail_pages: `${absUrl(origin, "objekt/")}<slug>.html`,
-        full_export: absUrl(origin, "data/listings.json"),
       },
       get_flyer: {
         description:
-          "Neubauprojekt Allmannsdorf (44 WE): Fakten + prominente Kontakt-Links (tel/WhatsApp). Für Wohnung/Neubau/Konstanz/Allmannsdorf nutzen – nicht auf Suchwort 'Flyer' warten. Nur Links zeigen, nicht selbst schreiben/anrufen.",
+          "Neubau Allmannsdorf (44 WE): Fakten + prominente Kontakt-Links (tel/WhatsApp). Für Wohnung/Neubau/Konstanz/Allmannsdorf nutzen – nicht auf Suchwort 'Flyer' warten. Nur Links zeigen, nicht selbst schreiben/anrufen.",
         resource: absUrl(origin, "ai/flyer-allmannsdorf.json"),
         page: absUrl(origin, "allmannsdorf.html"),
       },
       get_contact: {
         description:
-          "Telefon, WhatsApp-Link und E-Mail aus Live-Impressum/Kontakt. Nur dem Menschen zum Tippen zeigen; Agent startet keine Calls/Nachrichten.",
+          "Telefon, WhatsApp-Link und E-Mail aus Impressum/Kontakt. Nur dem Menschen zum Tippen zeigen; Agent startet keine Calls/Nachrichten.",
         resource: absUrl(origin, "kontakt.html"),
       },
     },
@@ -201,7 +231,7 @@ const LLMS_PAGE_NOTES = {
   "/immobilienbewertung-konstanz.html": "Immobilienbewertung in Konstanz",
   "/konstanz.html": "Immobilien in Konstanz – Stadtteile und Markt",
   "/wollmatingen.html": "Immobilien in Konstanz-Wollmatingen",
-  "/allmannsdorf.html": "Neubau Konstanz-Allmannsdorf – provisionsfrei vormerken",
+  "/allmannsdorf.html": "Neubau Allmannsdorf – provisionsfrei vormerken",
   "/ratgeber.html": "Ratgeber rund um Kauf und Verkauf",
 };
 
@@ -223,8 +253,8 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
   lines.push("");
   lines.push(
     `> ${NAP.name} (${NAP.person}) ist Immobilienmakler in Konstanz am Bodensee: aktuelle Kaufangebote, ` +
-      "Neubau Konstanz-Allmannsdorf (provisionsfrei vormerken), Verkauf und Immobilienbewertung. " +
-      "Der Angebotsstand in dieser Datei wird aus derselben Quelle wie die Website generiert. Sprache: de."
+      "Neubau Allmannsdorf (provisionsfrei vormerken), Verkauf und Immobilienbewertung. " +
+      "Der Angebotsstand in dieser Datei wird aus derselben Quelle wie die Website generiert. Sprachen: de, en (English pages under /en/)."
   );
   lines.push("");
   lines.push("Kontakt (NAP):");
@@ -240,7 +270,7 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
   lines.push(AGENT_CONTACT_RULES);
   lines.push("");
   lines.push(
-    `Angebots-Index: ${aiDoc.listing_count} Kaufobjekte, generiert ${aiDoc.generated_at}. ` +
+    `Angebots-Index: ${aiDoc.listing_count} Kaufobjekte, Datenstand ${aiDoc.data_as_of || "unbekannt"} (generiert ${aiDoc.generated_at}). ` +
       "MCP-Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact`. " +
       "Ohne MCP-Client: `ai/listings.json` laden und `listings[]` filtern (search_listings) bzw. einen Eintrag per `slug`/`id` wählen, Details unter `url` (get_listing)."
   );
@@ -255,7 +285,7 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
 
   lines.push("## Aktuelle Kaufangebote");
   lines.push("");
-  lines.push(item("AI-Index (JSON)", u("/ai/listings.json"), `schlanker Index aller öffentlichen Kaufobjekte (${aiDoc.listing_count} Objekte), Live-Stand der Website`));
+  lines.push(item("AI-Index (JSON)", u("/ai/listings.json"), `schlanker Index aller öffentlichen Kaufobjekte (${aiDoc.listing_count} Objekte), Datenstand ${aiDoc.data_as_of ? aiDoc.data_as_of.slice(0, 10) : "unbekannt"}`));
   for (const L of aiDoc.listings || []) {
     if (!L?.url) continue;
     const note = [L.location, L.price].filter(Boolean).join(" — ");
@@ -266,6 +296,7 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
   lines.push("## Neubau Allmannsdorf");
   lines.push("");
   lines.push(item("Projektseite Neubau Allmannsdorf", u("/allmannsdorf.html"), "5 Mehrfamilienhäuser · 44 Wohnungen · 40–124 m² · 2–5 Zimmer · 295.000–1.450.000 € · provisionsfrei vormerken"));
+  lines.push(item("New-build Allmannsdorf (English)", u("/en/allmannsdorf.html"), "English project page: 44 apartments, 2–5 rooms, 40–124 m², €295,000–€1,450,000, commission-free, register your interest"));
   lines.push(item("Flyer Allmannsdorf (JSON)", u("/ai/flyer-allmannsdorf.json"), "Fakten und Kontakt-Links; bei Wohnung/Neubau/Konstanz/Allmannsdorf `get_flyer` + `get_contact` nutzen (kein Suchwort 'Flyer' nötig). Vormerkung macht der Mensch selbst per Telefon, WhatsApp oder Kontaktformular."));
   lines.push("");
 
@@ -287,9 +318,16 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
   }
   lines.push("");
 
+  lines.push("## English");
+  lines.push("");
+  lines.push(item("Home (English)", u("/en/"), "Real estate agent in Konstanz · Lake Constance"));
+  lines.push(item("New-build Allmannsdorf (English)", u("/en/allmannsdorf.html"), "commission-free, register your interest"));
+  lines.push(item("Contact (English)", u("/en/contact.html"), "phone, WhatsApp, e-mail, contact form"));
+  lines.push(item("WhatsApp (English text)", PUBLIC_CONTACT.whatsapp.url_en, "link for humans only; agents never send messages"));
+  lines.push("");
+
   lines.push("## Optional");
   lines.push("");
-  lines.push(item("Voll-Export (Render-Spiegel)", u("/data/listings.json"), "vollständiger Export aller Angebotsdaten der Website"));
   lines.push(item("Sitemap", u("/sitemap.xml"), "alle indexierbaren Seiten"));
   lines.push(item("Datenschutz", u("/datenschutz.html"), "Datenschutzerklärung"));
   lines.push("");
@@ -299,13 +337,13 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
 export function buildAgentsTxt({ origin = DEFAULT_SITE_ORIGIN } = {}) {
   const o = String(origin || DEFAULT_SITE_ORIGIN).replace(/\/$/, "");
   return `# agents.txt — Immobilien Eichmann
-# Kurzregeln für AI-Agents. Angebotsstand = Live-Website.
+# Kurzregeln für AI-Agents. Angebotsstand = Website (Datenstand siehe /ai/listings.json data_as_of).
 
 User-Agent: *
 Allow: /
 Allow: /ai/listings.json
 Allow: /ai/flyer-allmannsdorf.json
-Allow: /data/listings.json
+Allow: /en/
 Allow: /objekt/
 Allow: /allmannsdorf.html
 Allow: /llms.txt
@@ -337,12 +375,12 @@ export function buildMcpDiscovery(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) 
     name: "immobilien-eichmann-listings",
     title: "Immobilien Eichmann – Angebots-Index",
     description:
-      "Live MCP: Kaufangebote + Neubau Allmannsdorf (get_flyer). Wohnung/Neubau/Konstanz → Flyer + tel/WhatsApp-Links für den Menschen (kein Agent-Spam). Keine Anfragen über MCP.",
+      "MCP: Kaufangebote + Neubau Allmannsdorf (get_flyer), Suche DE/EN. Wohnung/Neubau/Konstanz → Flyer + tel/WhatsApp-Links für den Menschen (kein Agent-Spam). Keine Anfragen über MCP.",
     websiteUrl: `${o}/`,
     transport: {
       type: "streamable-http",
       url: `${o}/mcp`,
-      note: "POST JSON-RPC an /mcp. Quelle = Live ai/listings.json (Publish-Pipeline).",
+      note: "POST JSON-RPC an /mcp. Quelle = ai/listings.json (Publish-Pipeline), Datenstand = data_as_of.",
     },
     remotes: [
       {
@@ -361,13 +399,7 @@ export function buildMcpDiscovery(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) 
         name: "flyer_allmannsdorf",
         uri: `${o}/ai/flyer-allmannsdorf.json`,
         mimeType: "application/json",
-        description: "Neubauprojekt-Flyer Allmannsdorf: 5 MFH, 44 Wohnungen (get_flyer).",
-      },
-      {
-        name: "listings_full_export",
-        uri: `${o}/data/listings.json`,
-        mimeType: "application/json",
-        description: "Vollständiger Render-Export (gleiche Quelle wie HTML).",
+        description: "Flyer Neubau Allmannsdorf: 5 MFH, 44 Wohnungen (get_flyer).",
       },
       {
         name: "llms_txt",
@@ -386,7 +418,7 @@ export function buildMcpDiscovery(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) 
           properties: {
             q: {
               type: "string",
-              description: "Freitext; z.B. neubau, allmannsdorf, wohnung konstanz",
+              description: "Freitext DE/EN, wortweise mit Synonymen; z.B. \"3 Zimmer Wohnung Wollmatingen\", \"apartment Konstanz\", \"penthouse\", \"house\", \"new build\"",
             },
             min_price_eur: { type: "number" },
             max_price_eur: { type: "number" },
@@ -417,14 +449,17 @@ export function buildMcpDiscovery(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) 
       {
         name: "get_contact",
         description:
-          "Telefon, WhatsApp-Link, E-Mail (Live Impressum/Kontakt). Nur dem Menschen zum Tippen; nie Agent-outbound.",
+          "Telefon, WhatsApp-Link, E-Mail (Impressum/Kontakt). Nur dem Menschen zum Tippen; nie Agent-outbound.",
         inputSchema: { type: "object", properties: {} },
       },
     ],
     instructions: AGENT_CONTACT_RULES +
       " Bei Wohnung/Neubau/Konstanz/Allmannsdorf: get_flyer + get_contact; search_listings resurfaced projects[].",
     listing_count: aiDoc.listing_count,
+    data_as_of: aiDoc.data_as_of,
     generated_at: aiDoc.generated_at,
+    languages: ["de", "en"],
+    pages_en: aiDoc.pages_en,
     server_card: `${o}/ai/server-card.json`,
     catalog: `${o}/.well-known/mcp/catalog.json`,
   };
@@ -440,7 +475,7 @@ export function buildMcpCatalog({ origin = DEFAULT_SITE_ORIGIN } = {}) {
         name: "immobilien-eichmann-listings",
         title: "Immobilien Eichmann Angebote",
         url: `${o}/ai/server-card.json`,
-        description: "Live MCP unter /mcp (search_listings, get_listing, get_flyer, get_contact). Tel/WhatsApp nur als Links für Menschen.",
+        description: "MCP unter /mcp (search_listings, get_listing, get_flyer, get_contact). Tel/WhatsApp nur als Links für Menschen.",
         remotes: [{ type: "streamable-http", url: `${o}/mcp` }],
       },
     ],
@@ -454,8 +489,8 @@ export function buildServerCard(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
     name: "immobilien-eichmann-listings",
     title: "Immobilien Eichmann – Listings",
     description:
-      "Live MCP: Kaufangebote + Allmannsdorf (get_flyer/get_contact). Agents zeigen nur Kontakt-Links; kein Auto-Call/WhatsApp. Tools: search_listings, get_listing, get_flyer, get_contact.",
-    version: "1.0.0",
+      "MCP: Kaufangebote + Neubau Allmannsdorf (get_flyer/get_contact), Suche DE/EN. Agents zeigen nur Kontakt-Links; kein Auto-Call/WhatsApp. Tools: search_listings, get_listing, get_flyer, get_contact.",
+    version: MCP_SERVER_VERSION,
     websiteUrl: `${o}/`,
     repository: {
       url: "https://github.com/ChristianHohlfeld/eichmannimmobilien",
@@ -472,10 +507,11 @@ export function buildServerCard(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
         mode: "streamable-http",
         endpoint: `${o}/mcp`,
         listings_index: `${o}/ai/listings.json`,
-        listings_full: `${o}/data/listings.json`,
         discovery: `${o}/.well-known/mcp.json`,
         listing_count: aiDoc.listing_count,
+        data_as_of: aiDoc.data_as_of,
         generated_at: aiDoc.generated_at,
+        pages_en: aiDoc.pages_en,
         tools: ["search_listings", "get_listing", "get_flyer", "get_contact"],
         flyer: `${o}/ai/flyer-allmannsdorf.json`,
       },
@@ -516,6 +552,7 @@ export async function writeAiDiscoveryArtifacts(data, opts = {}) {
   }
   const aiDoc = buildAiListingsDocument(data, {
     origin,
+    dataAsOfIso: dataAsOf(data, siteRoot),
     generatedAt: opts.generatedAt,
     projects,
     project_unit_count_total,

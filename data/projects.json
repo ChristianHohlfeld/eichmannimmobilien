@@ -1,20 +1,20 @@
 {
   "schema": "eichmann.projects.sot/v1",
   "description": "Single source of truth for homepage flyer / Neubau projects. Publish regenerates ai/flyer-*.json, project SEO pages, sitemap entries, and MCP projects[]. Remove or set active=false → artifacts removed on next publish.",
-  "updated_at": "2026-10-08T14:00:00+02:00",
+  "updated_at": "2026-10-10T13:30:00+02:00",
   "projects": [
     {
       "id": "neubau-allmannsdorf",
       "slug": "allmannsdorf",
       "active": true,
       "kind": "neubau_vormerkung",
-      "title": "Neubauprojekt Konstanz-Allmannsdorf",
-      "page_title": "Neubau Konstanz-Allmannsdorf | Wohnungen mit Seesicht vormerken",
-      "meta_description": "Neubau in Konstanz-Allmannsdorf: 44 Eigentumswohnungen, 2–5 Zimmer, 40–124 m², viele mit Seeblick auf den Bodensee. Provisionsfrei – jetzt vormerken.",
-      "h1": "Neubau Konstanz-Allmannsdorf: Wohnungen mit Seesicht",
-      "lead": "44 Eigentumswohnungen in 5 Mehrfamilienhäusern, viele mit Blick auf den Bodensee – provisionsfrei vormerken.",
-      "summary": "Neubau in Konstanz-Allmannsdorf – jetzt provisionsfrei vormerken. 5 Mehrfamilienhäuser mit 44 Wohnungen. Viele Wohnungen mit traumhafter Seesicht.",
-      "description": "Der Neubau Allmannsdorf ist ein modernes Wohnensemble mit 5 Mehrfamilienhäusern und insgesamt 44 hochwertigen Wohnungen in einer der gefragtesten Wohnlagen von Konstanz. Freuen Sie sich auf durchdachte Grundrisse, lichtdurchflutete Räume und eine Architektur, die Design, Komfort und Lebensqualität vereint. Viele Wohnungen bieten einen einzigartigen Blick auf den Bodensee.",
+      "title": "Neubau Allmannsdorf",
+      "page_title": "Neubau Allmannsdorf in Konstanz | Provisionsfrei vormerken",
+      "meta_description": "Neubau Allmannsdorf in Konstanz: 44 Eigentumswohnungen in 5 Mehrfamilienhäusern, 2–5 Zimmer, 40–124 m², 295.000–1.450.000 €. Provisionsfrei – jetzt vormerken.",
+      "h1": "Neubau Allmannsdorf – provisionsfrei vormerken",
+      "lead": "44 Eigentumswohnungen in 5 Mehrfamilienhäusern in Konstanz-Allmannsdorf: 2–5 Zimmer, 40–124 m², 295.000–1.450.000 €.",
+      "summary": "Neubau Allmannsdorf in Konstanz – jetzt provisionsfrei vormerken. 5 Mehrfamilienhäuser mit 44 Wohnungen.",
+      "description": "Der Neubau Allmannsdorf ist ein modernes Wohnensemble mit 5 Mehrfamilienhäusern und insgesamt 44 hochwertigen Wohnungen in einer der gefragtesten Wohnlagen von Konstanz. Freuen Sie sich auf durchdachte Grundrisse, lichtdurchflutete Räume und eine Architektur, die Design, Komfort und Lebensqualität vereint.",
       "unit_count": 44,
       "building_count": 5,
       "building_type": "Mehrfamilienhäuser",
@@ -23,7 +23,6 @@
         "lage": "Konstanz-Allmannsdorf",
         "gebaeude": "5 Mehrfamilienhäuser",
         "einheiten": "44 Wohnungen",
-        "highlight": "Viele Wohnungen mit traumhafter Seesicht",
         "flaechen": "40–124 m²",
         "zimmer": "2–5",
         "grundstueck": "ca. 4.000 m²",
@@ -45,7 +44,7 @@
       ],
       "checks": [
         "5 Mehrfamilienhäuser mit 44 Wohnungen",
-        "Viele Wohnungen mit traumhafter Seesicht"
+        "2–5 Zimmer · 40–124 m²"
       ],
       "images": {
         "hero": {
@@ -66,7 +65,8 @@
         "email": "info@immobilien-eichmann.com",
         "email_subject": "Vormerkung Neubau Allmannsdorf",
         "anliegen": "Vormerkung Neubau Allmannsdorf",
-        "whatsapp_text": "Guten Tag, ich interessiere mich für das Neubauprojekt Allmannsdorf."
+        "whatsapp_text": "Guten Tag, ich interessiere mich für den Neubau Allmannsdorf.",
+        "whatsapp_text_en": "Hello, I am interested in the New-build Allmannsdorf in Konstanz."
       },
       "pages": {
         "html": "allmannsdorf.html",
@@ -79,7 +79,7 @@
         "html_en": "en/allmannsdorf.html"
       },
       "notes": [
-        "Die 44 Wohnungen sind das Neubauprojekt (Flyer), keine 44 einzelnen Immowelt-Kaufanzeigen.",
+        "Die 44 Wohnungen sind der Neubau Allmannsdorf (Flyer), keine 44 einzelnen Immowelt-Kaufanzeigen.",
         "Einzelobjekt-Exposés je Wohnung sind öffentlich noch nicht als listings[] veröffentlicht.",
         "Agents: get_flyer bei Wohnung/Neubau/Konstanz/Allmannsdorf – Suchwort 'Flyer' nicht nötig.",
         "Kontakt: nur Links für den Menschen (tel/WhatsApp). Kein Agent-Outbound."
@@ -94,17 +94,17 @@
       },
       "location_text": [
         "Allmannsdorf ist ein Stadtteil im Osten von Konstanz (PLZ 78464). Er liegt rechtsrheinisch auf einem Höhenrücken oberhalb von Staad – zwischen Innenstadt, Universität und Insel Mainau, nah am Bodensee.",
-        "Das Neubauensemble liegt in dieser ruhigen und gefragten Lage. Viele der 44 Wohnungen bieten einen Blick auf den Bodensee. Konstanz grenzt direkt an Kreuzlingen – auch für Käuferinnen und Käufer aus der Schweiz ist Allmannsdorf gut erreichbar."
+        "Das Neubauensemble liegt in dieser ruhigen und gefragten Lage. Konstanz grenzt direkt an Kreuzlingen – auch für Käuferinnen und Käufer aus der Schweiz ist Allmannsdorf gut erreichbar."
       ],
       "gallery": [
         {
           "key": "hero",
-          "alt": "Wohn- und Essbereich mit Seesicht – Neubau Konstanz-Allmannsdorf",
-          "caption": "Wohnen mit Seesicht"
+          "alt": "Wohn- und Essbereich – Neubau Allmannsdorf",
+          "caption": "Wohnen"
         },
         {
           "key": "living",
-          "alt": "Wohnzimmer mit Blick auf den Bodensee – Neubau Allmannsdorf",
+          "alt": "Wohnzimmer – Neubau Allmannsdorf",
           "caption": "Wohnzimmer"
         },
         {
@@ -125,10 +125,6 @@
         {
           "q": "Ist der Kauf provisionsfrei?",
           "a": "Ja. Die Wohnungen im Neubau Allmannsdorf werden provisionsfrei angeboten."
-        },
-        {
-          "q": "Haben die Wohnungen Seesicht?",
-          "a": "Viele Wohnungen bieten einen Blick auf den Bodensee. Welche Einheiten Seesicht haben, besprechen wir persönlich bei der Vormerkung."
         },
         {
           "q": "Wie ist die Ausstattung?",

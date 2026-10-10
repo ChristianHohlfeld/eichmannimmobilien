@@ -1,11 +1,11 @@
 # agents.txt — Immobilien Eichmann
-# Kurzregeln für AI-Agents. Angebotsstand = Live-Website.
+# Kurzregeln für AI-Agents. Angebotsstand = Website (Datenstand siehe /ai/listings.json data_as_of).
 
 User-Agent: *
 Allow: /
 Allow: /ai/listings.json
 Allow: /ai/flyer-allmannsdorf.json
-Allow: /data/listings.json
+Allow: /en/
 Allow: /objekt/
 Allow: /allmannsdorf.html
 Allow: /llms.txt

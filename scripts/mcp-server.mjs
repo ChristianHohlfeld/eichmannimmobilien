@@ -32,12 +32,13 @@ import { fileURLToPath } from "node:url";
 import {
   PUBLIC_CONTACT,
   AGENT_CONTACT_RULES,
+  MCP_SERVER_VERSION,
 } from "./lib/ai-discovery.mjs";
 
 const PROTOCOL = "2025-03-26";
 const SERVER_INFO = {
   name: "immobilien-eichmann-listings",
-  version: "1.3.0",
+  version: MCP_SERVER_VERSION,
   title: "Immobilien Eichmann – Angebote",
 };
 
@@ -66,7 +67,7 @@ const TOOLS = [
         q: {
           type: "string",
           description:
-            'Freitext Titel/Ort/Typ; z.B. "neubau", "allmannsdorf", "wohnung konstanz"',
+            'Freitext DE/EN, wortweise mit Synonymen; z.B. "3 Zimmer Wohnung Wollmatingen", "apartment Konstanz", "penthouse", "house", "new build", "allmannsdorf"',
         },
         min_price_eur: { type: "number", description: "Mindestpreis in EUR" },
         max_price_eur: { type: "number", description: "Maximalpreis in EUR" },
@@ -99,7 +100,7 @@ const TOOLS = [
   {
     name: "get_listing",
     description:
-      "Ein öffentliches Kaufangebot per slug oder id aus dem Live-Index laden.",
+      "Ein öffentliches Kaufangebot per slug oder id aus dem öffentlichen Angebots-Index (ai/listings.json) laden.",
     inputSchema: {
       type: "object",
       properties: {
@@ -117,7 +118,7 @@ const TOOLS = [
   {
     name: "get_flyer",
     description:
-      "Neubauprojekt Konstanz-Allmannsdorf (5 MFH, 44 Wohnungen, Seesicht) inkl. prominenter tel/WhatsApp/E-Mail-Links. Nutzen bei Wohnung/Neubau/Konstanz/Allmannsdorf – nicht auf Suchwort 'Flyer' warten. Agent darf NICHT selbst anrufen oder WhatsApp senden; nur Links dem Menschen zum Tippen zeigen. Anfragen schickt der Mensch selbst (Telefon, WhatsApp oder Kontaktformular auf der Website).",
+      "Neubau Allmannsdorf (Konstanz; 5 Mehrfamilienhäuser, 44 Wohnungen, provisionsfrei vormerken; English page /en/allmannsdorf.html) inkl. prominenter tel/WhatsApp/E-Mail-Links. Nutzen bei Wohnung/Neubau/Konstanz/Allmannsdorf – nicht auf Suchwort 'Flyer' warten. Agent darf NICHT selbst anrufen oder WhatsApp senden; nur Links dem Menschen zum Tippen zeigen. Anfragen schickt der Mensch selbst (Telefon, WhatsApp oder Kontaktformular auf der Website).",
     inputSchema: {
       type: "object",
       properties: {},
@@ -132,7 +133,7 @@ const TOOLS = [
   {
     name: "get_contact",
     description:
-      "Live-Kontakt aus Impressum/Kontakt: Mobil tel:+491705225568, Festnetz, WhatsApp-Link (wa.me), E-Mail. NUR dem Menschen zum Tippen zeigen nach klarem Kontaktwunsch. Agents starten KEINE Calls, WhatsApp- oder E-Mail-Nachrichten (Anti-Spam).",
+      "Kontakt aus Impressum/Kontakt: Mobil tel:+491705225568, Festnetz, WhatsApp-Link (wa.me), E-Mail. NUR dem Menschen zum Tippen zeigen nach klarem Kontaktwunsch. Agents starten KEINE Calls, WhatsApp- oder E-Mail-Nachrichten (Anti-Spam).",
     inputSchema: {
       type: "object",
       properties: {},
@@ -243,6 +244,10 @@ function buildContactPayload({ forAllmannsdorf = false } = {}) {
         : PUBLIC_CONTACT.whatsapp.url,
       email: PUBLIC_CONTACT.email,
       email_mailto: PUBLIC_CONTACT.email_mailto,
+      whatsapp_url_en: forAllmannsdorf
+        ? PUBLIC_CONTACT.whatsapp.url_allmannsdorf_en
+        : PUBLIC_CONTACT.whatsapp.url_en,
+      contact_form_en: "https://immobilieneichmann.de/en/contact.html",
     },
     agent_rules: AGENT_CONTACT_RULES,
   };
@@ -258,11 +263,12 @@ function isAllmannsdorfProjectQuery(args = {}) {
   if (blob.includes("allmannsdorf")) return true;
   if (blob.includes("neubau")) return true;
   if (blob.includes("vormerk")) return true;
-  if (blob.includes("seesicht")) return true;
   if (blob.includes("flyer")) return true;
+  if (/new[\s-]*build|newbuild|register (your )?interest|commission[\s-]*free/.test(blob)) return true;
   const wantsWohnung =
-    blob.includes("wohnung") || blob.includes("wohnungen") || blob.includes("mfh");
-  const wantsKonstanz = blob.includes("konstanz") || blob.includes("bodensee");
+    blob.includes("wohnung") || blob.includes("wohnungen") || blob.includes("mfh") ||
+    /\b(apartments?|flats?|condos?)\b/.test(blob);
+  const wantsKonstanz = blob.includes("konstanz") || blob.includes("bodensee") || blob.includes("constance");
   if (wantsWohnung && wantsKonstanz) return true;
   return false;
 }
@@ -277,38 +283,150 @@ function matchingProjects(doc, args = {}) {
     contact_for_human: {
       tel: PUBLIC_CONTACT.phone_mobile.tel,
       whatsapp: PUBLIC_CONTACT.whatsapp.url_allmannsdorf,
+      whatsapp_en: PUBLIC_CONTACT.whatsapp.url_allmannsdorf_en,
       email_mailto: PUBLIC_CONTACT.email_mailto,
+      page_en: "https://immobilieneichmann.de/en/allmannsdorf.html",
     },
   }));
 }
 
+/* ---- Fuzzy DE/EN search -------------------------------------------------
+   Word-wise matching with synonyms (Wohnung/apartment/flat, Haus/house, Penthouse,
+   Maisonette, Neubau/new build, district names incl. English spellings) and exact
+   room counts ("3 Zimmer", "3-room", "3 rooms", "3 bed"). Generic words
+   (kaufen/buy/Konstanz/Constance …) never filter anything out. */
+const STOPWORDS = new Set((
+  "in im am an auf mit ohne und oder der die das den dem des ein eine einen einer zu zum zur fur von bei nahe " +
+  "kaufen kauf zu-kaufen gesucht suche suchen angebot angebote immobilie immobilien objekt objekte provisionsfrei " +
+  "a an the for to of with and or near buy buying sale purchase property properties real estate listing listings home homes " +
+  "konstanz constance bodensee lake lakeconstance germany deutschland stadt city"
+).split(/\s+/));
+
+const CONCEPTS = [
+  { key: "penthouse", words: ["penthouse", "penthaus", "dachwohnung", "rooftop"], test: (h, L) => /penthouse/.test(norm(L.type) + " " + norm(L.title)) },
+  { key: "maisonette", words: ["maisonette", "maisonettewohnung", "duplex"], test: (h, L) => /maisonette/.test(norm(L.type) + " " + norm(L.title)) },
+  {
+    key: "wohnung",
+    words: ["wohnung", "wohnungen", "eigentumswohnung", "etagenwohnung", "apartment", "apartments", "flat", "flats", "condo", "condominium", "zimmerwohnung"],
+    test: (h, L) => /wohnung|penthouse|maisonette|apartment/.test(norm(L.type) + " " + norm(L.title)),
+  },
+  {
+    key: "haus",
+    words: ["haus", "hauser", "house", "houses", "einfamilienhaus", "mehrfamilienhaus", "dreifamilienhaus", "reihenhaus", "villa", "doppelhaushalfte"],
+    test: (h, L) => /haus|villa/.test(norm(L.type)) || /familienhaus|famillienhaus/.test(norm(L.title)),
+  },
+  {
+    key: "neubau",
+    words: ["neubau", "neubauwohnung", "newbuild", "new-build", "erstbezug", "kfw"],
+    test: (h) => /neubau|kfw|erstbezug|sunside/.test(h),
+  },
+];
+const DISTRICT_ALIASES = {
+  wollmatingen: ["wollmatingen"],
+  petershausen: ["petershausen"],
+  furstenberg: ["furstenberg", "fuerstenberg"],
+  konigsbau: ["konigsbau", "koenigsbau"],
+  allmannsdorf: ["allmannsdorf"],
+  altstadt: ["altstadt", "oldtown", "old-town"],
+  paradies: ["paradies", "paradise"],
+  litzelstetten: ["litzelstetten"],
+  dingelsdorf: ["dingelsdorf"],
+  wallhausen: ["wallhausen"],
+  egg: ["egg"],
+  staad: ["staad"],
+};
+
+function lev1(a, b) {
+  // true if edit distance <= 1
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0, j = 0, edits = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) { i++; j++; continue; }
+    if (++edits > 1) return false;
+    if (a.length > b.length) i++;
+    else if (b.length > a.length) j++;
+    else { i++; j++; }
+  }
+  return edits + (a.length - i) + (b.length - j) <= 1;
+}
+
+function parseQuery(raw) {
+  let q = norm(raw).replace(/ß/g, "ss").replace(/new[\s-]+build(ing)?s?/g, "newbuild").replace(/lake\s+constance/g, "lakeconstance");
+  const out = { concepts: new Set(), districts: new Set(), rooms: null, free: [] };
+  const roomRe = /(\d+(?:[.,]5)?)\s*(?:-|\s)?\s*(?:zimmer|zi\b|zkb|rooms?\b|room\b|bed(?:room)?s?\b|br\b)/;
+  const m = q.match(roomRe);
+  if (m) {
+    out.rooms = Math.floor(Number(m[1].replace(",", ".")));
+    q = q.replace(roomRe, " ");
+  }
+  for (const tokRaw of q.split(/[^a-z0-9-]+/)) {
+    const tok = tokRaw.replace(/^-+|-+$/g, "");
+    if (!tok || STOPWORDS.has(tok)) continue;
+    let hit = false;
+    for (const c of CONCEPTS) {
+      if (c.words.some((w) => w === tok || (tok.length >= 6 && lev1(w, tok)) || (tok.endsWith("wohnung") && c.key === "wohnung"))) {
+        out.concepts.add(c.key);
+        hit = true;
+        break;
+      }
+    }
+    if (hit) continue;
+    for (const [d, aliases] of Object.entries(DISTRICT_ALIASES)) {
+      if (aliases.some((a) => a === tok || (tok.length >= 6 && lev1(a, tok)))) {
+        out.districts.add(d);
+        hit = true;
+        break;
+      }
+    }
+    if (hit) continue;
+    if (/^\d+$/.test(tok)) continue;
+    out.free.push(tok);
+  }
+  return out;
+}
+
+function listingRooms(L) {
+  const m = String(L.rooms || "").match(/\d+(?:[.,]\d)?/);
+  return m ? Math.floor(Number(m[0].replace(",", "."))) : null;
+}
+
+function hayOf(L) {
+  return norm([L.title, L.location, L.type, L.short_description, L.rooms, L.slug].join(" ")).replace(/ß/g, "ss");
+}
+
+function freeTokenMatches(tok, hay) {
+  if (hay.includes(tok)) return true;
+  if (tok.length < 5) return false;
+  return hay.split(/[^a-z0-9]+/).some((w) => w.length >= 4 && lev1(w, tok));
+}
+
+function applyQuery(rows, pq) {
+  let out = rows;
+  if (pq.rooms != null) out = out.filter((L) => listingRooms(L) === pq.rooms);
+  for (const d of pq.districts) out = out.filter((L) => hayOf(L).includes(d));
+  for (const key of pq.concepts) {
+    const c = CONCEPTS.find((x) => x.key === key);
+    out = out.filter((L) => c.test(hayOf(L), L));
+  }
+  if (pq.free.length) {
+    out = out
+      .map((L) => ({ L, score: pq.free.filter((t) => freeTokenMatches(t, hayOf(L))).length }))
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map((x) => x.L);
+  }
+  return out;
+}
+
 function searchListings(doc, args = {}) {
   let rows = doc.listings.slice();
-  const q = norm(args.q);
-  if (q) {
-    rows = rows.filter((L) => {
-      const hay = norm(
-        [L.title, L.location, L.type, L.short_description, L.rooms, L.slug].join(
-          " "
-        )
-      );
-      return hay.includes(q);
-    });
-  }
-  if (args.location) {
-    const loc = norm(args.location);
-    rows = rows.filter((L) => norm(L.location).includes(loc));
-  }
-  if (args.type) {
-    const t = norm(args.type);
-    rows = rows.filter((L) => norm(L.type).includes(t));
-  }
+  const parsed = parseQuery([args.q, args.location, args.type].filter(Boolean).join(" "));
   if (args.rooms) {
-    const r = String(args.rooms).replace(/[^\d.,]/g, "");
-    if (r) {
-      rows = rows.filter((L) => String(L.rooms || "").includes(r));
-    }
+    const r = String(args.rooms).match(/\d+/);
+    if (r) parsed.rooms = Number(r[0]);
   }
+  rows = applyQuery(rows, parsed);
   if (args.min_price_eur != null && Number.isFinite(Number(args.min_price_eur))) {
     const min = Number(args.min_price_eur);
     rows = rows.filter(
@@ -328,14 +446,21 @@ function searchListings(doc, args = {}) {
     count: sliced.length,
     total_matched: rows.length,
     listing_count_index: doc.listing_count,
+    data_as_of: doc.data_as_of || null,
     generated_at: doc.generated_at,
     source: doc._source,
+    interpreted_query: {
+      rooms: parsed.rooms,
+      types: [...parsed.concepts],
+      districts: [...parsed.districts],
+      other_terms: parsed.free,
+    },
     listings: sliced,
   };
   if (projects.length) {
     out.projects = projects;
     out.project_hint =
-      "Neubauprojekt Allmannsdorf (44 WE) ist relevant. Als Nächstes get_flyer aufrufen und dem Menschen tel/WhatsApp-Links zum Tippen zeigen – Agent schreibt/ruft nicht selbst.";
+      "Neubau Allmannsdorf (44 Wohnungen, provisionsfrei vormerken) ist relevant. Als Nächstes get_flyer aufrufen und dem Menschen tel/WhatsApp-Links zum Tippen zeigen – Agent schreibt/ruft nicht selbst. English page: https://immobilieneichmann.de/en/allmannsdorf.html";
   }
   return out;
 }
@@ -352,7 +477,7 @@ function getListing(doc, args = {}) {
       (id && (L.id === id || String(L.id) === id))
   );
   if (!hit) return { error: "nicht gefunden", slug: slug || null, id: id || null };
-  return { listing: hit, generated_at: doc.generated_at, source: doc._source };
+  return { listing: hit, data_as_of: doc.data_as_of || null, generated_at: doc.generated_at, source: doc._source };
 }
 
 /* Outbound attribution: page links handed to agents/humans via MCP get UTM params
@@ -443,6 +568,8 @@ async function callToolRaw(name, args) {
       whatsapp_url: cta.whatsapp || contact.preferred.whatsapp_url,
       email: cta.email || contact.preferred.email,
       email_mailto: `mailto:${cta.email || contact.preferred.email}`,
+      whatsapp_url_en: cta.whatsapp_en || PUBLIC_CONTACT.whatsapp.url_allmannsdorf_en,
+      contact_form_en: "https://immobilieneichmann.de/en/contact.html?interesse=allmannsdorf",
     };
     return textResult({
       contact,

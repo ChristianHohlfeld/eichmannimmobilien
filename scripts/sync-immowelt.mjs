@@ -31,8 +31,9 @@ import { reconcileMissingImmoweltOffers } from "./lib/immowelt-reconcile.mjs";
 import { publicImmoweltSyncReason } from "./lib/immowelt-public-reason.mjs";
 import { hasImmoweltApiKey, readImmoweltCredentials } from "./lib/immowelt-secrets.mjs";
 import { fetchOfficialImmoweltListings } from "./lib/immowelt-official-api.mjs";
-import { writeAiDiscoveryArtifacts } from "./lib/ai-discovery.mjs";
+import { writeAiDiscoveryArtifacts, dataAsOf } from "./lib/ai-discovery.mjs";
 import { publishProjects } from "./lib/projects.mjs";
+import { stripProjectStatus } from "./lib/listing-text.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.EICHMANN_SITE_ROOT
@@ -78,11 +79,8 @@ const STATIC_SITEMAP_PATHS = [
   { loc: "/en/", priority: "0.7", changefreq: "weekly" },
   { loc: "/en/allmannsdorf.html", priority: "0.7", changefreq: "weekly" },
   { loc: "/en/contact.html", priority: "0.6", changefreq: "monthly" },
-  { loc: "/llms.txt", priority: "0.6", changefreq: "weekly" },
-  { loc: "/agents.txt", priority: "0.4", changefreq: "monthly" },
-  { loc: "/ai/listings.json", priority: "0.9", changefreq: "daily" },
-  { loc: "/.well-known/mcp.json", priority: "0.5", changefreq: "monthly" },
 ];
+// Sitemap = HTML pages only (llms.txt/agents.txt/JSON are referenced from robots.txt/llms.txt instead).
 
 const args = new Set(process.argv.slice(2));
 const fromJsonArg = (() => {
@@ -922,6 +920,111 @@ function pictureTag(base, alt, { prefix = "", loading = "lazy", className = "", 
             </picture>`;
 }
 
+function listingDistrict(listing) {
+  return String(listing?.location || "").split(",")[0].replace(/\s*\(\d{5}\)\s*$/, "").trim();
+}
+function isProvisionsfrei(listing) {
+  const v = String(listing?.facts?.["Käuferprovision"] || "");
+  return /provisionsfrei/i.test(v) || /provisionsfrei/i.test(String(listing?.title || ""));
+}
+/** Meta description aus strukturierten Feldern (statt abgeschnittenem Exposé-Rohtext). */
+function exposeMetaDescription(listing) {
+  const ref = listingReference(listing);
+  const kind = String(listing?.type || "Immobilie").trim();
+  const district = listingDistrict(listing);
+  const where = district && !/^konstanz$/i.test(district) ? `Konstanz-${district}` : "Konstanz";
+  const facts = [listing?.rooms, listing?.living_area].filter(Boolean).join(", ");
+  const price = listing?.price ? String(listing.price).trim() : "";
+  let out = `${kind}${ref ? " " + ref : ""} in ${where}${facts ? ": " + facts : ""}${price ? ", " + price : ""}${isProvisionsfrei(listing) ? ", provisionsfrei" : ""}.`;
+  out += " Exposé und Besichtigung: +49 170 522 5568 – Immobilien Eichmann.";
+  return out.length > 160 ? out.replace(" – Immobilien Eichmann.", ".") : out;
+}
+
+/** Listings im selben Neubau (gleicher Lagetext) – für „Weitere Wohnungen in diesem Neubau“. */
+function siblingKey(listing) {
+  const loc = String(listing?.location_description || "").replace(/\s+/g, " ").trim();
+  return loc.length >= 80 ? loc.slice(0, 160) : "";
+}
+let __siblingIndex = null;
+function setSiblingIndex(listings) {
+  __siblingIndex = new Map();
+  for (const L of listings || []) {
+    if (!hasPublicDetail(L)) continue;
+    const k = siblingKey(L);
+    if (!k) continue;
+    if (!__siblingIndex.has(k)) __siblingIndex.set(k, []);
+    __siblingIndex.get(k).push(L);
+  }
+}
+function siblingListings(listing) {
+  const k = siblingKey(listing);
+  if (!k || !__siblingIndex) return [];
+  return (__siblingIndex.get(k) || []).filter((L) => L.slug !== listing.slug);
+}
+
+/** "dd.mm.yyyy" of the real data state: verified_at (mirror check) or scraped_at (last change). */
+function dataStandLabel(data) {
+  const raw = dataAsOf(data, ROOT);
+  const d = raw ? new Date(raw) : null;
+  if (!d || Number.isNaN(d.getTime())) return "unbekannt";
+  return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Berlin" });
+}
+
+/* Themen-/Stadtteilseiten verlinken passende Objektseiten (Marker-Block, beim Render erneuert). */
+const TOPIC_OBJEKT_PAGES = [
+  {
+    file: "wollmatingen.html",
+    heading: "Aktuelle Kaufangebote in Wollmatingen",
+    filter: (L) => /wollmatingen/i.test(String(L.location || "")),
+  },
+  {
+    file: "wohnung-kaufen-konstanz.html",
+    heading: "Aktuelle Wohnungen zum Kauf in Konstanz",
+    filter: (L) => /wohnung|penthouse|maisonette/i.test(String(L.type || "") + " " + String(L.title || "")),
+  },
+];
+const TOPIC_START = "<!-- OBJEKT-LINKS:START -->";
+const TOPIC_END = "<!-- OBJEKT-LINKS:END -->";
+async function renderTopicObjektLinks(data) {
+  const pub = (data.listings || []).filter(hasPublicDetail);
+  const stand = dataStandLabel(data);
+  for (const t of TOPIC_OBJEKT_PAGES) {
+    const fp = path.join(ROOT, t.file);
+    let html;
+    try { html = await readFile(fp, "utf8"); } catch { continue; }
+    const rows = pub.filter(t.filter);
+    const block = rows.length
+      ? `${TOPIC_START}
+    <section class="section" id="objekte">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2>${escapeHtml(t.heading)}</h2>
+            <p>${rows.length} ${rows.length === 1 ? "Objekt" : "Objekte"} · Stand der Angebote: ${stand}. <a href="/#angebote">Alle Angebote</a></p>
+          </div>
+        </div>
+        <div class="listings-grid">
+${rows.map(renderCard).join("\n")}
+        </div>
+      </div>
+    </section>
+    ${TOPIC_END}`
+      : `${TOPIC_START}${TOPIC_END}`;
+    if (html.includes(TOPIC_START)) {
+      html = html.replace(new RegExp(escapeRegExp(TOPIC_START) + "[\\s\\S]*?" + escapeRegExp(TOPIC_END)), block);
+    } else {
+      // after the first content section following the page hero
+      const heroEnd = html.indexOf("</section>", html.indexOf('<section class="page-hero"'));
+      const nextEnd = html.indexOf("</section>", heroEnd + 10);
+      if (heroEnd < 0 || nextEnd < 0) continue;
+      const at = nextEnd + "</section>".length;
+      html = html.slice(0, at) + "\n\n    " + block + html.slice(at);
+    }
+    if (!dryRun) await writeFile(fp, html, "utf8");
+    console.log(`Updated ${t.file} (${rows.length} objekt links)`);
+  }
+}
+
 function renderExposeHtml(listing, ogShare = null) {
   const p = "../";
   const badge = badgeFor(listing);
@@ -929,22 +1032,7 @@ function renderExposeHtml(listing, ogShare = null) {
   const title = listingDisplayTitle(listing);
   const fullTitle = ref ? ref + " · " + title : title;
   const pageTitle = `${fullTitle} | Exposé – Immobilien Eichmann Konstanz`;
-  const descBits = [
-    listing.price,
-    listing.rooms,
-    listing.living_area,
-    listing.location,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-  const metaDesc = softShorten(
-    normalizeContactPhoneDisplay(
-      listing.description ||
-      listing.short_description ||
-      `${title} in ${listing.location || "Konstanz"} – ${descBits}. Exposé anfragen bei Immobilien Eichmann.`
-    ),
-    155
-  );
+  const metaDesc = exposeMetaDescription(listing);
 
   const canonical = `${SITE_ORIGIN}/${listing.local_url}`;
   const ogImage = ogShare?.url
@@ -988,8 +1076,12 @@ function renderExposeHtml(listing, ogShare = null) {
       "Anzahl Terrassen": "Terrassen",
       "Anzahl Tiefgaragen Stellplätze": "Tiefgaragenstellplätze"
     };
+    const isKauf = /kauf/i.test(String(listing.status || "")) || Boolean(listing.price);
     for (const [k, v] of Object.entries(listing.facts)) {
-      if (v && !represented.has(k)) factRows.push([labelMap[k] || k, String(v)]);
+      if (!v || represented.has(k)) continue;
+      // Mietfelder auf Kaufobjekten bzw. Mietfelder ohne Betrag (Immowelt liefert dort teils Labels) nicht anzeigen
+      if (/miete|nebenkosten|kaution/i.test(k) && (isKauf || !/\d/.test(String(v)))) continue;
+      factRows.push([labelMap[k] || k, String(v)]);
     }
   }
 
@@ -1049,7 +1141,7 @@ function renderExposeHtml(listing, ogShare = null) {
       </section>`
       : "";
 
-  const proseHtml = (value) => String(value || "")
+  const proseHtml = (value) => stripProjectStatus(value)
     .split(/\n{2,}/)
     .map((para) => para.trim())
     .filter(Boolean)
@@ -1086,6 +1178,22 @@ function renderExposeHtml(listing, ogShare = null) {
           </section>`
     : "";
 
+  const siblings = siblingListings(listing);
+  const siblingsSection = siblings.length
+    ? `<section class="expose-section expose-siblings" id="weitere-wohnungen">
+            <h2>Weitere Wohnungen in diesem Neubau</h2>
+            <ul class="expose-sibling-list">
+              ${siblings
+                .map((L) => {
+                  const r = listingReference(L);
+                  const t = listingDisplayTitle(L);
+                  const bits = [L.living_area, L.price].filter(Boolean).join(" · ");
+                  return `<li><a href="${p}${escapeHtml(L.local_url)}">${escapeHtml(r ? r + " · " + t : t)}</a>${bits ? ` <span>${escapeHtml(bits)}</span>` : ""}</li>`;
+                })
+                .join("\n              ")}
+            </ul>
+          </section>`
+    : "";
   const anfrageSubject = `Exposé-Anfrage: ${title}`;
   const prefillMsg = `Guten Tag,\\nich interessiere mich für: ${title}${listing.location ? ` (${listing.location})` : ""}.\\nBitte senden Sie mir das Exposé / weitere Informationen.\\n\\nMit freundlichen Grüßen`;
 
@@ -1149,7 +1257,7 @@ function renderExposeHtml(listing, ogShare = null) {
         "@type": "ListItem",
         position: 2,
         name: "Angebote",
-        item: SITE_ORIGIN + "/index.html#angebote",
+        item: SITE_ORIGIN + "/#angebote",
       },
       {
         "@type": "ListItem",
@@ -1160,7 +1268,6 @@ function renderExposeHtml(listing, ogShare = null) {
     ],
   };
 
-  const waShareHref = `https://wa.me/?text=${encodeURIComponent(`${title} ${canonical}`)}`;
   /* WhatsApp an Helmut, vorbefüllt mit dem Objekt (Titel + Link) */
   const waHelmutHref = `https://wa.me/491705225568?text=${encodeURIComponent(`Guten Tag Herr Eichmann, ich interessiere mich für das Objekt „${title}“: ${canonical}`)}`;
 
@@ -1190,7 +1297,7 @@ function renderExposeHtml(listing, ogShare = null) {
   <link rel="icon" href="${p}assets/logo.svg?v=noclip-v1" type="image/svg+xml">
   <link rel="icon" href="${p}assets/logo.png" type="image/png" sizes="any">
   <link rel="apple-touch-icon" href="${p}assets/apple-touch-icon.png">
-<link rel="stylesheet" href="${p}css/styles.css?v=claude-v2">
+<link rel="stylesheet" href="${p}css/styles.css?v=claude-final">
   <script type="application/ld+json">
 ${JSON.stringify(schema, null, 2)}
   </script>
@@ -1201,7 +1308,7 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      <a class="logo" href="${p}index.html" aria-label="Immobilien Eichmann – Startseite">
+      <a class="logo" href="/" aria-label="Immobilien Eichmann – Startseite">
         <img class="logo-svg" src="${p}assets/logo-header.svg?v=header-safe-v1" alt="Immobilien Eichmann" width="320" height="56" decoding="async">
         <span class="logo-text">
           <span class="logo-mark">Immobilien Eichmann</span>
@@ -1210,14 +1317,14 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
       </a>
       <button class="menu-toggle" type="button" aria-label="Menü öffnen" aria-expanded="false">☰</button>
       <nav class="nav" aria-label="Hauptnavigation">
-        <a href="${p}index.html">Start</a>
-        <a href="${p}index.html#angebote">Angebote</a>
+        <a href="/">Start</a>
+        <a href="/#angebote">Angebote</a>
         <a href="${p}haus-verkaufen-konstanz.html">Verkauf</a>
         <a href="${p}leistungen.html">Leistungen</a>
         <a href="${p}immobilienbewertung-konstanz.html">Bewertung</a>
         <a href="${p}projekte.html">Projekte</a>
-        <a href="${p}ratgeber.html">Ratgeber</a>
-        <a href="${p}kontakt.html" class="nav-cta">Kontakt</a>
+        <a href="${p}kontakt.html">Kontakt</a>
+        <a href="tel:+491705225568" class="nav-cta">Anrufen</a>
       </nav>
     </div>
   </header>
@@ -1225,8 +1332,8 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
   <main>
     <section class="page-hero expose-hero">
       <div class="container">
-        <p class="eyebrow"><a href="${p}index.html#angebote">← Alle Angebote</a></p>
-        <h1 class="expose-title">${ref ? `<span class="expose-reference">${escapeHtml(ref)}</span>` : ""}<span>${escapeHtml(title)}</span></h1>
+        <p class="eyebrow"><a href="/#angebote">← Alle Angebote</a></p>
+        <h1 class="expose-title">${ref ? `<span class="expose-reference">${escapeHtml(ref)}</span><span class="expose-title-sep"> · </span>` : ""}<span>${escapeHtml(title)}</span></h1>
         <p>${listing.reference_number ? `<strong>${escapeHtml(listing.reference_number)}</strong> · ` : ""}${escapeHtml(listing.location || "Konstanz")}${listing.price ? ` · <strong>${escapeHtml(listing.price)}</strong>` : ""}</p>
         <span class="${badge.className}" style="position:static;display:inline-block;margin-top:0.5rem">${escapeHtml(badge.text)}</span>
       </div>
@@ -1255,6 +1362,7 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
           ${additionalSection}
 
           ${floorHtml}
+          ${siblingsSection}
         </div>
 
         <aside class="expose-aside">
@@ -1325,10 +1433,8 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
             <div class="expose-secondary-actions">
               <a class="btn btn-outline btn-sm" href="tel:+491705225568">Anrufen +49 170 522 5568</a>
               <a class="btn btn-outline btn-sm expose-wa" href="${escapeHtml(waHelmutHref)}" target="_blank" rel="noopener noreferrer">WhatsApp zu diesem Objekt</a>
-              <a class="btn btn-outline btn-sm" href="${p}kontakt.html?objekt=${encodeURIComponent(listing.slug)}#contact-form">Zum Kontaktformular</a>
-              <a class="btn btn-outline btn-sm" href="${escapeHtml(waShareHref)}" target="_blank" rel="noopener noreferrer">Per WhatsApp teilen</a>
-              <a class="btn btn-outline btn-sm" href="${escapeHtml(listing.expose_url)}" target="_blank" rel="noopener noreferrer">Exposé auf Immowelt</a>
             </div>
+            <p class="expose-textlinks"><a href="${escapeHtml(listing.expose_url)}" target="_blank" rel="noopener noreferrer">Exposé auf Immowelt ansehen</a></p>
             <p class="expose-disclaimer">Angaben ohne Gewähr. Maßgeblich sind die aktuellen Unterlagen und das Immowelt-Exposé.</p>
             <p class="immowelt-attribution"><a href="https://www.immowelt.de/" target="_blank" rel="noopener noreferrer">Immobilien-Daten bereitgestellt von immowelt.de</a></p>
           </div>
@@ -1369,7 +1475,7 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
           <a href="${p}wohnung-kaufen-konstanz.html">Wohnung kaufen Konstanz</a>
           <a href="${p}haus-verkaufen-konstanz.html">Haus verkaufen Konstanz</a>
           <a href="${p}immobilienbewertung-konstanz.html">Immobilienbewertung Konstanz</a>
-          <a href="${p}index.html#angebote">Aktuelle Kaufangebote</a>
+          <a href="/#angebote">Aktuelle Kaufangebote</a>
         </div>
         <div class="footer-col">
           <h2 class="footer-heading">Stadtteile &amp; Region</h2>
@@ -1418,8 +1524,8 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
   </aside>
 
   <script>window.__eichmannJsBase="${p}js/";</script>
-  <script src="${p}js/cookie-consent.js?v=claude-v2" defer></script>
-  <script src="${p}js/main.js?v=claude-v2" defer></script>
+  <script src="${p}js/cookie-consent.js?v=claude-final" defer></script>
+  <script src="${p}js/main.js?v=claude-final" defer></script>
 </body>
 </html>
 `;
@@ -1921,6 +2027,13 @@ async function writeSyncStatus({ state, previous = null, data = null, reason = n
     policy: "fail_closed_last_known_good",
   };
   if (!payload.mode) delete payload.mode;
+  // keep the read-only mirror verification (scripts/verify-listings-mirror.mjs)
+  try {
+    const prev = JSON.parse(await readFile(SYNC_STATUS_PATH, "utf8"));
+    for (const k of ["last_verified_at", "last_verified_via", "last_verified_count"]) {
+      if (prev && prev[k] != null) payload[k] = prev[k];
+    }
+  } catch {}
   if (!dryRun) await atomicWriteJson(SYNC_STATUS_PATH, payload);
   return payload;
 }
@@ -1934,6 +2047,7 @@ async function writeCanonical(data) {
     source: data.source || PROFILE_URL,
     immowelt_profile: data.immowelt_profile || PROFILE_URL,
     scraped_at: data.scraped_at,
+    ...(data.verified_at ? { verified_at: data.verified_at } : {}),
     listing_count: data.listings.length,
     active_listing_count: data.listings.filter(isPublicListing).length,
     listings: data.listings.map(serializeListing),
@@ -1943,6 +2057,7 @@ async function writeCanonical(data) {
 }
 
 async function renderExposePages(data) {
+  setSiblingIndex(data.listings);
   await mkdir(OBJEKT_DIR, { recursive: true });
   const detailed = data.listings.filter(hasPublicDetail);
   const keepSlugs = new Set(detailed.map((L) => L.slug));
@@ -2001,12 +2116,52 @@ function todayStamp(sourceDate = null) {
 }
 
 async function fileLastmodOr(filePath, fallbackDate) {
+  return contentLastmod(filePath, fallbackDate);
+}
+
+/* Real lastmod: content hash per page (volatile bits like the "Stand" date stripped).
+   Unchanged content keeps its previous lastmod; first seen → git commit date of the file
+   (if git is available) else now. State: data/sitemap-lastmod.json (committed). */
+const LASTMOD_STATE_PATH = path.join(ROOT, "data", "sitemap-lastmod.json");
+let __lastmodState = null;
+let __lastmodDirty = false;
+async function lastmodState() {
+  if (__lastmodState) return __lastmodState;
+  try { __lastmodState = JSON.parse(await readFile(LASTMOD_STATE_PATH, "utf8")); } catch { __lastmodState = {}; }
+  return __lastmodState;
+}
+async function gitLastCommitIso(rel) {
   try {
-    const st = await stat(filePath);
-    return sitemapLastmod(st.mtime);
-  } catch {
-    return sitemapLastmod(fallbackDate);
-  }
+    const { execFileSync } = await import("node:child_process");
+    const dirty = execFileSync("git", ["status", "--porcelain", "--", rel], { cwd: ROOT, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+    if (dirty) return null; // changed in this working tree → now
+    const out = execFileSync("git", ["log", "-1", "--format=%cI", "--", rel], { cwd: ROOT, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+    return out || null;
+  } catch { return null; }
+}
+async function contentLastmod(filePath, fallbackDate) {
+  const rel = path.relative(ROOT, filePath).replace(/\\/g, "/");
+  let body;
+  try { body = await readFile(filePath, "utf8"); } catch { return sitemapLastmod(fallbackDate); }
+  const norm = body
+    .replace(/Stand(?: der Angebote)?:\s*(?:[A-Za-zäöüÄÖÜß]+\s+\d{4}|\d{2}\.\d{2}\.\d{4})/g, "Stand")
+    .replace(/\?v=[\w.-]+/g, "");
+  const { createHash } = await import("node:crypto");
+  const hash = createHash("sha1").update(norm).digest("hex").slice(0, 16);
+  const st = await lastmodState();
+  const prev = st[rel];
+  if (prev && prev.hash === hash && prev.lastmod) return prev.lastmod;
+  const iso = prev ? sitemapLastmod(fallbackDate) : sitemapLastmod(new Date((await gitLastCommitIso(rel)) || fallbackDate));
+  st[rel] = { hash, lastmod: iso };
+  __lastmodDirty = true;
+  return iso;
+}
+async function saveLastmodState() {
+  if (!__lastmodDirty || dryRun) return;
+  const st = await lastmodState();
+  const sorted = Object.fromEntries(Object.keys(st).sort().map((k) => [k, st[k]]));
+  await writeFile(LASTMOD_STATE_PATH, JSON.stringify(sorted, null, 2) + "\n", "utf8");
+  __lastmodDirty = false;
 }
 
 function escapeXml(v) {
@@ -2085,6 +2240,7 @@ ${SITEMAP_OBJEKT_END}
 </urlset>
 `;
   if (!dryRun) await writeFile(SITEMAP_PATH, xml, "utf8");
+  await saveLastmodState();
   console.log(
     `Updated sitemap.xml (${data.listings.filter(hasPublicDetail).length} objekt URLs, publish lastmod ${publishLastmod})`
   );
@@ -2111,20 +2267,18 @@ async function renderIntoPages(data) {
     html = ensureCountMarkers(html, page);
     html = patchBetween(html, MARKER_START, MARKER_END, grid);
     html = patchBetween(html, COUNT_START, COUNT_END, countFn(n));
-    const stand = new Date().toLocaleString("de-DE", {
-      month: "long",
-      year: "numeric",
-      timeZone: "Europe/Berlin",
-    });
+    // Echtes Datum des Datenstands (zuletzt geprüft bzw. zuletzt geändert), nicht die Render-Zeit.
+    const stand = dataStandLabel(data);
     html = html.replace(
-      /Stand:\s*[A-Za-zäöüÄÖÜß]+\s+\d{4}\./,
-      `Stand: ${stand}.`
+      /Stand(?: der Angebote)?:\s*(?:[A-Za-zäöüÄÖÜß]+\s+\d{4}|\d{2}\.\d{2}\.\d{4})\./,
+      `Stand der Angebote: ${stand}.`
     );
     if (!dryRun) await writeFile(fp, html, "utf8");
     console.log(`Updated ${file} (${n} listings)`);
   }
 
   await renderExposePages(data);
+  await renderTopicObjektLinks(data);
   // Flyer/projects SoT → ai/flyer-*.json, project SEO pages, homepage ItemList; orphans removed
   const projectPub = await publishProjects({
     siteRoot: ROOT,
