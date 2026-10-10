@@ -2238,7 +2238,7 @@ function hreflangXml(locPath) {
 function objektHreflang(L) {
   const a = (lang, href) => `<xhtml:link rel="alternate" hreflang="${lang}" href="${href}"/>`;
   const de = `${SITE_ORIGIN}/${L.local_url}`;
-  return a("de", de) + a("en", `${SITE_ORIGIN}${enPath(L.slug)}`) + a("x-default", de);
+  return a("de", de) + a("en", `${SITE_ORIGIN}${enPath(L.slug)}`) + a("x-default", `${SITE_ORIGIN}${enPath(L.slug)}`);
 }
 
 async function updateSitemap(data) {

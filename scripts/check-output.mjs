@@ -91,7 +91,7 @@ for (const p of sot.pages.pages.filter((x) => x.paths?.en)) {
     const dh = readFileSync(dp, "utf8");
     if (!eh.includes(`<link rel="canonical" href="${en}">`)) problems.push({ where: `en/property/${f}`, rule: "canonical", hit: "", message: "Canonical nicht selbstreferenzierend" });
     if (!dh.includes(`<link rel="canonical" href="${de}">`)) problems.push({ where: `objekt/${f}`, rule: "canonical", hit: "", message: "Canonical nicht selbstreferenzierend" });
-    for (const h of [eh, dh]) for (const [l, t] of [["de", de], ["en", en], ["x-default", de]])
+    for (const h of [eh, dh]) for (const [l, t] of [["de", de], ["en", en], ["x-default", en]])
       if (!h.slice(0, h.indexOf("</head>")).includes(`hreflang="${l}" href="${t}"`)) problems.push({ where: f, rule: "hreflang", hit: l, message: `hreflang ${l} fehlt (${h === eh ? "EN" : "DE"})` });
   }
 }

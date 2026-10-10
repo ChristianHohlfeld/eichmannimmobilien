@@ -22,7 +22,7 @@ test("Canonical selbst, hreflang de/en/x-default gegenseitig, keine Weiterleitun
     for (const [h, self] of [[read(`en/property/${f}`), en], [read(`objekt/${f}`), de]]) {
       const head = h.slice(0, h.indexOf("</head>"));
       assert.ok(head.includes(`<link rel="canonical" href="${self}">`), `${f} canonical`);
-      assert.ok(head.includes(`hreflang="de" href="${de}"`) && head.includes(`hreflang="en" href="${en}"`) && head.includes(`hreflang="x-default" href="${de}"`), `${f} hreflang`);
+      assert.ok(head.includes(`hreflang="de" href="${de}"`) && head.includes(`hreflang="en" href="${en}"`) && head.includes(`hreflang="x-default" href="${en}"`), `${f} hreflang`);
       assert.ok(!/http-equiv="refresh"/i.test(head));
     }
     assert.match(read(`en/property/${f}`), /<html lang="en">/);

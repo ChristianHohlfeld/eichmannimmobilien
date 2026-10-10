@@ -2,7 +2,7 @@
  * English property pages /en/property/<slug>.html – generated from the same listing rows as the German
  * exposé pages (data/listings.json + SSOT layer data/sot/listings.json). Claude global concept, Code 1.
  * Rules (Chris): numbers only from the listing facts, nothing about planning/construction status or dates,
- * no countdowns, no invented availability. German page stays canonical for German; hreflang de/en/x-default(de).
+ * no countdowns, no invented availability. each page canonical to itself; hreflang de/en, x-default = English (Claude global concept, line 46).
  */
 import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from "node:fs";
 import path from "node:path";
@@ -86,7 +86,7 @@ export function listingImages(siteRoot, L, max = 12) {
 }
 
 export const hreflangHead = (dePathAbs, enPathAbs, indent = "  ") =>
-  [["de", dePathAbs], ["en", enPathAbs], ["x-default", dePathAbs]].map(([l, h]) => `${indent}<link rel="alternate" hreflang="${l}" href="${h}">`).join("\n");
+  [["de", dePathAbs], ["en", enPathAbs], ["x-default", enPathAbs]].map(([l, h]) => `${indent}<link rel="alternate" hreflang="${l}" href="${h}">`).join("\n");
 
 const WA = (text) => `https://wa.me/491705225568?text=${encodeURIComponent(text)}`;
 const ddmmyyyy = (iso) => (iso ? iso.split("-").reverse().join("/") : "");
