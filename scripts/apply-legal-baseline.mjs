@@ -317,4 +317,11 @@ for (const full of await htmlFiles()) {
   await write("scripts/sync-immowelt.mjs", s);
 }
 
+// Feste ?v=-Schlüssel oben sind Altlast: am Ende wieder Inhalts-Hashes setzen (Claude R2 #7).
+{
+  const { execFileSync } = await import("node:child_process");
+  const { fileURLToPath } = await import("node:url");
+  const here = fileURLToPath(new URL(".", import.meta.url));
+  execFileSync(process.execPath, [here + "cache-bust.mjs"], { stdio: "inherit" });
+}
 console.log("Applied minimal legal/privacy baseline.");
