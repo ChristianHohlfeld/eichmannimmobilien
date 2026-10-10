@@ -150,7 +150,7 @@ function foot(key, waHref = WA_GEN) {
     </div>
   </footer>
 
-  <nav class="sticky-bar" aria-label="Quick contact">
+${key === "allmannsdorf" ? `  <div class="flyer-overlay" id="flyerModal" hidden data-flyer-src="/partials/flyer-modal-en.html?v=${V}"></div>\n` : ""}  <nav class="sticky-bar" aria-label="Quick contact">
     <a href="${TEL}" class="sticky-item sticky-accent">
       <span class="sticky-ico" aria-hidden="true">${PHONE_SVG}</span>
       <span>Call</span>

@@ -2639,3 +2639,12 @@ body:has(form:focus-within) .floating-wa { opacity: 0; pointer-events: none; }
   .vormerk-fold > summary::after { content: " ▾"; }
   .vormerk-fold[open] > summary::after { content: " ▴"; }
 }
+
+/* full-review-p2: Mobil (≤768) gibt es die Leiste mit WhatsApp – Bubble nie zusätzlich (auch nicht bei offenem Cookie-Banner, sie überlagerte Inhalt).
+   Desktop: Platz unter dem Seitenende, damit die Bubble keinen Footer-Text verdeckt. */
+@media (max-width: 768px) {
+  .floating-wa, body.cookie-banner-open .floating-wa { display: none !important; }
+}
+@media (min-width: 769px) {
+  body { padding-bottom: calc(58px + 2rem); }
+}
