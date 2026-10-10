@@ -132,6 +132,8 @@
   }
 
 
+  window.__eichmannAttributionFields = attributionFields;
+
   function trackForm(name, extra) {
     try {
       if (typeof window.eichmannTrack === "function") window.eichmannTrack(name, extra || {});
@@ -198,7 +200,7 @@
 
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.textContent = "Wird gesendet …";
+        submitBtn.textContent = /^en/i.test(document.documentElement.getAttribute("lang") || "") ? "Sending …" : "Wird gesendet …";
       }
 
       var isExpose = form.classList.contains("expose-form") || !!form.dataset.exposeTitle;
@@ -206,7 +208,8 @@
       var payload = {
         email: valueOf(form, "email"),
         phone: valueOf(form, "phone"),
-        anliegen: anliegen
+        anliegen: anliegen,
+        lang: valueOf(form, "lang") || (document.documentElement.getAttribute("lang") || "de").slice(0, 2).toLowerCase()
       };
 
       if (isExpose) {
@@ -259,6 +262,7 @@
             trackForm("generate_lead", {
               form_id: form.id || "contact-form",
               form_type: isExpose ? "expose" : "contact",
+              lang: (document.documentElement.getAttribute("lang") || "de").slice(0, 2).toLowerCase(),
               transport_type: "beacon"
             });
             }
@@ -477,7 +481,9 @@
     }
     var msg = form.querySelector('[name="message"]');
     if (msg && !msg.value) {
-      msg.placeholder = "Ich möchte für den Neubau Konstanz-Allmannsdorf vorgemerkt werden …";
+      msg.placeholder = /^en/i.test(document.documentElement.getAttribute("lang") || "")
+        ? "I would like to register my interest in New-build Allmannsdorf …"
+        : "Ich möchte für den Neubau Konstanz-Allmannsdorf vorgemerkt werden …";
     }
     /* Scroll zum Formular, nicht nur zur Adresskarte */
     var target = document.getElementById("contact-form") || document.getElementById("bewertung");

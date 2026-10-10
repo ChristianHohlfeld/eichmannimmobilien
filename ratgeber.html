@@ -27,7 +27,7 @@
   <link rel="icon" href="assets/logo.png?v=house-orig-v1" type="image/png" sizes="any">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="preload" href="assets/logo.svg?v=house-orig-v1" as="image" type="image/svg+xml">
-<link rel="stylesheet" href="css/styles.css?v=claude-plan-v1">
+<link rel="stylesheet" href="css/styles.css?v=claude-v2">
   
   <script type="application/ld+json">
 {
@@ -256,12 +256,39 @@
           </div>
           <div class="flyer-intro">
             <h2 id="flyerTitle">NEUBAUPROJEKT<br><span>KONSTANZ-ALLMANNSDORF</span></h2>
-            <p>In Konstanz-Allmannsdorf entsteht ein Neubau – jetzt provisionsfrei vormerken.</p>
+            <p>Neubau in Konstanz-Allmannsdorf – jetzt provisionsfrei vormerken.</p>
             <ul class="flyer-checks">
               <li>5 Mehrfamilienhäuser mit 44 Wohnungen</li>
               <li>Viele Wohnungen mit traumhafter <strong>Seesicht</strong></li>
             </ul>
             <p class="flyer-cta-script">Jetzt Vormerken Lassen!</p>
+            <div class="flyer-form">
+            <form class="vormerk-form" id="vormerk-flyer" data-vormerk-form data-form-location="flyer_modal" action="https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/contact" method="POST">
+              <h3 class="vormerk-title">Provisionsfrei vormerken</h3>
+              <p class="vormerk-sub">Helmut Eichmann meldet sich persönlich bei Ihnen.</p>
+              <input type="hidden" name="anliegen" value="Vormerkung Neubau Allmannsdorf">
+              <input type="hidden" name="lang" value="de">
+              <input type="checkbox" name="botcheck" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+              <div class="vormerk-fields">
+                <div class="form-group">
+                  <label for="vormerk-flyer-name">Name *</label>
+                  <input type="text" id="vormerk-flyer-name" name="name" required autocomplete="name">
+                </div>
+                <div class="form-group">
+                  <label for="vormerk-flyer-phone">Telefon *</label>
+                  <input type="tel" id="vormerk-flyer-phone" name="phone" required autocomplete="tel" inputmode="tel" placeholder="Für den Rückruf">
+                </div>
+                <div class="form-group">
+                  <label for="vormerk-flyer-email">E-Mail (optional)</label>
+                  <input type="email" id="vormerk-flyer-email" name="email" autocomplete="email">
+                </div>
+              </div>
+              <button type="submit" class="btn btn-accent vormerk-submit">Vormerken</button>
+              <p class="vormerk-note">Hinweise zur Verarbeitung Ihrer Angaben: <a href="datenschutz.html">Datenschutzerklärung</a>. Durch das Absenden kommt kein Maklervertrag zustande.</p>
+              <p class="vormerk-success" role="status" hidden>Vielen Dank – Ihre Vormerkung ist angekommen. Helmut Eichmann meldet sich persönlich bei Ihnen.</p>
+              <p class="vormerk-error" role="alert" hidden>Senden hat gerade nicht geklappt. Bitte rufen Sie an: <a href="tel:+491705225568">+49 170 522 5568</a>.</p>
+            </form>
+            </div>
           </div>
         </div>
         <div class="flyer-mid">
@@ -288,7 +315,7 @@
               </picture>
             </div>
             <div class="flyer-copy">
-              <p>In einer der gefragtesten Wohnlagen Konstanz entsteht ein modernes Wohnensemble mit 5 Mehrfamilienhäusern und insgesamt 44 hochwertigen Wohnungen. Freuen Sie sich auf durchdachte Grundrisse, lichtdurchflutete Räume und eine Architektur, die Design, Komfort und Lebensqualität vereint. Viele Wohnungen bieten einen einzigartigen Blick auf den Bodensee.</p>
+              <p>Der Neubau Allmannsdorf ist ein modernes Wohnensemble mit 5 Mehrfamilienhäusern und insgesamt 44 hochwertigen Wohnungen in einer der gefragtesten Wohnlagen von Konstanz. Freuen Sie sich auf durchdachte Grundrisse, lichtdurchflutete Räume und eine Architektur, die Design, Komfort und Lebensqualität vereint. Viele Wohnungen bieten einen einzigartigen Blick auf den Bodensee.</p>
               <ul class="flyer-features">
                 <li>Hochwertige Architektur</li>
                 <li>Nachhaltige Bauweise</li>
@@ -320,8 +347,9 @@
         </div>
     </div>
   </div>
-  <script src="js/cookie-consent.js?v=claude-plan-v1" defer></script>
-  <script src="js/main.js?v=claude-plan-v1" defer></script>
+  <script src="js/cookie-consent.js?v=claude-v2" defer></script>
+  <script src="js/main.js?v=claude-v2" defer></script>
+  <script src="js/vormerk.js?v=claude-v2" defer></script>
 
 </body>
 </html>
