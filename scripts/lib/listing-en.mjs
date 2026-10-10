@@ -278,7 +278,7 @@ ${siblings.map((s) => `          <li><a href="${enPath(s.slug)}">${esc(s.name)}<
     </div>
   </footer>
 
-  <nav class="sticky-bar" aria-label="Quick contact">
+  <nav class="sticky-bar sticky-bar--3" aria-label="Quick contact">
     <a href="${TEL}" class="sticky-item sticky-accent"><span>Call</span></a>
     <a href="#anfragen" class="sticky-item"><span>Exposé</span></a>
     <a href="${esc(wa)}" class="sticky-item sticky-item--wa" target="_blank" rel="noopener noreferrer"><span>WhatsApp</span></a>

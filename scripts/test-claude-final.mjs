@@ -40,7 +40,7 @@ for (const f of htmlFiles) {
   }
   if (h.includes('id="flyerModal"')) {
     // Flyer kommt aus EINEM Partial (SSOT); Seiten enthalten nur den Container
-    check(/id="flyerModal" hidden data-flyer-src="\/partials\/flyer-modal\.html\?v=[0-9a-f]{8}"><\/div>/.test(h), `${f}: flyer container/partial missing`);
+    check(/id="flyerModal" hidden data-flyer-src="\/partials\/flyer-modal(-en)?\.html\?v=[0-9a-f]{8}"><\/div>/.test(h), `${f}: flyer container/partial missing`);
     const fl0 = await read("partials/flyer-modal.html");
     const fl = fl0.slice(0, fl0.indexOf('<div class="flyer-foot">'));
     check(/NEUBAU<br><span>ALLMANNSDORF<\/span>/.test(fl), `${f}: flyer title`);

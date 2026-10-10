@@ -110,6 +110,83 @@ ${P.features.map((x) => `                <li>${esc(x)}</li>`).join("\n")}
 `;
 }
 
+export const FLYER_PARTIAL_EN = "partials/flyer-modal-en.html";
+
+/** English flyer window for /en/allmannsdorf.html – only texts from data/sot (page.en). */
+export function flyerModalInnerEn(sot = loadSot()) {
+  const P = projectTexts(sot, "allmannsdorf", "en");
+  const c = sot.contact;
+  const tel = `tel:${c.phone_mobile.e164}`;
+  const gal = (key) => P.gallery.find((g) => g.key === key) || {};
+  const specs = (P.facts || []).map(([k, v]) => `            <li>
+              <span class="flyer-spec-label">${esc(k)}</span>
+              <span class="flyer-spec-val">${esc(v)}</span>
+            </li>`).join("\n");
+  return `    <div class="flyer-backdrop" data-close-flyer aria-hidden="true"></div>
+    <div class="flyer-dialog" role="dialog" aria-modal="true" aria-labelledby="flyerTitle" lang="en">
+      <button type="button" class="flyer-close" data-close-flyer aria-label="Close">×</button>
+      <div class="flyer">
+        <div class="flyer-top">
+          <div class="flyer-brand">
+            <img src="/assets/logo.png?v=house-orig-v1" alt="${esc(c.name)}" width="320" height="56" decoding="async">
+          </div>
+          <figure class="flyer-hero-img">
+            <picture>
+              <source srcset="/assets/flyer/hero-dining.webp" type="image/webp">
+              <img src="/assets/flyer/hero-dining.jpg" alt="${esc(gal("hero-dining").alt)}" width="520" height="550">
+            </picture>
+            <figcaption class="flyer-img-note">Visualisation</figcaption>
+          </figure>
+          <div class="flyer-intro">
+            <h2 id="flyerTitle">NEW-BUILD<br><span>ALLMANNSDORF</span></h2>
+            <p>${esc(P.lead)}</p>
+            <div class="flyer-intro-ctas">
+              <a class="btn btn-accent" href="${tel}">Call ${esc(c.phone_mobile.display)}</a>
+            </div>
+            <div class="flyer-form">
+${vormerkFormHtml({ id: "vormerk-flyer-en", location: "flyer_modal_en", lang: "en", prefix: "/", heading: "h3", indent: "            " })}
+            </div>
+          </div>
+        </div>
+        <div class="flyer-mid">
+          <ul class="flyer-specs">
+${specs}
+          </ul>
+          <div class="flyer-mid-right">
+            <div class="flyer-thumbs">
+              <picture>
+                <source srcset="/assets/flyer/living.webp" type="image/webp">
+                <img src="/assets/flyer/living.jpg" alt="${esc(gal("living").alt)}" width="300" height="260" loading="lazy">
+              </picture>
+              <picture>
+                <source srcset="/assets/flyer/dining-detail.webp" type="image/webp">
+                <img src="/assets/flyer/dining-detail.jpg" alt="${esc(gal("dining-detail").alt)}" width="300" height="260" loading="lazy">
+              </picture>
+            </div>
+            <p class="flyer-img-note">Visualisations from the project brochure</p>
+            <div class="flyer-copy">
+              <p>${esc(P.description)}</p>
+              <ul class="flyer-features">
+${P.features.map((x) => `                <li>${esc(x)}</li>`).join("\n")}
+              </ul>
+              <div class="flyer-actions">
+                <a class="btn btn-outline" href="mailto:${esc(c.email)}?subject=${encodeURIComponent(P.email_subject || "New-build Allmannsdorf")}">Register by e-mail</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flyer-foot">
+          <div class="flyer-foot-contact">
+            <a href="${tel}">Phone ${esc(c.phone_mobile.display)}</a>
+            <a href="mailto:${esc(c.email)}">${esc(c.email)}</a>
+            <a href="/en/">www.immobilieneichmann.de/en/</a>
+          </div>
+        </div>
+      </div>
+    </div>
+`;
+}
+
 const STUB = `${FLYER_START}
   <div class="flyer-overlay" id="flyerModal" hidden data-flyer-src="/${FLYER_PARTIAL}?v=0"></div>
   ${FLYER_END}`;
@@ -133,6 +210,7 @@ export async function publishFlyerModal({ siteRoot, dryRun = false } = {}) {
   if (!dryRun) {
     await mkdir(path.join(siteRoot, "partials"), { recursive: true });
     await writeFile(path.join(siteRoot, FLYER_PARTIAL), inner, "utf8");
+    await writeFile(path.join(siteRoot, FLYER_PARTIAL_EN), flyerModalInnerEn(sot), "utf8");
   }
   const files = [];
   const walk = async (d) => {
@@ -144,6 +222,7 @@ export async function publishFlyerModal({ siteRoot, dryRun = false } = {}) {
   await walk("");
   let changed = 0;
   for (const rel of files) {
+    if (rel.startsWith("en" + path.sep) || rel.startsWith("en/")) continue; // EN-Seiten tragen ihren eigenen EN-Container (build-en-pages)
     const fp = path.join(siteRoot, rel);
     const s = await readFile(fp, "utf8");
     const b = findBlock(s);

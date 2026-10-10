@@ -610,7 +610,7 @@
       '<button type="button" class="lb-close" aria-label="Schließen">×</button>' +
       '<button type="button" class="lb-nav lb-prev" aria-label="Vorheriges Bild">‹</button>' +
       '<figure class="lb-dialog">' +
-      '<img src="" alt="">' +
+      '<img alt="">' +
       '<figcaption class="lb-caption"></figcaption>' +
       "</figure>" +
       '<button type="button" class="lb-nav lb-next" aria-label="Nächstes Bild">›</button>';
