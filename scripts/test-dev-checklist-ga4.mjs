@@ -70,12 +70,14 @@ try {
     await page.waitForTimeout(800);
     const vis = await page.evaluate(() => {
       const v = (el) => { if (!el) return false; const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return cs.display !== 'none' && cs.visibility !== 'hidden' && r.width > 0 && r.bottom <= innerHeight + 1 && r.top >= 0; };
-      return { tel: v(document.querySelector('.sticky-bar a[href^="tel:"]')), wa: v(document.querySelector('.floating-wa')) };
+      return { tel: v(document.querySelector('.sticky-bar a[href^="tel:"]')), wa: v(document.querySelector('.sticky-bar a[href*="wa.me/"]')), items: document.querySelectorAll('.sticky-bar a').length, floating: v(document.querySelector('.floating-wa')) };
     });
     if (!vis.tel) fail('mobile: sticky Anrufen (tel:) not visible at 390px');
-    if (!vis.wa) fail('mobile: floating WhatsApp not visible at 390px');
+    if (!vis.wa) fail('mobile: sticky WhatsApp not visible at 390px');
+    if (vis.items !== 2) fail(`mobile sticky bar should have exactly 2 items, got ${vis.items}`);
+    if (vis.floating) fail('mobile: floating WhatsApp should be merged into the sticky bar');
     await page.click('.sticky-bar a[href^="tel:"]');
-    await page.click('.floating-wa');
+    await page.click('.sticky-bar a[href*="wa.me/"]');
     await page.locator('main a[href^="tel:"]:visible').first().click();
     await page.waitForTimeout(300);
     const calls = named(hits, 'click_phone');
@@ -83,14 +85,15 @@ try {
     else {
       const p = calls[0].params;
       if (p.location !== 'sticky') fail(`click_phone sticky location wrong: ${p.location}`);
-      if (p.ab_variant !== 'hero_cta_r1_A') fail(`click_phone lacks ab_variant: ${JSON.stringify(p)}`);
+      if (p.ab_variant) fail(`A/B test ended: click_phone must not carry ab_variant: ${p.ab_variant}`);
+      if (p.device_hint !== 'mobile') fail(`click_phone device_hint should be mobile: ${p.device_hint}`);
       if (!/allmannsdorf/.test(p.page_path || '')) fail(`click_phone lacks page_path: ${p.page_path}`);
       if (p.transport_type !== 'beacon') fail('click_phone must use beacon transport');
       if (p.phone_target !== '+491705225568') fail(`click_phone phone_target wrong: ${p.phone_target}`);
       if (calls[1].params.location !== 'content') fail(`in-content tel location wrong: ${calls[1].params.location}`);
     }
     const wa = named(hits, 'click_whatsapp');
-    if (wa.length !== 1 || wa[0].params.location !== 'sticky') fail(`click_whatsapp from floating button wrong: ${JSON.stringify(wa)}`);
+    if (wa.length !== 1 || wa[0].params.location !== 'sticky') fail(`click_whatsapp from sticky bar wrong: ${JSON.stringify(wa)}`);
     if (named(hits, 'click_call').length) fail('legacy click_call should be replaced by click_phone');
     await ctx.close();
   }
@@ -135,7 +138,7 @@ try {
     else {
       const p = leads[0].params;
       if (p.form_id !== 'contact-form' || p.form_type !== 'contact') fail(`generate_lead form params wrong: ${JSON.stringify(p)}`);
-      if (p.ab_variant !== 'hero_cta_r1_A') fail('generate_lead lacks ab_variant');
+      if (p.ab_variant) fail('A/B test ended: generate_lead must not carry ab_variant');
       if (p.anliegen !== 'vormerkung_allmannsdorf') fail(`generate_lead anliegen should reflect sent form: ${p.anliegen}`);
       for (const k of Object.keys(p)) if (/^(name|phone|email|message)$/.test(k)) fail(`PII key in generate_lead: ${k}`);
     }
