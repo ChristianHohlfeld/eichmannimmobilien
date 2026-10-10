@@ -12,6 +12,7 @@ import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { vormerkFormHtml, EN_PRIVACY } from "./lib/vormerk-form.mjs";
+import { enListingModels, enPath } from "./lib/listing-en.mjs";
 import { loadSot, projectTexts, projectFacts, whatsappUrl } from "./lib/sot.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -27,7 +28,7 @@ const WA_GEN = whatsappUrl(SOT, C.whatsapp_text.en);
 const WA_ALL = whatsappUrl(SOT, AL.whatsapp_text);
 const MAIL_ALL = `mailto:${C.email}?subject=` + encodeURIComponent(AL.email_subject);
 
-const PAIRS = { home: { de: "/", en: "/en/" }, allmannsdorf: { de: "/allmannsdorf.html", en: "/en/allmannsdorf.html" }, contact: { de: "/kontakt.html", en: "/en/contact.html" } };
+const PAIRS = { home: { de: "/", en: "/en/" }, allmannsdorf: { de: "/allmannsdorf.html", en: "/en/allmannsdorf.html" }, contact: { de: "/kontakt.html", en: "/en/contact.html" }, abroad: { de: "/kaufen-aus-der-schweiz.html", en: "/en/buying-from-abroad.html" } };
 
 const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const ld = (obj) => JSON.stringify(obj, null, 2).replace(/</g, "\\u003c").replace(/&/g, "\\u0026");
@@ -99,7 +100,7 @@ ${ld(jsonld)}
       <button class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false">☰</button>
       <nav class="nav" aria-label="Main navigation">
         <a href="/en/"${key === "home" ? ' class="active"' : ""}>Home</a>
-        <a href="/#angebote" hreflang="de">Listings (German)</a>
+        <a href="/en/#listings">Properties</a>
         <a href="/en/allmannsdorf.html"${key === "allmannsdorf" ? ' class="active"' : ""}>New-build Allmannsdorf</a>
         <a href="/en/contact.html"${key === "contact" ? ' class="active"' : ""}>Contact</a>
         <a href="${p.de}" hreflang="de" lang="de" class="lang-switch" data-lang-switch="de">Deutsch</a>
@@ -127,7 +128,9 @@ function foot(key, waHref = WA_GEN) {
         <div class="footer-col">
           <h2 class="footer-heading">English</h2>
           <a href="/en/">Home</a>
+          <a href="/en/#listings">Properties</a>
           <a href="/en/allmannsdorf.html">New-build Allmannsdorf</a>
+          <a href="/en/buying-from-abroad.html">Buying from abroad</a>
           <a href="/en/contact.html">Contact</a>
           <a href="${p.de}" hreflang="de" lang="de" class="lang-switch" data-lang-switch="de">Deutsch</a>
         </div>
@@ -204,7 +207,7 @@ async function homePage() {
             <a href="${TEL}">${C.phone_mobile.display}</a> · <span class="nowrap">Landline <a href="tel:${C.phone_landline.e164}">${C.phone_landline.display}</a></span>
           </p>
           <p class="hero-links">
-            <a href="/en/allmannsdorf.html">New-build Allmannsdorf</a> · <a href="/#angebote" hreflang="de">Listings (German)</a> · <a href="/" hreflang="de" lang="de" data-lang-switch="de">Deutsch</a>
+            <a href="/en/allmannsdorf.html">New-build Allmannsdorf</a> · <a href="/en/#listings">Properties</a> · <a href="/" hreflang="de" lang="de" data-lang-switch="de">Deutsch</a>
           </p>
         </div>
         <div class="hero-form">
@@ -216,8 +219,11 @@ ${vormerkFormHtml({ id: "vormerk-hero-en", location: "home_hero", lang: "en", pr
     <section class="section" id="listings">
       <div class="container narrow">
         <h2>Current listings</h2>
-        <p>Properties for sale in and around Konstanz. Listing details are in German; prices are in euros.</p>
-        <p><a class="btn btn-outline" href="/#angebote" hreflang="de">View listings (German)</a></p>
+        <p>Properties for sale in Konstanz. Prices are in euros; the full exposés are in German.</p>
+        <ul class="check-list en-listings">
+${enListingModels(ROOT).map((m) => `          <li><a href="${enPath(m.slug)}">${esc(m.name)}</a>${m.price ? ` – €${m.price.toLocaleString("en-GB")}` : ""}${m.area ? `, ${m.area.toLocaleString("en-GB")} m²` : ""}, ${esc(m.commission)}</li>`).join("\n")}
+        </ul>
+        <p><a class="btn btn-outline" href="/en/buying-from-abroad.html">Buying from abroad</a> <a class="btn btn-outline" href="/#angebote" hreflang="de">Listings with photos (German)</a></p>
         <p class="immowelt-note">All information without guarantee. The current exposés are authoritative.</p>
       </div>
     </section>
@@ -522,8 +528,64 @@ function contactPage() {
 ` + foot("contact");
 }
 
+/* ---------- /en/buying-from-abroad.html (Claude global concept, Code 2; unconfirmed permit sentence left out) ---------- */
+function abroadPage() {
+  const url = `${O}/en/buying-from-abroad.html`;
+  const title = "Buying property in Konstanz from abroad | Eichmann";
+  const desc = "Buying property in Konstanz from abroad: prices in euros, notarised purchase in Germany, personal support by Helmut Eichmann. Call +49 170 522 5568.";
+  const jsonld = { "@context": "https://schema.org", "@graph": [
+    { "@type": "WebPage", "@id": `${url}#webpage`, url, name: title, description: desc, inLanguage: "en",
+      isPartOf: { "@id": `${O}/#website` }, about: { "@id": `${O}/#business` }, publisher: { "@id": `${O}/#business` },
+      translationOfWork: { "@id": `${O}/kaufen-aus-der-schweiz.html#webpage` } },
+    { "@type": "BreadcrumbList", itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: `${O}/en/` },
+      { "@type": "ListItem", position: 2, name: "Buying from abroad", item: url } ] },
+    BUSINESS ] };
+  const props = enListingModels(ROOT);
+  return head({ key: "abroad", title, desc, jsonld }) + `
+  <main id="main">
+    <section class="page-hero">
+      <div class="container page-hero-inner">
+        <h1>Buying property in Konstanz from abroad</h1>
+        <p class="lead">Konstanz lies on Lake Constance, directly on the Swiss border. Helmut Eichmann assists buyers from abroad from the first call to the notary appointment.</p>
+        <div class="hero-actions project-hero-actions">
+          <a class="btn btn-accent btn-call" href="${TEL}" data-location="hero_number">Call <span class="nowrap">${C.phone_mobile.display}</span></a>
+          <a class="btn btn-outline" href="${esc(WA_GEN)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+          <a class="btn btn-outline" href="/en/#listings">Current listings</a>
+        </div>
+        <p class="hero-links"><a href="/kaufen-aus-der-schweiz.html" hreflang="de" lang="de" data-lang-switch="de">Deutsch</a></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container narrow prose">
+        <h2>Good to know</h2>
+        <ul class="check-list">
+          <li><strong>Prices:</strong> all purchase prices are in euros.</li>
+          <li><strong>Contract:</strong> a purchase in Germany is concluded before a notary.</li>
+          <li><strong>Property transfer tax:</strong> 5.0 % of the purchase price in Baden-Württemberg (source: <a href="https://www.heidelberg.de/-/Verfahrensbeschreibung/grunderwerbsteuer-zahlen/vbid413" target="_blank" rel="noopener noreferrer" hreflang="de">service-bw</a>).</li>
+          <li><strong>Commission:</strong> shown for each property. New-build Allmannsdorf is commission-free.</li>
+        </ul>
+        <p>For individual legal or tax questions, please consult the notary or your tax adviser. Helmut Eichmann answers your questions about the properties personally.</p>
+      </div>
+    </section>
+
+    <section class="section section-alt">
+      <div class="container narrow">
+        <h2>Current properties</h2>
+        <ul class="check-list">
+${props.map((m) => `          <li><a href="${enPath(m.slug)}">${esc(m.name)}</a>${m.price ? ` – €${m.price.toLocaleString("en-GB")}` : ""}</li>`).join("\n")}
+          <li><a href="/en/allmannsdorf.html">New-build Allmannsdorf</a> – commission-free, register your interest</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+` + foot("abroad");
+}
+
 await mkdir(path.join(ROOT, "en"), { recursive: true });
 await writeFile(path.join(ROOT, "en/index.html"), await homePage());
 await writeFile(path.join(ROOT, "en/allmannsdorf.html"), allmannsdorfPage());
 await writeFile(path.join(ROOT, "en/contact.html"), contactPage());
+await writeFile(path.join(ROOT, "en/buying-from-abroad.html"), abroadPage());
 console.log("EN pages written: en/index.html, en/allmannsdorf.html, en/contact.html");

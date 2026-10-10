@@ -8,16 +8,64 @@
     "lastmod": "2026-10-10T14:54:40+02:00"
   },
   "en/allmannsdorf.html": {
-    "hash": "bf10473aa09e4b79",
-    "lastmod": "2026-10-10T14:54:51+02:00"
+    "hash": "6ad363ec3016607d",
+    "lastmod": "2026-10-10T15:14:17+02:00"
+  },
+  "en/buying-from-abroad.html": {
+    "hash": "16a9784acdf0d76c",
+    "lastmod": "2026-10-10T15:14:17+02:00"
   },
   "en/contact.html": {
-    "hash": "7e47da62f4f62510",
-    "lastmod": "2026-10-10T14:54:51+02:00"
+    "hash": "ff32e4abdee261c3",
+    "lastmod": "2026-10-10T15:14:17+02:00"
   },
   "en/index.html": {
-    "hash": "00cc3cfec9d5870d",
-    "lastmod": "2026-10-10T15:00:36+02:00"
+    "hash": "ef16ae05dd0cc3dc",
+    "lastmod": "2026-10-10T15:14:17+02:00"
+  },
+  "en/property/maisonette-furstenberg-bb241b38.html": {
+    "hash": "a465879a0b09e428",
+    "lastmod": "2026-10-10T15:16:07+02:00"
+  },
+  "en/property/maisonette-furstenberg-ff414db8.html": {
+    "hash": "c31cb5b6947ec2d0",
+    "lastmod": "2026-10-10T15:16:07+02:00"
+  },
+  "en/property/maisonette-wollmatingen-484fee8a.html": {
+    "hash": "06ac41ab880bfa80",
+    "lastmod": "2026-10-10T15:16:07+02:00"
+  },
+  "en/property/maisonette-wollmatingen-4ac199b6.html": {
+    "hash": "bb6d1b9ee4ea8304",
+    "lastmod": "2026-10-10T15:16:07+02:00"
+  },
+  "en/property/mehrfamilienhaus-wollmatingen-32a8908e.html": {
+    "hash": "e2607c509259438b",
+    "lastmod": "2026-10-10T15:16:07+02:00"
+  },
+  "en/property/penthouse-furstenberg-6fd6062e.html": {
+    "hash": "8352e550c0fbd954",
+    "lastmod": "2026-10-10T15:16:07+02:00"
+  },
+  "en/property/penthouse-konigsbau-c6b1d820.html": {
+    "hash": "3d54dccb4cc51c4e",
+    "lastmod": "2026-10-10T15:16:07+02:00"
+  },
+  "en/property/wohnung-petershausen-86a7d4f6.html": {
+    "hash": "02898c966f497a08",
+    "lastmod": "2026-10-10T15:16:07+02:00"
+  },
+  "en/property/wohnung-wollmatingen-4fed09f2.html": {
+    "hash": "d576ba43b2552d8a",
+    "lastmod": "2026-10-10T15:16:07+02:00"
+  },
+  "en/property/wohnung-wollmatingen-7bff84e7.html": {
+    "hash": "d1efc152699d9d75",
+    "lastmod": "2026-10-10T15:16:07+02:00"
+  },
+  "en/property/wohnung-wollmatingen-e7e58fe2.html": {
+    "hash": "6ece19d9f9cf4d9e",
+    "lastmod": "2026-10-10T15:16:07+02:00"
   },
   "haus-verkaufen-konstanz.html": {
     "hash": "30f90fd5e6a823fb",
@@ -39,6 +87,10 @@
     "hash": "b37ac42a818c4117",
     "lastmod": "2026-10-10T15:00:36+02:00"
   },
+  "kaufen-aus-der-schweiz.html": {
+    "hash": "d4ffe23a5da98302",
+    "lastmod": "2026-10-10T15:14:17+02:00"
+  },
   "konstanz.html": {
     "hash": "db983ba5c0ba70cc",
     "lastmod": "2026-10-10T14:54:40+02:00"
@@ -56,48 +108,48 @@
     "lastmod": "2026-10-10T14:54:40+02:00"
   },
   "objekt/maisonette-furstenberg-bb241b38.html": {
-    "hash": "a3679206cede06ca",
-    "lastmod": "2026-10-10T14:55:28+02:00"
+    "hash": "e59f4a94f3c899e9",
+    "lastmod": "2026-10-10T15:14:17+02:00"
   },
   "objekt/maisonette-furstenberg-ff414db8.html": {
-    "hash": "56d1a4576d905901",
-    "lastmod": "2026-10-10T14:55:28+02:00"
+    "hash": "ef4705435d78ccf9",
+    "lastmod": "2026-10-10T15:14:17+02:00"
   },
   "objekt/maisonette-wollmatingen-484fee8a.html": {
-    "hash": "5b5484631d95c4ea",
-    "lastmod": "2026-10-10T14:55:28+02:00"
+    "hash": "e5a791105125475c",
+    "lastmod": "2026-10-10T15:14:17+02:00"
   },
   "objekt/maisonette-wollmatingen-4ac199b6.html": {
-    "hash": "2db85ce2487a86c5",
-    "lastmod": "2026-10-10T14:55:28+02:00"
+    "hash": "2b34a59e97d7a9cf",
+    "lastmod": "2026-10-10T15:14:17+02:00"
   },
   "objekt/mehrfamilienhaus-wollmatingen-32a8908e.html": {
-    "hash": "ec6c0cf044a73f35",
-    "lastmod": "2026-10-10T14:55:38+02:00"
+    "hash": "2ba3a009abc4146c",
+    "lastmod": "2026-10-10T15:14:17+02:00"
   },
   "objekt/penthouse-furstenberg-6fd6062e.html": {
-    "hash": "35d698d8949cc3c0",
-    "lastmod": "2026-10-10T14:55:38+02:00"
+    "hash": "5630c271fa22ec57",
+    "lastmod": "2026-10-10T15:14:17+02:00"
   },
   "objekt/penthouse-konigsbau-c6b1d820.html": {
-    "hash": "81cf5de6833f0ba9",
-    "lastmod": "2026-10-10T14:55:38+02:00"
+    "hash": "8e7bfc08f06fdf30",
+    "lastmod": "2026-10-10T15:14:17+02:00"
   },
   "objekt/wohnung-petershausen-86a7d4f6.html": {
-    "hash": "e7b555ea896588f5",
-    "lastmod": "2026-10-10T14:55:38+02:00"
+    "hash": "d85a69f239a5ca4f",
+    "lastmod": "2026-10-10T15:14:17+02:00"
   },
   "objekt/wohnung-wollmatingen-4fed09f2.html": {
-    "hash": "4bf5e23c81e694ab",
-    "lastmod": "2026-10-10T14:55:28+02:00"
+    "hash": "fecbc227aa1bbe8c",
+    "lastmod": "2026-10-10T15:14:17+02:00"
   },
   "objekt/wohnung-wollmatingen-7bff84e7.html": {
-    "hash": "658095502ebb0887",
-    "lastmod": "2026-10-10T14:55:38+02:00"
+    "hash": "35dbc4fdf2884f08",
+    "lastmod": "2026-10-10T15:14:17+02:00"
   },
   "objekt/wohnung-wollmatingen-e7e58fe2.html": {
-    "hash": "96a25fdf905544bd",
-    "lastmod": "2026-10-10T14:55:38+02:00"
+    "hash": "b81416e1721e0ec3",
+    "lastmod": "2026-10-10T15:14:17+02:00"
   },
   "projekte.html": {
     "hash": "82904844b5d0ef1a",

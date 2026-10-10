@@ -1,3 +1,4 @@
+import { listingEn, enPath } from "./listing-en.mjs";
 /**
  * AI-friendly Angebots-Index + Discovery artifacts.
  *
@@ -121,6 +122,8 @@ export function toAiListing(L, origin = DEFAULT_SITE_ORIGIN) {
     commission: (L.facts && L.facts["Käuferprovision"]) || null,
     origin: L.origin || L.source || null,
     image: L.main_image_url || null,
+    title_en: L.slug ? listingEn(L).name : null,
+    url_en: L.slug ? absUrl(origin, enPath(L.slug).slice(1)) : null,
   };
 }
 
@@ -162,7 +165,7 @@ export function buildAiListingsDocument(
       },
       get_listing: {
         description:
-          "Ein Angebot per slug oder id aus listings[] wählen; Detailseite unter url.",
+          "Ein Angebot per slug oder id aus listings[] wählen; Detailseite unter url, englische Seite unter url_en (English page).",
         resource: absUrl(origin, "ai/listings.json"),
         detail_pages: `${absUrl(origin, "objekt/")}<slug>.html`,
       },
@@ -292,6 +295,12 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
   lines.push(item("Home (English)", u("/en/"), "Real estate agent in Konstanz · Lake Constance"));
   lines.push(item("New-build Allmannsdorf (English)", u("/en/allmannsdorf.html"), "commission-free, register your interest"));
   lines.push(item("Contact (English)", u("/en/contact.html"), "phone, WhatsApp, e-mail, contact form"));
+  for (const L of aiDoc.listings || []) {
+    if (!L?.url_en) continue;
+    const m = listingEn({ ...L, facts: { "Käuferprovision": L.commission || "" } });
+    lines.push(item(L.title_en || L.slug, L.url_en, [m.area ? `${m.area.toLocaleString("en-GB")} m²` : null, m.price ? `€${m.price.toLocaleString("en-GB")}` : null, m.commission].filter(Boolean).join(", ")));
+  }
+  lines.push(item("Buying property in Konstanz from abroad", u("/en/buying-from-abroad.html"), "prices in euros, notarised purchase, property transfer tax in Baden-Württemberg"));
   lines.push(item("WhatsApp (English text)", PUBLIC_CONTACT.whatsapp.url_en, "link for humans only; agents never send messages"));
   lines.push("");
 
@@ -313,6 +322,7 @@ Allow: /
 Allow: /ai/listings.json
 Allow: /ai/flyer-allmannsdorf.json
 Allow: /en/
+Allow: /en/property/
 Allow: /objekt/
 Allow: /allmannsdorf.html
 Allow: /llms.txt

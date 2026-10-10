@@ -14,9 +14,9 @@ function hashOf(rel) {
   hashCache.set(rel, h);
   return h;
 }
-const RE = /((?:href|src|srcset|data-flyer-src)=["'])((?:\.\.\/|\/)?((?:css|js|assets|partials)\/[^"'?#\s]+))\?v=[^"'\s]*/g;
+const RE = /((?:href|src|srcset|data-flyer-src)=["'])((?:(?:\.\.\/)+|\/)?((?:css|js|assets|partials)\/[^"'?#\s]+))\?v=[^"'\s]*/g;
 let changed = 0;
-for (const d of ["partials", "", "en", "objekt"]) {
+for (const d of ["partials", "", "en", "en/property", "objekt"]) {
   const dir = path.join(root, d);
   if (!existsSync(dir)) continue;
   for (const f of readdirSync(dir)) {

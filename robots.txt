@@ -10,7 +10,7 @@ Allow: /mcp
 Disallow: /admin/
 
 # AI / Agent discovery
-# - llms.txt  → Einstieg + Objekt-URLs + NAP
+# - llms.txt  → Einstieg + Objekt-URLs (de + en) + NAP
 # - agents.txt → Leserechte für Angebote
 # - ai/listings.json → maschinenlesbarer Angebots-Index (eine Quelle mit der Website)
 # - .well-known/mcp.json + /mcp → MCP Streamable-HTTP (Datenstand data_as_of) (search_listings, get_listing)
@@ -19,8 +19,27 @@ Disallow: /admin/
 # OpenAI search / ads crawlers (ChatGPT discovery)
 User-agent: OAI-SearchBot
 Allow: /
+Disallow: /admin/
 
 User-agent: OAI-AdsBot
 Allow: /
+Disallow: /admin/
+
+# AI-Assistenten ausdrücklich zulassen (ergänzend zu "User-agent: *", ändert nichts am Zugriff)
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /admin/
+
+User-agent: Claude-User
+Allow: /
+Disallow: /admin/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin/
 
 Sitemap: https://immobilieneichmann.de/sitemap.xml
