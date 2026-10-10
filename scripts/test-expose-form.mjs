@@ -59,13 +59,19 @@ try {
 
   assert.deepEqual(
     controls.map((x) => x.name),
-    ["anrede", "vorname", "name", "strasse", "plz", "ort", "phone", "email"],
-    "Visible expose input set/order differs from BI reference flow"
+    ["name", "phone", "email", "anrede", "vorname", "strasse", "plz", "ort"],
+    "Expose input set/order differs (Kurzformular: Name + Telefon, Rest optional)"
   );
+  assert.deepEqual(controls.filter((x) => x.required).map((x) => x.name), ["name", "phone"], "Only Name + Telefon may be required");
   assert.equal(await page.locator('#contact-form textarea').count(), 0, "Expose flow must not add a message field");
   assert.equal(await page.locator('#contact-form [name="privacy_ack"], #contact-form [name="datenschutz"]').count(), 0, "No redundant privacy checkbox");
   assert.equal(await page.locator("#contact-form").evaluate((f) => f.checkValidity()), false, "Empty expose form must be invalid");
 
+  /* Short path: Name + Telefon alone are valid */
+  await page.fill('[name="name"]', "Test");
+  await page.fill('[name="phone"]', "000000000");
+  assert.equal(await page.locator("#contact-form").evaluate((f) => f.checkValidity()), true, "Name + Telefon must be enough");
+  await page.locator("#contact-form details.form-more > summary").click();
   await page.selectOption('[name="anrede"]', "Herr");
   await page.fill('[name="vorname"]', "Technischer");
   await page.fill('[name="name"]', "Test");
