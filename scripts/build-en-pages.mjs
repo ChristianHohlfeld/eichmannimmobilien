@@ -15,7 +15,7 @@ import { vormerkFormHtml } from "./lib/vormerk-form.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const O = "https://immobilieneichmann.de";
-const V = "claude-v2";
+const V = "claude-final";
 const TEL = "tel:+491705225568";
 const WA_GEN = "https://wa.me/491705225568?text=" + encodeURIComponent("Hello, I am interested in a property or a consultation with Immobilien Eichmann.");
 const WA_ALL = "https://wa.me/491705225568?text=" + encodeURIComponent("Hello, I would like to register my interest in New-build Allmannsdorf.");
@@ -187,9 +187,9 @@ async function homePage() {
     <section class="hero">
       <div class="hero-grid">
         <div class="hero-copy">
-          <h1 class="hero-kicker">Real estate agent in Konstanz · Lake Constance</h1>
-          <p class="hero-title">New-build Allmannsdorf – register your interest now, commission-free</p>
-          <p class="lead">Immobilien Eichmann in Konstanz: properties for sale, sales and project development. Personal advice from Helmut Eichmann.</p>
+          <h1 class="hero-kicker">Real estate agent in Konstanz · Lake Constance</h1>
+          <p class="hero-title">New-build Allmannsdorf – register your interest now, commission‑free</p>
+          <p class="lead">Immobilien Eichmann in Konstanz: homes for sale, property sales and project development. Personal advice from Helmut Eichmann.</p>
           <div class="hero-actions hero-actions--dual">
             <a class="btn btn-accent hero-cta-call" href="${TEL}" aria-label="Call: +49 170 522 5568">Call</a>
             <a class="btn btn-accent hero-cta-vormerken" href="#vormerk-hero-en">Register interest</a>
@@ -219,7 +219,7 @@ ${vormerkFormHtml({ id: "vormerk-hero-en", location: "home_hero", lang: "en", pr
     <section class="section section-alt">
       <div class="container narrow">
         <h2>New-build Allmannsdorf</h2>
-        <p>A new-build ensemble in Konstanz-Allmannsdorf – commission-free, register your interest.</p>
+        <p>A new-build ensemble in Konstanz-Allmannsdorf – commission‑free, register your interest.</p>
         <p class="hero-actions"><a class="btn btn-accent" href="/en/allmannsdorf.html">View project</a> <a class="btn btn-outline" href="#vormerk-hero-en">Register interest</a></p>
       </div>
     </section>
@@ -335,11 +335,11 @@ function allmannsdorfPage() {
     <section class="page-hero">
       <div class="container page-hero-inner">
         <span class="eyebrow">New-build · Allmannsdorf · Commission-free</span>
-        <h1>New-build Konstanz-Allmannsdorf – register your interest, commission-free</h1>
-        <p class="lead">44 apartments in 5 apartment buildings in Konstanz-Allmannsdorf – commission-free, register your interest.</p>
+        <h1>New-build Allmannsdorf in Konstanz</h1>
+        <p class="lead">44 apartments in 5 apartment buildings, 2–5 rooms, €295,000–€1,450,000 – commission‑free, register your interest.</p>
         <div class="hero-actions project-hero-actions">
-          <a class="btn btn-accent" href="${TEL}" aria-label="Call: +49 170 522 5568">Call</a>
-          <a class="btn btn-outline" href="#register">Register interest</a>
+          <a class="btn btn-accent hero-cta-call" href="${TEL}" aria-label="Call: +49 170 522 5568">Call</a>
+          <a class="btn btn-outline hero-cta-vormerken" href="#register">Register interest</a>
         </div>
         <p class="hero-links"><a href="${esc(WA_ALL)}" target="_blank" rel="noopener noreferrer">WhatsApp</a> · <a href="${TEL}">+49 170 522 5568</a> · Landline <a href="tel:+4975319228848">+49 7531 9228848</a> · <a href="/allmannsdorf.html" hreflang="de" lang="de" data-lang-switch="de">Deutsch</a></p>
       </div>

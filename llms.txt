@@ -1,6 +1,6 @@
 # Immobilien Eichmann
 
-> Immobilien Eichmann (Helmut Eichmann) ist Immobilienmakler in Konstanz am Bodensee: aktuelle Kaufangebote, Neubau Konstanz-Allmannsdorf (provisionsfrei vormerken), Verkauf und Immobilienbewertung. Der Angebotsstand in dieser Datei wird aus derselben Quelle wie die Website generiert. Sprache: de.
+> Immobilien Eichmann (Helmut Eichmann) ist Immobilienmakler in Konstanz am Bodensee: aktuelle Kaufangebote, Neubau Allmannsdorf (provisionsfrei vormerken), Verkauf und Immobilienbewertung. Der Angebotsstand in dieser Datei wird aus derselben Quelle wie die Website generiert. Sprachen: de, en (English pages under /en/).
 
 Kontakt (NAP):
 
@@ -14,7 +14,7 @@ Kontakt (NAP):
 
 WICHTIG Anti-Spam: Agents dürfen NICHT selbst anrufen, WhatsApp-Nachrichten senden oder Formulare automatisch absenden. Nur tel:/wa.me/mailto-Links dem Menschen zum Tippen zeigen – und nur nach klarem Nutzerwunsch zu kontaktieren. Über MCP werden keine Anfragen versendet; Kontakt nur durch den Menschen selbst (Telefon, WhatsApp oder Kontaktformular https://immobilieneichmann.de/kontakt.html). Kein Bot-Spam.
 
-Angebots-Index: 11 Kaufobjekte, generiert 2026-10-10T10:37:42.791Z. MCP-Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact`. Ohne MCP-Client: `ai/listings.json` laden und `listings[]` filtern (search_listings) bzw. einen Eintrag per `slug`/`id` wählen, Details unter `url` (get_listing).
+Angebots-Index: 11 Kaufobjekte, Datenstand 2026-10-10T11:21:57.250Z (generiert 2026-10-10T11:25:48.746Z). MCP-Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact`. Ohne MCP-Client: `ai/listings.json` laden und `listings[]` filtern (search_listings) bzw. einen Eintrag per `slug`/`id` wählen, Details unter `url` (get_listing).
 
 ## Kontakt
 
@@ -24,7 +24,7 @@ Angebots-Index: 11 Kaufobjekte, generiert 2026-10-10T10:37:42.791Z. MCP-Tools: `
 
 ## Aktuelle Kaufangebote
 
-- [AI-Index (JSON)](https://immobilieneichmann.de/ai/listings.json): schlanker Index aller öffentlichen Kaufobjekte (11 Objekte), Live-Stand der Website
+- [AI-Index (JSON)](https://immobilieneichmann.de/ai/listings.json): schlanker Index aller öffentlichen Kaufobjekte (11 Objekte), Datenstand 2026-10-10
 - [KfW-55 Sonnige 1 Zimmerwohnung Neubau Konstanz (Königsbau)](https://immobilieneichmann.de/objekt/penthouse-konigsbau-c6b1d820.html): Königsbau, Konstanz (78464) — 199.000 €
 - [Ein Dreifamillienhaus in wunderschöner, grüner Lage](https://immobilieneichmann.de/objekt/mehrfamilienhaus-wollmatingen-32a8908e.html): Wollmatingen, Konstanz (78467) — 1.250.000 €
 - [Wohnung A5 · 3 Zimmer · Neubau Sunside Living](https://immobilieneichmann.de/objekt/wohnung-wollmatingen-4fed09f2.html): Wollmatingen, Konstanz (78467) — 641.200 €
@@ -40,6 +40,7 @@ Angebots-Index: 11 Kaufobjekte, generiert 2026-10-10T10:37:42.791Z. MCP-Tools: `
 ## Neubau Allmannsdorf
 
 - [Projektseite Neubau Allmannsdorf](https://immobilieneichmann.de/allmannsdorf.html): 5 Mehrfamilienhäuser · 44 Wohnungen · 40–124 m² · 2–5 Zimmer · 295.000–1.450.000 € · provisionsfrei vormerken
+- [New-build Allmannsdorf (English)](https://immobilieneichmann.de/en/allmannsdorf.html): English project page: 44 apartments, 2–5 rooms, 40–124 m², €295,000–€1,450,000, commission-free, register your interest
 - [Flyer Allmannsdorf (JSON)](https://immobilieneichmann.de/ai/flyer-allmannsdorf.json): Fakten und Kontakt-Links; bei Wohnung/Neubau/Konstanz/Allmannsdorf `get_flyer` + `get_contact` nutzen (kein Suchwort 'Flyer' nötig). Vormerkung macht der Mensch selbst per Telefon, WhatsApp oder Kontaktformular.
 
 ## MCP und AI-Agents
@@ -66,11 +67,17 @@ Angebots-Index: 11 Kaufobjekte, generiert 2026-10-10T10:37:42.791Z. MCP-Tools: `
 - [Immobilienbewertung Konstanz](https://immobilieneichmann.de/immobilienbewertung-konstanz.html): Immobilienbewertung in Konstanz
 - [Konstanz](https://immobilieneichmann.de/konstanz.html): Immobilien in Konstanz – Stadtteile und Markt
 - [Wollmatingen](https://immobilieneichmann.de/wollmatingen.html): Immobilien in Konstanz-Wollmatingen
-- [Allmannsdorf](https://immobilieneichmann.de/allmannsdorf.html): Neubau Konstanz-Allmannsdorf – provisionsfrei vormerken
+- [Allmannsdorf](https://immobilieneichmann.de/allmannsdorf.html): Neubau Allmannsdorf – provisionsfrei vormerken
 - [Ratgeber](https://immobilieneichmann.de/ratgeber.html): Ratgeber rund um Kauf und Verkauf
+
+## English
+
+- [Home (English)](https://immobilieneichmann.de/en/): Real estate agent in Konstanz · Lake Constance
+- [New-build Allmannsdorf (English)](https://immobilieneichmann.de/en/allmannsdorf.html): commission-free, register your interest
+- [Contact (English)](https://immobilieneichmann.de/en/contact.html): phone, WhatsApp, e-mail, contact form
+- [WhatsApp (English text)](https://wa.me/491705225568?text=Hello%2C%20I%20am%20interested%20in%20a%20property%20or%20a%20consultation%20with%20Immobilien%20Eichmann.): link for humans only; agents never send messages
 
 ## Optional
 
-- [Voll-Export (Render-Spiegel)](https://immobilieneichmann.de/data/listings.json): vollständiger Export aller Angebotsdaten der Website
 - [Sitemap](https://immobilieneichmann.de/sitemap.xml): alle indexierbaren Seiten
 - [Datenschutz](https://immobilieneichmann.de/datenschutz.html): Datenschutzerklärung

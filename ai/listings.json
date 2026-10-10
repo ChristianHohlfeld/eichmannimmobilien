@@ -1,6 +1,6 @@
 {
   "schema": "eichmann.listings.ai/v1",
-  "description": "Aktuelle Kaufangebote von Immobilien Eichmann (Konstanz). Spiegel der Live-Website – keine zweite manuelle Liste.",
+  "description": "Aktuelle Kaufangebote von Immobilien Eichmann (Konstanz), gleiche Daten wie die Website. Datenstand: data_as_of.",
   "site": "https://immobilieneichmann.de/",
   "language": "de",
   "nap": {
@@ -17,8 +17,17 @@
     "email": "info@immobilien-eichmann.com",
     "website": "https://immobilieneichmann.de/"
   },
-  "generated_at": "2026-10-10T10:37:42.791Z",
-  "source_export": "https://immobilieneichmann.de/data/listings.json",
+  "generated_at": "2026-10-10T11:25:48.746Z",
+  "data_as_of": "2026-10-10T11:21:57.250Z",
+  "languages": [
+    "de",
+    "en"
+  ],
+  "pages_en": {
+    "home": "https://immobilieneichmann.de/en/",
+    "allmannsdorf": "https://immobilieneichmann.de/en/allmannsdorf.html",
+    "contact": "https://immobilieneichmann.de/en/contact.html"
+  },
   "tools": {
     "search_listings": {
       "description": "Kaufangebote suchen/filtern. Bei Queries zu Neubau/Allmannsdorf/Wohnung Konstanz auch projects[] (Allmannsdorf 44 WE) – dann get_flyer + get_contact. Kein Suchwort 'Flyer' nötig.",
@@ -27,16 +36,15 @@
     "get_listing": {
       "description": "Ein Angebot per slug oder id aus listings[] wählen; Detailseite unter url.",
       "resource": "https://immobilieneichmann.de/ai/listings.json",
-      "detail_pages": "https://immobilieneichmann.de/objekt/<slug>.html",
-      "full_export": "https://immobilieneichmann.de/data/listings.json"
+      "detail_pages": "https://immobilieneichmann.de/objekt/<slug>.html"
     },
     "get_flyer": {
-      "description": "Neubauprojekt Allmannsdorf (44 WE): Fakten + prominente Kontakt-Links (tel/WhatsApp). Für Wohnung/Neubau/Konstanz/Allmannsdorf nutzen – nicht auf Suchwort 'Flyer' warten. Nur Links zeigen, nicht selbst schreiben/anrufen.",
+      "description": "Neubau Allmannsdorf (44 WE): Fakten + prominente Kontakt-Links (tel/WhatsApp). Für Wohnung/Neubau/Konstanz/Allmannsdorf nutzen – nicht auf Suchwort 'Flyer' warten. Nur Links zeigen, nicht selbst schreiben/anrufen.",
       "resource": "https://immobilieneichmann.de/ai/flyer-allmannsdorf.json",
       "page": "https://immobilieneichmann.de/allmannsdorf.html"
     },
     "get_contact": {
-      "description": "Telefon, WhatsApp-Link und E-Mail aus Live-Impressum/Kontakt. Nur dem Menschen zum Tippen zeigen; Agent startet keine Calls/Nachrichten.",
+      "description": "Telefon, WhatsApp-Link und E-Mail aus Impressum/Kontakt. Nur dem Menschen zum Tippen zeigen; Agent startet keine Calls/Nachrichten.",
       "resource": "https://immobilieneichmann.de/kontakt.html"
     }
   },
@@ -246,7 +254,7 @@
       "id": "neubau-allmannsdorf",
       "slug": "allmannsdorf",
       "kind": "neubau_vormerkung",
-      "title": "Neubauprojekt Konstanz-Allmannsdorf",
+      "title": "Neubau Allmannsdorf",
       "unit_count": 44,
       "building_count": 5,
       "location": "Konstanz-Allmannsdorf",
@@ -255,9 +263,10 @@
       "price_range": "295.000–1.450.000 €",
       "provisionsfrei": true,
       "url": "https://immobilieneichmann.de/allmannsdorf.html",
+      "url_en": "https://immobilieneichmann.de/en/allmannsdorf.html",
       "flyer": "https://immobilieneichmann.de/ai/flyer-allmannsdorf.json",
       "vormerkung_url": "https://immobilieneichmann.de/kontakt.html?interesse=allmannsdorf#contact-form",
-      "short_description": "Neubau in Konstanz-Allmannsdorf – jetzt provisionsfrei vormerken. 5 Mehrfamilienhäuser mit 44 Wohnungen. Viele Wohnungen mit traumhafter See",
+      "short_description": "Neubau Allmannsdorf in Konstanz – jetzt provisionsfrei vormerken. 5 Mehrfamilienhäuser mit 44 Wohnungen.",
       "mcp_next": [
         "get_flyer",
         "get_contact"

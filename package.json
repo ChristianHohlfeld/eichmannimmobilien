@@ -11,7 +11,7 @@
     "test:layout": "node scripts/test-layout-regression.mjs",
     "build:share": "node scripts/build-share-card.mjs",
     "test:share": "node scripts/test-share-card.mjs",
-    "test": "npm run test:share && npm run test:logo && npm run test:jsonld && npm run test:legal && npm run test:content && npm run test:layout && npm run test:ai-index && npm run test:mcp && npm run test:ga4-funnel && npm run test:ab-ga4 && npm run test:dev-checklist && npm run test:claude-v2",
+    "test": "npm run test:share && npm run test:logo && npm run test:jsonld && npm run test:legal && npm run test:content && npm run test:layout && npm run test:ai-index && npm run test:mcp && npm run test:ga4-funnel && npm run test:ab-ga4 && npm run test:dev-checklist && npm run test:claude-v2 && npm run test:claude-final",
     "test:strict": "npm run test:legal && STRICT=1 npm run test:logo && STRICT=1 npm run test:layout",
     "test:jsonld": "node scripts/test-jsonld.mjs",
     "test:legal": "node scripts/test-legal-baseline.mjs",
@@ -34,7 +34,9 @@
     "test:ab-ga4": "node scripts/test-ab-ga4.mjs",
     "test:dev-checklist": "node scripts/test-dev-checklist-ga4.mjs",
     "test:claude-v2": "node scripts/test-claude-v2.mjs",
-    "build:en": "node scripts/build-en-pages.mjs"
+    "build:en": "node scripts/build-en-pages.mjs",
+    "test:claude-final": "node scripts/test-claude-final.mjs",
+    "verify:mirror": "node scripts/verify-listings-mirror.mjs"
   },
   "engines": {
     "node": ">=20"

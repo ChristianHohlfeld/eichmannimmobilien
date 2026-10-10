@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
+import { stripProjectStatus } from "./lib/listing-text.mjs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -176,7 +177,8 @@ for (const item of listings) {
     problems.push(`${item.slug}: rendered description is duplicated`);
   }
 
-  const expectedWords = wordSet(description);
+  // Rendered text omits project-status sentences (Baubeginn/Fertigstellung …, Chris rule) – compare against that.
+  const expectedWords = wordSet(stripProjectStatus(description));
   const renderedWords = wordSet(rendered);
   let overlap = 0;
   for (const word of expectedWords) {

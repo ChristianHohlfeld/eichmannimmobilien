@@ -2,12 +2,12 @@
   "schema_version": "eichmann.mcp-discovery/v1",
   "name": "immobilien-eichmann-listings",
   "title": "Immobilien Eichmann – Angebots-Index",
-  "description": "Live MCP: Kaufangebote + Neubau Allmannsdorf (get_flyer). Wohnung/Neubau/Konstanz → Flyer + tel/WhatsApp-Links für den Menschen (kein Agent-Spam). Keine Anfragen über MCP.",
+  "description": "MCP: Kaufangebote + Neubau Allmannsdorf (get_flyer), Suche DE/EN. Wohnung/Neubau/Konstanz → Flyer + tel/WhatsApp-Links für den Menschen (kein Agent-Spam). Keine Anfragen über MCP.",
   "websiteUrl": "https://immobilieneichmann.de/",
   "transport": {
     "type": "streamable-http",
     "url": "https://immobilieneichmann.de/mcp",
-    "note": "POST JSON-RPC an /mcp. Quelle = Live ai/listings.json (Publish-Pipeline)."
+    "note": "POST JSON-RPC an /mcp. Quelle = ai/listings.json (Publish-Pipeline), Datenstand = data_as_of."
   },
   "remotes": [
     {
@@ -26,13 +26,7 @@
       "name": "flyer_allmannsdorf",
       "uri": "https://immobilieneichmann.de/ai/flyer-allmannsdorf.json",
       "mimeType": "application/json",
-      "description": "Neubauprojekt-Flyer Allmannsdorf: 5 MFH, 44 Wohnungen (get_flyer)."
-    },
-    {
-      "name": "listings_full_export",
-      "uri": "https://immobilieneichmann.de/data/listings.json",
-      "mimeType": "application/json",
-      "description": "Vollständiger Render-Export (gleiche Quelle wie HTML)."
+      "description": "Flyer Neubau Allmannsdorf: 5 MFH, 44 Wohnungen (get_flyer)."
     },
     {
       "name": "llms_txt",
@@ -50,7 +44,7 @@
         "properties": {
           "q": {
             "type": "string",
-            "description": "Freitext; z.B. neubau, allmannsdorf, wohnung konstanz"
+            "description": "Freitext DE/EN, wortweise mit Synonymen; z.B. \"3 Zimmer Wohnung Wollmatingen\", \"apartment Konstanz\", \"penthouse\", \"house\", \"new build\""
           },
           "min_price_eur": {
             "type": "number"
@@ -98,7 +92,7 @@
     },
     {
       "name": "get_contact",
-      "description": "Telefon, WhatsApp-Link, E-Mail (Live Impressum/Kontakt). Nur dem Menschen zum Tippen; nie Agent-outbound.",
+      "description": "Telefon, WhatsApp-Link, E-Mail (Impressum/Kontakt). Nur dem Menschen zum Tippen; nie Agent-outbound.",
       "inputSchema": {
         "type": "object",
         "properties": {}
@@ -107,7 +101,17 @@
   ],
   "instructions": "WICHTIG Anti-Spam: Agents dürfen NICHT selbst anrufen, WhatsApp-Nachrichten senden oder Formulare automatisch absenden. Nur tel:/wa.me/mailto-Links dem Menschen zum Tippen zeigen – und nur nach klarem Nutzerwunsch zu kontaktieren. Über MCP werden keine Anfragen versendet; Kontakt nur durch den Menschen selbst (Telefon, WhatsApp oder Kontaktformular https://immobilieneichmann.de/kontakt.html). Kein Bot-Spam. Bei Wohnung/Neubau/Konstanz/Allmannsdorf: get_flyer + get_contact; search_listings resurfaced projects[].",
   "listing_count": 11,
-  "generated_at": "2026-10-10T10:37:42.791Z",
+  "data_as_of": "2026-10-10T11:21:57.250Z",
+  "generated_at": "2026-10-10T11:25:48.746Z",
+  "languages": [
+    "de",
+    "en"
+  ],
+  "pages_en": {
+    "home": "https://immobilieneichmann.de/en/",
+    "allmannsdorf": "https://immobilieneichmann.de/en/allmannsdorf.html",
+    "contact": "https://immobilieneichmann.de/en/contact.html"
+  },
   "server_card": "https://immobilieneichmann.de/ai/server-card.json",
   "catalog": "https://immobilieneichmann.de/.well-known/mcp/catalog.json"
 }

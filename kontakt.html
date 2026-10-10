@@ -31,7 +31,7 @@
   <link rel="icon" href="assets/logo.png?v=house-orig-v1" type="image/png" sizes="any">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="preload" href="assets/logo.svg?v=house-orig-v1" as="image" type="image/svg+xml">
-<link rel="stylesheet" href="css/styles.css?v=claude-v2">
+<link rel="stylesheet" href="css/styles.css?v=claude-final">
   
   <script type="application/ld+json">
 {
@@ -48,7 +48,7 @@
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      <a class="logo" href="index.html" aria-label="Immobilien Eichmann – Startseite">
+      <a class="logo" href="/" aria-label="Immobilien Eichmann – Startseite">
         <img class="logo-svg" src="assets/logo-header.svg?v=header-safe-v1" alt="Immobilien Eichmann" width="320" height="56" decoding="async">
         <span class="logo-text">
           <span class="logo-mark">Immobilien Eichmann</span>
@@ -57,15 +57,16 @@
       </a>
       <button class="menu-toggle" type="button" aria-label="Menü öffnen" aria-expanded="false">☰</button>
             <nav class="nav" aria-label="Hauptnavigation">
-        <a href="index.html">Start</a>
-        <a href="index.html#angebote">Angebote</a>
+        <a href="/">Start</a>
+        <a href="/#angebote">Angebote</a>
         <a href="haus-verkaufen-konstanz.html">Verkauf</a>
         <a href="leistungen.html">Leistungen</a>
         <a href="immobilienbewertung-konstanz.html">Bewertung</a>
         <a href="projekte.html">Projekte</a>
         <a href="ratgeber.html">Ratgeber</a>
         <a href="/en/contact.html" hreflang="en" lang="en" class="lang-switch" data-lang-switch="en">English</a>
-        <a href="kontakt.html" class="nav-cta active">Kontakt</a>
+        <a href="kontakt.html" class="active">Kontakt</a>
+        <a href="tel:+491705225568" class="nav-cta">Anrufen</a>
       </nav>
     </div>
   </header>
@@ -88,7 +89,7 @@
         <div class="hero-actions" style="margin-top:1.1rem">
           <a class="btn btn-accent" href="tel:+491705225568">Jetzt anrufen</a>
           <a class="btn btn-outline" href="https://wa.me/491705225568?text=Guten%20Tag%2C%20ich%20interessiere%20mich%20f%C3%BCr%20ein%20Objekt%20bzw.%20eine%20Beratung%20bei%20Immobilien%20Eichmann." target="_blank" rel="noopener noreferrer">WhatsApp</a>
-          <a class="btn btn-outline" href="#" data-open-flyer>Neubau vormerken</a>
+          <a class="btn btn-outline" href="kontakt.html?interesse=allmannsdorf#contact-form" data-open-flyer>Neubau vormerken</a>
         </div>
       </div>
       <div class="content-card contact-form" id="bewertung">
@@ -210,7 +211,7 @@
           <a href="haus-verkaufen-konstanz.html">Haus verkaufen Konstanz</a>
           <a href="immobilienbewertung-konstanz.html">Immobilienbewertung Konstanz</a>
           <a href="konstanz.html">Immobilien in Konstanz</a>
-          <a href="index.html#angebote">Aktuelle Kaufangebote</a>
+          <a href="/#angebote">Aktuelle Kaufangebote</a>
         </div>
         <div class="footer-col">
           <h2 class="footer-heading">Stadtteile &amp; Region</h2>
@@ -277,17 +278,20 @@
           <div class="flyer-hero-img">
             <picture>
               <source srcset="assets/flyer/hero-dining.webp" type="image/webp">
-              <img src="assets/flyer/hero-dining.jpg" alt="Neubauwohnung mit Seesicht Konstanz-Allmannsdorf" width="520" height="550">
+              <img src="assets/flyer/hero-dining.jpg" alt="Wohn- und Essbereich – Neubau Allmannsdorf" width="520" height="550">
             </picture>
           </div>
           <div class="flyer-intro">
-            <h2 id="flyerTitle">NEUBAUPROJEKT<br><span>KONSTANZ-ALLMANNSDORF</span></h2>
-            <p>Neubau in Konstanz-Allmannsdorf – jetzt provisionsfrei vormerken.</p>
+            <h2 id="flyerTitle">NEUBAU<br><span>ALLMANNSDORF</span></h2>
+            <p>Neubau Allmannsdorf in Konstanz – jetzt provisionsfrei vormerken.</p>
             <ul class="flyer-checks">
               <li>5 Mehrfamilienhäuser mit 44 Wohnungen</li>
-              <li>Viele Wohnungen mit traumhafter <strong>Seesicht</strong></li>
+              <li>2–5 Zimmer · 40–124 m²</li>
             </ul>
-            <p class="flyer-cta-script">Jetzt Vormerken Lassen!</p>
+            <p class="flyer-cta-script">Jetzt vormerken lassen!</p>
+            <div class="flyer-intro-ctas">
+              <a class="btn btn-accent" href="tel:+491705225568">Anrufen +49 170 522 5568</a>
+            </div>
             <div class="flyer-form">
             <form class="vormerk-form" id="vormerk-flyer" data-vormerk-form data-form-location="flyer_modal" action="https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/contact" method="POST">
               <h3 class="vormerk-title">Provisionsfrei vormerken</h3>
@@ -322,7 +326,6 @@
             <li><span>Lage</span> Konstanz-Allmannsdorf</li>
             <li><span>Gebäude</span> 5 Mehrfamilienhäuser</li>
             <li><span>Einheiten</span> 44 Wohnungen</li>
-            <li><span>Highlights</span> Viele Wohnungen mit traumhafter Seesicht</li>
             <li><span>Flächen</span> 40–124 m²</li>
             <li><span>Zimmer</span> 2–5</li>
             <li><span>Grundstück</span> ca. 4.000 m²</li>
@@ -333,7 +336,7 @@
             <div class="flyer-thumbs">
               <picture>
                 <source srcset="assets/flyer/living.webp" type="image/webp">
-                <img src="assets/flyer/living.jpg" alt="Wohnzimmer mit Seesicht Allmannsdorf" width="300" height="260" loading="lazy">
+                <img src="assets/flyer/living.jpg" alt="Wohnzimmer – Neubau Allmannsdorf" width="300" height="260" loading="lazy">
               </picture>
               <picture>
                 <source srcset="assets/flyer/dining-detail.webp" type="image/webp">
@@ -341,7 +344,7 @@
               </picture>
             </div>
             <div class="flyer-copy">
-              <p>Der Neubau Allmannsdorf ist ein modernes Wohnensemble mit 5 Mehrfamilienhäusern und insgesamt 44 hochwertigen Wohnungen in einer der gefragtesten Wohnlagen von Konstanz. Freuen Sie sich auf durchdachte Grundrisse, lichtdurchflutete Räume und eine Architektur, die Design, Komfort und Lebensqualität vereint. Viele Wohnungen bieten einen einzigartigen Blick auf den Bodensee.</p>
+              <p>Der Neubau Allmannsdorf ist ein modernes Wohnensemble mit 5 Mehrfamilienhäusern und insgesamt 44 hochwertigen Wohnungen in einer der gefragtesten Wohnlagen von Konstanz. Freuen Sie sich auf durchdachte Grundrisse, lichtdurchflutete Räume und eine Architektur, die Design, Komfort und Lebensqualität vereint.</p>
               <ul class="flyer-features">
                 <li>Hochwertige Architektur</li>
                 <li>Nachhaltige Bauweise</li>
@@ -351,8 +354,6 @@
                 <li>Ruhige und gefragte Lage</li>
               </ul>
               <div class="flyer-actions">
-                <a class="btn btn-accent" href="tel:+491705225568">Anrufen +49 170 522 5568</a>
-                <a class="btn btn-primary" href="kontakt.html?interesse=allmannsdorf#contact-form">Vormerken per Kontakt</a>
                 <a class="btn btn-outline" href="mailto:info@immobilien-eichmann.com?subject=Vormerkung%20Neubau%20Allmannsdorf">E-Mail Vormerken</a>
               </div>
             </div>
@@ -373,9 +374,9 @@
         </div>
     </div>
   </div>
-  <script src="js/cookie-consent.js?v=claude-v2" defer></script>
-  <script src="js/main.js?v=claude-v2" defer></script>
-  <script src="js/vormerk.js?v=claude-v2" defer></script>
+  <script src="js/cookie-consent.js?v=claude-final" defer></script>
+  <script src="js/main.js?v=claude-final" defer></script>
+  <script src="js/vormerk.js?v=claude-final" defer></script>
 
 </body>
 </html>

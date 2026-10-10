@@ -241,7 +241,8 @@ async function measurePage(page, base, path, vp) {
       const intro = modal.querySelector('.flyer-intro');
       const introCtas = intro?.querySelector('.flyer-intro-ctas');
       const call = introCtas?.querySelector('a[href^="tel:"]');
-      const vormerk = introCtas?.querySelector('a[href*="kontakt"], a[href="#vormerk-flyer"]');
+      // claude-final: Vormerken = the inline form in the intro (no separate Vormerken button any more)
+      const vormerk = intro?.querySelector('form[data-vormerk-form] button[type="submit"]');
       const c = introCtas?.getBoundingClientRect();
       const h = modal.querySelector('.flyer-hero-img')?.getBoundingClientRect();
       const i = intro?.getBoundingClientRect();
