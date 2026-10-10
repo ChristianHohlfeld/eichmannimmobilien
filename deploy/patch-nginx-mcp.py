@@ -130,6 +130,22 @@ if "data-private-v1" not in text:
     print("nginx: /data/listings.json + /data/projects.json → 404 (data-private-v1)")
 
 
+# /mcp/health (read-only: listing_count, data_as_of, build.json) – SSOT
+HEALTH = """    location = /mcp/health {
+        limit_req zone=eichmann_mcp burst=15 nodelay;
+        proxy_pass http://127.0.0.1:3848/mcp/health;
+        proxy_set_header Host $host;
+        add_header Cache-Control "no-store" always;
+    }
+
+"""
+if "location = /mcp/health" not in text:
+    anchor = "    location = /mcp/ {\n"
+    if anchor in text:
+        text = text.replace(anchor, HEALTH + anchor, 1)
+        changed = True
+        print("nginx: inserted /mcp/health proxy")
+
 if changed:
     # Write, validate, and roll back on failure so a bad patch can never leave nginx unloadable.
     import shutil, subprocess
@@ -144,3 +160,4 @@ if changed:
     print("nginx: config updated (nginx -t ok)")
 else:
     print("nginx: no changes needed")
+
