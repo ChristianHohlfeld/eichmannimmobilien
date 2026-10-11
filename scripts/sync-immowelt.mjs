@@ -993,6 +993,16 @@ const TOPIC_OBJEKT_PAGES = [
     filter: (L) => /wollmatingen/i.test(String(L.location || "")),
   },
   {
+    file: "petershausen.html",
+    heading: "Aktuelle Kaufangebote in Petershausen",
+    filter: (L) => /petershausen/i.test(String(L.location || "")),
+  },
+  {
+    file: "mehrfamilienhaus-konstanz.html",
+    heading: "Aktuelle Mehrfamilienhäuser in Konstanz",
+    filter: (L) => /mehrfamilien|dreifamilien/i.test(String(L.type || "") + " " + String(L.title || "")),
+  },
+  {
     file: "wohnung-kaufen-konstanz.html",
     heading: "Aktuelle Wohnungen zum Kauf in Konstanz",
     filter: (L) => /wohnung|penthouse|maisonette/i.test(String(L.type || "") + " " + String(L.title || "")),
@@ -1527,12 +1537,14 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
           <a href="${p}immobilienmakler-konstanz.html">Immobilienmakler Konstanz</a>
           <a href="${p}wohnung-kaufen-konstanz.html">Wohnung kaufen Konstanz</a>
           <a href="${p}haus-verkaufen-konstanz.html">Haus verkaufen Konstanz</a>
+          <a href="${p}wohnung-verkaufen-konstanz.html">Wohnung verkaufen Konstanz</a>
           <a href="${p}immobilienbewertung-konstanz.html">Immobilienbewertung Konstanz</a>
           <a href="/#angebote">Aktuelle Kaufangebote</a>
         </div>
         <div class="footer-col">
           <h2 class="footer-heading">Stadtteile &amp; Region</h2>
           <a href="${p}wollmatingen.html">Immobilien Wollmatingen</a>
+          <a href="${p}petershausen.html">Immobilien Petershausen</a>
           <a href="${p}allmannsdorf.html">Neubau Allmannsdorf</a>
           <a href="${p}projekte.html">Projekte &amp; Angebote</a>
           <a href="https://www.immowelt.de/profil/3b18336c6a2e401da38e9cc20268270d" target="_blank" rel="noopener noreferrer">Immowelt-Profil</a>

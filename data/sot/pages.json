@@ -39,10 +39,10 @@
         "de": "leistungen.html"
       },
       "title": {
-        "de": "Leistungen: Verkauf &amp; Vermittlung | Immobilien Eichmann"
+        "de": "Immobilienmakler-Leistungen Konstanz | Immobilien Eichmann"
       },
       "description": {
-        "de": "Leistungen von Immobilien Eichmann in Konstanz: Immobilienverkauf, Vermittlung und Projektentwicklung am Bodensee."
+        "de": "Makler-Leistungen in Konstanz: Haus und Wohnung verkaufen, Bewertung, Wohnung und Mehrfamilienhaus kaufen, Neubau-Vertrieb – persönlich mit Helmut Eichmann."
       },
       "sitemap": {
         "de": {
@@ -264,7 +264,7 @@
         "de": "immobilienmakler-konstanz.html"
       },
       "title": {
-        "de": "Immobilienmakler Konstanz | Persönlich am Bodensee"
+        "de": "Immobilienmakler Konstanz | Immobilien Eichmann"
       },
       "description": {
         "de": "Immobilienmakler Konstanz: Helmut Eichmann – Verkauf, Wertermittlung und Kauf am Bodensee. Persönlich erreichbar unter +49 170 522 5568."
@@ -327,7 +327,7 @@
         "de": "konstanz.html"
       },
       "title": {
-        "de": "Immobilien Konstanz &amp; Bodensee | Immobilien Eichmann"
+        "de": "Immobilien Konstanz | Immobilien Eichmann"
       },
       "description": {
         "de": "Immobilien in Konstanz und am Bodensee: Stadtteile, Kauf und Verkauf – inkl. Neubau Allmannsdorf (provisionsfrei vormerken)."
@@ -352,6 +352,69 @@
       },
       "description": {
         "de": "Immobilien in Konstanz-Wollmatingen: Kaufangebote und Beratung durch Immobilien Eichmann."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.8",
+          "changefreq": "weekly"
+        }
+      }
+    },
+    {
+      "id": "wohnung-verkaufen-konstanz",
+      "paths": {
+        "de": "/wohnung-verkaufen-konstanz.html"
+      },
+      "file": {
+        "de": "wohnung-verkaufen-konstanz.html"
+      },
+      "title": {
+        "de": "Wohnung verkaufen Konstanz | Immobilien Eichmann"
+      },
+      "description": {
+        "de": "Wohnung verkaufen in Konstanz: persönliche Begleitung durch Helmut Eichmann – Bewertung, Unterlagen, Exposé, Besichtigungen und Notar. Mobil +49 170 522 5568."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.8",
+          "changefreq": "weekly"
+        }
+      }
+    },
+    {
+      "id": "mehrfamilienhaus-konstanz",
+      "paths": {
+        "de": "/mehrfamilienhaus-konstanz.html"
+      },
+      "file": {
+        "de": "mehrfamilienhaus-konstanz.html"
+      },
+      "title": {
+        "de": "Mehrfamilienhaus kaufen Konstanz | Immobilien Eichmann"
+      },
+      "description": {
+        "de": "Mehrfamilienhaus kaufen in Konstanz: aktuelle Angebote von Immobilien Eichmann für Eigennutzer und Kapitalanleger am Bodensee. Mobil +49 170 522 5568."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.8",
+          "changefreq": "weekly"
+        }
+      }
+    },
+    {
+      "id": "petershausen",
+      "paths": {
+        "de": "/petershausen.html"
+      },
+      "file": {
+        "de": "petershausen.html"
+      },
+      "title": {
+        "de": "Immobilien Petershausen Konstanz | Immobilien Eichmann"
+      },
+      "description": {
+        "de": "Immobilien in Konstanz-Petershausen: aktuelle Kaufangebote und persönliche Beratung zu Kauf und Verkauf mit Helmut Eichmann. Mobil +49 170 522 5568."
       },
       "sitemap": {
         "de": {
@@ -390,7 +453,7 @@
         "de": "immobilienbewertung-konstanz.html"
       },
       "title": {
-        "de": "Immobilienbewertung Konstanz | Markteinschätzung am Bodensee"
+        "de": "Immobilienbewertung Konstanz | Immobilien Eichmann"
       },
       "description": {
         "de": "Immobilienbewertung Konstanz: maklerische Markteinschätzung für Verkauf und Erbschaft am Bodensee – persönlich, kein Online-Tool. Kein Verkehrswertgutachten."
