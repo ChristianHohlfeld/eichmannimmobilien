@@ -51,9 +51,12 @@ const STATIC_PAGE_LINKS = [
   ["Immobilienmakler Konstanz", "/immobilienmakler-konstanz.html"],
   ["Wohnung kaufen Konstanz", "/wohnung-kaufen-konstanz.html"],
   ["Haus verkaufen Konstanz", "/haus-verkaufen-konstanz.html"],
+  ["Wohnung verkaufen Konstanz", "/wohnung-verkaufen-konstanz.html"],
+  ["Mehrfamilienhaus kaufen Konstanz", "/mehrfamilienhaus-konstanz.html"],
   ["Immobilienbewertung Konstanz", "/immobilienbewertung-konstanz.html"],
   ["Konstanz", "/konstanz.html"],
   ["Wollmatingen", "/wollmatingen.html"],
+  ["Petershausen", "/petershausen.html"],
   ["Allmannsdorf", "/allmannsdorf.html"],
   ["Ratgeber", "/ratgeber.html"],
 ];
@@ -203,6 +206,9 @@ const LLMS_PAGE_NOTES = {
   "/immobilienbewertung-konstanz.html": "Immobilienbewertung in Konstanz",
   "/konstanz.html": "Immobilien in Konstanz – Stadtteile und Markt",
   "/wollmatingen.html": "Immobilien in Konstanz-Wollmatingen",
+  "/petershausen.html": "Immobilien in Konstanz-Petershausen",
+  "/wohnung-verkaufen-konstanz.html": "Wohnung verkaufen in Konstanz – Ablauf und Unterlagen",
+  "/mehrfamilienhaus-konstanz.html": "Mehrfamilienhaus kaufen in Konstanz – aktuelle Angebote",
   "/allmannsdorf.html": "Neubau Allmannsdorf – provisionsfrei vormerken",
   "/ratgeber.html": "Ratgeber rund um Kauf und Verkauf",
 };

@@ -2648,3 +2648,9 @@ body:has(form:focus-within) .floating-wa { opacity: 0; pointer-events: none; }
 @media (min-width: 769px) {
   body { padding-bottom: calc(58px + 2rem); }
 }
+
+/* Local-SEO: FAQ-Akkordeon + Warum-Eichmann-Block */
+.faq-item summary { cursor: pointer; list-style-position: outside; }
+.faq-item summary h3 { display: inline; font-size: 1.05rem; margin: 0; }
+.faq-item > p { margin-top: .6rem; }
+.why-eichmann .check-list { margin-bottom: 1rem; }

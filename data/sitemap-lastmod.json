@@ -1,11 +1,11 @@
 {
   "allmannsdorf.html": {
-    "hash": "16a4ae0e3f35a10a",
-    "lastmod": "2026-10-10T14:54:40+02:00"
+    "hash": "0523c0705fc20458",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "datenschutz.html": {
-    "hash": "3418a16fad6e70ad",
-    "lastmod": "2026-10-10T14:54:40+02:00"
+    "hash": "182886b00eda1996",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "en/allmannsdorf.html": {
     "hash": "e80a8caf11e9b0fb",
@@ -68,111 +68,123 @@
     "lastmod": "2026-10-10T19:45:57+02:00"
   },
   "haus-verkaufen-konstanz.html": {
-    "hash": "30f90fd5e6a823fb",
-    "lastmod": "2026-10-10T15:14:01+02:00"
+    "hash": "f3cef52f6d0a66d9",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "immobilienbewertung-konstanz.html": {
-    "hash": "34fb0b66f916a0b8",
-    "lastmod": "2026-10-10T15:14:01+02:00"
+    "hash": "bb1141f81335d6f6",
+    "lastmod": "2026-10-11T02:48:28+02:00"
   },
   "immobilienmakler-konstanz.html": {
-    "hash": "4406083e06201c99",
-    "lastmod": "2026-10-10T14:54:51+02:00"
+    "hash": "86102eaf8ed74642",
+    "lastmod": "2026-10-11T02:48:28+02:00"
   },
   "impressum.html": {
-    "hash": "b4ffce471f6979d5",
-    "lastmod": "2026-10-10T14:54:40+02:00"
+    "hash": "60e18b16b2c03f01",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "index.html": {
-    "hash": "b37ac42a818c4117",
-    "lastmod": "2026-10-10T15:00:36+02:00"
+    "hash": "da0cfcf2f1f77b84",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "kaufen-aus-der-schweiz.html": {
-    "hash": "d4ffe23a5da98302",
-    "lastmod": "2026-10-10T15:14:17+02:00"
+    "hash": "12d7146738b2e84d",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "konstanz.html": {
-    "hash": "db983ba5c0ba70cc",
-    "lastmod": "2026-10-10T14:54:40+02:00"
+    "hash": "42c86704b5054382",
+    "lastmod": "2026-10-11T02:48:28+02:00"
   },
   "kontakt.html": {
-    "hash": "d439b374a28bac81",
-    "lastmod": "2026-10-10T14:54:40+02:00"
+    "hash": "468e8656d0a698fb",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "leistungen.html": {
-    "hash": "db13c251048530f7",
-    "lastmod": "2026-10-10T14:54:51+02:00"
+    "hash": "a5acc0b1f749396b",
+    "lastmod": "2026-10-11T02:51:57+02:00"
   },
   "mcp.html": {
-    "hash": "14d73598f6ed3f35",
-    "lastmod": "2026-10-10T14:54:40+02:00"
+    "hash": "52b0b1613b8dddc6",
+    "lastmod": "2026-10-11T02:48:24+02:00"
+  },
+  "mehrfamilienhaus-konstanz.html": {
+    "hash": "0362cea2019332b1",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "objekt/maisonette-furstenberg-bb241b38.html": {
-    "hash": "85c7ff51210ebb7b",
-    "lastmod": "2026-10-10T19:19:45+02:00"
+    "hash": "67b0c7c48c1504ee",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "objekt/maisonette-furstenberg-ff414db8.html": {
-    "hash": "17ebda5de7cf630f",
-    "lastmod": "2026-10-10T19:19:45+02:00"
+    "hash": "0dcdd839b07b859b",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "objekt/maisonette-wollmatingen-484fee8a.html": {
-    "hash": "b85b2961098c4eff",
-    "lastmod": "2026-10-10T19:19:45+02:00"
+    "hash": "168b49364e4ee3de",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "objekt/maisonette-wollmatingen-4ac199b6.html": {
-    "hash": "92eda5f096d58d5d",
-    "lastmod": "2026-10-10T19:19:45+02:00"
+    "hash": "25face9d8bec7d76",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "objekt/mehrfamilienhaus-wollmatingen-32a8908e.html": {
-    "hash": "2fabecc791bb6fd3",
-    "lastmod": "2026-10-10T19:19:45+02:00"
+    "hash": "35c93614c55b9a2d",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "objekt/penthouse-furstenberg-6fd6062e.html": {
-    "hash": "0cae1b6fd86132c3",
-    "lastmod": "2026-10-10T19:19:45+02:00"
+    "hash": "5f7eb2dad1561e2c",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "objekt/penthouse-konigsbau-c6b1d820.html": {
-    "hash": "6fd21cd83c31ea82",
-    "lastmod": "2026-10-10T19:19:45+02:00"
+    "hash": "ca7130f865b23505",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "objekt/wohnung-petershausen-86a7d4f6.html": {
-    "hash": "9688c1271e0c096b",
-    "lastmod": "2026-10-10T19:19:45+02:00"
+    "hash": "896027e939fc3ea2",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "objekt/wohnung-wollmatingen-4fed09f2.html": {
-    "hash": "56fcbf792f982668",
-    "lastmod": "2026-10-10T19:19:45+02:00"
+    "hash": "279ffd6340f50798",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "objekt/wohnung-wollmatingen-7bff84e7.html": {
-    "hash": "5a2029108d526a41",
-    "lastmod": "2026-10-10T19:19:45+02:00"
+    "hash": "f2dc4b03bb7a1e7b",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "objekt/wohnung-wollmatingen-e7e58fe2.html": {
-    "hash": "83e9094b37cd39f0",
-    "lastmod": "2026-10-10T19:19:45+02:00"
+    "hash": "4ab87de478030375",
+    "lastmod": "2026-10-11T02:48:24+02:00"
+  },
+  "petershausen.html": {
+    "hash": "f65ce7dd5377d8ae",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "projekte.html": {
-    "hash": "82904844b5d0ef1a",
-    "lastmod": "2026-10-10T14:54:40+02:00"
+    "hash": "2043b1cb07861a21",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "ratgeber.html": {
-    "hash": "9cb77a7d0f65311d",
-    "lastmod": "2026-10-10T14:54:51+02:00"
+    "hash": "99eab1df7b893cc2",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "vertrag-widerrufen.html": {
-    "hash": "50151c14569ce3a7",
-    "lastmod": "2026-10-10T14:54:40+02:00"
+    "hash": "d2a88212abe93ad0",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "widerrufsbelehrung.html": {
-    "hash": "b40a20336cc98981",
-    "lastmod": "2026-10-10T14:54:40+02:00"
+    "hash": "8ab65da4eda58e35",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "wohnung-kaufen-konstanz.html": {
-    "hash": "fe176d94529da040",
-    "lastmod": "2026-10-10T14:54:40+02:00"
+    "hash": "2ddc2453721905d5",
+    "lastmod": "2026-10-11T02:48:24+02:00"
+  },
+  "wohnung-verkaufen-konstanz.html": {
+    "hash": "f25999a6a577dd4f",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   },
   "wollmatingen.html": {
-    "hash": "10d937ee27b11ec0",
-    "lastmod": "2026-10-10T14:54:40+02:00"
+    "hash": "af84d32957022cda",
+    "lastmod": "2026-10-11T02:48:24+02:00"
   }
 }
