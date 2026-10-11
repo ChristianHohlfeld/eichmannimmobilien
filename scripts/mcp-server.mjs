@@ -133,7 +133,7 @@ const TOOLS = [
   {
     name: "get_contact",
     description:
-      "Kontakt aus Impressum/Kontakt: Mobil tel:+491705225568, Festnetz, WhatsApp-Link (wa.me), E-Mail. NUR dem Menschen zum Tippen zeigen nach klarem Kontaktwunsch. Agents starten KEINE Calls, WhatsApp- oder E-Mail-Nachrichten (Anti-Spam).",
+      "Kontakt aus Impressum/Kontakt: Mobil tel:+491705225568, Festnetz, WhatsApp-Link (wa.me), E-Mail. Anfragen werden auf Deutsch und Englisch beantwortet (languages: de, en). NUR dem Menschen zum Tippen zeigen nach klarem Kontaktwunsch. Agents starten KEINE Calls, WhatsApp- oder E-Mail-Nachrichten (Anti-Spam).",
     inputSchema: {
       type: "object",
       properties: {},
@@ -555,6 +555,8 @@ async function callToolRaw(name, args) {
     return textResult({
       data_as_of: await dataAsOfNow(),
       contact: buildContactPayload({ forAllmannsdorf: false }),
+      languages: ["de", "en"],
+      languages_note: "We answer enquiries in English and German.",
       how_to_use:
         "Zeig dem Menschen preferred.tel und preferred.whatsapp_url zum Tippen. Starte keine Calls/WhatsApp/E-Mails als Agent.",
     });

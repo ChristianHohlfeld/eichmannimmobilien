@@ -183,6 +183,7 @@ ${ld(jsonld)}
           <a class="btn btn-outline btn-call" href="${TEL}" data-location="hero_number">Call <span class="nowrap">${TEL_DISPLAY}</span></a>
           <a class="btn btn-outline" href="${esc(wa)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>
         </div>
+        <p class="lang-note" data-lang-note>We answer enquiries in English and German.</p>
       </div>
     </section>
 
@@ -221,6 +222,7 @@ ${m.facts.map(([k, v]) => `            <li>${esc(k)}: <strong>${esc(v)}</strong>
             </details>
             <p class="form-note legal-request-note">${EN_PRIVACY("/")}</p>
             <button type="submit" class="btn btn-accent" id="contact-submit">Request exposé</button>
+            <p class="lang-note" data-lang-note>We answer enquiries in English and German.</p>
             <div id="form-success" class="form-success" role="status" hidden>Thank you. Helmut Eichmann will get back to you personally.</div>
             <div id="form-error" class="form-error" role="alert" hidden>Your request could not be sent. Please call or use WhatsApp: <a href="${TEL}">${TEL_DISPLAY}</a>.</div>
           </form>

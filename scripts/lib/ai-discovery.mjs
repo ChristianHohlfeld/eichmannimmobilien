@@ -180,8 +180,9 @@ export function buildAiListingsDocument(
       },
       get_contact: {
         description:
-          "Telefon, WhatsApp-Link und E-Mail aus Impressum/Kontakt. Nur dem Menschen zum Tippen zeigen; Agent startet keine Calls/Nachrichten.",
+          "Telefon, WhatsApp-Link und E-Mail aus Impressum/Kontakt. Anfragen auf Deutsch und Englisch (We answer enquiries in English and German). Nur dem Menschen zum Tippen zeigen; Agent startet keine Calls/Nachrichten.",
         resource: absUrl(origin, "kontakt.html"),
+        languages: ["de", "en"],
       },
     },
     listing_count: publicDetail.length,
@@ -243,6 +244,7 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
   lines.push(`- Festnetz: ${PUBLIC_CONTACT.phone_landline.display} (${PUBLIC_CONTACT.phone_landline.tel})`);
   lines.push(`- WhatsApp (Link für Menschen): ${PUBLIC_CONTACT.whatsapp.url}`);
   lines.push(`- E-Mail: ${NAP.email}`);
+  lines.push("- Sprachen: Anfragen werden auf Deutsch und Englisch beantwortet (We answer enquiries in English and German).");
   lines.push(`- Web: ${o}/`);
   lines.push("");
   lines.push(AGENT_CONTACT_RULES);

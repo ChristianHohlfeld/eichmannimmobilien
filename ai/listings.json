@@ -17,7 +17,7 @@
     "email": "info@immobilien-eichmann.com",
     "website": "https://immobilieneichmann.de/"
   },
-  "generated_at": "2026-10-11T01:34:29.017Z",
+  "generated_at": "2026-10-11T01:42:26.656Z",
   "data_as_of": "2026-10-11",
   "languages": [
     "de",
@@ -44,8 +44,12 @@
       "page": "https://immobilieneichmann.de/allmannsdorf.html"
     },
     "get_contact": {
-      "description": "Telefon, WhatsApp-Link und E-Mail aus Impressum/Kontakt. Nur dem Menschen zum Tippen zeigen; Agent startet keine Calls/Nachrichten.",
-      "resource": "https://immobilieneichmann.de/kontakt.html"
+      "description": "Telefon, WhatsApp-Link und E-Mail aus Impressum/Kontakt. Anfragen auf Deutsch und Englisch (We answer enquiries in English and German). Nur dem Menschen zum Tippen zeigen; Agent startet keine Calls/Nachrichten.",
+      "resource": "https://immobilieneichmann.de/kontakt.html",
+      "languages": [
+        "de",
+        "en"
+      ]
     }
   },
   "listing_count": 11,
