@@ -5,7 +5,13 @@
   function gtag(){ dataLayer.push(arguments); }
   window.gtag = gtag;
   gtag('js', new Date());
-  gtag('config', MEASUREMENT_ID);
+  /* QA: ?debug_mode=1 enables GA4 DebugView for this tab session (no effect for normal visitors) */
+  var debugMode = false;
+  try {
+    if (/[?&]debug_mode=1(&|$)/.test(location.search || '')) sessionStorage.setItem('eichmann_ga_debug', '1');
+    debugMode = sessionStorage.getItem('eichmann_ga_debug') === '1';
+  } catch (e) {}
+  gtag('config', MEASUREMENT_ID, debugMode ? { debug_mode: true } : {});
 
   var ATTR_KEY = 'eichmann_attr_v1';
   var UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];

@@ -103,6 +103,8 @@
             if (kind === "vormerken") track("vormerken_submit", base);
             track("form_submit_success", base);
             track("generate_lead", {
+              form: kind,
+              anliegen: kind === "vormerken" ? "vormerkung_allmannsdorf" : kind,
               form_id: form.id || "vormerk",
               form_type: kind,
               project: project,
