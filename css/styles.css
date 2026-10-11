@@ -2654,3 +2654,6 @@ body:has(form:focus-within) .floating-wa { opacity: 0; pointer-events: none; }
 .faq-item summary h3 { display: inline; font-size: 1.05rem; margin: 0; }
 .faq-item > p { margin-top: .6rem; }
 .why-eichmann .check-list { margin-bottom: 1rem; }
+
+/* EN: languages line near CTAs/forms */
+.lang-note { margin: .6rem 0 0; font-size: .95rem; opacity: .9; }

@@ -252,6 +252,8 @@ export function buildProjectJsonLd(project, { origin = DEFAULT_ORIGIN, updatedAt
     },
     founder: { "@type": "Person", name: "Helmut Eichmann" },
     areaServed: ["Konstanz", "Allmannsdorf", "Bodensee"],
+    knowsLanguage: ["de", "en"],
+    contactPoint: { "@type": "ContactPoint", contactType: "sales", telephone: "+491705225568", email: project.cta?.email || "info@immobilien-eichmann.com", availableLanguage: ["de", "en"] },
   };
 
   const webpage = {
