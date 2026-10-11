@@ -201,7 +201,11 @@
   },
   "sunside-living-wollmatingen.html": {
     "hash": "994e0ff3261dd0bb",
+<<<<<<< HEAD
     "lastmod": "2026-10-11T11:44:39+02:00"
+=======
+    "lastmod": "2026-10-11T11:53:24+02:00"
+>>>>>>> dbd38a17fe7e961d12120dc4c83d05ddefaaf76c
   },
   "vertrag-widerrufen.html": {
     "hash": "d2a88212abe93ad0",
@@ -221,6 +225,10 @@
   },
   "wollmatingen.html": {
     "hash": "5503a6f70268c68e",
+<<<<<<< HEAD
     "lastmod": "2026-10-11T11:45:23+02:00"
+=======
+    "lastmod": "2026-10-11T11:54:50+02:00"
+>>>>>>> dbd38a17fe7e961d12120dc4c83d05ddefaaf76c
   }
 }
