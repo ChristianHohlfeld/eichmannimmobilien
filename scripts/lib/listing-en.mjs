@@ -183,7 +183,6 @@ ${ld(jsonld)}
           <a class="btn btn-outline btn-call" href="${TEL}" data-location="hero_number">Call <span class="nowrap">${TEL_DISPLAY}</span></a>
           <a class="btn btn-outline" href="${esc(wa)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>
         </div>
-        <p class="lang-note" data-lang-note>We answer enquiries in English and German.</p>
       </div>
     </section>
 
@@ -199,6 +198,7 @@ ${m.facts.map(([k, v]) => `            <li>${esc(k)}: <strong>${esc(v)}</strong>
         </div>
         <div class="content-card expose-cta-card" id="anfragen">
           <h2 style="margin-top:0">Request exposé</h2>
+          <p class="lang-note" data-lang-note>Languages: English, German</p>
           <form id="contact-form" class="expose-form" action="https://forms.digitalisierungsplanung.de/v1/immobilieneichmann/expose" method="POST" data-expose-title="${esc(m.titleDe)}" data-expose-slug="${esc(m.slug)}">
             <input type="hidden" name="anliegen" value="Exposé-Anfrage (EN)">
             <input type="hidden" name="objekt" value="${esc(m.titleDe)}">
@@ -222,7 +222,6 @@ ${m.facts.map(([k, v]) => `            <li>${esc(k)}: <strong>${esc(v)}</strong>
             </details>
             <p class="form-note legal-request-note">${EN_PRIVACY("/")}</p>
             <button type="submit" class="btn btn-accent" id="contact-submit">Request exposé</button>
-            <p class="lang-note" data-lang-note>We answer enquiries in English and German.</p>
             <div id="form-success" class="form-success" role="status" hidden>Thank you. Helmut Eichmann will get back to you personally.</div>
             <div id="form-error" class="form-error" role="alert" hidden>Your request could not be sent. Please call or use WhatsApp: <a href="${TEL}">${TEL_DISPLAY}</a>.</div>
           </form>

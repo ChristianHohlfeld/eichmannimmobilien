@@ -48,8 +48,9 @@ for (const sv of EN_SERVICES) {
     assert.ok(EN_SERVICES.filter((x) => x !== sv).every((x) => m.includes(`href="${x.en}"`)));
     assert.match(en, /<nav class="nav"[\s\S]*href="\/en\/services.html"/);
     assert.doesNotMatch(text(en), /building permit|planning permission|construction start|Bauantrag|Baubeginn|Genehmigung|countdown|days left|sea view|lake view/i);
-    // Confirmed by Chris 2026-10-11: team answers in English and German (team wording, not tied to one person).
-    assert.match(text(en), /We answer enquiries in English and German\./);
+    // Confirmed by Chris 2026-10-11: one neutral "Languages" line per page (not tied to one person, not per CTA).
+    assert.equal((en.match(/Languages: English, German/g) || []).length, 1);
+    assert.doesNotMatch(en, /We answer enquiries in English and German/);
     assert.doesNotMatch(text(en), /Helmut Eichmann answers|English-speaking/i);
   });
 }
@@ -63,7 +64,13 @@ test("property pages link to services; sitemap + llms.txt contain all EN service
 test("EN language line + company JSON-LD languages (de, en)", async () => {
   const fs = await import("node:fs");
   const pages = ["en/index.html", "en/contact.html", "en/allmannsdorf.html", "en/services.html", ...fs.readdirSync("en/property").filter((f) => f.endsWith(".html")).map((f) => `en/property/${f}`)];
-  for (const p of pages) assert.match(fs.readFileSync(p, "utf8"), /data-lang-note>We answer enquiries in English and German\.</, p);
+  for (const p of pages) {
+    const h = fs.readFileSync(p, "utf8");
+    assert.equal((h.match(/data-lang-note>Languages: English, German</g) || []).length, 1, p);
+    assert.doesNotMatch(h, /We answer enquiries in English and German|viewings, documents/i, p);
+    assert.doesNotMatch(h, /Helmut Eichmann (answers|speaks)|English-speaking/i, p);
+  }
+  assert.match(fs.readFileSync("en/contact.html", "utf8"), /<li data-lang-note>Languages: English, German<\/li>/);
   for (const p of ["index.html", "en/index.html"]) {
     const h = fs.readFileSync(p, "utf8");
     assert.match(h, /"knowsLanguage":\s*\[\s*"de",\s*"en"\s*\]/, p);

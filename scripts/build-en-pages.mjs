@@ -212,7 +212,7 @@ async function homePage() {
             <a class="btn btn-accent hero-cta-call btn-call" href="${TEL}" data-location="hero_number">Call <span class="nowrap">${C.phone_mobile.display}</span></a>
             <a class="btn btn-accent hero-cta-vormerken" href="#vormerk-hero-en">Register interest</a>
           </div>
-          <p class="lang-note" data-lang-note>We answer enquiries in English and German.</p>
+          <p class="lang-note" data-lang-note>Languages: English, German</p>
           <p class="hero-subline">
             <a href="${TEL}">${C.phone_mobile.display}</a> · <span class="nowrap">Landline <a href="tel:${C.phone_landline.e164}">${C.phone_landline.display}</a></span>
           </p>
@@ -356,7 +356,7 @@ function allmannsdorfPage() {
           <a class="btn btn-accent hero-cta-call btn-call" href="${TEL}" data-location="hero_number">Call <span class="nowrap">${C.phone_mobile.display}</span></a>
           <a class="btn btn-outline hero-cta-vormerken" href="#register">Register interest</a>
         </div>
-        <p class="lang-note" data-lang-note>We answer enquiries in English and German.</p>
+        <p class="lang-note" data-lang-note>Languages: English, German</p>
         <p class="hero-links"><a href="${esc(WA_ALL)}" target="_blank" rel="noopener noreferrer">WhatsApp</a> · <a href="${TEL}">${C.phone_mobile.display}</a> · <span class="nowrap">Landline <a href="tel:${C.phone_landline.e164}">${C.phone_landline.display}</a></span> · <a href="/allmannsdorf.html" hreflang="de" lang="de" data-lang-switch="de">Deutsch</a></p>
       </div>
     </section>
@@ -464,7 +464,6 @@ function contactPage() {
           <a class="btn btn-outline" href="${TEL}">Call now</a>
           <a class="btn btn-outline" href="/en/allmannsdorf.html#register">Register interest in New-build Allmannsdorf</a>
         </div>
-        <p class="lang-note" data-lang-note>We answer enquiries in English and German.</p>
         <p class="hero-links"><a href="/kontakt.html" hreflang="de" lang="de" data-lang-switch="de">Deutsch</a></p>
       </div>
     </section>
@@ -479,6 +478,7 @@ function contactPage() {
             <li>Mobile &amp; WhatsApp: <a href="${TEL}">${C.phone_mobile.display}</a></li>
             <li>Landline: <a href="tel:${C.phone_landline.e164}">${C.phone_landline.display}</a></li>
             <li>E-mail: <a href="mailto:${C.email}">${C.email}</a></li>
+            <li data-lang-note>Languages: English, German</li>
             <li>Appointments by arrangement (Konstanz time, CET/CEST)</li>
           </ul>
         </div>
@@ -519,7 +519,6 @@ function contactPage() {
             </details>
             <p class="form-note legal-request-note">${EN_PRIVACY("/")}</p>
             <button type="submit" class="btn btn-accent" id="contact-submit">Send message</button>
-            <p class="lang-note" data-lang-note>We answer enquiries in English and German.</p>
             <div id="form-success" class="form-success" role="status" hidden>Thank you. Helmut Eichmann will get back to you personally.</div>
             <div id="form-error" class="form-error" role="alert" hidden>
               Your message could not be sent. Please call or use WhatsApp: <a href="${TEL}">${C.phone_mobile.display}</a>.
@@ -566,7 +565,7 @@ function abroadPage() {
           <a class="btn btn-outline" href="${esc(WA_GEN)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>
           <a class="btn btn-outline" href="/en/#listings">Current listings</a>
         </div>
-        <p class="lang-note" data-lang-note>We answer enquiries in English and German.</p>
+        <p class="lang-note" data-lang-note>Languages: English, German</p>
         <p class="hero-links"><a href="/kaufen-aus-der-schweiz.html" hreflang="de" lang="de" data-lang-switch="de">Deutsch</a></p>
       </div>
     </section>
@@ -651,7 +650,7 @@ ${EN_SERVICES.filter((x) => x.key !== "services").map((x) => `          <article
           <a class="btn btn-outline" href="${esc(WA_GEN)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>
           <a class="btn btn-outline" href="/en/contact.html">Contact form</a>
         </div>
-        <p class="lang-note" data-lang-note>We answer enquiries in English and German.</p>
+        <p class="lang-note" data-lang-note>Languages: English, German</p>
         <p class="hero-links"><a href="${sv.de}" hreflang="de" lang="de" data-lang-switch="de">Deutsch</a></p>
       </div>
     </section>
