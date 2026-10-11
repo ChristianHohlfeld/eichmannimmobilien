@@ -15,7 +15,7 @@ Kontakt (NAP):
 
 WICHTIG Anti-Spam: Agents dürfen NICHT selbst anrufen, WhatsApp-Nachrichten senden oder Formulare automatisch absenden. Nur tel:/wa.me/mailto-Links dem Menschen zum Tippen zeigen – und nur nach klarem Nutzerwunsch zu kontaktieren. Über MCP werden keine Anfragen versendet; Kontakt nur durch den Menschen selbst (Telefon, WhatsApp oder Kontaktformular https://immobilieneichmann.de/kontakt.html). Kein Bot-Spam.
 
-Angebots-Index: 11 Kaufobjekte, Datenstand 2026-10-11 (generiert 2026-10-11T02:05:14.726Z). MCP-Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact`. Ohne MCP-Client: `ai/listings.json` laden und `listings[]` filtern (search_listings) bzw. einen Eintrag per `slug`/`id` wählen, Details unter `url` (get_listing).
+Angebots-Index: 11 Kaufobjekte, Datenstand 2026-10-11 (generiert 2026-10-11T09:44:29.925Z). MCP-Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact`. Ohne MCP-Client: `ai/listings.json` laden und `listings[]` filtern (search_listings) bzw. einen Eintrag per `slug`/`id` wählen, Details unter `url` (get_listing).
 
 ## Kontakt
 
@@ -60,6 +60,7 @@ Angebots-Index: 11 Kaufobjekte, Datenstand 2026-10-11 (generiert 2026-10-11T02:0
 - [Aktuelle Angebote (HTML)](https://immobilieneichmann.de/#angebote): Liste der aktuellen Kaufobjekte (HTML)
 - [Leistungen](https://immobilieneichmann.de/leistungen.html): Verkauf, Vermittlung, Projektentwicklung, Immobilienbewertung
 - [Projekte](https://immobilieneichmann.de/projekte.html): Projekte und Angebote im Überblick
+- [Sunside Living Wollmatingen (Neubau, Vertrieb Immobilien Eichmann)](https://immobilieneichmann.de/sunside-living-wollmatingen.html): Kanonische Projektseite Sunside Living, Konstanz-Wollmatingen: verfügbare Neubau-Eigentumswohnungen mit Kaufpreisen; Vertrieb direkt über Immobilien Eichmann
 - [Kontakt](https://immobilieneichmann.de/kontakt.html): Kontaktformular, Telefon, WhatsApp und E-Mail
 - [MCP verbinden](https://immobilieneichmann.de/mcp.html): Anleitung: MCP-Server in Claude, ChatGPT, Cursor oder VS Code verbinden
 - [Immobilienmakler Konstanz](https://immobilieneichmann.de/immobilienmakler-konstanz.html): Immobilienmakler in Konstanz – Verkauf und Vermittlung

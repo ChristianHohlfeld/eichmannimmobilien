@@ -33,6 +33,7 @@ import { hasImmoweltApiKey, readImmoweltCredentials } from "./lib/immowelt-secre
 import { fetchOfficialImmoweltListings } from "./lib/immowelt-official-api.mjs";
 import { writeAiDiscoveryArtifacts, dataAsOf } from "./lib/ai-discovery.mjs";
 import { publishProjects } from "./lib/projects.mjs";
+import { publishSunsidePage } from "./lib/sunside-page.mjs";
 import { stripProjectStatus } from "./lib/listing-text.mjs";
 import { publishEnListings, enPath, hreflangHead } from "./lib/listing-en.mjs";
 import { loadSot, sitemapStatic, hreflangPairs, dataAsOfLabel, applyListingLayer, saveListingsLayer } from "./lib/sot.mjs";
@@ -2376,6 +2377,8 @@ async function renderIntoPages(data) {
     listings: data.listings,
   });
   data._projectSitemapPaths = projectPub.sitemapPaths || [];
+  const sunside = await publishSunsidePage({ siteRoot: ROOT, origin: SITE_ORIGIN, listings: data.listings, isPublic: hasPublicDetail, dryRun });
+  if (sunside) data._projectSitemapPaths.push(sunside);
   // AI-Index + Discovery aus derselben Listing-Liste wie HTML (vor Sitemap, damit lastmod greift)
   const ai = await writeAiDiscoveryArtifacts(data, {
     siteRoot: ROOT,

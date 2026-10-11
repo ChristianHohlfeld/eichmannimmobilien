@@ -46,6 +46,7 @@ const STATIC_PAGE_LINKS = [
   ["Aktuelle Angebote (HTML)", "/#angebote"],
   ["Leistungen", "/leistungen.html"],
   ["Projekte", "/projekte.html"],
+  ["Sunside Living Wollmatingen (Neubau, Vertrieb Immobilien Eichmann)", "/sunside-living-wollmatingen.html"],
   ["Kontakt", "/kontakt.html"],
   ["MCP verbinden", "/mcp.html"],
   ["Immobilienmakler Konstanz", "/immobilienmakler-konstanz.html"],
@@ -195,6 +196,7 @@ export function buildAiListingsDocument(
 // llms.txt per https://llmstxt.org/ : H1, one "> summary" blockquote, free-form
 // details (no headings), then H2 sections whose lists are "- [name](absolute url): notes".
 const LLMS_PAGE_NOTES = {
+  "/sunside-living-wollmatingen.html": "Kanonische Projektseite Sunside Living, Konstanz-Wollmatingen: verfügbare Neubau-Eigentumswohnungen mit Kaufpreisen; Vertrieb direkt über Immobilien Eichmann",
   "/": "Startseite mit aktuellen Kaufangeboten in Konstanz",
   "/#angebote": "Liste der aktuellen Kaufobjekte (HTML)",
   "/leistungen.html": "Verkauf, Vermittlung, Projektentwicklung, Immobilienbewertung",

@@ -16,6 +16,24 @@ Disallow: /admin/
 # - .well-known/mcp.json + /mcp → MCP Streamable-HTTP (Datenstand data_as_of) (search_listings, get_listing)
 
 
+
+# ChatGPT / Bing (ChatGPT-Suche nutzt u. a. den Bing-Index)
+User-agent: GPTBot
+Allow: /
+Disallow: /admin/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+
 # OpenAI search / ads crawlers (ChatGPT discovery)
 User-agent: OAI-SearchBot
 Allow: /
