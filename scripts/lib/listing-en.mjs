@@ -163,6 +163,7 @@ ${ld(jsonld)}
         <a href="/en/">Home</a>
         <a href="/en/#listings" class="active">Properties</a>
         <a href="/en/allmannsdorf.html">New-build Allmannsdorf</a>
+        <a href="/en/services.html">Services</a>
         <a href="/en/contact.html">Contact</a>
         <a href="${m.de}" hreflang="de" lang="de" class="lang-switch" data-lang-switch="de">Deutsch</a>
         <a href="${TEL}" class="nav-cta btn-call" data-location="header_number">Call<span class="nav-cta-num"> ${TEL_DISPLAY}</span></a>
@@ -243,7 +244,7 @@ ${siblings.length ? `
         <ul class="check-list">
 ${siblings.map((s) => `          <li><a href="${enPath(s.slug)}">${esc(s.name)}</a>${s.price ? ` – ${esc(eur(s.price))}` : ""}</li>`).join("\n")}
         </ul>
-        <p><a href="/en/buying-from-abroad.html">Buying property in Konstanz from abroad</a></p>
+        <p><a href="/en/buying-from-abroad.html">Buying property in Konstanz from abroad</a> · <a href="/en/buy-apartment-konstanz.html">Buy an apartment in Konstanz</a> · <a href="/en/real-estate-agent-konstanz.html">Real estate agent in Konstanz</a></p>
       </div>
     </section>
 ` : ""}  </main>
@@ -262,6 +263,8 @@ ${siblings.map((s) => `          <li><a href="${enPath(s.slug)}">${esc(s.name)}<
           <a href="/en/#listings">Properties</a>
           <a href="/en/allmannsdorf.html">New-build Allmannsdorf</a>
           <a href="/en/buying-from-abroad.html">Buying from abroad</a>
+          <a href="/en/services.html">Services</a>
+          <a href="/en/real-estate-agent-konstanz.html">Real estate agent Konstanz</a>
           <a href="/en/contact.html">Contact</a>
         </div>
         <div class="footer-col">

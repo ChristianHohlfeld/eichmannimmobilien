@@ -14,6 +14,8 @@ import { fileURLToPath } from "node:url";
 import { vormerkFormHtml, EN_PRIVACY } from "./lib/vormerk-form.mjs";
 import { enListingModels, enPath } from "./lib/listing-en.mjs";
 import { loadSot, projectTexts, projectFacts, whatsappUrl } from "./lib/sot.mjs";
+import { EN_SERVICES, EN_SERVICE_LINKS } from "./lib/en-services.mjs";
+import { readFileSync } from "node:fs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const O = "https://immobilieneichmann.de";
@@ -29,6 +31,8 @@ const WA_ALL = whatsappUrl(SOT, AL.whatsapp_text);
 const MAIL_ALL = `mailto:${C.email}?subject=` + encodeURIComponent(AL.email_subject);
 
 const PAIRS = { home: { de: "/", en: "/en/" }, allmannsdorf: { de: "/allmannsdorf.html", en: "/en/allmannsdorf.html" }, contact: { de: "/kontakt.html", en: "/en/contact.html" }, abroad: { de: "/kaufen-aus-der-schweiz.html", en: "/en/buying-from-abroad.html" } };
+// Service pages (local SEO EN): x-default = EN
+for (const sv of EN_SERVICES) PAIRS[sv.key] = { de: sv.de, en: sv.en, xdef: "en" };
 
 const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const ld = (obj) => JSON.stringify(obj, null, 2).replace(/</g, "\\u003c").replace(/&/g, "\\u0026");
@@ -64,7 +68,7 @@ function head({ key, title, desc, ogAlt = "Immobilien Eichmann – new-build and
   <link rel="canonical" href="${url}">
   <link rel="alternate" hreflang="de" href="${O}${p.de}">
   <link rel="alternate" hreflang="en" href="${url}">
-  <link rel="alternate" hreflang="x-default" href="${O}${p.de}">
+  <link rel="alternate" hreflang="x-default" href="${O}${p.xdef === "en" ? p.en : p.de}">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="en_GB">
   <meta property="og:locale:alternate" content="de_DE">
@@ -102,6 +106,7 @@ ${ld(jsonld)}
         <a href="/en/"${key === "home" ? ' class="active"' : ""}>Home</a>
         <a href="/en/#listings">Properties</a>
         <a href="/en/allmannsdorf.html"${key === "allmannsdorf" ? ' class="active"' : ""}>New-build Allmannsdorf</a>
+        <a href="/en/services.html"${EN_SERVICES.some((x) => x.key === key) ? ' class="active"' : ""}>Services</a>
         <a href="/en/contact.html"${key === "contact" ? ' class="active"' : ""}>Contact</a>
         <a href="${p.de}" hreflang="de" lang="de" class="lang-switch" data-lang-switch="de">Deutsch</a>
         <a href="${TEL}" class="nav-cta btn-call" data-location="header_number">Call<span class="nav-cta-num"> +49 170 522 5568</span></a>
@@ -131,6 +136,8 @@ function foot(key, waHref = WA_GEN) {
           <a href="/en/#listings">Properties</a>
           <a href="/en/allmannsdorf.html">New-build Allmannsdorf</a>
           <a href="/en/buying-from-abroad.html">Buying from abroad</a>
+          <a href="/en/services.html">Services</a>
+          <a href="/en/real-estate-agent-konstanz.html">Real estate agent Konstanz</a>
           <a href="/en/contact.html">Contact</a>
           <a href="${p.de}" hreflang="de" lang="de" class="lang-switch" data-lang-switch="de">Deutsch</a>
         </div>
@@ -583,9 +590,123 @@ ${props.map((m) => `          <li><a href="${enPath(m.slug)}">${esc(m.name)}</a>
 ` + foot("abroad");
 }
 
+
+/* ---------- service pages (local SEO EN, counterpart of PR #96) ---------- */
+function serviceBlurb(x) {
+  return x.desc.replace(/\s*\+49 170 522 5568\.?$/, "").replace(/\s*Call or WhatsApp\s*$/, "").replace(/\s*(Call|Phone)\s*$/, "");
+}
+function servicePage(sv) {
+  const url = `${O}${sv.en}`;
+  const faqLd = { "@type": "FAQPage", "@id": `${url}#faq`, mainEntity: sv.faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) };
+  const crumbs = [{ "@type": "ListItem", position: 1, name: "Home", item: `${O}/en/` }];
+  if (sv.key !== "services") crumbs.push({ "@type": "ListItem", position: 2, name: "Services", item: `${O}/en/services.html` });
+  crumbs.push({ "@type": "ListItem", position: crumbs.length + 1, name: sv.crumb, item: url });
+  const jsonld = { "@context": "https://schema.org", "@graph": [
+    { "@type": "WebPage", "@id": `${url}#webpage`, url, name: sv.title, description: sv.desc, inLanguage: "en",
+      isPartOf: { "@id": `${O}/#website` }, about: { "@id": `${O}/#business` }, publisher: { "@id": `${O}/#business` },
+      translationOfWork: { "@id": `${O}${sv.de}#webpage` } },
+    { "@type": "BreadcrumbList", itemListElement: crumbs },
+    faqLd,
+    { ...BUSINESS, sameAs: [EN_SERVICE_LINKS.GBP, EN_SERVICE_LINKS.IMMOWELT] } ] };
+  const rows = sv.listings ? enListingModels(ROOT).filter(sv.listings.filter) : [];
+  const listBlock = sv.listings ? `    <section class="section section-alt" id="listings">
+      <div class="container narrow">
+        <h2>${esc(sv.listings.heading)}</h2>
+${rows.length ? `        <ul class="check-list en-listings">
+${rows.map((m) => `          <li><a href="${enPath(m.slug)}">${esc(m.name)}</a>${m.price ? ` – €${m.price.toLocaleString("en-GB")}` : ""}${m.area ? `, ${m.area.toLocaleString("en-GB")} m²` : ""}, ${esc(m.commission)}</li>`).join("\n")}
+        </ul>` : `        <p>No matching property is listed at the moment. Call or write to us with what you are looking for.</p>`}
+        <p><a href="/en/#listings">All current properties</a></p>
+      </div>
+    </section>
+` : "";
+  const overview = sv.overview ? `    <section class="section section-alt">
+      <div class="container">
+        <div class="section-head"><div><h2>Our services at a glance</h2><p>Each service has its own page with the process and answers to common questions.</p></div></div>
+        <div class="services-strip services-strip-auto">
+${EN_SERVICES.filter((x) => x.key !== "services").map((x) => `          <article class="service-card"><h3><a href="${x.en}">${esc(x.crumb)}</a></h3><p>${esc(serviceBlurb(x))}</p></article>`).join("\n")}
+          <article class="service-card"><h3><a href="/en/allmannsdorf.html">New-build Allmannsdorf</a></h3><p>New-build sales in Konstanz-Allmannsdorf – commission-free for buyers, register your interest.</p></article>
+          <article class="service-card"><h3><a href="/en/buying-from-abroad.html">Buying from abroad</a></h3><p>Notes for buyers living outside Germany, up to the notary appointment.</p></article>
+        </div>
+      </div>
+    </section>
+
+` : "";
+  const related = EN_SERVICES.filter((x) => x.key !== sv.key).map((x) => `<a href="${x.en}">${esc(x.crumb)}</a>`).join(" · ");
+  return head({ key: sv.key, title: sv.title, desc: sv.desc, jsonld }) + `
+  <main id="main">
+    <section class="page-hero">
+      <div class="container page-hero-inner">
+        <span class="eyebrow">${sv.kicker}</span>
+        <h1>${esc(sv.h1)}</h1>
+        <p class="lead">${esc(sv.lead)}</p>
+        <div class="hero-actions project-hero-actions">
+          <a class="btn btn-accent btn-call" href="${TEL}" data-location="hero_number">Call <span class="nowrap">${C.phone_mobile.display}</span></a>
+          <a class="btn btn-outline" href="${esc(WA_GEN)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+          <a class="btn btn-outline" href="/en/contact.html">Contact form</a>
+        </div>
+        <p class="hero-links"><a href="${sv.de}" hreflang="de" lang="de" data-lang-switch="de">Deutsch</a></p>
+      </div>
+    </section>
+
+    <section class="section why-eichmann" aria-labelledby="why-eichmann">
+      <div class="container narrow">
+        <h2 id="why-eichmann">Why Immobilien Eichmann</h2>
+        <ul class="check-list">
+          <li><strong>Personal:</strong> your contact is Helmut Eichmann himself – mobile and WhatsApp <a href="${TEL}">${C.phone_mobile.display}</a>.</li>
+          <li><strong>Local in Konstanz:</strong> office at ${C.address.street}, ${C.address.postal_code} ${C.address.city}, appointments by arrangement.</li>
+          <li><strong>Commission-free new build:</strong> <a href="/en/allmannsdorf.html">New-build Allmannsdorf</a> is commission-free for buyers; for all other properties the buyer's commission is stated in the exposé.</li>
+          <li><strong>Publicly verifiable:</strong> <a href="${EN_SERVICE_LINKS.GBP}" target="_blank" rel="noopener noreferrer">Google Business Profile with reviews</a> and <a href="${EN_SERVICE_LINKS.IMMOWELT}" target="_blank" rel="noopener noreferrer">Immowelt profile</a> (German).</li>
+        </ul>
+        <p class="hero-actions"><a class="btn btn-accent btn-call" href="${TEL}" data-location="why_block">Call <span class="nowrap">${C.phone_mobile.display}</span></a></p>
+      </div>
+    </section>
+
+${overview}${sv.body[0]}
+${listBlock}${sv.body.slice(1).join("\n")}
+
+    <section class="section faq" id="faq">
+      <div class="container narrow prose">
+        <h2>Frequently asked questions</h2>
+${sv.faq.map(([q, a]) => `        <details class="faq-item"><summary><h3>${esc(q)}</h3></summary><p>${esc(a)}</p></details>`).join("\n")}
+      </div>
+    </section>
+
+    <section class="section section-alt">
+      <div class="container narrow">
+        <h2>Contact</h2>
+        <p>Immobilien Eichmann · Helmut Eichmann · ${C.address.street}, ${C.address.postal_code} ${C.address.city}, Germany</p>
+        <p>Mobile &amp; WhatsApp <a href="${TEL}">${C.phone_mobile.display}</a> · <span class="nowrap">Landline <a href="tel:${C.phone_landline.e164}">${C.phone_landline.display}</a></span> · <a href="mailto:${C.email}">${C.email}</a> · <a href="/en/contact.html">Contact form</a></p>
+        <p class="hero-links">More: ${related}</p>
+      </div>
+    </section>
+  </main>
+` + foot(sv.key);
+}
+
+/* DE partner pages: hreflang de/en/x-default(en) in <head> + "English" link in the hero (idempotent) */
+function pairGerman(sv) {
+  const fp = path.join(ROOT, sv.deFile);
+  let s = readFileSync(fp, "utf8");
+  const tags = `  <link rel="alternate" hreflang="de" href="${O}${sv.de}">\n  <link rel="alternate" hreflang="en" href="${O}${sv.en}">\n  <link rel="alternate" hreflang="x-default" href="${O}${sv.en}">\n`;
+  s = s.replace(/[ \t]*<link rel="alternate" hreflang="[^"]+" href="[^"]*">\n/g, "");
+  if (!/<link rel="canonical" href="[^"]*">\n/.test(s)) throw new Error(`${sv.deFile}: canonical fehlt`);
+  s = s.replace(/(<link rel="canonical" href="[^"]*">\n)/, `$1${tags}`);
+  s = s.replace(/\n[ \t]*<p class="hero-links" data-en-pair>.*?<\/p>/, "");
+  const i = s.indexOf('<section class="page-hero');
+  const end = s.indexOf("</section>", i);
+  const inner = s.lastIndexOf("</div>", end); // closing .page-hero-inner
+  const lineStart = s.lastIndexOf("\n", inner) + 1;
+  s = s.slice(0, lineStart) + `        <p class="hero-links" data-en-pair><a href="${sv.en}" hreflang="en" lang="en">English</a></p>\n` + s.slice(lineStart);
+  return s;
+}
+
 await mkdir(path.join(ROOT, "en"), { recursive: true });
 await writeFile(path.join(ROOT, "en/index.html"), await homePage());
 await writeFile(path.join(ROOT, "en/allmannsdorf.html"), allmannsdorfPage());
 await writeFile(path.join(ROOT, "en/contact.html"), contactPage());
 await writeFile(path.join(ROOT, "en/buying-from-abroad.html"), abroadPage());
-console.log("EN pages written: en/index.html, en/allmannsdorf.html, en/contact.html");
+for (const sv of EN_SERVICES) {
+  await writeFile(path.join(ROOT, sv.en.replace(/^\//, "")), servicePage(sv));
+  await writeFile(path.join(ROOT, sv.deFile), pairGerman(sv));
+}
+console.log(`EN pages written: en/index.html, en/allmannsdorf.html, en/contact.html, en/buying-from-abroad.html + ${EN_SERVICES.length} service pages`);

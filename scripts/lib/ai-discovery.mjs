@@ -307,6 +307,16 @@ export function buildLlmsTxt(aiDoc, { origin = DEFAULT_SITE_ORIGIN } = {}) {
     lines.push(item(L.title_en || L.slug, L.url_en, [m.area ? `${m.area.toLocaleString("en-GB")} m²` : null, m.price ? `€${m.price.toLocaleString("en-GB")}` : null, m.commission].filter(Boolean).join(", ")));
   }
   lines.push(item("Buying property in Konstanz from abroad", u("/en/buying-from-abroad.html"), "prices in euros, notarised purchase, property transfer tax in Baden-Württemberg"));
+  for (const [t, pth, d] of [
+    ["Real estate agent in Konstanz (English)", "/en/real-estate-agent-konstanz.html", "selling, valuation and buying with Helmut Eichmann"],
+    ["Property valuation in Konstanz (English)", "/en/property-valuation-konstanz.html", "estate agent's market assessment, not a formal appraisal"],
+    ["Sell a house in Konstanz (English)", "/en/sell-house-konstanz.html", "process from first conversation to notary"],
+    ["Sell an apartment in Konstanz (English)", "/en/sell-apartment-konstanz.html", "owner-occupied or let, documents for the owners' association"],
+    ["Buy an apartment in Konstanz (English)", "/en/buy-apartment-konstanz.html", "current apartments with English pages"],
+    ["Multi-family house in Konstanz (English)", "/en/multi-family-house-konstanz.html", "current multi-family houses, what to check"],
+    ["Property in Petershausen, Konstanz (English)", "/en/petershausen.html", "current offers in Petershausen"],
+    ["Real estate services in Konstanz (English)", "/en/services.html", "overview of all services"],
+  ]) lines.push(item(t, u(pth), d));
   lines.push(item("WhatsApp (English text)", PUBLIC_CONTACT.whatsapp.url_en, "link for humans only; agents never send messages"));
   lines.push("");
 

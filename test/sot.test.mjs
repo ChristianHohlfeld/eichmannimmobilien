@@ -71,7 +71,7 @@ test("Seitenregister: Sitemap + hreflang-Paare", () => {
   const sm = sitemapStatic(sot).map((x) => x.loc);
   assert.ok(sm.includes("/") && sm.includes("/en/") && sm.includes("/en/allmannsdorf.html"));
   assert.ok(!sm.some((x) => !/(\.html|\/)$/.test(x)), "nur HTML in der Sitemap");
-  assert.deepEqual(hreflangPairs(sot).map((p) => p.en).sort(), ["/en/", "/en/allmannsdorf.html", "/en/buying-from-abroad.html", "/en/contact.html"]);
+  assert.deepEqual(hreflangPairs(sot).map((p) => p.en).sort(), ["/en/", "/en/allmannsdorf.html", "/en/buy-apartment-konstanz.html", "/en/buying-from-abroad.html", "/en/contact.html", "/en/multi-family-house-konstanz.html", "/en/petershausen.html", "/en/property-valuation-konstanz.html", "/en/real-estate-agent-konstanz.html", "/en/sell-apartment-konstanz.html", "/en/sell-house-konstanz.html", "/en/services.html"]);
 });
 test("Datenstand = ältestes Prüfdatum aktiver Objekte", () => {
   const oldest = sot.listings.filter((l) => l.status === "active").map((l) => l.verified_at).sort()[0];
