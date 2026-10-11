@@ -249,7 +249,7 @@ export function saveListingsLayer(sot, listings) {
 /* ---------- Seiten ---------- */
 export function pageEntries(sot = loadSot()) { return sot.pages.pages; }
 export function hreflangPairs(sot = loadSot()) {
-  return sot.pages.pages.filter((p) => p.paths?.de && p.paths?.en).map((p) => ({ de: p.paths.de, en: p.paths.en }));
+  return sot.pages.pages.filter((p) => p.paths?.de && p.paths?.en).map((p) => ({ de: p.paths.de, en: p.paths.en, xdef: p.x_default === "en" ? p.paths.en : p.paths.de }));
 }
 export function sitemapStatic(sot = loadSot()) {
   const out = [];

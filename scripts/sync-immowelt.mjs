@@ -2238,13 +2238,13 @@ function escapeXml(v) {
     .replace(/'/g, "&apos;");
 }
 
-/* hreflang pairs (de ↔ en); x-default = German. Only pages that exist in both languages. */
+/* hreflang pairs (de ↔ en); x-default = German, or English where pages.json says "x_default": "en". Only pages that exist in both languages. */
 const HREFLANG_PAIRS = hreflangPairs(loadSot(ROOT)); // SSOT: data/sot/pages.json
 function hreflangXml(locPath) {
   const pair = HREFLANG_PAIRS.find((x) => x.de === locPath || x.en === locPath);
   if (!pair) return "";
   const a = (lang, p) => `<xhtml:link rel="alternate" hreflang="${lang}" href="${SITE_ORIGIN}${p}"/>`;
-  return a("de", pair.de) + a("en", pair.en) + a("x-default", pair.de);
+  return a("de", pair.de) + a("en", pair.en) + a("x-default", pair.xdef || pair.de);
 }
 
 function objektHreflang(L) {

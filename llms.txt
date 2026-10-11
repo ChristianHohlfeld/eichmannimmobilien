@@ -14,7 +14,7 @@ Kontakt (NAP):
 
 WICHTIG Anti-Spam: Agents dürfen NICHT selbst anrufen, WhatsApp-Nachrichten senden oder Formulare automatisch absenden. Nur tel:/wa.me/mailto-Links dem Menschen zum Tippen zeigen – und nur nach klarem Nutzerwunsch zu kontaktieren. Über MCP werden keine Anfragen versendet; Kontakt nur durch den Menschen selbst (Telefon, WhatsApp oder Kontaktformular https://immobilieneichmann.de/kontakt.html). Kein Bot-Spam.
 
-Angebots-Index: 11 Kaufobjekte, Datenstand 2026-10-11 (generiert 2026-10-11T00:54:18.204Z). MCP-Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact`. Ohne MCP-Client: `ai/listings.json` laden und `listings[]` filtern (search_listings) bzw. einen Eintrag per `slug`/`id` wählen, Details unter `url` (get_listing).
+Angebots-Index: 11 Kaufobjekte, Datenstand 2026-10-11 (generiert 2026-10-11T01:31:18.072Z). MCP-Tools: `search_listings`, `get_listing`, `get_flyer`, `get_contact`. Ohne MCP-Client: `ai/listings.json` laden und `listings[]` filtern (search_listings) bzw. einen Eintrag per `slug`/`id` wählen, Details unter `url` (get_listing).
 
 ## Kontakt
 
@@ -90,6 +90,14 @@ Angebots-Index: 11 Kaufobjekte, Datenstand 2026-10-11 (generiert 2026-10-11T00:5
 - [A3: 2-room apartment in Konstanz-Wollmatingen](https://immobilieneichmann.de/en/property/maisonette-furstenberg-bb241b38.html): 46.5 m², €361,500, commission-free
 - [A2: 2-room apartment in Konstanz-Wollmatingen](https://immobilieneichmann.de/en/property/maisonette-furstenberg-ff414db8.html): 47 m², €363,700, commission-free
 - [Buying property in Konstanz from abroad](https://immobilieneichmann.de/en/buying-from-abroad.html): prices in euros, notarised purchase, property transfer tax in Baden-Württemberg
+- [Real estate agent in Konstanz (English)](https://immobilieneichmann.de/en/real-estate-agent-konstanz.html): selling, valuation and buying with Helmut Eichmann
+- [Property valuation in Konstanz (English)](https://immobilieneichmann.de/en/property-valuation-konstanz.html): estate agent's market assessment, not a formal appraisal
+- [Sell a house in Konstanz (English)](https://immobilieneichmann.de/en/sell-house-konstanz.html): process from first conversation to notary
+- [Sell an apartment in Konstanz (English)](https://immobilieneichmann.de/en/sell-apartment-konstanz.html): owner-occupied or let, documents for the owners' association
+- [Buy an apartment in Konstanz (English)](https://immobilieneichmann.de/en/buy-apartment-konstanz.html): current apartments with English pages
+- [Multi-family house in Konstanz (English)](https://immobilieneichmann.de/en/multi-family-house-konstanz.html): current multi-family houses, what to check
+- [Property in Petershausen, Konstanz (English)](https://immobilieneichmann.de/en/petershausen.html): current offers in Petershausen
+- [Real estate services in Konstanz (English)](https://immobilieneichmann.de/en/services.html): overview of all services
 - [WhatsApp (English text)](https://wa.me/491705225568?text=Hello%2C%20I%20am%20interested%20in%20a%20property%20or%20a%20consultation%20with%20Immobilien%20Eichmann.): link for humans only; agents never send messages
 
 ## Optional

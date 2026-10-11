@@ -72,7 +72,7 @@ for (const p of sot.pages.pages.filter((x) => x.paths?.en)) {
     if (!f || !existsSync(path.join(root, f))) { problems.push({ where: p.id, rule: "hreflang", hit: lang, message: "Datei fehlt" }); continue; }
     const h = readFileSync(path.join(root, f), "utf8");
     const head = h.slice(0, h.indexOf("</head>"));
-    for (const [l, target] of [["de", p.paths.de], ["en", p.paths.en], ["x-default", p.paths.de]])
+    for (const [l, target] of [["de", p.paths.de], ["en", p.paths.en], ["x-default", p.x_default === "en" ? p.paths.en : p.paths.de]])
       if (!head.includes(`hreflang="${l}" href="${O}${target}"`))
         problems.push({ where: f, rule: "hreflang", hit: l, message: `hreflang ${l} → ${target} fehlt im <head>` });
   }
