@@ -48,7 +48,7 @@ async function newCtx() {
   await ctx.route(/googletagmanager\.com\/gtag\/js/, (r) => r.fulfill({ status: 200, contentType: 'application/javascript', body: GTAG_STUB }));
   await ctx.route(/google-analytics\.com|googletagmanager\.com\/(?!gtag)/, (r) => r.abort());
   // keep the flyer auto-open out of the way
-  await ctx.addInitScript(() => { try { sessionStorage.setItem('eichmann_flyer_shown_v1', '1'); } catch (e) {} });
+  await ctx.addInitScript(() => { try { localStorage.setItem('eichmann_flyer_closed_v1', '1'); } catch (e) {} });
   return { ctx, hits };
 }
 const named = (hits, n) => hits.filter((h) => h.name === n);

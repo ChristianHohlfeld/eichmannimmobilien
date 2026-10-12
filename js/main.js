@@ -291,6 +291,7 @@
   /* Flyer modal */
   var modal = document.getElementById("flyerModal");
   var flyerReturnFocus = null;
+  var FLYER_CLOSED_KEY = "eichmann_flyer_closed_v1";
   /* Flyer-Inhalt kommt aus EINEM erzeugten Partial (partials/flyer-modal.html, SSOT) und wird
      beim ersten Öffnen geladen – nicht mehr in jeder Seite dupliziert. */
   var flyerLoading = null;
@@ -341,6 +342,7 @@
   }
   function closeFlyer() {
     if (!modal) return;
+    try { localStorage.setItem(FLYER_CLOSED_KEY, "1"); } catch (e) {}
     modal.hidden = true;
     document.body.style.overflow = "";
     document.body.classList.remove("flyer-open");
@@ -367,98 +369,21 @@
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && modal && !modal.hidden) closeFlyer();
   });
-  /* Flyer auto-open (flyer-idle-open-v1): nur Startseite, einmal pro Session (sessionStorage).
-     Desktop: erst wenn die Seite idle ist (load + >= 4 s + requestIdleCallback) und nur,
-     solange noch kein CTA benutzt wurde. Mobil: kein Vollbild-Pop-up beim Laden, sondern erst
-     bei echtem Engagement (~50 % gescrollt oder 15 s auf der Seite). [data-open-flyer] öffnet
-     weiterhin sofort (siehe oben). GA flyer_open feuert über den MutationObserver in analytics.js. */
+  /* First visit: open on DE/EN home; remember dismissal across visits. */
   (function () {
     if (!modal) return;
     var path = location.pathname || "/";
-    var isHome = path === "/" || /(?:^|\/)index\.html$/i.test(path);
-    if (!isHome) return;
-    var KEY = "eichmann_flyer_shown_v1";
-    try {
-      if (sessionStorage.getItem(KEY) === "1") return;
-    } catch (e) {}
-
-    var DESKTOP_DELAY_MS = 4000;
-    var MOBILE_DELAY_MS = 15000;
-    var MOBILE_SCROLL_RATIO = 0.5;
-    var isMobile = false;
-    try {
-      isMobile = window.matchMedia("(max-width: 768px), (pointer: coarse)").matches;
-    } catch (e) {}
-
-    var done = false;
-    var timer = null;
-    function markShown() {
-      try { sessionStorage.setItem(KEY, "1"); } catch (e) {}
-    }
-    function stop() {
-      if (done) return;
-      done = true;
-      if (timer) clearTimeout(timer);
-      window.removeEventListener("scroll", onScroll);
-      document.removeEventListener("click", onCta, true);
-      document.removeEventListener("focusin", onFormFocus, true);
-    }
-    function whenIdle(fn) {
-      if (typeof window.requestIdleCallback === "function") {
-        window.requestIdleCallback(fn, { timeout: 2000 });
-      } else {
-        setTimeout(fn, 200);
-      }
-    }
-    function autoOpen() {
-      if (done) return;
-      stop();
-      if (!modal.hidden) return;
-      openFlyer();
-      markShown();
-    }
-    /* Any CTA use (or opening the flyer manually) cancels the auto-open. */
-    var CTA_SEL =
-      'a[href^="tel:"], a[href^="mailto:"], a[href*="wa.me/"], a[href*="kontakt.html"], ' +
-      '.btn, .sticky-bar a, .floating-wa, [data-open-flyer], button[type="submit"]';
-    function onCta(e) {
-      var t = e.target;
-      if (t && t.closest && t.closest(CTA_SEL)) {
-        stop();
-        markShown();
-      }
-    }
-    function onFormFocus(e) {
-      var t = e.target;
-      if (t && t.closest && t.closest("form")) stop();
-    }
-    var ticking = false;
-    function onScroll() {
-      if (ticking || done) return;
-      ticking = true;
-      window.requestAnimationFrame(function () {
-        ticking = false;
-        var doc = document.documentElement;
-        var max = (doc.scrollHeight || 0) - window.innerHeight;
-        if (max > 0 && (window.scrollY || window.pageYOffset || 0) / max >= MOBILE_SCROLL_RATIO) {
-          whenIdle(autoOpen);
-        }
+    if (path !== "/" && path !== "/en/" && path !== "/index.html" && path !== "/en/index.html") return;
+    function firstVisit() {
+      try { if (localStorage.getItem(FLYER_CLOSED_KEY) === "1") return; } catch (e) {}
+      // Failed loading leaves the page usable and does not record a dismissal.
+      loadFlyer().then(function () {
+        try { if (localStorage.getItem(FLYER_CLOSED_KEY) === "1") return; } catch (e) {}
+        if (modal.hidden && modal.querySelector(".flyer-dialog")) openFlyerNow(document.activeElement);
       });
     }
-    document.addEventListener("click", onCta, true);
-    document.addEventListener("focusin", onFormFocus, true);
-
-    function arm() {
-      if (done) return;
-      if (isMobile) {
-        window.addEventListener("scroll", onScroll, { passive: true });
-        timer = setTimeout(function () { whenIdle(autoOpen); }, MOBILE_DELAY_MS);
-      } else {
-        timer = setTimeout(function () { whenIdle(autoOpen); }, DESKTOP_DELAY_MS);
-      }
-    }
-    if (document.readyState === "complete") arm();
-    else window.addEventListener("load", arm, { once: true });
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", firstVisit, { once: true });
+    else firstVisit();
   })();
 
   /* Prefill bei ?interesse=widerruf */

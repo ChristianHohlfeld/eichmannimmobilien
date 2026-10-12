@@ -40,7 +40,7 @@ async function newCtx({ consent = true, mobile = true, formStatus = 200 } = {}) 
     r.fulfill({ status: formStatus, contentType: 'application/json', body: JSON.stringify(formStatus === 200 ? { success: true } : { success: false }) });
   });
   await ctx.addInitScript(({ consent }) => {
-    try { sessionStorage.setItem('eichmann_flyer_shown_v1', '1'); } catch (e) {}
+    try { localStorage.setItem('eichmann_flyer_closed_v1', '1'); } catch (e) {}
     try { localStorage.setItem('ab_hero_cta_r1', 'A'); } catch (e) {}
     if (consent) localStorage.setItem('eichmann_cookie_consent_v1', JSON.stringify({ necessary: true, analytics: true, ts: Date.now() }));
     // keep tel:/wa.me clicks inside the test page (tracking listeners still run)
