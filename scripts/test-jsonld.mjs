@@ -34,10 +34,9 @@ function walk(dir) {
   }
 }
 walk(root);
-const soft = process.env.STRICT !== "1";
 if (errors.length) {
   console.error(`JSON-LD issues (${errors.length}/${checked}):`);
   errors.forEach((e) => console.error(" -", e));
-  process.exit(soft ? 0 : 1);
+  process.exit(1);
 }
 console.log(`JSON-LD OK: ${checked} blocks`);
