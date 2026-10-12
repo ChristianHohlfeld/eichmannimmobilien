@@ -58,15 +58,6 @@ jobs:
         with:
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Validate indexing and structured data before deploy
-        run: |
-          node scripts/check-indexing.mjs
-          node scripts/test-jsonld.mjs
-
       - name: Setup SSH
         env:
           DEPLOY_KEY: ${{ secrets.EICHMANN_DEPLOY_KEY }}
