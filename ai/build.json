@@ -1,7 +1,7 @@
 {
-  "sot_hash": "34e1919fb400",
-  "data_as_of": "2026-10-11",
+  "sot_hash": "abcc5bd5a8b9",
+  "data_as_of": "2026-10-12",
   "active_listings": 11,
-  "built_from_commit": "ba33728",
+  "built_from_commit": "cd3b869",
   "schema": "eichmann.build/v1"
 }
