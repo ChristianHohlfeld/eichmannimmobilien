@@ -109,7 +109,7 @@ export function toPublicFlyerJson(project, { origin = DEFAULT_ORIGIN } = {}) {
       ...(project.pages?.html_en ? { project_en: absUrl(o, project.pages.html_en), contact_en: absUrl(o, "en/contact.html?interesse=" + project.slug) } : {}),
       projekte: absUrl(o, project.pages?.projekte || "projekte.html"),
       contact_vormerkung: absUrl(o, contactPath),
-      flyer_modal_on: (project.pages?.flyer_modal_on || ["index.html"]).map((p) =>
+      flyer_modal_on: (project.pages?.flyer_modal_on || ["/"]).map((p) =>
         p === "/" ? `${o}/` : absUrl(o, p)
       ),
     },

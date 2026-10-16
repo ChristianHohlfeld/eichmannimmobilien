@@ -79,7 +79,6 @@
         "projekte": "projekte.html",
         "contact_vormerkung": "kontakt.html?interesse=allmannsdorf#contact-form",
         "flyer_modal_on": [
-          "index.html",
           "/"
         ],
         "html_en": "en/allmannsdorf.html"

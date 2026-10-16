@@ -197,17 +197,15 @@
         "de": "Datenschutzerklärung von Immobilien Eichmann (Helmut Eichmann) – Informationen zur DSGVO und Nutzung dieser Website."
       },
       "sitemap": {
-        "de": {
-          "priority": "0.5",
-          "changefreq": "yearly"
-        }
+        "de": false
       },
       "rule_exempt": [
         "construction_status",
         "action_wording",
         "countdown"
       ],
-      "exempt_reason": "Rechtstext: Begriffe wie „Genehmigung“/Fristen sind dort Pflichtinhalt."
+      "exempt_reason": "Rechtstext: Begriffe wie „Genehmigung“/Fristen sind dort Pflichtinhalt.",
+      "sitemap_note": "noindex,follow: Pflicht-/Technikseite, kein Suchziel; bleibt verlinkt (GSC 16.10.2026)"
     },
     {
       "id": "widerrufsbelehrung",
@@ -224,17 +222,15 @@
         "de": "Widerrufsbelehrung für Verbraucherinnen und Verbraucher bei Maklerdienstleistungen von Immobilien Eichmann, Konstanz."
       },
       "sitemap": {
-        "de": {
-          "priority": "0.4",
-          "changefreq": "yearly"
-        }
+        "de": false
       },
       "rule_exempt": [
         "construction_status",
         "action_wording",
         "countdown"
       ],
-      "exempt_reason": "Rechtstext: Begriffe wie „Genehmigung“/Fristen sind dort Pflichtinhalt."
+      "exempt_reason": "Rechtstext: Begriffe wie „Genehmigung“/Fristen sind dort Pflichtinhalt.",
+      "sitemap_note": "noindex,follow: Pflicht-/Technikseite, kein Suchziel; bleibt verlinkt (GSC 16.10.2026)"
     },
     {
       "id": "vertrag-widerrufen",
@@ -251,17 +247,15 @@
         "de": "Widerruf eines Maklervertrags oder einer Einwilligung in Textform an Immobilien Eichmann, Konstanz – "
       },
       "sitemap": {
-        "de": {
-          "priority": "0.4",
-          "changefreq": "yearly"
-        }
+        "de": false
       },
       "rule_exempt": [
         "construction_status",
         "action_wording",
         "countdown"
       ],
-      "exempt_reason": "Rechtstext: Begriffe wie „Genehmigung“/Fristen sind dort Pflichtinhalt."
+      "exempt_reason": "Rechtstext: Begriffe wie „Genehmigung“/Fristen sind dort Pflichtinhalt.",
+      "sitemap_note": "noindex,follow: Pflicht-/Technikseite, kein Suchziel; bleibt verlinkt (GSC 16.10.2026)"
     },
     {
       "id": "immobilienmakler-konstanz",
@@ -544,11 +538,9 @@
         "de": "Angebote von Immobilien Eichmann in Claude, ChatGPT, Cursor und VS Code per MCP verbinden. Endpoint: https://immobilieneichmann.de/mcp"
       },
       "sitemap": {
-        "de": {
-          "priority": "0.7",
-          "changefreq": "monthly"
-        }
-      }
+        "de": false
+      },
+      "sitemap_note": "noindex,follow: Pflicht-/Technikseite, kein Suchziel; bleibt verlinkt (GSC 16.10.2026)"
     }
   ]
 }
