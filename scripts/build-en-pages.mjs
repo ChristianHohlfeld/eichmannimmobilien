@@ -159,7 +159,7 @@ function foot(key, waHref = WA_GEN) {
     </div>
   </footer>
 
-${key === "allmannsdorf" ? `  <div class="flyer-overlay" id="flyerModal" hidden data-flyer-src="/partials/flyer-modal-en.html?v=${V}"></div>\n` : ""}  <nav class="sticky-bar" aria-label="Quick contact">
+  <nav class="sticky-bar" aria-label="Quick contact">
     <a href="${TEL}" class="sticky-item sticky-accent">
       <span class="sticky-ico" aria-hidden="true">${PHONE_SVG}</span>
       <span>Call</span>
@@ -344,7 +344,7 @@ function allmannsdorfPage() {
         <h1>${esc(AL.h1)}</h1>
         <p class="lead">${esc(AL.lead)}</p>
         <figure class="project-hero-media">
-          <a href="#flyerModal" data-open-flyer aria-label="Living and dining area with lake view – New-build Allmannsdorf (visualisation)">
+          <a href="#register" aria-label="Living and dining area with lake view – New-build Allmannsdorf (visualisation)">
             <picture>
               <source srcset="/assets/flyer/hero-dining.webp" type="image/webp">
               <img src="/assets/flyer/hero-dining.jpg" alt="Living and dining area with lake view – New-build Allmannsdorf (visualisation)" width="520" height="550" fetchpriority="high" decoding="async">

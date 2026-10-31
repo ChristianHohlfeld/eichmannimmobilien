@@ -160,109 +160,20 @@ async function measurePage(page, base, path, vp) {
     }
   }
 
-  // First-visit flyer: auto-opens, dismissal persists, manual reopening remains available.
-  // Then: Close button must sit on the flyer's right edge on desktop and mobile.
+  // Flyer-Pop-up entfernt (31.10.2026, Chris): a clean first visit must show no flyer,
+  // must not lock scrolling, and nothing may open a flyer.
   if (path === '/') {
-    const isOpen = () => page.evaluate(() => {
-      const m = document.getElementById('flyerModal');
-      return !!(m && !m.hidden);
-    });
-    const freshHome = async () => {
-      await page.evaluate(() => {
-        try { localStorage.removeItem('eichmann_flyer_closed_v1'); } catch (e) {}
-      });
-      await page.reload({ waitUntil: 'load' });
-    };
-
-    // 1) manual opener works instantly
-    await freshHome();
-    await page.evaluate(() => document.querySelector('[data-open-flyer]')?.click());
-    await page.waitForTimeout(150);
-    if (!(await isOpen())) fail(`${label}: [data-open-flyer] must open the flyer instantly`);
-    await page.keyboard.press('Escape');
-
-    // Closing persists across reloads; the opener still works.
+    await page.evaluate(() => { try { localStorage.removeItem('eichmann_flyer_closed_v1'); } catch (e) {} });
     await page.reload({ waitUntil: 'load' });
-    await page.waitForTimeout(300);
-    if (await isOpen()) fail(`${label}: dismissed flyer reopened after reload`);
-    await page.evaluate(() => document.querySelector('[data-open-flyer]')?.click());
-    await page.waitForTimeout(150);
-    if (!(await isOpen())) fail(`${label}: dismissed flyer cannot be reopened manually`);
-    await page.keyboard.press('Escape');
-
-    // A clean first visit opens on desktop and mobile without engagement/delay.
-    await freshHome();
-    await page.waitForFunction(() => !document.getElementById('flyerModal')?.hidden);
-    await page.evaluate(() => window.scrollTo(0, 0));
-    const flyer = await page.evaluate(() => {
-      const modal = document.getElementById('flyerModal');
-      const dialog = modal?.querySelector('.flyer-dialog');
-      const close = modal?.querySelector('.flyer-close');
-      if (!modal || modal.hidden || !dialog || !close) return null;
-      const d = dialog.getBoundingClientRect();
-      const c = close.getBoundingClientRect();
-      return {
-        dialogLeft: Math.round(d.left),
-        dialogRight: Math.round(d.right),
-        closeLeft: Math.round(c.left),
-        closeRight: Math.round(c.right),
-      };
-    });
-    if (!flyer) {
-      fail(`${label}: flyer did not auto-open for geometry check`);
-    } else {
-      const rightGap = Math.abs(flyer.dialogRight - flyer.closeRight);
-      if (rightGap > 24) {
-        fail(`${label}: flyer close is not aligned to flyer right edge (gap=${rightGap}px, closeRight=${flyer.closeRight}, dialogRight=${flyer.dialogRight})`);
-      }
-      if (flyer.closeLeft < flyer.dialogLeft - 2) {
-        fail(`${label}: flyer close sits left of flyer dialog`);
-      }
-    }
-
-    // ChatGPT funnel layout: one Anrufen+Vormerken pair in the intro flow;
-    // mobile order brand → hero → intro (hero before intro CTAs).
-    const funnel = await page.evaluate(() => {
-      const modal = document.getElementById('flyerModal');
-      if (!modal || modal.hidden) return null;
-      const sticky = modal.querySelector('.flyer-sticky-ctas');
-      const intro = modal.querySelector('.flyer-intro');
-      const introCtas = intro?.querySelector('.flyer-intro-ctas');
-      const call = introCtas?.querySelector('a[href^="tel:"]');
-      // claude-final: Vormerken = the inline form in the intro (no separate Vormerken button any more)
-      const vormerk = intro?.querySelector('form[data-vormerk-form] button[type="submit"]');
-      const c = introCtas?.getBoundingClientRect();
-      const h = modal.querySelector('.flyer-hero-img')?.getBoundingClientRect();
-      const i = intro?.getBoundingClientRect();
-      const cStyle = introCtas ? getComputedStyle(introCtas) : null;
-      return {
-        hasSticky: !!sticky,
-        introCtasInFlow: !!(introCtas && c && cStyle && cStyle.position !== 'fixed' && cStyle.position !== 'absolute' && c.top >= i.top - 2 && c.bottom <= i.bottom + 2),
-        hasAnrufen: !!(call && /Anrufen/i.test(call.textContent || '')),
-        hasVormerken: !!(vormerk && /Vormerken/i.test(vormerk.textContent || '')),
-        heroTop: h ? Math.round(h.top) : null,
-        introTop: i ? Math.round(i.top) : null,
-        // Chris 2026-10-02: Allmannsdorf wording only Vormerken / Neubau / provisionsfrei —
-        // no 'planen' / Bauantrag / Baubeginn / Genehmigungs-Story.
-        wordingOk:
-          /vormerken/i.test(intro?.textContent || '') &&
-          !/planen|geplant|bauantrag|baubeginn|genehmig/i.test(modal.textContent || ''),
-      };
-    });
-    if (!funnel) {
-      fail(`${label}: flyer funnel layout check — modal not open`);
-    } else {
-      if (funnel.hasSticky) fail(`${label}: flyer sticky CTA bar must be removed`);
-      if (!funnel.introCtasInFlow) fail(`${label}: flyer intro CTAs must remain in normal flow`);
-      if (!funnel.hasAnrufen) fail(`${label}: flyer intro missing Anrufen`);
-      if (!funnel.hasVormerken) fail(`${label}: flyer intro missing Vormerken`);
-      if (!funnel.wordingOk) fail(`${label}: flyer wording must say vormerken and contain no planen/Bauantrag/Baubeginn/Genehmigung`);
-      if (vp.name === 'mobile' && funnel.heroTop != null && funnel.introTop != null) {
-        if (funnel.heroTop >= funnel.introTop - 2) {
-          fail(`${label}: mobile flyer hero should appear before intro (heroTop=${funnel.heroTop}, introTop=${funnel.introTop})`);
-        }
-      }
-    }
+    await page.waitForTimeout(800);
+    const st = await page.evaluate(() => ({
+      modal: !!document.getElementById('flyerModal') || !!document.querySelector('.flyer-dialog'),
+      opener: !!document.querySelector('[data-open-flyer]'),
+      locked: document.body.style.overflow === 'hidden' || document.body.classList.contains('flyer-open'),
+    }));
+    if (st.modal) fail(`${label}: flyer modal must not exist any more`);
+    if (st.opener) fail(`${label}: [data-open-flyer] opener must not exist any more`);
+    if (st.locked) fail(`${label}: body scroll locked on first visit`);
   }
 
   // sample screenshot path for debugging on fail (always write small set)

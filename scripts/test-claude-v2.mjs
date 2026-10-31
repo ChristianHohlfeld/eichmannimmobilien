@@ -95,22 +95,14 @@ try {
     if (posts.length !== 1 || posts[0].anliegen !== 'Vormerkung Neubau Allmannsdorf' || posts[0].lang !== 'de' || posts[0].phone !== '+41 79 000 00 00') fail(`home hero payload ${JSON.stringify(posts[0])}`);
     await ctx.close();
   }
-  // 2) Flyer modal form (mobile)
+  // 2) Flyer-Pop-up entfernt (31.10.2026): kontakt.html "Neubau vormerken" ist ein normaler Link, kein Modal
   {
-    const { ctx, hits, posts } = await newCtx({ mobile: true });
+    const { ctx } = await newCtx({ mobile: true });
     const page = await ctx.newPage();
     await page.goto(base + '/kontakt.html', { waitUntil: 'load' });
     await page.waitForTimeout(500);
-    await page.evaluate(() => document.querySelector('[data-open-flyer]') ? document.querySelector('[data-open-flyer]').click() : null);
-    await page.waitForTimeout(400);
-    const open = await page.evaluate(() => !document.getElementById('flyerModal').hidden);
-    if (!open) fail('flyer modal did not open');
-    await page.locator('#vormerk-flyer [name="name"]').scrollIntoViewIfNeeded();
-    await submitVormerk(page, '#vormerk-flyer');
-    await page.waitForSelector('#vormerk-flyer .vormerk-success:not([hidden])', { timeout: 5000 });
-    await page.waitForTimeout(300);
-    checkLead(hits, { location: 'flyer_modal', lang: 'de', label: 'flyer modal' });
-    if (posts.length !== 1) fail(`flyer: expected 1 post, got ${posts.length}`);
+    const st = await page.evaluate(() => ({ modal: !!document.getElementById('flyerModal'), opener: !!document.querySelector('[data-open-flyer]') }));
+    if (st.modal || st.opener) fail(`kontakt: flyer remnants ${JSON.stringify(st)}`);
     await ctx.close();
   }
   // 3) allmannsdorf.html: Anrufen first, inline form; server error → no lead

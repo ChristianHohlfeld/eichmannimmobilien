@@ -78,9 +78,7 @@
         "html": "allmannsdorf.html",
         "projekte": "projekte.html",
         "contact_vormerkung": "kontakt.html?interesse=allmannsdorf#contact-form",
-        "flyer_modal_on": [
-          "/"
-        ],
+        "flyer_modal_on": [],
         "html_en": "en/allmannsdorf.html"
       },
       "legacy_key_order": [

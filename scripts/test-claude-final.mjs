@@ -38,17 +38,7 @@ for (const f of htmlFiles) {
     check(/>Kontakt<\/a>/.test(nav), `${f}: nav Kontakt link missing`);
     check(!/href="(\.\.\/)?index\.html/.test(nav), `${f}: nav links index.html instead of /`);
   }
-  if (h.includes('id="flyerModal"')) {
-    // Flyer kommt aus EINEM Partial (SSOT); Seiten enthalten nur den Container
-    check(/id="flyerModal" hidden data-flyer-src="\/partials\/flyer-modal(-en)?\.html\?v=[0-9a-f]{8}"><\/div>/.test(h), `${f}: flyer container/partial missing`);
-    const fl0 = await read("partials/flyer-modal.html");
-    const fl = fl0.slice(0, fl0.indexOf('<div class="flyer-foot">'));
-    check(/NEUBAU<br><span>ALLMANNSDORF<\/span>/.test(fl), `${f}: flyer title`);
-    check(fl.includes('<p class="flyer-cta-script">Jetzt vormerken lassen!</p>'), `${f}: flyer heading`);
-    check(!/Vormerken per Kontakt/.test(fl), `${f}: flyer still has 'Vormerken per Kontakt'`);
-    check(!/<a class="btn btn-primary" href="#vormerk-flyer">Vormerken<\/a>/.test(fl), `${f}: flyer still has Vormerken button`);
-    check((fl.match(/class="btn btn-accent" href="tel:/g) || []).length === 1, `${f}: flyer must have exactly one Anrufen button`);
-  }
+  check(!h.includes('id="flyerModal"') && !/data-open-flyer/.test(h), `${f}: Flyer-Pop-up-Rest (entfernt 31.10.2026)`);
 }
 // objekt pages
 for (const L of listings) {
@@ -103,7 +93,7 @@ check(enH1 && enLead && !enLead.includes(enH1) && !/register your interest/.test
 check(/commission\u2011free/.test(enA) && /commission\u2011free/.test(await read("en/index.html")), "EN: non-breaking hyphen in commission‑free");
 check(/hero-cta-vormerken/.test(enA) && /hero-cta-vormerken/.test(await read("allmannsdorf.html")), "allmannsdorf: desktop-primary Vormerken class");
 const kontakt = await read("kontakt.html");
-check(/href="kontakt\.html\?interesse=allmannsdorf#contact-form" data-open-flyer/.test(kontakt), "kontakt.html: Neubau vormerken fallback href");
+check(/href="kontakt\.html\?interesse=allmannsdorf#contact-form">Neubau vormerken</.test(kontakt), "kontakt.html: Neubau vormerken href");
 
 /* ---------- MCP search ---------- */
 async function rpc(url, method, params) {

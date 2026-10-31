@@ -438,7 +438,7 @@ ${images
     const w = im.key === "hero" ? 520 : 300;
     const h = im.key === "hero" ? 550 : 260;
     return `          <figure class="project-gallery-item">
-            <a href="#flyerModal" data-open-flyer aria-label="${escapeHtml(im.alt)} – Flyer öffnen">
+            <a href="#vormerken" aria-label="${escapeHtml(im.alt)} – zum Vormerken">
               <picture>
 ${im.webp ? `                <source srcset="${escapeHtml(im.webp)}" type="image/webp">\n` : ""}                <img src="${escapeHtml(im.jpg)}" alt="${escapeHtml(im.alt)}" width="${w}" height="${h}" loading="lazy" decoding="async">
               </picture>
@@ -497,7 +497,7 @@ ${faq
         <h1>${escapeHtml(project.h1 || project.title)}</h1>
         <p class="lead">${escapeHtml(project.lead || project.summary || "")}</p>
         <figure class="project-hero-media">
-          <a href="#flyerModal" data-open-flyer aria-label="Wohn- und Essbereich mit Seeblick – Neubau Allmannsdorf (Visualisierung)">
+          <a href="#vormerken" aria-label="Wohn- und Essbereich mit Seeblick – Neubau Allmannsdorf (Visualisierung)">
             <picture>
               <source srcset="/assets/flyer/hero-dining.webp" type="image/webp">
               <img src="/assets/flyer/hero-dining.jpg" alt="Wohn- und Essbereich mit Seeblick – Neubau Allmannsdorf (Visualisierung)" width="520" height="550" fetchpriority="high" decoding="async">
@@ -509,7 +509,7 @@ ${faq
           <a class="btn btn-accent hero-cta-call btn-call" href="tel:+491705225568" data-location="hero_number">Jetzt anrufen <span class="nowrap">0170 522 5568</span></a>
           <a class="btn btn-outline hero-cta-vormerken" href="#vormerken" data-focus-form="vormerk-projekt">Vormerken</a>
         </div>
-        <p class="hero-links"><button type="button" class="linkish" data-open-flyer>Flyer öffnen</button> · <a href="tel:+491705225568">+49 170 522 5568</a> · <span class="nowrap">Festnetz <a href="tel:+4975319228848">+49 7531 9228848</a></span></p>
+        <p class="hero-links"><a class="linkish" href="#vormerken">Zum Vormerkformular</a> · <a href="tel:+491705225568">+49 170 522 5568</a> · <span class="nowrap">Festnetz <a href="tel:+4975319228848">+49 7531 9228848</a></span></p>
       </div>
     </section>
 

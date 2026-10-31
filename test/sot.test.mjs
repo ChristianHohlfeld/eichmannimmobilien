@@ -4,7 +4,6 @@ import { readFileSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { loadSot, checkStructure, renderText, formatFact, projectsDocument, projectTexts, publicContact, dataAsOfLabel, sitemapStatic, hreflangPairs } from "../scripts/lib/sot.mjs";
 import { compileRules, checkWording, checkNoRawNumbers, allowedNumberSet, checkNumbersInOutput } from "../scripts/lib/rules.mjs";
-import { flyerModalInner } from "../scripts/lib/flyer-modal.mjs";
 
 const sot = loadSot();
 const rules = compileRules(sot.wording);
@@ -78,12 +77,12 @@ test("Datenstand = ältestes Prüfdatum aktiver Objekte", () => {
   assert.equal(sot.dataAsOf, oldest);
   assert.match(dataAsOfLabel(sot), /^\d{2}\.\d{2}\.\d{4}$/);
 });
-test("Flyer-Fenster: ein Template, Zahlen aus Fakten, Bildhinweis, Seesicht-Highlight", () => {
-  const h = flyerModalInner(sot);
-  assert.match(h, /44 Wohnungen/);
-  assert.match(h, /Visualisierung/);
-  assert.match(h, /Seesicht/);
-  assert.deepEqual(hits(h), []);
-  assert.ok(existsSync("partials/flyer-modal.html"));
+test("Flyer-Pop-up entfernt: kein Container, keine Partials, keine Öffner", () => {
+  assert.ok(!existsSync("partials/flyer-modal.html"));
+  assert.ok(!existsSync("partials/flyer-modal-en.html"));
+  for (const f of ["index.html", "allmannsdorf.html", "kontakt.html", "en/index.html", "en/allmannsdorf.html"]) {
+    const h = readFileSync(f, "utf8");
+    assert.ok(!/id="flyerModal"|data-open-flyer|href="#flyerModal"|FLYER-MODAL/.test(h), f);
+  }
 });
 test("check-output: Ausgabe regelkonform", () => { execFileSync(process.execPath, ["scripts/check-output.mjs"], { stdio: "pipe" }); });

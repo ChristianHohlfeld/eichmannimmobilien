@@ -5,7 +5,7 @@
  *  2 Export            data/projects.json (Kompatibilität für ältere Leser) aus data/sot/projects.json
  *  3 Render            Objektseiten, Raster, Projektseite, JSON-LD, Sitemap, llms.txt, agents.txt, ai/*.json, mcp.json
  *  4 EN                /en/ (Texte + Fakten aus der SSOT)
- *  5 Flyer             partials/flyer-modal.html (ein Template) + Container in allen Seiten
+ *  5 Flyer             Flyer-Pop-up entfernt: Container/Partials werden aus allen Seiten gelöscht
  *  6 Seiten-Meta       <title>/description aus data/sot/pages.json
  *  7 Cache-Hashes      ?v=<Inhalts-Hash> für css/js/assets/partials
  *  8 check-output      Ausgabe: dieselben Regeln + Konsistenz (hreflang, Objektzahl, Datenstand)
@@ -17,7 +17,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadSot, projectsDocument, projectTexts } from "./lib/sot.mjs";
-import { publishFlyerModal } from "./lib/flyer-modal.mjs";
+import { removeFlyerModal } from "./lib/flyer-modal.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const run = (file, ...args) => execFileSync(process.execPath, [path.join(ROOT, file), ...args], { stdio: "inherit", cwd: ROOT, env: { ...process.env, EICHMANN_SITE_ROOT: ROOT } });
@@ -30,8 +30,8 @@ if (!process.argv.includes("--no-render")) {
   run("scripts/sync-immowelt.mjs", "--render-only");
   run("scripts/build-en-pages.mjs");
 }
-const fl = await publishFlyerModal({ siteRoot: ROOT });
-console.log(`Flyer: ${fl.partial} (${fl.pages} Seiten mit Container)`);
+const fl = await removeFlyerModal({ siteRoot: ROOT });
+console.log(`Flyer-Pop-up entfernt (${fl.pages} Seite(n) bereinigt)`);
 
 // Startseite: Hero-Unterzeile = Allmannsdorf-Lead aus der SSOT (Zahlen nur aus Fakten, Claude R3 #4)
 {

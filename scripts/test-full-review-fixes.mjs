@@ -11,16 +11,14 @@ for (const f of pages) {
   const bar = s.match(/<nav class="sticky-bar[\s\S]*?<\/nav>/)?.[0] || "";
   ok(/href="tel:\+491705225568"/.test(bar) && /wa\.me\/491705225568/.test(bar), `${f}: Leiste ohne Anrufen/WhatsApp`);
   ok(!/<img[^>]*\ssrc=""/.test(s), `${f}: leeres <img src="">`);
-  if (/href="#flyerModal"/.test(s)) ok(/id="flyerModal"/.test(s), `${f}: #flyerModal verlinkt, aber kein Modal`);
+  ok(!/id="flyerModal"|href="#flyerModal"|data-open-flyer/.test(s), `${f}: Flyer-Pop-up-Rest (entfernt 31.10.2026)`);
 }
+// Flyer-Pop-up entfernt (31.10.2026): EN-Allmannsdorf ohne Flyer, Bild führt zum Inline-Formular
 const en = readFileSync("en/allmannsdorf.html", "utf8");
-ok(/data-flyer-src="\/partials\/flyer-modal-en\.html\?v=/.test(en), "EN-Allmannsdorf lädt nicht den EN-Flyer");
-ok(existsSync("partials/flyer-modal-en.html"), "partials/flyer-modal-en.html fehlt");
-const p = readFileSync("partials/flyer-modal-en.html", "utf8");
-ok(/name="lang" value="en"/.test(p) && /NEW-BUILD/.test(p) && !/Vormerken|Schließen|Anrufen/.test(p), "EN-Flyer nicht englisch");
-ok(!/permit|construction start|building application|approval|countdown/i.test(p), "EN-Flyer verletzt harte Regeln");
+ok(!/data-flyer-src=/.test(en) && /href="#register"/.test(en) && /id="register"/.test(en), "EN-Allmannsdorf: Flyer-Rest oder kein Link zum Formular");
+ok(!existsSync("partials/flyer-modal-en.html") && !existsSync("partials/flyer-modal.html"), "Flyer-Partials noch vorhanden");
 ok(!readFileSync("js/main.js", "utf8").includes(`'<img src="" alt="">'`), "main.js erzeugt noch <img src=\"\">");
 const css = readFileSync("css/styles.css", "utf8");
 ok(/full-review-p2[\s\S]*max-width: 768px[\s\S]*\.floating-wa, body\.cookie-banner-open \.floating-wa \{ display: none !important; \}/.test(css), "WA-Bubble mobil nicht ausgeblendet");
 if (fail.length) { console.error("✗ full-review-fixes\n" + fail.join("\n")); process.exit(1); }
-console.log(`✓ full-review-fixes: ${pages.length} Seiten (Leiste, kein leeres img, Flyer-Anker), EN-Flyer, WA-Bubble`);
+console.log(`✓ full-review-fixes: ${pages.length} Seiten (Leiste, kein leeres img, kein Flyer-Pop-up), EN ohne Flyer, WA-Bubble`);
