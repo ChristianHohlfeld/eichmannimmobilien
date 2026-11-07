@@ -1709,7 +1709,14 @@ async function syncOneImage(url, base, opts = {}) {
   if (!url) return false;
   const jpgPath = path.join(IMAGES_DIR, `${base}.jpg`);
   const webpPath = path.join(IMAGES_DIR, `${base}.webp`);
-  if ((await fileExists(jpgPath)) && (await fileExists(webpPath))) return true;
+  // The local file names are positions (…-g02), not pictures: a file is kept only while it is
+  // still the same remote picture. Its source (the media asset's name) is noted next to it; a
+  // different picture at that position on Immowelt replaces it, so the site shows Immowelt's
+  // current gallery, never the old one under a familiar name.
+  const srcPath = path.join(IMAGES_DIR, `${base}.src`);
+  const want = remoteMediaKey(url);
+  const had = await readFile(srcPath, "utf8").catch(() => "");
+  if (had.trim() === want && (await fileExists(jpgPath)) && (await fileExists(webpPath))) return true;
 
   const tmpExt = (url.split("?")[0].match(/\.(jpe?g|png|webp)$/i) || [, "jpg"])[1].toLowerCase();
   const tmp = path.join(IMAGES_DIR, `._tmp-${base}.${tmpExt}`);
@@ -1717,6 +1724,7 @@ async function syncOneImage(url, base, opts = {}) {
     await downloadTo(url, tmp);
     await convertImages(tmp, base, opts);
     await unlink(tmp).catch(() => {});
+    if (!dryRun) await writeFile(srcPath, `${want}\n`);
     return true;
   } catch (e) {
     console.warn(`Image sync failed for ${base}:`, e.message);
@@ -1938,7 +1946,7 @@ async function cleanupOrphanImages(data) {
     }
   }
   const files = await readdir(IMAGES_DIR).catch(() => []);
-  const imgRe = /^(.*)\.(jpe?g|png|webp)$/i;
+  const imgRe = /^(.*)\.(jpe?g|png|webp|src)$/i;  // (.src: which remote picture a file is)
   for (const f of files) {
     if (f.startsWith("._tmp-")) {
       if (!dryRun) await unlink(path.join(IMAGES_DIR, f)).catch(() => {});
@@ -2949,20 +2957,12 @@ async function enrichListings(listings) {
         }
       }
       try {
-        const mirrorUrl = SPARKASSE_EXPOSE_BY_IMMOWELT_ID[String(L.id || "").toLowerCase()];
-        if (mirrorUrl && mo.images !== true) {
-          await enrichGalleryFromSparkasse(page, L);
-        } else {
-          await enrichFromExposePage(page, L);
-        }
+        // Immowelt is the one source - also of the pictures: every gallery from its exposé (the
+        // Sparkasse syndication is not used; a failed read keeps the last good gallery)
+        await enrichFromExposePage(page, L);
         await page.waitForTimeout(250);
-      } catch (mirrorErr) {
-        console.warn(`Gallery mirror failed for ${shortId(L.id)}:`, mirrorErr.message || mirrorErr);
-        try {
-          await enrichFromExposePage(page, L);
-        } catch (err) {
-          console.warn(`Enrich failed for ${shortId(L.id)}:`, err.message || err);
-        }
+      } catch (err) {
+        console.warn(`Enrich failed for ${shortId(L.id)} (last good gallery kept):`, err.message || err);
       }
     }
   } finally {
