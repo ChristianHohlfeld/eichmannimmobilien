@@ -712,6 +712,45 @@ async function ensureSession() {
   }
 }
 
+/* ---------- Wächter & Sichtprüfung ---------- */
+async function loadReviewMeta() {
+  const el = $("review-meta");
+  if (!el) return;
+  try {
+    const r = await api("/review/status");
+    const m = r.meta;
+    el.textContent = m
+      ? `Letzte Sichtprüfung: ${new Date(m.updated_at).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })} · ${m.pages_after ?? "?"} Seiten · Datenvergleich: ${m.differences === 0 ? "keine Abweichung" : m.differences == null ? "–" : `${m.differences} Abweichung(en)`}`
+      : "Noch keine Sichtprüfung auf dem Server.";
+    if (!r.can_dispatch) el.textContent += " · Automatische Aktualisierung ist noch nicht eingerichtet.";
+  } catch {
+    el.textContent = "";
+  }
+}
+
+async function onWatchdogRun() {
+  const btn = $("btn-watchdog-run");
+  const out = $("watchdog-result");
+  btn.disabled = true;
+  btn.textContent = "Prüft …";
+  out.innerHTML = "";
+  try {
+    const r = await api("/watchdog/run", { method: "POST", body: JSON.stringify({}) });
+    const lines = (r.watchdog?.lines || []).map((l) => `<div>${esc(l)}</div>`).join("");
+    const badge = r.watchdog?.ok ? '<span class="badge ok">Wächter: in Ordnung</span>' : '<span class="badge miss">Wächter: Problem</span>';
+    const review = r.review?.dispatched
+      ? "Die Sichtprüfung wird jetzt neu erstellt (Aufnahmen aller Seiten, etwa 10–20 Minuten). Danach „Sichtprüfung öffnen“."
+      : `Sichtprüfung nicht gestartet: ${esc(r.review?.reason || "unbekannt")}`;
+    out.innerHTML = `<p>${badge}</p>${lines}<p>${review}</p>`;
+  } catch (e) {
+    out.textContent = e.message || "Wächter konnte nicht gestartet werden.";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Wächter jetzt starten";
+    loadReviewMeta();
+  }
+}
+
 /** Never show raw Node/Playwright stack traces in Immowelt-Stand. */
 function publicImmoweltReason(reason, state) {
   const raw = String(reason || "").trim();
@@ -1894,6 +1933,9 @@ function bind() {
   });
   const syncBtn = $("btn-immowelt-sync");
   if (syncBtn) syncBtn.addEventListener("click", onImmoweltSync);
+  const wdBtn = $("btn-watchdog-run");
+  if (wdBtn) wdBtn.addEventListener("click", onWatchdogRun);
+  loadReviewMeta();
   const credForm = $("form-immowelt-credentials");
   if (credForm) credForm.addEventListener("submit", onSaveImmoweltCredentials);
   const replaceCb = $("iw-replace-key");

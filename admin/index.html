@@ -88,6 +88,16 @@
           <p class="hint" id="immowelt-health-detail"></p>
           <p id="immowelt-sync-outcome" class="sync-outcome hidden" role="status" aria-live="polite"></p>
         </div>
+        <div class="card" id="review-card" style="margin-bottom:16px">
+          <strong>Wächter &amp; Sichtprüfung</strong>
+          <p class="hint">Prüft sofort, ob die Website den Immowelt-Stand korrekt ausliefert, und erstellt danach neue Aufnahmen aller Seiten: vorher · nachher · Immowelt.</p>
+          <p>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-watchdog-run">Wächter jetzt starten</button>
+            <a class="btn btn-outline btn-sm" id="link-review" href="/admin/sichtpruefung/review/index.html" target="_blank" rel="noopener">Sichtprüfung öffnen</a>
+          </p>
+          <p class="hint" id="review-meta"></p>
+          <div id="watchdog-result" class="hint" role="status" aria-live="polite"></div>
+        </div>
         <div class="card table-wrap" style="padding:0;overflow:hidden">
           <table class="listings">
             <thead>

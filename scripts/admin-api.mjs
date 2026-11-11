@@ -688,6 +688,47 @@ async function handle(req, res) {
       }
     }
 
+    // --- Wächter jetzt starten + Sichtprüfung aktualisieren ---
+    if (method === "GET" && p === "/review/status") {
+      const { loadConfig } = await import("./lib/immowelt/config.mjs");
+      const cfg = loadConfig();
+      let meta = null;
+      try { meta = JSON.parse(fs.readFileSync(path.join(cfg.reviewDir, "meta.json"), "utf8")); } catch { meta = null; }
+      return send(res, 200, { ok: true, meta, url: "/admin/sichtpruefung/review/index.html", can_dispatch: fs.existsSync(cfg.dispatchTokenFile) });
+    }
+    if (method === "POST" && p === "/watchdog/run") {
+      await readBody(req);
+      const { loadConfig } = await import("./lib/immowelt/config.mjs");
+      const cfg = loadConfig();
+      // 1. the same check the external watchdog runs, against the public site – result at once
+      const appRoot = path.resolve(__dirname, "..");
+      const wd = await new Promise((resolve) => {
+        const child = spawn(process.execPath, [path.join(appRoot, "scripts", "watchdog-check.mjs"), "--url", cfg.publicOrigin], { cwd: appRoot, env: { ...process.env, GITHUB_STEP_SUMMARY: "" }, stdio: ["ignore", "pipe", "pipe"] });
+        let out = "";
+        child.stdout.on("data", (c) => { out += c; });
+        child.stderr.on("data", (c) => { out += c; });
+        const timer = setTimeout(() => { try { child.kill("SIGTERM"); } catch { /* gone */ } }, 90_000);
+        child.on("close", (code) => { clearTimeout(timer); resolve({ ok: code === 0, lines: out.split("\n").map((l) => l.trim()).filter(Boolean).slice(-20) }); });
+      });
+      // 2. screenshots need a browser: started as a GitHub workflow, which uploads the new review to this server
+      let review = { dispatched: false, reason: "Kein GitHub-Zugang auf dem Server hinterlegt (Ops-Aktion github-token-install)." };
+      try {
+        const token = String(JSON.parse(fs.readFileSync(cfg.dispatchTokenFile, "utf8")).token || "").trim();
+        if (token) {
+          const r = await fetch(`https://api.github.com/repos/${cfg.githubRepo}/actions/workflows/immowelt-verify-live.yml/dispatches`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "eichmann-admin" },
+            body: JSON.stringify({ ref: "main", inputs: { label: "check", api: "true" } }),
+            signal: AbortSignal.timeout(20_000),
+          });
+          review = r.status === 204 ? { dispatched: true, reason: null } : { dispatched: false, reason: `GitHub hat den Start abgelehnt (HTTP ${r.status}).` };
+        }
+      } catch (e) {
+        if (e?.code !== "ENOENT") review = { dispatched: false, reason: "GitHub war nicht erreichbar." };
+      }
+      return send(res, 200, { ok: true, watchdog: wd, review });
+    }
+
     // --- Immowelt API credentials (Kundennummer + API-Key; droplet secrets only) ---
     if (method === "GET" && p === "/immowelt/credentials") {
       return send(res, 200, getImmoweltCredentialsStatus());

@@ -68,6 +68,11 @@ export function loadConfig(processEnv = process.env) {
     lockDir: path.resolve(env.EICHMANN_LOCK_DIR || path.join(stateDir, "locks")),
     adminConfigFile: path.resolve(env.EICHMANN_ADMIN_CONFIG_STORE || path.join(stateDir, "admin-config.json")),
     acmeDir: path.resolve(env.EICHMANN_ACME_DIR || path.join(stateDir, "acme-challenge")),
+    // visual check: screenshots + review page, uploaded by the "verify live" workflow, served under /admin/sichtpruefung/
+    reviewDir: path.resolve(env.EICHMANN_REVIEW_DIR || path.join(stateDir, "review")),
+    dispatchTokenFile: path.resolve(env.EICHMANN_DISPATCH_TOKEN_FILE || path.join(stateDir, "secrets", "github-dispatch.json")),
+    githubRepo: env.EICHMANN_GITHUB_REPO || "ChristianHohlfeld/eichmannimmobilien",
+    publicOrigin: (env.EICHMANN_PUBLIC_ORIGIN || "https://immobilieneichmann.de").replace(/\/+$/, ""),
     alarmFile: path.resolve(env.EICHMANN_ALARM_FILE || path.join(stateDir, "secrets", "alarm.json")),
     immoweltDir,
     snapshotsDir: path.join(immoweltDir, "snapshots"),

@@ -193,6 +193,8 @@ export async function buildRelease(config, { dbPath, doc, reason, commit = null,
   await fsp.mkdir(path.dirname(config.statusFile), { recursive: true });
   await symlinkFresh(config.statusFile, path.join(staging, "data", "immowelt-sync-status.json"));
   if (fs.existsSync(config.adminConfigFile)) await symlinkFresh(config.adminConfigFile, path.join(staging, "admin", "config.json"));
+  await fsp.mkdir(config.reviewDir, { recursive: true });
+  await symlinkFresh(config.reviewDir, path.join(staging, "admin", "sichtpruefung"));
   await fsp.mkdir(config.acmeDir, { recursive: true });
   await symlinkFresh(config.acmeDir, path.join(staging, ".well-known", "acme-challenge"));
 

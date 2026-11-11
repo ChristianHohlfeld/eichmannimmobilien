@@ -27,6 +27,7 @@ on:
           - timers-enable
           - timers-disable
           - admin-password-set
+          - github-token-install
       plan_hash:
         description: "identity-apply: Hash aus dem geprüften Plan"
         required: false
@@ -92,7 +93,7 @@ jobs:
             rollback-release) node scripts/release.mjs rollback ;;
             timers-enable)    bash deploy/install-immowelt-sync.sh --enable ;;
             timers-disable)   bash deploy/install-immowelt-sync.sh --disable ;;
-            admin-password-set) echo "wird im nächsten Schritt gesetzt" ;;
+            admin-password-set|github-token-install) echo "wird im nächsten Schritt gesetzt" ;;
             *) echo "unbekannte Aktion"; exit 2 ;;
           esac
           REMOTE
@@ -109,3 +110,14 @@ jobs:
           printf '%s' "$NEW_PASSWORD" | ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
             "${DEPLOY_USER}@${DEPLOY_HOST}" "cd /var/lib/eichmann/app && node scripts/admin-password-set.mjs"
           echo "Admin-Passwort gesetzt. Bitte das Secret EICHMANN_ADMIN_NEW_PASSWORD jetzt wieder löschen." >> "$GITHUB_STEP_SUMMARY"
+      - name: Install GitHub token for the admin trigger (from secret EICHMANN_DISPATCH_TOKEN, STDIN only)
+        if: inputs.action == 'github-token-install'
+        env:
+          DISPATCH_TOKEN: ${{ secrets.EICHMANN_DISPATCH_TOKEN }}
+          DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.EICHMANN_DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          test -n "${DISPATCH_TOKEN:-}" || { echo "::error::Secret EICHMANN_DISPATCH_TOKEN fehlt oder ist leer – nichts geändert."; exit 1; }
+          printf '%s' "$DISPATCH_TOKEN" | ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" "cd /var/lib/eichmann/app && node scripts/github-token-install.mjs"
