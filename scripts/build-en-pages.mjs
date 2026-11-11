@@ -587,7 +587,7 @@ function abroadPage() {
       <div class="container narrow">
         <h2>Current properties</h2>
         <ul class="check-list">
-${props.map((m) => `          <li><a href="${enPath(m.slug)}">${esc(m.name)}</a>${m.price ? ` – €${m.price.toLocaleString("en-GB")}` : ""}</li>`).join("\n")}
+${props.map((m) => `          <li><a href="${enPath(m.slug)}">${esc(m.name)}</a>${m.price ? ` – €${m.price.toLocaleString("en-GB")}${m.rent ? " per month (rent)" : ""}` : ""}</li>`).join("\n")}
           <li><a href="/en/allmannsdorf.html">New-build Allmannsdorf</a> – commission-free, register your interest</li>
         </ul>
       </div>
@@ -614,7 +614,7 @@ function servicePage(sv) {
     { "@type": "BreadcrumbList", itemListElement: crumbs },
     faqLd,
     { ...BUSINESS, sameAs: [EN_SERVICE_LINKS.GBP, EN_SERVICE_LINKS.IMMOWELT] } ] };
-  const rows = sv.listings ? enListingModels(ROOT).filter(sv.listings.filter) : [];
+  const rows = sv.listings ? enListingModels(ROOT).filter((m) => !m.rent).filter(sv.listings.filter) : []; // service pages are about buying
   const listBlock = sv.listings ? `    <section class="section section-alt" id="listings">
       <div class="container narrow">
         <h2>${esc(sv.listings.heading)}</h2>

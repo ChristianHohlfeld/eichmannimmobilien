@@ -390,10 +390,11 @@ function routePath(url) {
 
 
 async function runImmoweltSyncChild() {
-  const appRoot = fs.existsSync("/var/lib/eichmann/app/scripts/sync-immowelt.mjs")
+  const appRoot = fs.existsSync("/var/lib/eichmann/app/scripts/immowelt-sync.mjs")
     ? "/var/lib/eichmann/app"
     : path.resolve(__dirname, "..");
-  const script = path.join(appRoot, "scripts", "sync-immowelt.mjs");
+  // Same command the timer runs: official API, complete-or-nothing, publishes automatically.
+  const script = path.join(appRoot, "scripts", "immowelt-sync.mjs");
   if (!fs.existsSync(script)) {
     const err = new Error("Immowelt-Sync ist hier nicht verfügbar.");
     err.status = 500;
@@ -402,11 +403,10 @@ async function runImmoweltSyncChild() {
   const env = {
     ...process.env,
     EICHMANN_DB_PATH: resolveDbPath(),
-    EICHMANN_SITE_ROOT: SITE_ROOT,
-    EICHMANN_AUTO_PUBLISH: "0",
   };
+  delete env.EICHMANN_SITE_ROOT; // the pipeline builds a release; it never renders into the served tree
   return await new Promise((resolve) => {
-    const child = spawn(process.execPath, [script], {
+    const child = spawn(process.execPath, [script, "run", "--trigger", "admin", "--wait", "120"], {
       cwd: appRoot,
       env,
       stdio: ["ignore", "pipe", "pipe"],
@@ -438,7 +438,8 @@ async function runImmoweltSyncChild() {
 
 function buildImmoweltSyncResponse(db, result) {
   const doc = exportListingsDocument(db);
-  const preview = previewImmoweltSync(SITE_ROOT, doc);
+  // Immowelt data is published by the sync itself (no manual "Abnahme" step any more).
+  const preview = { ...previewImmoweltSync(SITE_ROOT, doc), has_changes: false };
   let syncStatus = {};
   try {
     const statusPath = path.join(SITE_ROOT, "data", "immowelt-sync-status.json");
@@ -457,7 +458,7 @@ function buildImmoweltSyncResponse(db, result) {
       logTail
     );
   const statusRejected =
-    statusState === "rejected" || statusState === "awaiting_api_key";
+    ["rejected", "awaiting_api_key", "failed", "migration_required", "held"].includes(statusState);
   const processFailed = result.timedOut === true || result.code !== 0;
   const statusSoft = softFailLog || statusRejected;
   const failed = processFailed || statusSoft;
@@ -470,20 +471,9 @@ function buildImmoweltSyncResponse(db, result) {
         statusState === "awaiting_api_key" ? "awaiting_api_key" : "rejected"
       )
     : null;
-  if (!failed && !getMeta(db, "publish_pending") && preview.has_changes) {
-    setMeta(
-      db,
-      "publish_pending",
-      JSON.stringify({
-        reason: "immowelt_sync",
-        at: new Date().toISOString(),
-        listing_count: doc.listing_count,
-        active_listing_count: doc.active_listing_count,
-        message: "Immowelt-Sync abgeschlossen – bitte Ist und Neu prüfen, dann Übernehmen.",
-      })
-    );
-  }
   const pendingRaw = getMeta(db, "publish_pending");
+  const lastChange = syncStatus.last_change || null;
+  const changedNow = !failed && syncStatus.last_change_at && syncStatus.last_change_at === syncStatus.last_attempt_at;
   return {
     ok: !failed && (result.code === 0 || preview.has_changes),
     sync: {
@@ -503,9 +493,11 @@ function buildImmoweltSyncResponse(db, result) {
     path: "immowelt_sync",
     message: failed
       ? publicError
-      : preview.has_changes
-        ? "Immowelt-Sync: bitte Ist und Neu vergleichen, dann Übernehmen."
-        : "Keine Änderungen — Website bleibt wie sie ist.",
+      : statusState === "pending_confirmation"
+        ? "Immowelt meldet einen großen Wegfall von Angeboten. Er wird automatisch übernommen, sobald Immowelt denselben Stand ein zweites Mal bestätigt."
+        : changedNow
+          ? `Immowelt-Stand übernommen und veröffentlicht: ${(lastChange?.added || []).length} neu, ${(lastChange?.changed || []).length} geändert, ${(lastChange?.removed || []).length} offline.`
+          : "Keine Änderungen auf Immowelt — Website ist aktuell.",
   };
 }
 
@@ -684,7 +676,7 @@ async function handle(req, res) {
       });
     }
 
-    // --- Immowelt Sync (updates SQLite only; live site needs Abnahme / Übernehmen) ---
+    // --- Immowelt Sync: the same run the timer starts (official API, complete-or-nothing, publishes itself) ---
     if (method === "POST" && p === "/immowelt/sync") {
       await readBody(req); // consume body if any
       const result = await runImmoweltSyncChild();
@@ -987,6 +979,14 @@ async function handle(req, res) {
       const db = openApiDb();
       try {
         const all = listAllListings(db);
+        // Immowelt-Inserate: an/aus wird ausschließlich auf Immowelt gesteuert (harte Einweg-Übernahme).
+        const target = all.find((L) => L.id === id);
+        if (target && String(target.origin) === ORIGIN_IMMOWELT) {
+          return send(res, 409, {
+            ok: false,
+            error: "Immowelt-Inserate werden auf Immowelt ein- und ausgeschaltet. Die Website übernimmt das automatisch; ein lokales Ausblenden ist nicht mehr vorgesehen.",
+          });
+        }
         const preview = previewVisibility(SITE_ROOT, all, id, body.site_hidden);
         if (body.confirm !== true) {
           return send(res, 200, {

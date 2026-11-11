@@ -152,3 +152,31 @@ export function saveImmoweltCredentials(input = {}) {
 
   return getImmoweltCredentialsStatus();
 }
+
+/**
+ * Provisioning path (scripts/immowelt-secret-install.mjs): store the API key delivered by Immowelt.
+ * The SOAP API authenticates with the key alone, so the Kundennummer is optional here; an
+ * already stored Kundennummer is kept. The admin form (saveImmoweltCredentials) is unchanged.
+ * Returns the masked status only – the key itself is never returned or logged.
+ */
+export function installImmoweltApiKey({ api_key, kundennummer } = {}) {
+  const key = String(api_key ?? "").trim();
+  if (key.length < 8 || /\s/.test(key)) {
+    const err = new Error("API-Schlüssel fehlt, ist zu kurz oder enthält Leerraum.");
+    err.code = "api_key_invalid";
+    throw err;
+  }
+  const filePath = immoweltSecretsPath();
+  const prev = readRaw() || {};
+  ensureSecretsDir(filePath);
+  const payload = {
+    kundennummer: String(kundennummer ?? prev.kundennummer ?? "").trim().replace(/\s+/g, ""),
+    api_key: key,
+    updated_at: new Date().toISOString(),
+  };
+  const tmp = `${filePath}.tmp-${process.pid}`;
+  fs.writeFileSync(tmp, JSON.stringify(payload, null, 2) + "\n", { mode: 0o600 });
+  fs.chmodSync(tmp, 0o600);
+  fs.renameSync(tmp, filePath);
+  return getImmoweltCredentialsStatus();
+}

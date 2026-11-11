@@ -1,0 +1,71 @@
+name: Immowelt API key → server
+
+# Copies the repository secret IMMOWELT_API_KEY to the droplet, where the sync reads it:
+#   /var/lib/eichmann/secrets/immowelt-api.json   (0600, directory 0700)
+# The key travels runner → SSH → STDIN of the install script. It is never an argument, never an
+# environment variable on the server, never printed – not even masked or in part: the log of a
+# public repository is public. The script reports "has_key: true" and the date, nothing else.
+# Afterwards a read-only probe on the server proves that the key works there; it prints ids,
+# counts and field names only.
+#
+# Run it again after a key rotation. The secret may stay in GitHub for that purpose; it is read
+# only by manually started, read-only workflows (API probe, verify live with "api").
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Zur Bestätigung "INSTALL" eintragen'
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: immowelt-provision-key
+  cancel-in-progress: false
+
+jobs:
+  install:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Confirmation
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          [ "$CONFIRM" = "INSTALL" ] || { echo "::error::Nicht bestätigt (confirm muss genau INSTALL lauten) – es wurde nichts installiert."; exit 1; }
+      - name: Setup SSH
+        env:
+          DEPLOY_KEY: ${{ secrets.EICHMANN_DEPLOY_KEY }}
+          DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
+          KNOWN_HOSTS: ${{ secrets.EICHMANN_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/eichmann_deploy
+          chmod 600 ~/.ssh/eichmann_deploy
+          # Pin the server's host key (secret EICHMANN_KNOWN_HOSTS = output of "ssh-keyscan <host>", checked once on the
+          # server). Without the secret the key is taken on trust at first contact – set it before installing the API key.
+          if [ -n "${KNOWN_HOSTS:-}" ]; then printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts; else echo "::warning::EICHMANN_KNOWN_HOSTS ist nicht gesetzt – der Server wird nicht authentifiziert."; ssh-keyscan -T 10 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true; fi
+      - name: Install key on the server (STDIN only)
+        env:
+          IMMOWELT_API_KEY: ${{ secrets.IMMOWELT_API_KEY }}
+          DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.EICHMANN_DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          test -n "${IMMOWELT_API_KEY:-}" || { echo "Secret IMMOWELT_API_KEY ist leer oder fehlt."; exit 1; }
+          # The customer number is not needed by the API and does not belong into a public run log –
+          # if wanted, it is entered in the admin area.
+          printf '%s' "$IMMOWELT_API_KEY" | ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" "cd /var/lib/eichmann/app && node scripts/immowelt-secret-install.mjs"
+      - name: Prove it on the server (read-only API probe, structure only)
+        env:
+          DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.EICHMANN_DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" "cd /var/lib/eichmann/app && stat -c '%a %U %n' /var/lib/eichmann/secrets /var/lib/eichmann/secrets/immowelt-api.json && node scripts/immowelt-sync.mjs probe"

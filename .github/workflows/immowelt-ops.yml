@@ -1,0 +1,94 @@
+name: Immowelt ops (server)
+
+# The server-side commands of scripts/immowelt-sync.mjs, run over SSH with the deploy key –
+# for the cutover (identity plan → approval) and for operations (status, run now, hold,
+# resume, rollback, timers). Output contains offer ids, slugs, public titles/prices and
+# counts; never the API key.
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Was soll auf dem Server passieren?"
+        type: choice
+        required: true
+        options:
+          - status
+          - identity-plan
+          - identity-apply
+          - run
+          - history
+          - releases
+          - hold
+          - resume
+          - rollback-data
+          - rollback-release
+          - timers-enable
+          - timers-disable
+      plan_hash:
+        description: "identity-apply: Hash aus dem geprüften Plan"
+        required: false
+      reason:
+        description: "hold: Grund (kurz)"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: immowelt-ops
+  cancel-in-progress: false
+
+jobs:
+  ops:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Setup SSH
+        env:
+          DEPLOY_KEY: ${{ secrets.EICHMANN_DEPLOY_KEY }}
+          DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
+          KNOWN_HOSTS: ${{ secrets.EICHMANN_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/eichmann_deploy
+          chmod 600 ~/.ssh/eichmann_deploy
+          # Pin the server's host key (secret EICHMANN_KNOWN_HOSTS = output of "ssh-keyscan <host>", checked once on the
+          # server). Without the secret the key is taken on trust at first contact – set it before installing the API key.
+          if [ -n "${KNOWN_HOSTS:-}" ]; then printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts; else echo "::warning::EICHMANN_KNOWN_HOSTS ist nicht gesetzt – der Server wird nicht authentifiziert."; ssh-keyscan -T 10 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true; fi
+      - name: Run
+        env:
+          ACTION: ${{ inputs.action }}
+          PLAN_HASH: ${{ inputs.plan_hash }}
+          REASON: ${{ inputs.reason }}
+          DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.EICHMANN_DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          # Inputs are data, never shell: strict patterns, then passed as environment to the remote script.
+          [[ "${ACTION:-}" =~ ^[a-z-]{2,24}$ ]] || { echo "action ungültig"; exit 1; }
+          [[ "${PLAN_HASH:-}" =~ ^[0-9a-f]{0,16}$ ]] || { echo "plan_hash ungültig"; exit 1; }
+          REASON_CLEAN="$(printf '%s' "${REASON:-}" | tr -cd 'A-Za-z0-9 .,:_/-' | cut -c1-120)"
+          ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" "ACTION=$(printf '%q' "$ACTION") PLAN_HASH=$(printf '%q' "${PLAN_HASH:-}") REASON=$(printf '%q' "$REASON_CLEAN") bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd /var/lib/eichmann/app
+          export EICHMANN_DB_PATH=/var/lib/eichmann/listings.db
+          case "$ACTION" in
+            status)           node scripts/immowelt-sync.mjs status || true; systemctl list-timers --all --no-pager 'eichmann-*' || true; systemctl --no-pager --failed || true ;;
+            identity-plan)    node scripts/immowelt-sync.mjs identity-plan ;;
+            identity-apply)   test -n "$PLAN_HASH" || { echo "plan_hash fehlt"; exit 1; }; node scripts/immowelt-sync.mjs identity-apply --plan-hash "$PLAN_HASH" ;;
+            run)              node scripts/immowelt-sync.mjs run --trigger manual --wait 300 ;;
+            history)          node scripts/immowelt-sync.mjs history --limit 40 ;;
+            releases)         node scripts/release.mjs list ;;
+            hold)             node scripts/immowelt-sync.mjs hold --reason "${REASON:-ohne Angabe}" ;;
+            resume)           node scripts/immowelt-sync.mjs resume && node scripts/immowelt-sync.mjs run --trigger manual --wait 300 ;;
+            rollback-data)    node scripts/immowelt-sync.mjs rollback ;;
+            rollback-release) node scripts/release.mjs rollback ;;
+            timers-enable)    bash deploy/install-immowelt-sync.sh --enable ;;
+            timers-disable)   bash deploy/install-immowelt-sync.sh --disable ;;
+            *) echo "unbekannte Aktion"; exit 2 ;;
+          esac
+          REMOTE

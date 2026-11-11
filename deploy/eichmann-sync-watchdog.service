@@ -1,0 +1,15 @@
+[Unit]
+Description=Waechter: lief der Immowelt-Abgleich und ist er aktuell?
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/lib/eichmann/app
+Environment=NODE_ENV=production
+EnvironmentFile=-/var/lib/eichmann/sync.env
+ExecStart=/usr/bin/node /var/lib/eichmann/app/scripts/watchdog-check.mjs --local
+TimeoutStartSec=120
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full

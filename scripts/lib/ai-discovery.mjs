@@ -63,9 +63,8 @@ const STATIC_PAGE_LINKS = [
 ];
 
 /**
- * Real data date of the listings: newest of verified_at (mirror check, see
- * scripts/verify-listings-mirror.mjs → data/immowelt-sync-status.json last_verified_at)
- * and scraped_at (last semantic change). Never the render time.
+ * Real data date of the listings: day of the last complete, validated read of the Immowelt
+ * account (Objekt-Register, see scripts/lib/sot.mjs syncListingsLayer). Never the render time.
  */
 export function dataAsOf(data, siteRoot = null) {
   // SSOT: ältestes Prüfdatum der aktiven Objekte (data/sot/listings.json verified_at).
@@ -115,7 +114,9 @@ export function toAiListing(L, origin = DEFAULT_SITE_ORIGIN) {
     local_url: local,
     title: L.title || null,
     price: L.price || null,
-    price_eur: parseEuroPrice(L.price),
+    // API-Inserate: Zahl direkt von Immowelt; „auf Anfrage“ bleibt ohne Betrag
+    price_eur: L.immowelt_api === true ? (L.price_on_request ? null : L.price_eur ?? null) : parseEuroPrice(L.price),
+    ...(L.immowelt_api === true ? { marketing: L.marketing, price_on_request: L.price_on_request === true, online_id: L.immowelt_online_id } : {}),
     location: L.location || null,
     rooms: L.rooms || null,
     living_area: L.living_area || null,
@@ -123,9 +124,9 @@ export function toAiListing(L, origin = DEFAULT_SITE_ORIGIN) {
     type: L.type || null,
     status: L.status || "Kauf",
     short_description: L.short_description || null,
-    commission: (L.facts && L.facts["Käuferprovision"]) || null,
+    commission: (L.immowelt_api === true ? (L.fact_rows || []).find((r) => /provision|courtage/i.test(String(r.label || "")))?.value : L.facts && L.facts["Käuferprovision"]) || null,
     origin: L.origin || L.source || null,
-    image: L.main_image_url || null,
+    image: L.immowelt_api === true ? (L.image_base ? absUrl(origin, `${L.image_base}.jpg`) : null) : L.main_image_url || null,
     title_en: L.slug ? listingEn(L).name : null,
     url_en: L.slug ? absUrl(origin, enPath(L.slug).slice(1)) : null,
   };

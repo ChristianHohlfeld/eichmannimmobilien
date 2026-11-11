@@ -1,0 +1,34 @@
+name: Immowelt API probe (read-only)
+
+# Manual, read-only contract check of the official API from a second location, with the
+# repository secret IMMOWELT_API_KEY (the VALUE; the server uses a file instead). Reads the
+# complete inventory and every exposé, runs the same parser and completeness gate as the
+# server and prints structure only: counts, public ids, field names, section lengths.
+# No database, no pictures, no publish. Use it when Immowelt changes something or the
+# watchdog reports parser errors.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Probe
+        env:
+          IMMOWELT_API_KEY: ${{ secrets.IMMOWELT_API_KEY }}
+          EICHMANN_STATE_DIR: ${{ runner.temp }}/eichmann
+          EICHMANN_DB_PATH: ${{ runner.temp }}/eichmann/probe.db
+        run: |
+          test -n "${IMMOWELT_API_KEY:-}" || { echo "Secret IMMOWELT_API_KEY fehlt."; exit 1; }
+          node scripts/immowelt-sync.mjs probe

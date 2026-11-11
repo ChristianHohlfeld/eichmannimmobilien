@@ -1,0 +1,15 @@
+{
+  "_comment": "Nicht von der Immowelt-API lieferbar: welche Inserate zu einer eigenen Projektseite gehören. Reine Zuordnung über die Immowelt-Online-ID – ändert keinen Inseratsinhalt (Titel, Preis, Texte, Bilder kommen 1:1 von Immowelt). Ein Inserat, das auf Immowelt offline geht, verschwindet automatisch auch hier. Neue Einheiten erscheinen auf der Projektseite erst, wenn ihre Online-ID hier eingetragen ist; in der Angebotsliste und mit eigener Objektseite erscheinen sie sofort.",
+  "groups": [
+    {
+      "id": "sunside-living",
+      "label": "Sunside Living",
+      "page": "sunside-living-wollmatingen.html",
+      "match": {
+        "online_ids": ["2geq25e", "2ggn25e", "2f42h56", "2fayg56", "2fsjg56"]
+      },
+      "confirmed_by": "Zuordnung der bisherigen Projektseite (Einheiten A2, A3, A5, A9, A12) auf die Online-IDs des API-Bestands vom 11.11.2026",
+      "confirmed_at": "2026-11-11"
+    }
+  ]
+}

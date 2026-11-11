@@ -570,6 +570,18 @@ function patchBetween(html, start, end, inner) {
   return html.slice(0, a) + inner + html.slice(b + end.length);
 }
 
+/** Offer for the homepage ItemList. API offers carry the number; "auf Anfrage" publishes no price. */
+function homeOffer(L) {
+  if (L.immowelt_api === true) {
+    if (L.price_on_request || !(L.price_eur > 0)) return undefined;
+    const rent = L.marketing === "miete";
+    return { "@type": "Offer", price: String(L.price_eur), priceCurrency: "EUR", businessFunction: `http://purl.org/goodrelations/v1#${rent ? "LeaseOut" : "Sell"}`,
+      ...(rent ? { priceSpecification: { "@type": "UnitPriceSpecification", price: String(L.price_eur), priceCurrency: "EUR", unitCode: "MON" } } : {}) };
+  }
+  const digits = String(L.price || "").replace(/[^\d]/g, "");
+  return digits ? { "@type": "Offer", price: digits, priceCurrency: "EUR" } : undefined;
+}
+
 export function buildHomeListingsItemList(listings, { origin = DEFAULT_ORIGIN } = {}) {
   const o = String(origin || DEFAULT_ORIGIN).replace(/\/$/, "");
   const publicOnes = (listings || []).filter(
@@ -584,19 +596,13 @@ export function buildHomeListingsItemList(listings, { origin = DEFAULT_ORIGIN } 
       "@type": "RealEstateListing",
       name: L.title,
       url: absUrl(o, L.local_url || `objekt/${L.slug}.html`),
-      offers: L.price
-        ? {
-            "@type": "Offer",
-            price: String(L.price).replace(/[^\d]/g, "") || undefined,
-            priceCurrency: "EUR",
-          }
-        : undefined,
+      offers: homeOffer(L),
     },
   }));
   return {
     "@type": "ItemList",
     "@id": `${o}/#angebote-list`,
-    name: "Aktuelle Kaufangebote – Immobilien Eichmann",
+    name: publicOnes.some((L) => L.marketing === "miete") ? "Aktuelle Angebote – Immobilien Eichmann" : "Aktuelle Kaufangebote – Immobilien Eichmann",
     numberOfItems: elements.length,
     itemListElement: elements,
   };
@@ -615,7 +621,7 @@ export function patchHomeListingsJsonLd(indexHtml, listings, { origin = DEFAULT_
   }
   doc["@graph"] = doc["@graph"].filter((n) => n?.["@id"] !== itemList["@id"] && n?.["@type"] !== "ItemList");
   doc["@graph"].push(itemList);
-  const block = `${m[1]}${JSON.stringify(doc, null, 2)}${m[3]}`;
+  const block = `${m[1]}${JSON.stringify(doc, null, 2).replace(/</g, "\\u003c").replace(/&/g, "\\u0026")}${m[3]}`;
   return indexHtml.replace(re, () => block);
 }
 

@@ -1,7 +1,19 @@
 name: Deploy to Droplet
 
-# Live hosting is DigitalOcean droplet eichmann-web (NOT GitHub Pages).
-# After Immowelt sync / admin render commits to main, this ships static files to the droplet.
+# Live hosting is the DigitalOcean droplet eichmann-web (NOT GitHub Pages).
+#
+# A deploy ships CODE AND TEMPLATES to /var/lib/eichmann/app and then lets the server build a
+# complete release from its own database (the last complete Immowelt state plus own listings),
+# verify it and switch atomically. Nothing is copied into the served directory any more, and
+# no listing data travels from the repository to the website: the repository's rendered pages
+# and data/listings.json are development fixtures, not a source.
+#
+# A failed build or failed verification leaves the previous release online and this run red.
+#
+# ONE-TIME CUTOVER: as long as the server still has the old layout (webroot = plain directory) a
+# deploy stops in the preflight step BEFORE it touches the server. The conversion is started on
+# purpose – after the infrastructure has been backed up – with "Run workflow" and layout = install
+# (see docs/IMMOWELT-SYNC.md, Rollout). Afterwards every push deploys normally.
 
 on:
   push:
@@ -11,57 +23,53 @@ on:
       - "css/**"
       - "js/**"
       - "assets/**"
-      - "data/**"
-      - "objekt/**"
+      - "data/sot/**"
       - "partials/**"
       - "admin/**"
       - "scripts/**"
       - "deploy/**"
+      - "en/**"
       - "package.json"
       - "package-lock.json"
-      - "sitemap.xml"
       - "robots.txt"
-      - "llms.txt"
-      - "agents.txt"
-      - "ai/**"
       - "mcp-static/**"
       - ".well-known/**"
-      - ".nojekyll"
       - ".github/workflows/deploy-droplet.yml"
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - "Immowelt Official API"
-      - "Admin Apply (Save + Render)"
-    types: [completed]
-    branches: [main]
+    inputs:
+      timers:
+        description: "Immowelt-Timer nach dem Deploy: unverändert lassen | einschalten | ausschalten"
+        type: choice
+        options: [keep, enable, disable]
+        default: keep
+      layout:
+        description: "Einmalige Umstellung des Webroots auf Releases (nur nach Sicherung!): keep | install"
+        type: choice
+        options: [keep, install]
+        default: keep
 
 permissions:
   contents: read
 
 jobs:
   deploy:
-    if: >
-      github.event_name == 'push' ||
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    # Only code that is on main is ever deployed (a dispatch from another ref is ignored).
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    # Job-level (not workflow-level): a skipped workflow_run (failed sync) must not
-    # cancel an in-progress push deploy. Only deploys that actually run queue/cancel.
+    timeout-minutes: 20
+    # Never cancel a deploy half-way: the server-side build holds the pipeline lock.
     concurrency:
       group: deploy-eichmann-droplet
-      cancel-in-progress: true
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - name: Setup SSH
         env:
           DEPLOY_KEY: ${{ secrets.EICHMANN_DEPLOY_KEY }}
           DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
+          KNOWN_HOSTS: ${{ secrets.EICHMANN_KNOWN_HOSTS }}
           DEPLOY_USER: ${{ secrets.EICHMANN_DEPLOY_USER }}
         run: |
           set -euo pipefail
@@ -72,103 +80,117 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/eichmann_deploy
           chmod 600 ~/.ssh/eichmann_deploy
-          ssh-keyscan -T 10 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          # Pin the server's host key (secret EICHMANN_KNOWN_HOSTS = output of "ssh-keyscan <host>", checked once on the
+          # server). Without the secret the key is taken on trust at first contact – set it before installing the API key.
+          if [ -n "${KNOWN_HOSTS:-}" ]; then printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts; else echo "::warning::EICHMANN_KNOWN_HOSTS ist nicht gesetzt – der Server wird nicht authentifiziert."; ssh-keyscan -T 10 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true; fi
 
-      - name: Rsync static site to droplet
+      - name: Preflight – server layout (nothing is changed here)
         env:
           DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.EICHMANN_DEPLOY_USER }}
-          DEPLOY_PATH: ${{ secrets.EICHMANN_DEPLOY_PATH }}
+          LAYOUT: ${{ github.event_name == 'workflow_dispatch' && inputs.layout || 'keep' }}
+          KNOWN_HOSTS: ${{ secrets.EICHMANN_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
-          DEST_PATH="${DEPLOY_PATH:-/var/www/immobilieneichmann.de}"
-          COMMIT="$(git rev-parse --short HEAD)"
-          # Never overwrite live admin/config.json. Password hash lives in
-          # /var/lib/eichmann/secrets/admin-auth.json (mode 600); config.json is fallback only.
-          rsync -az --delete \
-            -e "ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+          STATE="$(ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" 'if [ -L /var/www/immobilieneichmann.de ]; then echo release; elif [ -d /var/www/immobilieneichmann.de ]; then echo legacy; else echo missing; fi')"
+          echo "Server-Layout: ${STATE} · angefordert: ${LAYOUT}"
+          # Host key for the secret EICHMANN_KNOWN_HOSTS – printed so that nobody needs a shell on the server:
+          # what this runner sees on the network, and what the server reports about itself. (The key is public.)
+          SEEN="$(ssh-keyscan -T 10 -t ed25519 "$DEPLOY_HOST" 2>/dev/null | ssh-keygen -lf - | awk '{print $2}' || true)"
+          SELF="$(ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" 'ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub' | awk '{print $2}' || true)"
+          KEY="$(ssh-keyscan -T 10 -t ed25519 "$DEPLOY_HOST" 2>/dev/null | awk '{print $2" "$3}' || true)"
+          {
+            echo "### SSH-Host-Schlüssel des Servers"
+            echo "- vom Runner gesehen: \`${SEEN:-nicht lesbar}\`"
+            echo "- vom Server selbst gemeldet: \`${SELF:-nicht lesbar}\`"
+            echo "- Secret \`EICHMANN_KNOWN_HOSTS\` gesetzt: $([ -n "${KNOWN_HOSTS:-}" ] && echo ja || echo NEIN)"
+            echo "- Wert für das Secret (Host = Inhalt von EICHMANN_DEPLOY_HOST voranstellen): \`<host> ${KEY}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ -z "$SEEN" ] || [ "$SEEN" = "$SELF" ] || { echo "::error::Host-Schlüssel stimmen nicht überein – Abbruch."; exit 1; }
+          case "${STATE}:${LAYOUT}" in
+            release:*) ;;
+            legacy:install) echo "Einmalige Umstellung auf das Release-Layout wird in diesem Lauf durchgeführt." ;;
+            legacy:*)
+              echo "::error title=Einmalige Umstellung steht aus::Der Server hat noch das alte Layout. Dieser Lauf hat NICHTS am Server verändert. Erst sichern (DigitalOcean-Snapshot, App-Sicherung, Vorher-Screenshots), dann diesen Workflow über 'Run workflow' mit layout = install starten. Siehe docs/IMMOWELT-SYNC.md, Abschnitt Rollout."
+              exit 1 ;;
+            *) echo "::error::Webroot /var/www/immobilieneichmann.de nicht gefunden."; exit 1 ;;
+          esac
+
+      - name: Sync app tree (code, templates, assets) to /var/lib/eichmann/app
+        env:
+          DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.EICHMANN_DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          APP=/var/lib/eichmann/app
+          RSYNC_SSH="ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          git rev-parse HEAD > .deploy-commit
+          ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p '${APP}' /var/lib/eichmann && chmod 755 /var/lib/eichmann"
+          # The served directory is NOT a target. node_modules, the database and uploads live on the server only.
+          rsync -az --delete -e "${RSYNC_SSH}" \
             --exclude='.git/' \
             --exclude='.github/' \
-            --exclude='scripts/' \
-            --exclude='deploy/' \
             --exclude='node_modules/' \
-            --exclude='package.json' \
-            --exclude='package-lock.json' \
-            --exclude='README.md' \
-            --exclude='docs/' \
-            --exclude='.gitignore' \
-            --exclude='media/' \
             --exclude='var/' \
+            --exclude='media/' \
             --exclude='snapshots/' \
-            --exclude='admin/config.json' \
-            ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEST_PATH}/"
-          # Preserve Eigen uploads (media/eigen) across --delete deploys
-          ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
-            "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "mkdir -p '${DEST_PATH}/media/eigen' && chown -R www-data:www-data '${DEST_PATH}/media' || true"
-          ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
-            "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "chown -R www-data:www-data '${DEST_PATH}' && echo \"DEPLOYED_COMMIT=${COMMIT}\" > /root/.eichmann-deploy-ref && nginx -t && systemctl reload nginx && echo OK ${COMMIT}"
+            --exclude='test-results/' \
+            --exclude='**/*.db' \
+            ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${APP}/"
 
-      - name: Sync SQLite app tooling to droplet
+      - name: Install dependencies, services, release layout – then build + verify + switch a release
         env:
           DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.EICHMANN_DEPLOY_USER }}
-          DEPLOY_PATH: ${{ secrets.EICHMANN_DEPLOY_PATH }}
+          TIMERS: ${{ github.event_name == 'workflow_dispatch' && inputs.timers || 'keep' }}
         run: |
           set -euo pipefail
-          SSH=(ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
-          RSYNC_SSH="ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
-          APP=/var/lib/eichmann/app
-          DBDIR=/var/lib/eichmann
-          SITE="${DEPLOY_PATH:-/var/www/immobilieneichmann.de}"
-          "${SSH[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p '${DBDIR}' '${APP}/data' '${APP}/deploy' && chmod 755 '${DBDIR}'"
-          rsync -az -e "${RSYNC_SSH}" \
-            --delete \
-            --exclude node_modules/ \
-            --exclude .git/ \
-            --exclude var/ \
-            --exclude snapshots/ \
-            --exclude '**/snapshots/' \
-            --exclude '**/*.db' \
-            ./package.json ./package-lock.json ./scripts ./deploy \
-            "${DEPLOY_USER}@${DEPLOY_HOST}:${APP}/"
-          if [ -f ./data/listings.json ]; then
-            rsync -az -e "${RSYNC_SSH}" ./data/listings.json \
-              "${DEPLOY_USER}@${DEPLOY_HOST}:${APP}/data/listings.json"
-          fi
-          "${SSH[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            APP="${APP}" DB="${DBDIR}/listings.db" SITE="${SITE}" \
-            bash -s <<'REMOTE'
+          # Inputs are data, never shell.
+          [[ "${TIMERS}" =~ ^(keep|enable|disable)$ ]] || { echo "timers ungültig"; exit 1; }
+          ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" "TIMERS=${TIMERS} bash -s" <<'REMOTE'
           set -euo pipefail
+          APP=/var/lib/eichmann/app
+          DB=/var/lib/eichmann/listings.db
           cd "$APP"
           if ! command -v node >/dev/null 2>&1; then
             curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
             apt-get install -y nodejs build-essential python3
           fi
           node -v
-          if [ ! -d node_modules/better-sqlite3 ] || [ ! -d node_modules/playwright ]; then
-            npm ci --omit=dev || npm install --omit=dev
+          # Reinstall only when the lockfile changed (or modules are missing).
+          LOCK_SUM="$(sha256sum package-lock.json | cut -d' ' -f1)"
+          if [ ! -d node_modules/better-sqlite3 ] || [ ! -d node_modules/sharp ] || [ "$(cat node_modules/.lock-sum 2>/dev/null || true)" != "$LOCK_SUM" ]; then
+            npm ci --omit=dev
+            echo "$LOCK_SUM" > node_modules/.lock-sum
           fi
-          # Immowelt Admin Sync (/immowelt/sync) launches Playwright as the
-          # admin-api user (root on eichmann-web). Keep Chromium present so
-          # Deploy does not regress browserType.launch after npm refreshes.
-          if [ -x node_modules/.bin/playwright ]; then
-            npx playwright install chromium || echo "WARN: playwright chromium install failed (non-fatal)"
-          fi
+          node -e "import('sharp').then(()=>console.log('sharp ok'))"
+
           export EICHMANN_DB_PATH="$DB"
-          export EICHMANN_SITE_ROOT="$SITE"
-          if [ ! -f "$DB" ]; then
-            node scripts/db-migrate.mjs --bootstrap --json "$APP/data/listings.json"
-          else
-            node scripts/db-migrate.mjs
-          fi
-          node scripts/publish-from-db.mjs
-          chown -R www-data:www-data "$SITE" || true
-          echo "SQLite SoT ready at $DB"
-          # Install/refresh localhost admin API + nginx proxy
+          # The database is never (re)filled from the repository: a missing file is an incident, not a fresh start.
+          [ -s "$DB" ] || { echo "::error::$DB fehlt oder ist leer – kein Befüllen aus dem Repository. Sicherung zurückspielen."; exit 1; }
+          node scripts/db-migrate.mjs
+
           mkdir -p /var/lib/eichmann/snapshots
-          chmod 755 /var/lib/eichmann/snapshots
           bash "$APP/deploy/install-admin-api.sh"
           bash "$APP/deploy/install-mcp.sh"
+          case "$TIMERS" in
+            enable)  bash "$APP/deploy/install-immowelt-sync.sh" --enable ;;
+            disable) bash "$APP/deploy/install-immowelt-sync.sh" --disable ;;
+            *)       bash "$APP/deploy/install-immowelt-sync.sh" ;;
+          esac
+
+          # Release layout active: the release for THIS deploy is built, verified and switched here.
+          # Old layout: only reached when the preflight step allowed the one-time conversion
+          # (layout = install); the script builds the first release itself and keeps the old directory.
+          if [ -L /var/www/immobilieneichmann.de ]; then
+            node scripts/release.mjs build --reason deploy --wait 600
+          else
+            bash "$APP/deploy/install-release-layout.sh"
+          fi
+          node scripts/release.mjs list | tail -4
+          echo "DEPLOYED_COMMIT=$(cut -c1-12 "$APP/.deploy-commit")" > /root/.eichmann-deploy-ref
           REMOTE

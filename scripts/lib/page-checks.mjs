@@ -21,7 +21,9 @@ export function checkPage(html, where) {
     if (!/id="anfragen"/.test(html)) bad("expose", "Formular-Anker fehlt");
     if (!/href="#anfragen"/.test(html)) bad("expose", "Kein Sprung-Knopf zum Formular");
     if (!/Stand:\s*\d{2}\.\d{2}\.\d{4}/.test(html)) bad("stand", "Datenstand fehlt");
-    if (!/Käuferprovision:\s*(provisionsfrei|provisionspflichtig|auf Anfrage|\d)/.test(html)) bad("provision", "Provision ohne Angabe");
+    // Mietangebote (Immowelt-API, data-marketing="miete") haben keine Käuferprovision.
+    // Bei Kaufangeboten wird der Wert so gezeigt, wie Immowelt ihn liefert – er muss nur vorhanden sein.
+    if (!/data-marketing="miete"/.test(html) && !/Käuferprovision:\s*\S/.test(html)) bad("provision", "Provision ohne Angabe");
   }
   if (/\bLive[- ](MCP|Kaufangebote|Stand|ai\/)/.test(html)) bad("live", "„Live“ behauptet Echtzeit");
   return out;

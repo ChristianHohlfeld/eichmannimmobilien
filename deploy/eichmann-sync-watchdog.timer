@@ -1,0 +1,11 @@
+[Unit]
+Description=Waechter fuer den Immowelt-Abgleich (alle 15 Minuten, unabhaengig vom Abgleich selbst)
+
+[Timer]
+OnCalendar=*:02,17,32,47
+AccuracySec=30s
+Persistent=true
+Unit=eichmann-sync-watchdog.service
+
+[Install]
+WantedBy=timers.target

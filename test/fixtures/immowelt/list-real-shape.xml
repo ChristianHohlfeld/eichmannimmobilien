@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <soap:Body>
+    <GetListCustomerProjectsResponse xmlns="http://immowelt.de/services">
+      <GetListCustomerProjectsResult>
+        <Status>OK</Status>
+        <EstatePropertyList>
+          <EstateProperty id="90187795" guid="E40350BE25F949F081CCE3377E64699A" onlineID="2ql2c52">
+            <Category saleRentID="2">Wohnung</Category>
+            <Description>Möblierte sonnige 1 Zimmerwohnung</Description>
+            <Price Complete="1200.0000">1.200 €</Price>
+            <LivingArea value="26" unit="m²">26 m²</LivingArea>
+            <Rooms>1</Rooms>
+            <Zip>78464</Zip>
+            <City>Konstanz</City>
+            <UrlExpose>https://www.immowelt.de/expose/2ql2c52</UrlExpose>
+            <PreviewImage>~/App_Themes/MID_{0}/images/Immobilien/NoPicThumbnail_s.png</PreviewImage>
+          </EstateProperty>
+        </EstatePropertyList>
+        <TotalCount>1</TotalCount>
+        <PageSize>50</PageSize>
+        <CurrentPage>1</CurrentPage>
+      </GetListCustomerProjectsResult>
+    </GetListCustomerProjectsResponse>
+  </soap:Body>
+</soap:Envelope>

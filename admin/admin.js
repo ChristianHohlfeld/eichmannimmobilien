@@ -1,7 +1,8 @@
 /**
- * Unified Admin – Immowelt visibility + Eigen CRUD + multi-image upload.
+ * Unified Admin – Immowelt status (read-only: Immowelt is the only source for those offers)
+ * + Eigen CRUD + multi-image upload.
  * Auth: session cookie via /admin/api/
- * Public site changes require Abnahme modal (confirm:true).
+ * Changes to own listings require the Abnahme modal (confirm:true).
  */
 const API = "/admin/api";
 
@@ -150,7 +151,7 @@ async function resolveImmoweltSyncAfterDisconnect() {
           "Änderungen gefunden. Bitte prüfen und dann „Übernehmen“ oder „Abbrechen“ wählen.",
       };
     }
-    if (status.state === "rejected" || status.state === "awaiting_api_key") {
+    if (["rejected", "awaiting_api_key", "failed", "migration_required", "held"].includes(status.state)) {
       return {
         kind: "rejected",
         message: publicImmoweltReason(status.reason, status.state),
@@ -889,7 +890,20 @@ async function loadImmoweltHealth() {
   if (status.state === "current") {
     line.innerHTML = `<span class="badge ok">OK</span> aktuelle Inserate von Immowelt ${esc(fmt(valid))}`;
     detail.textContent =
-      "Die Inserate kommen aus Immowelt. Hier wählen Sie nur, ob sie auf unserer Website sichtbar sind.";
+      "Die Inserate werden automatisch und vollständig von Immowelt übernommen. Änderungen bitte direkt bei Immowelt vornehmen.";
+  } else if (status.state === "pending_confirmation") {
+    line.innerHTML = `<span class="badge warn">Bestätigung läuft</span> zuletzt geprüft ${esc(fmt(valid))}`;
+    detail.textContent =
+      "Bei Immowelt fehlen ungewöhnlich viele Inserate. Die Website übernimmt das erst, wenn Immowelt es beim nächsten Abgleich genauso bestätigt.";
+  } else if (status.state === "failed") {
+    line.innerHTML = `<span class="badge miss">Website bleibt</span> letzter Abgleich fehlgeschlagen · zuletzt vollständig ${esc(fmt(valid))}`;
+    detail.textContent = publicImmoweltReason(status.reason, "rejected");
+  } else if (status.state === "held") {
+    line.innerHTML = `<span class="badge warn">Angehalten</span> zuletzt vollständig ${esc(fmt(valid))}`;
+    detail.textContent = publicImmoweltReason(status.reason, "held");
+  } else if (status.state === "migration_required") {
+    line.innerHTML = `<span class="badge warn">Umstellung offen</span> zuletzt geprüft ${esc(fmt(valid))}`;
+    detail.textContent = publicImmoweltReason(status.reason, "migration_required");
   } else if (status.state === "awaiting_api_key") {
     line.innerHTML = `<span class="badge warn">Zugang fehlt</span> zuletzt geprüft ${esc(fmt(valid))}`;
     detail.textContent = publicImmoweltReason(status.reason, "awaiting_api_key");
@@ -933,12 +947,12 @@ function renderImmowelt() {
       const ref = String(L.reference_number || L.facts?.Referenznummer || "")
         .trim()
         .toUpperCase();
-      const visibilityBadge =
-        L.site_hidden === true
-          ? ' <span class="badge warn">ausgeblendet</span>'
-          : ' <span class="badge ok">öffentlich</span>';
-      const toggleLabel = L.site_hidden === true ? "Einblenden" : "Ausblenden";
-      const toggleClass = L.site_hidden === true ? "btn-primary" : "btn-outline";
+      // Immowelt ist die einzige Quelle: Sichtbarkeit, Texte und Bilder werden dort gepflegt und
+      // automatisch übernommen – hier gibt es dafür bewusst keinen Schalter mehr.
+      const offline = L.active === false || L.site_hidden === true;
+      const visibilityBadge = offline
+        ? ' <span class="badge warn">offline</span>'
+        : ' <span class="badge ok">öffentlich</span>';
       return `<tr>
         <td>
           <strong>${ref ? `<span class="badge">${esc(ref)}</span> ` : ""}${esc(L.title || "–")}</strong>
@@ -948,9 +962,9 @@ function renderImmowelt() {
         <td>${esc(L.price || "–")}</td>
         <td><span class="badge">${esc(L.status || "–")}</span></td>
         <td>
-          <button type="button" class="btn ${toggleClass} btn-sm" data-toggle-hidden="${esc(L.id)}" title="${toggleLabel} auf der Website">${toggleLabel}</button>
+          <span class="muted" title="An-/Ausschalten, Texte, Preise und Bilder ausschließlich bei Immowelt ändern – die Website übernimmt es automatisch.">wird bei Immowelt gepflegt</span>
           ${
-            L.site_hidden === true
+            offline
               ? ""
               : `<a class="btn btn-outline btn-sm" href="${esc(local)}" target="_blank" rel="noopener">Seite</a>`
           }

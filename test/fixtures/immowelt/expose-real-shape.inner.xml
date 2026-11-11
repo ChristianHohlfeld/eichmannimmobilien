@@ -1,0 +1,22 @@
+<expose><address AdrGuid="3b18336c6a2e401da38e9cc20268270d"/><estate id="90187795" guid="E40350BE25F949F081CCE3377E64699A" onlineid="2ql2c52" salestype="2">
+<item id="OnlineID"><title>Online-ID</title><description>2QL2C52</description></item>
+<item id="Description"><title>Objekt</title><description>Möblierte sonnige 1 Zimmerwohnung</description></item>
+<item id="PriceWarmmiete"><title>Warmmiete</title><description>1.200,00 € (inkl. Nebenkosten)</description></item>
+<item id="HeatingCosts"><title>Heizkosten</title><description>in Warmmiete enthalten</description></item>
+<item id="Kaution"><title>Kaution</title><description>2.400,00 €</description></item>
+<item id="LocationStreet"><title>Straße</title><description>Fixturestraße 1</description></item>
+<item id="LocationZipCity"><title>Ort</title><description>78464 Konstanz</description></item>
+<item id="LocationZip"><title>PLZ</title><description>78464</description></item>
+<item id="LocationCity"><title>Ort</title><description>Konstanz</description></item>
+<item id="AreaLiving"><title>Wohnfläche</title><description>26 m²</description></item>
+<item id="Rooms"><title>Zimmer</title><description>1</description></item>
+<item id="Stockwerk"><title>Etage</title><description>1</description></item>
+<item id="Baujahr"><title>Baujahr</title><description>2014</description></item>
+<item id="Bezugsfrei"><title>Bezugsfrei ab</title><description>sofort</description></item>
+<item id="ParkingSlots"><title>Stellplätze</title><description>1</description></item>
+<item id="Ausstattung"><title>Ausstattung</title><description><item id="Bad"><title>Bad</title><description>Dusche, Fenster</description></item><item id="Kueche"><title>Küche</title><description>Einbauküche</description></item></description></item>
+<item id="Info1"><title>Objektbeschreibung</title><description>Fixture-Absatz eins der Objektbeschreibung. &lt;br/&gt; Zweite Zeile im selben Absatz.&lt;br/&gt;&lt;br/&gt;Fixture-Absatz zwei mit &amp;amp; und &lt;script&gt;alert(1)&lt;/script&gt;Rest.</description></item>
+<item id="Info2"><title>Sonstiges</title><description>Fixture-Text Sonstiges.</description></item>
+<item id="Info3"><title>Lagebeschreibung</title><description>Fixture-Text zur Lage in Konstanz.&lt;br/&gt;Zweite Zeile.</description></item>
+</estate><images><image id="0"><source>https://ms.immowelt.org/0a0a0a0a-0000-4000-8000-000000000001/1b1b1b1b-0000-4000-8000-000000000001/480x0</source><source_thumbnail>https://ms.immowelt.org/0a0a0a0a-0000-4000-8000-000000000001/1b1b1b1b-0000-4000-8000-000000000001/100x70</source_thumbnail><source_XXL>https://ms.immowelt.org/0a0a0a0a-0000-4000-8000-000000000001/1b1b1b1b-0000-4000-8000-000000000001/640x0</source_XXL></image><image id="1"><source>https://ms.immowelt.org/0a0a0a0a-0000-4000-8000-000000000002/1b1b1b1b-0000-4000-8000-000000000002/480x0</source><source_thumbnail>https://ms.immowelt.org/0a0a0a0a-0000-4000-8000-000000000002/1b1b1b1b-0000-4000-8000-000000000002/100x70</source_thumbnail><source_XXL>https://ms.immowelt.org/0a0a0a0a-0000-4000-8000-000000000002/1b1b1b1b-0000-4000-8000-000000000002/640x0</source_XXL></image></images>
+<extensions><environmentmap visible="true"/><contactformular visible="true"/></extensions><GeoData><Latitude>47.0</Latitude><Longitude>9.0</Longitude></GeoData></expose>

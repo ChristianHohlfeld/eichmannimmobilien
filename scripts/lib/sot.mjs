@@ -38,7 +38,8 @@ export function loadSot(root = process.env.EICHMANN_SITE_ROOT || DEFAULT_ROOT, {
   };
   sot.activeListings = sot.listings.filter((l) => l.status === "active");
   // Ältestes Prüfdatum unter den gezeigten Objekten = Datenstand, den die Website druckt.
-  sot.dataAsOf = sot.activeListings.map((l) => l.verified_at).filter(Boolean).sort()[0] ?? null;
+  // Ohne ein einziges Angebot (gültiger Leerbestand) gilt der Tag des letzten vollständigen Immowelt-Abgleichs.
+  sot.dataAsOf = sot.activeListings.map((l) => l.verified_at).filter(Boolean).sort()[0] ?? listings.data_checked_date ?? null;
   cache.set(root, sot);
   return sot;
 }
@@ -194,13 +195,18 @@ export function listingLayer(sot, listing) {
 /**
  * Merge our layer into importer rows (in place). status sold/hidden → not public;
  * overrides.title/meta_description (de) win; verified_at per row.
+ *
+ * Inserate aus der Immowelt-API (immowelt_api === true) sind davon ausgenommen: Sichtbarkeit, Titel und
+ * Wortlaut bestimmt ausschließlich Immowelt. Für sie wird nur das Prüfdatum übernommen. Die Schicht wirkt
+ * damit nur noch auf Alt-Datensätze aus der Scraper-Zeit und auf eigene Inserate.
  */
 export function applyListingLayer(sot, data) {
   for (const L of data?.listings || []) {
     const lay = listingLayer(sot, L);
     if (!lay) continue;
-    if (lay.status === "sold" || lay.status === "hidden") { L.site_hidden = true; L.sot_status = lay.status; }
     if (lay.verified_at) L.verified_at = lay.verified_at;
+    if (L.immowelt_api === true) continue;
+    if (lay.status === "sold" || lay.status === "hidden") { L.site_hidden = true; L.sot_status = lay.status; }
     if (lay.overrides?.title?.de) L.title = lay.overrides.title.de;
     if (lay.overrides?.meta_description?.de) L.meta_description_override = lay.overrides.meta_description.de;
     if (lay.waivers?.length) L.waivers = lay.waivers;
@@ -213,9 +219,56 @@ export function applyListingLayer(sot, data) {
   }
   // Claude R4 #10/#27: globale Text-Fixes (nur Anzeige), erst ganze Sätze, dann Schreibfehler
   const tf = sot.listingsDoc?.text_fixes || readListingsDoc(sot)?.text_fixes;
-  if (tf) for (const L of data?.listings || []) applyTextFixes(L, tf);
+  if (tf) for (const L of data?.listings || []) if (L.immowelt_api !== true) applyTextFixes(L, tf);
   if (sot.dataAsOf) data.data_as_of = sot.dataAsOf;
   return data;
+}
+
+/**
+ * Objekt-Register (data/sot/listings.json → listings[]) aus den Daten ableiten, damit Objektzahl und
+ * Datenstand der Seite immer zu dem passen, was tatsächlich veröffentlicht wird:
+ *   - API-Inserat: Eintrag wird erzeugt (status aus der Datenbank, Prüfdatum = Tag des letzten vollständigen
+ *     Immowelt-Abgleichs, keine Overrides, keine Ausnahmen)
+ *   - Alt-Datensatz / eigenes Inserat: vorhandener Eintrag bleibt (inkl. Overrides); ist der Datensatz nicht
+ *     mehr öffentlich, wird er hier ebenfalls nicht mehr als aktiv geführt
+ *   - Einträge ohne Datensatz entfallen
+ * Der Server schreibt in seine Build-Kopie, nie ins Repo.
+ */
+export function syncListingsLayer(root, data) {
+  root = path.resolve(root);
+  const fp = path.join(root, "data", "sot", "listings.json");
+  const doc = JSON.parse(readFileSync(fp, "utf8"));
+  const byId = new Map((doc.listings || []).map((l) => [l.id, l]));
+  // Server-Releases geben den Tag vor (derselbe, den der Abgleich verwendet); sonst das heutige Datum.
+  const today = /^\d{4}-\d{2}-\d{2}$/.test(process.env.EICHMANN_BUILD_DATE || "") ? process.env.EICHMANN_BUILD_DATE : new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
+  const checked = /^\d{4}-\d{2}-\d{2}$/.test(String(data?.immowelt_checked_date || "")) ? data.immowelt_checked_date : null;
+  const out = [];
+  const seenSlug = new Set();
+  let api = 0;
+  for (const L of data?.listings || []) {
+    const id = String(L.immowelt_id || L.id || "");
+    if (!id || !L.slug || seenSlug.has(L.slug)) continue;
+    seenSlug.add(L.slug);
+    const isPublic = L.active !== false && L.site_hidden !== true;
+    if (L.immowelt_api === true) {
+      api++;
+      out.push({ id, slug: L.slug, status: isPublic ? "active" : "hidden", source: "immowelt", verified_at: checked || today, verified_by: "immowelt-api", overrides: {}, waivers: [] });
+      continue;
+    }
+    const prev = byId.get(id);
+    if (prev) out.push({ ...prev, slug: L.slug, status: isPublic ? prev.status : prev.status === "sold" ? "sold" : "hidden" });
+    else {
+      const eigen = String(L.origin || L.source || "") === "eigen" || String(L.source || "") === "local";
+      out.push({ id, slug: L.slug, status: isPublic ? "active" : "hidden", source: eigen ? "eigen" : "immowelt", verified_at: today, verified_by: "import", overrides: {}, waivers: [] });
+    }
+  }
+  const next = { ...doc, listings: out };
+  if (checked) next.data_checked_date = checked;
+  const text = JSON.stringify(next, null, 2) + "\n";
+  if (text !== readFileSync(fp, "utf8")) writeFileSync(fp, text, "utf8");
+  cache.delete(root);
+  const active = out.filter((l) => l.status === "active");
+  return { active: active.length, hidden: out.length - active.length, api, dataAsOf: active.map((l) => l.verified_at).filter(Boolean).sort()[0] ?? next.data_checked_date ?? null };
 }
 function readListingsDoc(sot) {
   try { return JSON.parse(readFileSync(path.join(sot.dir, "listings.json"), "utf8")); } catch { return null; }

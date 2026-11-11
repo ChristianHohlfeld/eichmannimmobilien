@@ -21,6 +21,8 @@ const doc = exportListingsDocument(db);
 const slugs = allSlugs(db);
 db.close();
 
+// A call of this script is a deliberate publish ("manual"; the backup restore passes "restore").
+const reason = /^[a-z-]{2,20}$/.test(process.env.EICHMANN_PUBLISH_REASON || "") ? process.env.EICHMANN_PUBLISH_REASON : "manual";
 console.log(`Publishing ${doc.listing_count} listings from ${dbPath} → ${siteRoot}`);
-await publishSiteFromDocument(doc, { siteRoot, knownSlugs: slugs });
+await publishSiteFromDocument(doc, { siteRoot, knownSlugs: slugs, reason });
 console.log("Publish complete.");

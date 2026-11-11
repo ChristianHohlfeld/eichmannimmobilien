@@ -1,42 +1,30 @@
 #!/usr/bin/env node
 /**
- * Immowelt → immobilieneichmann.de listings sync (Single Source of Truth).
+ * RENDERER for immobilieneichmann.de: listing cards, exposé pages, topic links, sitemap,
+ * AI index, English property pages – from the SQLite database (or, without one, from the
+ * data/listings.json export in the working tree).
  *
- * Canonical store: data/listings.json (keyed by expose UUID)
- * Regenerates:
- *   - listing cards in index.html + projekte.html (+ partials/listings-grid.html)
- *   - local Exposé pages under objekt/{slug}.html
- *   - sitemap.xml (static + dynamic objekt entries)
- * Downloads images to assets/listings/ (main + gallery + floor plans)
+ *   node scripts/sync-immowelt.mjs --export-only   database → data/listings.json + Objekt-Register
+ *   node scripts/sync-immowelt.mjs --render-only   the above + every generated page
+ *   node scripts/sync-immowelt.mjs                 hands over to scripts/immowelt-sync.mjs (official API)
  *
- * Usage:
- *   node scripts/sync-immowelt.mjs
- *   node scripts/sync-immowelt.mjs --from-json /path/to/listings.json
- *   node scripts/sync-immowelt.mjs --render-only
- *   node scripts/sync-immowelt.mjs --dry-run
- *   node scripts/sync-immowelt.mjs --skip-enrich
- *
- * Fail-closed: prefer official Immowelt SOAP API when API key is present
- * (/var/lib/eichmann/secrets/immowelt-api.json). Without key → awaiting_api_key
- * (no scrape success pretend). Scrape only with --force-scrape emergency.
- * On failure keep last good JSON and exit non-zero (admin-api sync.failed).
+ * Fetching Immowelt is NOT done here. The Playwright scraper, the Sparkassen mirror, the manual
+ * overrides and the per-offer title/location tables that used to live in this file are gone:
+ * offers in API form (immowelt_api === true) are rendered exactly as Immowelt delivers them –
+ * no title or text overrides, no sentence removal, no spelling fixes, no address redaction.
+ * The older display rules below (paragraph heuristics, redaction, text fixes) only still apply
+ * to scraper-era rows until the one-time identity migration has retired them, and to own listings.
  */
 
-import { readFile, writeFile, mkdir, readdir, unlink, copyFile, access, rm, rename, stat } from "node:fs/promises";
+import { readFile, writeFile, mkdir, readdir, unlink, access, rename } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateIncomingSnapshot, validateNoDestructiveOverwrite } from "./lib/listing-safety.mjs";
-import { scrapeEichmannFromImmoweltSearch } from "./lib/immowelt-public-search.mjs";
-import { reconcileMissingImmoweltOffers } from "./lib/immowelt-reconcile.mjs";
-import { publicImmoweltSyncReason } from "./lib/immowelt-public-reason.mjs";
-import { hasImmoweltApiKey, readImmoweltCredentials } from "./lib/immowelt-secrets.mjs";
-import { fetchOfficialImmoweltListings } from "./lib/immowelt-official-api.mjs";
-import { writeAiDiscoveryArtifacts, dataAsOf } from "./lib/ai-discovery.mjs";
+import { writeAiDiscoveryArtifacts } from "./lib/ai-discovery.mjs";
 import { publishProjects } from "./lib/projects.mjs";
 import { publishSunsidePage } from "./lib/sunside-page.mjs";
 import { stripProjectStatus } from "./lib/listing-text.mjs";
 import { publishEnListings, enPath, hreflangHead } from "./lib/listing-en.mjs";
-import { loadSot, sitemapStatic, hreflangPairs, dataAsOfLabel, applyListingLayer, saveListingsLayer } from "./lib/sot.mjs";
+import { loadSot, sitemapStatic, hreflangPairs, dataAsOfLabel, applyListingLayer, syncListingsLayer } from "./lib/sot.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.EICHMANN_SITE_ROOT
@@ -49,7 +37,6 @@ const PROFILE_URL =
 
 const SITE_ORIGIN = "https://immobilieneichmann.de";
 const DATA_PATH = path.join(ROOT, "data", "listings.json");
-const SYNC_STATUS_PATH = path.join(ROOT, "data", "immowelt-sync-status.json");
 const IMAGES_DIR = path.join(ROOT, "assets", "listings");
 const OBJEKT_DIR = path.join(ROOT, "objekt");
 const PARTIAL_PATH = path.join(ROOT, "partials", "listings-grid.html");
@@ -66,67 +53,14 @@ const STATIC_SITEMAP_PATHS = sitemapStatic(loadSot(ROOT)); // SSOT: data/sot/pag
 // Sitemap = HTML pages only (llms.txt/agents.txt/JSON are referenced from robots.txt/llms.txt instead).
 
 const args = new Set(process.argv.slice(2));
-const fromJsonArg = (() => {
-  const i = process.argv.indexOf("--from-json");
-  return i >= 0 ? process.argv[i + 1] : null;
-})();
 const renderOnly = args.has("--render-only");
-const enrichOnly = args.has("--enrich-only");
+const exportOnly = args.has("--export-only");
+/** Release builds read the given database and nothing else (no JSON mirror, no fallbacks). */
+const RELEASE_BUILD = process.env.EICHMANN_RELEASE_BUILD === "1";
+/** Offer delivered by the official API: Immowelt is the only authority for its content. */
+const isApi = (L) => L?.immowelt_api === true;
+const isRent = (L) => L?.marketing === "miete" || (!L?.marketing && /miete/i.test(String(L?.status || "")));
 const dryRun = args.has("--dry-run");
-const forceScrape = args.has("--force-scrape");
-const skipEnrich = args.has("--skip-enrich");
-
-// Public syndication mirror for the same Immowelt offers. Immowelt blocks
-// GitHub-hosted runners with DataDome; Sparkassen-Immobilien publishes the
-// identical SIP offers and their full galleries without that datacenter block.
-// Key = canonical Immowelt expose UUID, value = matching syndicated expose URL.
-const SPARKASSE_EXPOSE_BY_IMMOWELT_ID = Object.freeze({
-  "c6b1d820-4e82-416d-95ad-22472a129955": "https://immobilien.sparkasse.de/expose/FID-F13-699-009.html",
-  "32a8908e-c8e0-4944-b44f-f203ccdaa8a9": "https://immobilien.sparkasse.de/expose/FID-F13-646-975.html",
-  "4fed09f2-bcef-4e96-ba56-810037b569c0": "https://immobilien.sparkasse.de/expose/FID-F13-646-974.html",
-  "d6860062-651b-4f72-a26e-b3719e525241": "https://immobilien.sparkasse.de/expose/FID-F13-646-966.html",
-  "e7e58fe2-a93f-44f2-bc73-dabd3c7208b3": "https://immobilien.sparkasse.de/expose/FID-F13-646-976.html",
-  "aebb3257-3317-4452-bc9c-a5dbc5ed3838": "https://immobilien.sparkasse.de/expose/FID-F13-646-972.html",
-  "86a7d4f6-0118-45fa-addc-ef5fe9edf21d": "https://immobilien.sparkasse.de/expose/FID-F13-646-973.html",
-  "7bff84e7-8370-471d-b359-5319c8df10ef": "https://immobilien.sparkasse.de/expose/FID-F13-646-970.html",
-  "6fd6062e-32f4-4f02-af80-d854bd090279": "https://immobilien.sparkasse.de/expose/FID-F13-646-967.html",
-  "484fee8a-e3f0-4f06-8d26-d740c290b320": "https://immobilien.sparkasse.de/expose/FID-F13-646-969.html",
-  "4ac199b6-606e-470b-bb7e-d8646d47ea80": "https://immobilien.sparkasse.de/expose/FID-F13-646-977.html",
-  "bb241b38-d292-4047-98fd-4352b841bc5a": "https://immobilien.sparkasse.de/expose/FID-F13-646-968.html",
-  "ff414db8-7e3d-4a01-99f8-029fe15a4d55": "https://immobilien.sparkasse.de/expose/FID-F13-646-971.html",
-});
-
-const PROJECT_REFERENCE_BY_IMMOWELT_ID = Object.freeze({
-  "4fed09f2-bcef-4e96-ba56-810037b569c0": "A5",
-  "aebb3257-3317-4452-bc9c-a5dbc5ed3838": "B3",
-  "484fee8a-e3f0-4f06-8d26-d740c290b320": "A12",
-  "4ac199b6-606e-470b-bb7e-d8646d47ea80": "A9",
-  "bb241b38-d292-4047-98fd-4352b841bc5a": "A3",
-  "ff414db8-7e3d-4a01-99f8-029fe15a4d55": "A2"
-});
-
-const PROJECT_DISPLAY_TITLE_BY_IMMOWELT_ID = Object.freeze({
-  "4fed09f2-bcef-4e96-ba56-810037b569c0": "Wohnung A5 · 3 Zimmer · Neubau Sunside Living",
-  "aebb3257-3317-4452-bc9c-a5dbc5ed3838": "Wohnung B3 · 4 Zimmer · Neubau Sunside Living",
-  "484fee8a-e3f0-4f06-8d26-d740c290b320": "Wohnung A12 · 4 Zimmer · Neubau Sunside Living",
-  "4ac199b6-606e-470b-bb7e-d8646d47ea80": "Wohnung A9 · 4 Zimmer · Neubau Sunside Living",
-  "bb241b38-d292-4047-98fd-4352b841bc5a": "Wohnung A3 · 2 Zimmer · Neubau Sunside Living",
-  "ff414db8-7e3d-4a01-99f8-029fe15a4d55": "Wohnung A2 · 2 Zimmer · Neubau Sunside Living"
-});
-
-const PROJECT_LOCATION_BY_IMMOWELT_ID = Object.freeze({
-  "4fed09f2-bcef-4e96-ba56-810037b569c0": "Wollmatingen, Konstanz (78467)",
-  "aebb3257-3317-4452-bc9c-a5dbc5ed3838": "Wollmatingen, Konstanz (78467)",
-  "484fee8a-e3f0-4f06-8d26-d740c290b320": "Wollmatingen, Konstanz (78467)",
-  "4ac199b6-606e-470b-bb7e-d8646d47ea80": "Wollmatingen, Konstanz (78467)",
-  "bb241b38-d292-4047-98fd-4352b841bc5a": "Wollmatingen, Konstanz (78467)",
-  "ff414db8-7e3d-4a01-99f8-029fe15a4d55": "Wollmatingen, Konstanz (78467)"
-});
-
-const PROJECT_TYPE_BY_IMMOWELT_ID = Object.freeze({
-  "bb241b38-d292-4047-98fd-4352b841bc5a": "Wohnung",
-  "ff414db8-7e3d-4a01-99f8-029fe15a4d55": "Wohnung"
-});
 
 function escapeHtml(s) {
   return String(s ?? "")
@@ -465,6 +399,12 @@ function postalAddressFromListing(listing) {
     addressCountry: "DE",
   };
   if (plz) addr.postalCode = plz;
+  if (isApi(listing)) {
+    // Street only when the address mode publishes it; otherwise the district if Immowelt delivered one.
+    if (listing.street) addr.streetAddress = listing.street;
+    else if (listing.district) addr.streetAddress = listing.district;
+    return addr;
+  }
   const district = loc.split(",")[0]?.trim();
   if (district && district.length < 48 && !new RegExp(`^${ort}$`, "i").test(district)) {
     // District / Stadtteil – keep as streetAddress stand-in (no exact street from Immowelt)
@@ -522,71 +462,6 @@ function localExposePath(listing) {
   return `objekt/${listing.slug}.html`;
 }
 
-
-/** Fields Helmut can lock via Admin (manual_overrides[field] === true). */
-const MANUAL_OVERRIDE_FIELDS = [
-  "title",
-  "price",
-  "location",
-  "rooms",
-  "living_area",
-  "plot_area",
-  "type",
-  "status",
-  "short_description",
-  "description",
-  "source_title",
-  "reference_number",
-  "location_description",
-  "amenities",
-  "additional_information",
-  "images",
-  "gallery_bases",
-  "floor_plans",
-  "floor_plan_bases",
-  "facts",
-  "main_image_url",
-  "image_base",
-  "active",
-  "detail_page",
-];
-
-function isManuallyOverridden(prev, field) {
-  const mo = prev && prev.manual_overrides;
-  return !!(mo && mo[field] === true);
-}
-
-/**
- * Re-apply fields Helmut locked in Admin so Immowelt scrape/enrich cannot overwrite them.
- * Always preserves the manual_overrides object itself.
- */
-function applyManualOverrides(listing, prev) {
-  if (!prev) return listing;
-  const mo = prev.manual_overrides;
-  if (!mo || typeof mo !== "object") return listing;
-
-  for (const field of MANUAL_OVERRIDE_FIELDS) {
-    if (mo[field] === true && Object.prototype.hasOwnProperty.call(prev, field)) {
-      listing[field] = prev[field];
-    }
-  }
-  // If images locked, keep related gallery paths too even if not explicitly flagged
-  if (mo.images === true) {
-    if (Array.isArray(prev.images)) listing.images = prev.images;
-    if (Array.isArray(prev.gallery_bases)) listing.gallery_bases = prev.gallery_bases;
-    if (prev.image_base) listing.image_base = prev.image_base;
-    if (prev.main_image_url) listing.main_image_url = prev.main_image_url;
-  }
-  if (mo.description === true && prev.description != null) {
-    listing.description = prev.description;
-  }
-  if (mo.short_description === true && prev.short_description != null) {
-    listing.short_description = prev.short_description;
-  }
-
-  listing.manual_overrides = { ...mo };
-  return listing;
-}
 
 function redactPrivateAddressText(value) {
   if (value == null) return value;
@@ -738,6 +613,7 @@ function escapeRegExp(value) {
 
 function listingDisplayTitle(listing) {
   const raw = String(listing?.title || "Immobilie").replace(/\s+/g, " ").trim();
+  if (isApi(listing)) return raw; // Immowelt's headline, unchanged
   const ref = listingReference(listing);
   if (!ref) return raw;
 
@@ -786,12 +662,12 @@ function renderCard(listing) {
               ${ref ? `<span class="listing-reference" aria-label="Objektnummer ${escapeHtml(ref)}">${escapeHtml(ref)}</span>` : ""}
               <h3 class="listing-title">${escapeHtml(displayTitle)}</h3>
             </div>
-            <p class="listing-loc">${escapeHtml(publicLocation(listing.location) || "")}</p>
+            <p class="listing-loc">${escapeHtml((isApi(listing) ? listing.location : publicLocation(listing.location)) || "")}</p>
             <p class="listing-price">${escapeHtml(listing.price || "")}</p>
             <div class="listing-meta">
               ${meta}
             </div>
-            <p class="listing-desc">${escapeHtml(normalizeContactPhoneDisplay(listing.short_description || ""))}</p>
+            <p class="listing-desc">${escapeHtml(isApi(listing) ? listing.short_description || "" : normalizeContactPhoneDisplay(listing.short_description || ""))}</p>
             <div class="listing-actions">
               ${detailed
                 ? '<span class="btn btn-primary btn-sm">Exposé ansehen</span>'
@@ -810,16 +686,31 @@ function renderCard(listing) {
 }
 
 function renderGrid(listings) {
-  const cards = listings.filter(isPublicListing).map(renderCard).join("\n\n");
+  const pub = listings.filter(isPublicListing);
+  // A really empty inventory is a valid state on Immowelt – say so instead of showing an empty box.
+  const cards = pub.length
+    ? pub.map(renderCard).join("\n\n")
+    : `        <p class="listings-empty">Aktuell sind keine Angebote veröffentlicht. Sprechen Sie uns gern direkt an: <a href="tel:+491705225568">+49 170 522 5568</a>.</p>`;
   return `${MARKER_START}\n${cards}\n${MARKER_END}`;
 }
 
-function countTextIndex(n) {
-  return `${COUNT_START}${n} Kaufobjekte in und um Konstanz – Fotos und Eckdaten, Details zum Objekt.${COUNT_END}`;
+/** "11 Kaufobjekte" / "1 Mietobjekt" / "10 Angebote (9 Kauf, 1 Miete)" – counted from the offers themselves. */
+function offerCountPhrase(list) {
+  const n = list.length;
+  const rent = list.filter(isRent).length;
+  if (!n) return "Aktuell keine Angebote";
+  if (!rent) return `${n} ${n === 1 ? "Kaufobjekt" : "Kaufobjekte"}`;
+  if (rent === n) return `${n} ${n === 1 ? "Mietobjekt" : "Mietobjekte"}`;
+  return `${n} Angebote (${n - rent} Kauf, ${rent} Miete)`;
 }
 
-function countTextProjekte(n) {
-  return `${COUNT_START}${n} Objekte – Details im Exposé.${COUNT_END}`;
+function countTextIndex(list) {
+  return `${COUNT_START}${offerCountPhrase(list)} in und um Konstanz${list.length ? " – Fotos und Eckdaten, Details zum Objekt" : ""}.${COUNT_END}`;
+}
+
+function countTextProjekte(list) {
+  const n = list.length;
+  return `${COUNT_START}${n ? `${n} ${n === 1 ? "Objekt" : "Objekte"} – Details im Exposé` : "Aktuell keine Angebote"}.${COUNT_END}`;
 }
 
 function patchBetween(html, start, end, replacement) {
@@ -880,10 +771,6 @@ function ensureCountMarkers(html, page) {
   );
 }
 
-function assetPrefix(fromObjekt) {
-  return fromObjekt ? "../" : "";
-}
-
 /** Resolve gallery stem: Immowelt "01-abcd1234" → assets/listings/…; Eigen "media/eigen/id/01" → as-is. */
 function assetRelPath(base) {
   const b = String(base || "").replace(/^\/+/, "").replace(/\\/g, "/");
@@ -904,11 +791,19 @@ function pictureTag(base, alt, { prefix = "", loading = "lazy", className = "", 
 }
 
 function listingDistrict(listing) {
+  if (isApi(listing)) return String(listing.district || listing.city || "").trim(); // structured API fields, nothing parsed from display text
   return String(listing?.location || "").split(",")[0].replace(/\s*\(\d{5}\)\s*$/, "").trim();
 }
+/** Commission as stated in the offer data (API: any fact whose label names Provision/Courtage). */
+function commissionFact(listing) {
+  if (isApi(listing)) {
+    const row = (listing.fact_rows || []).find((r) => /provision|courtage/i.test(String(r.label || "")));
+    return row ? String(row.value || "").trim() : "";
+  }
+  return String(listing?.facts?.["Käuferprovision"] || "").trim();
+}
 function isProvisionsfrei(listing) {
-  const v = String(listing?.facts?.["Käuferprovision"] || "");
-  return /provisionsfrei/i.test(v) || /provisionsfrei/i.test(String(listing?.title || ""));
+  return /provisionsfrei/i.test(commissionFact(listing)) || /provisionsfrei/i.test(String(listing?.title || ""));
 }
 /** Meta description aus strukturierten Feldern (statt abgeschnittenem Exposé-Rohtext). */
 function exposeMetaDescription(listing) {
@@ -920,7 +815,10 @@ function exposeMetaDescription(listing) {
   const price = listing?.price ? String(listing.price).trim() : "";
   let out = `${kind}${ref ? " " + ref : ""} in ${where}${facts ? ": " + facts : ""}${price ? ", " + price : ""}${isProvisionsfrei(listing) ? ", provisionsfrei" : ""}.`;
   out += " Exposé und Besichtigung: +49 170 522 5568 – Immobilien Eichmann.";
-  return out.length > 160 ? out.replace(" – Immobilien Eichmann.", ".") : out;
+  if (out.length > 160) out = out.replace(" – Immobilien Eichmann.", ".");
+  if (out.length > 160) out = out.replace(" Exposé und Besichtigung: +49 170 522 5568.", "");
+  // Content comes from Immowelt and can be any length: a long value must never fail the build.
+  return out.length > 160 ? softShorten(out, 160) : out;
 }
 
 /** Listings im selben Neubau (gleicher Lagetext) – für „Weitere Wohnungen in diesem Neubau“. */
@@ -973,30 +871,39 @@ function heroFactsHtml(listing) {
 /** Datenstand + Käuferprovision – letztere nur so, wie sie in den Objektdaten steht. */
 function heroMetaHtml(listing) {
   const parts = [`<span class="nowrap">Stand: ${escapeHtml(dataAsOfLabel(loadSot(ROOT), "de"))}</span>`];
-  const prov = String(listing?.facts?.["Käuferprovision"] || "").trim();
+  if (isRent(listing)) return parts.join(" · "); // Mietangebot: keine Käuferprovision
+  const prov = commissionFact(listing);
   parts.push(`<span class="nowrap">Käuferprovision: ${escapeHtml(prov || "auf Anfrage")}</span>`); // Claude R4 #4: nie leer, keine erfundene Quote
   return parts.join(" · ");
 }
 
-/* Datenstand rückt nur vor, wenn ALLE aktiven Objekte beim Abgleich mit den öffentlichen Exposés übereinstimmen
-   (scripts/verify-listings-mirror.mjs, fail-closed). */
-const STAND_NOTE = " (mit den öffentlichen Exposés abgeglichen)";
+/* Datenstand = Tag des letzten vollständigen, validierten Immowelt-Abgleichs (scripts/immowelt-sync.mjs).
+   Schlägt der Abgleich fehl, bleibt das Datum stehen – die Seite behauptet nie einen frischeren Stand, als sie hat. */
+let STAND_NOTE = " (mit den öffentlichen Exposés abgeglichen)";
+/** With the API sync the date is the last complete, validated read of the Immowelt account. */
+function setStandNote(data) {
+  if (data?.immowelt_checked_date) STAND_NOTE = " (automatisch mit Immowelt abgeglichen)";
+}
 function dataStandLabel(data) {
   // SSOT: ältestes Prüfdatum der aktiven Objekte (data/sot/listings.json)
   return dataAsOfLabel(loadSot(ROOT), "de");
 }
 
 /* Themen-/Stadtteilseiten verlinken passende Objektseiten (Marker-Block, beim Render erneuert). */
+/** Where an offer is: location fields first; the location text only when the API gave no district. */
+function placeHaystack(L) {
+  return [L.location, L.district, L.title, isApi(L) && !L.district ? L.location_description : ""].map((v) => String(v || "")).join(" ");
+}
 const TOPIC_OBJEKT_PAGES = [
   {
     file: "wollmatingen.html",
     heading: "Aktuelle Kaufangebote in Wollmatingen",
-    filter: (L) => /wollmatingen/i.test(String(L.location || "")),
+    filter: (L) => /wollmatingen/i.test(placeHaystack(L)),
   },
   {
     file: "petershausen.html",
     heading: "Aktuelle Kaufangebote in Petershausen",
-    filter: (L) => /petershausen/i.test(String(L.location || "")),
+    filter: (L) => /petershausen/i.test(placeHaystack(L)),
   },
   {
     file: "mehrfamilienhaus-konstanz.html",
@@ -1012,7 +919,8 @@ const TOPIC_OBJEKT_PAGES = [
 const TOPIC_START = "<!-- OBJEKT-LINKS:START -->";
 const TOPIC_END = "<!-- OBJEKT-LINKS:END -->";
 async function renderTopicObjektLinks(data) {
-  const pub = (data.listings || []).filter(hasPublicDetail);
+  // All four blocks are headed "Kaufangebote"/"zum Kauf": rentals never appear in them.
+  const pub = (data.listings || []).filter(hasPublicDetail).filter((L) => !isRent(L));
   const stand = dataStandLabel(data);
   for (const t of TOPIC_OBJEKT_PAGES) {
     const fp = path.join(ROOT, t.file);
@@ -1056,13 +964,40 @@ function shortPageTitle(listing, ref) {
   const src = String(listing.title || "") + " " + String(listing.type || "");
   const typ = /dreifamil/i.test(src) ? "Dreifamilienhaus" : /maisonette/i.test(src) ? "Maisonette" : /penthouse/i.test(String(listing.title || "")) ? "Penthouse" : /haus/i.test(String(listing.type || "")) ? "Haus" : "Wohnung";
   const rooms = String(listing.rooms || "").match(/[\d,]+/)?.[0];
-  const district = (String(listing.location || "").split(",")[0] || "").trim();
-  const place = district && district !== "Konstanz" ? `Konstanz-${district}` : "Konstanz";
+  const district = isApi(listing) ? listingDistrict(listing) : (String(listing.location || "").split(",")[0] || "").trim();
+  const city = isApi(listing) ? String(listing.city || "Konstanz") : "Konstanz";
+  const place = district && district !== city ? `${city}-${district}` : city;
   const core = typ === "Dreifamilienhaus" || !rooms ? typ : `${rooms}-Zimmer-${typ}`;
   let t = `${ref ? ref + ": " : ""}${core} ${place} | Eichmann`;
   if (t.length > 60) t = `${ref ? ref + ": " : ""}${core} ${place}`;
   if (t.length > 60) t = `${ref ? ref + ": " : ""}${core} Konstanz`;
-  return t;
+  if (t.length > 60) t = `${core} Konstanz`; // very long reference numbers from Immowelt
+  return t.length > 60 ? softShorten(t, 60) : t;
+}
+
+/** schema.org Offer: purchase price, monthly rent, or no price at all when Immowelt says "auf Anfrage". */
+function offerSchema(listing) {
+  if (isApi(listing)) {
+    if (listing.price_on_request || !(listing.price_eur > 0)) return undefined;
+    const price = String(listing.price_eur);
+    if (isRent(listing)) {
+      return {
+        "@type": "Offer",
+        priceCurrency: "EUR",
+        price,
+        businessFunction: "http://purl.org/goodrelations/v1#LeaseOut",
+        priceSpecification: { "@type": "UnitPriceSpecification", price, priceCurrency: "EUR", unitCode: "MON", name: listing.price_label || "Miete" },
+      };
+    }
+    return { "@type": "Offer", priceCurrency: "EUR", price, businessFunction: "http://purl.org/goodrelations/v1#Sell" };
+  }
+  return listing.price
+    ? {
+        "@type": "Offer",
+        priceCurrency: "EUR",
+        price: String(listing.price).replace(/[^\d]/g, "") || undefined,
+      }
+    : undefined;
 }
 
 function renderExposeHtml(listing, ogShare = null) {
@@ -1101,7 +1036,11 @@ function renderExposeHtml(listing, ogShare = null) {
     listing.location ? ["Lage", listing.location] : null,
   ].filter(Boolean);
 
-  if (listing.facts && typeof listing.facts === "object") {
+  if (isApi(listing)) {
+    // Immowelt's own rows, in Immowelt's order and wording (label → value); nothing hidden, nothing relabelled.
+    factRows.length = 0;
+    for (const r of listing.fact_rows || []) factRows.push([r.label, r.value]);
+  } else if (listing.facts && typeof listing.facts === "object") {
     const represented = new Set([
       listing.price ? "Kaufpreis" : "",
       listing.rooms ? "Anzahl Zimmer" : "",
@@ -1223,6 +1162,19 @@ function renderExposeHtml(listing, ogShare = null) {
           </section>`
     : "";
 
+  // API form: every text block Immowelt delivered, under Immowelt's own heading, markup rebuilt from an allowlist.
+  const apiSections = isApi(listing)
+    ? (listing.sections || [])
+        .filter((sec) => sec.html)
+        .map(
+          (sec) => `<section class="expose-section" data-section="${escapeHtml(sec.id || "")}">
+            <h2>${escapeHtml(sec.title)}</h2>
+            <div class="expose-description prose"><!-- SOURCE-TEXT:START -->${sec.html}<!-- SOURCE-TEXT:END --></div>
+          </section>`
+        )
+        .join("\n          ")
+    : null;
+
   const siblings = siblingListings(listing);
   const siblingsSection = siblings.length
     ? `<section class="expose-section expose-siblings" id="weitere-wohnungen">
@@ -1285,13 +1237,7 @@ function renderExposeHtml(listing, ogShare = null) {
     description: metaDesc,
     url: canonical,
     image: galleryImageUrls.length ? galleryImageUrls : ogImage,
-    offers: listing.price
-      ? {
-          "@type": "Offer",
-          priceCurrency: "EUR",
-          price: String(listing.price).replace(/[^\d]/g, "") || undefined,
-        }
-      : undefined,
+    offers: offerSchema(listing),
     address,
     numberOfRooms: roomsNum,
     floorSize: floorSize || undefined,
@@ -1361,10 +1307,10 @@ ${hreflangHead(canonical, `${SITE_ORIGIN}${enPath(listing.slug)}`)}
   <link rel="apple-touch-icon" href="${p}assets/apple-touch-icon.png">
 <link rel="stylesheet" href="${p}css/styles.css?v=claude-final">
   <script type="application/ld+json">
-${JSON.stringify(schema, null, 2)}
+${JSON.stringify(schema, null, 2).replace(/</g, "\\u003c").replace(/&/g, "\\u0026")}
   </script>
   <script type="application/ld+json">
-${JSON.stringify(breadcrumbSchema, null, 2)}
+${JSON.stringify(breadcrumbSchema, null, 2).replace(/</g, "\\u003c").replace(/&/g, "\\u0026")}
   </script>
 </head>
 <body>
@@ -1391,7 +1337,7 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
     </div>
   </header>
 
-  <main>
+  <main data-listing-id="${escapeHtml(listing.id)}"${isApi(listing) ? ` data-online-id="${escapeHtml(listing.immowelt_online_id)}" data-content-hash="${escapeHtml(listing.content_hash || "")}" data-marketing="${escapeHtml(listing.marketing)}"` : ""}>
     <section class="page-hero expose-hero">
       <div class="container">
         <p class="eyebrow"><a href="/#angebote">← Alle Angebote</a></p>
@@ -1420,10 +1366,7 @@ ${JSON.stringify(breadcrumbSchema, null, 2)}
             </ul>
           </section>
 
-          ${descriptionSection}
-          ${locationSection}
-          ${amenitiesSection}
-          ${additionalSection}
+          ${apiSections ?? [descriptionSection, locationSection, amenitiesSection, additionalSection].join("\n          ")}
 
           ${floorHtml}
           ${siblingsSection}
@@ -1602,6 +1545,7 @@ async function loadJson(filePath) {
   const list = Array.isArray(raw) ? raw : raw.listings || [];
   const listings = list
     .map((item, i) => {
+      if (isApi(item)) return { ...item }; // already canonical; never re-derived from a whitelist
       const listing = normalizeListing(item, i);
       if (!listing) return null;
 
@@ -1623,6 +1567,7 @@ async function loadJson(filePath) {
     unique.push(L);
   }
   unique.forEach((L, i) => {
+    if (isApi(L)) return;
     if (!(L.detail_page === false && !L.main_image_url && !(L.images || []).length)) {
       L.image_base = L.image_base || imageBase(i, L.id);
     } else {
@@ -1634,6 +1579,8 @@ async function loadJson(filePath) {
 
   return {
     source: raw.source || PROFILE_URL,
+    immowelt_checked_date: raw.immowelt_checked_date || null,
+    immowelt_fingerprint: raw.immowelt_fingerprint || null,
     scraped_at: raw.scraped_at || new Date().toISOString(),
     listing_count: unique.length,
     listings: unique,
@@ -1647,46 +1594,6 @@ async function fileExists(p) {
   } catch {
     return false;
   }
-}
-
-async function downloadTo(url, dest) {
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (compatible; EichmannImmobilienBot/1.0; +https://immobilieneichmann.de)",
-      Accept: "image/*,*/*",
-    },
-    redirect: "follow",
-  });
-  if (!res.ok) throw new Error(`Image download ${res.status}: ${url}`);
-  const buf = Buffer.from(await res.arrayBuffer());
-  await writeFile(dest, buf);
-  return buf;
-}
-
-async function convertImages(srcPath, base, { fit = "cover", width = 800, height = 600 } = {}) {
-  let sharp;
-  try {
-    sharp = (await import("sharp")).default;
-  } catch {
-    console.warn("sharp not installed – copying source as .jpg only");
-    const jpg = path.join(IMAGES_DIR, `${base}.jpg`);
-    if (srcPath !== jpg) await copyFile(srcPath, jpg);
-    return;
-  }
-
-  const jpg = path.join(IMAGES_DIR, `${base}.jpg`);
-  const webp = path.join(IMAGES_DIR, `${base}.webp`);
-
-  const pipelineImg = sharp(srcPath).rotate().resize({
-    width,
-    height,
-    fit,
-    withoutEnlargement: false,
-  });
-
-  await pipelineImg.clone().jpeg({ quality: 82, mozjpeg: true }).toFile(jpg);
-  await pipelineImg.clone().webp({ quality: 78 }).toFile(webp);
 }
 
 function collectKeepImageBases(listings) {
@@ -1704,27 +1611,6 @@ function collectKeepImageBases(listings) {
   }
   return keep;
 }
-
-async function syncOneImage(url, base, opts = {}) {
-  if (!url) return false;
-  const jpgPath = path.join(IMAGES_DIR, `${base}.jpg`);
-  const webpPath = path.join(IMAGES_DIR, `${base}.webp`);
-  if ((await fileExists(jpgPath)) && (await fileExists(webpPath))) return true;
-
-  const tmpExt = (url.split("?")[0].match(/\.(jpe?g|png|webp)$/i) || [, "jpg"])[1].toLowerCase();
-  const tmp = path.join(IMAGES_DIR, `._tmp-${base}.${tmpExt}`);
-  try {
-    await downloadTo(url, tmp);
-    await convertImages(tmp, base, opts);
-    await unlink(tmp).catch(() => {});
-    return true;
-  } catch (e) {
-    console.warn(`Image sync failed for ${base}:`, e.message);
-    await unlink(tmp).catch(() => {});
-    return false;
-  }
-}
-
 
 async function localListingImagePath(base) {
   const rel = assetRelPath(base);
@@ -1830,108 +1716,17 @@ async function ensureShareOgImage(listing) {
   };
 }
 
-function remoteMediaKey(rawUrl) {
-  try {
-    const u = new URL(String(rawUrl || ""));
-    return path.basename(u.pathname).toLowerCase();
-  } catch {
-    return String(rawUrl || "").split("?")[0].toLowerCase();
-  }
-}
-
-async function syncImages(data, { skipDownload = false } = {}) {
-  await mkdir(IMAGES_DIR, { recursive: true });
-  const keepBases = collectKeepImageBases(data.listings);
-
-  for (let i = 0; i < data.listings.length; i++) {
-    const L = data.listings[i];
-    console.log(`Images ${i + 1}/${data.listings.length}: ${L.image_base || "-"}`);
-    if (L.active === false) continue;
-    if (L.detail_page === false && !L.main_image_url) {
-      L.image_base = null;
-      L.gallery_bases = [];
-      L.floor_plan_bases = [];
-      continue;
-    }
-
-    // Path-style Eigen bases (media/eigen/…) are local uploads — never fetch as Immowelt CDN URLs
-    const isLocalPathBase = String(L.image_base || "").includes("/");
-    if (isLocalPathBase) {
-      const bases = [
-        L.image_base,
-        ...(L.gallery_bases || []).filter((b) => b && b !== L.image_base),
-      ].filter(Boolean);
-      L.gallery_bases = bases;
-      continue;
-    }
-
-    if (!skipDownload) {
-      await syncOneImage(L.main_image_url, L.image_base);
-    } else {
-      const jpgPath = path.join(IMAGES_DIR, `${L.image_base}.jpg`);
-      const webpPath = path.join(IMAGES_DIR, `${L.image_base}.webp`);
-      if ((await fileExists(jpgPath)) && !(await fileExists(webpPath))) {
-        try {
-          await convertImages(jpgPath, L.image_base);
-        } catch (e) {
-          console.warn(`webp convert failed for ${L.image_base}:`, e.message);
-        }
-      }
-    }
-
-    // Gallery extras (skip index 0 if same as main)
-    const remoteGallery = (L.images || []).filter(Boolean);
-    const galleryBases = [];
-    for (let g = 0; g < remoteGallery.length; g++) {
-      const url = remoteGallery[g];
-      // Skip the same media asset even when Immowelt and its syndication
-      // partner use different CDN hostnames for the identical UUID.
-      const mainKey = remoteMediaKey(L.main_image_url);
-      if (remoteMediaKey(url) === mainKey && g === 0) {
-        galleryBases.push(L.image_base);
-        continue;
-      }
-      if (remoteMediaKey(url) === mainKey) continue;
-      const gBase = `${L.image_base}-g${String(g + 1).padStart(2, "0")}`;
-      if (!skipDownload) await syncOneImage(url, gBase);
-      if (await fileExists(path.join(IMAGES_DIR, `${gBase}.jpg`))) {
-        galleryBases.push(gBase);
-      }
-    }
-    // Ensure main is first in gallery_bases for page rendering
-    L.gallery_bases = [
-      L.image_base,
-      ...galleryBases.filter((b) => b !== L.image_base),
-    ];
-
-    const floorBases = [];
-    const floors = L.floor_plans || [];
-    for (let f = 0; f < floors.length; f++) {
-      const item = floors[f];
-      const url = typeof item === "string" ? item : item && item.url;
-      if (!url) continue;
-      const fBase = `${L.image_base}-fp${String(f + 1).padStart(2, "0")}`;
-      if (!skipDownload) {
-        await syncOneImage(url, fBase, { fit: "inside", width: 1200, height: 1200 });
-      }
-      if (await fileExists(path.join(IMAGES_DIR, `${fBase}.jpg`))) {
-        floorBases.push(fBase);
-      }
-    }
-    L.floor_plan_bases = floorBases;
-  }
-
-  await cleanupOrphanImages(data);
-}
-
 /** Managed image stems: Immowelt NN-xxxxxxxx(+gallery) or Admin admin-xxxxxxxx-ts */
 const MANAGED_IMAGE_STEM_RE =
   /^(?:\d{2}-[a-f0-9]{8}(?:-g\d{2}|-fp\d{2}|-og)?|admin-[a-f0-9]{8}-\d+(?:-og)?)(?:\.[a-z]+)?$/i;
 
 async function cleanupOrphanImages(data) {
   await mkdir(IMAGES_DIR, { recursive: true });
-  const keepFinal = collectKeepImageBases(data.listings);
-  for (const L of data.listings) {
+  // A release serves only what is public: pictures of offers that are offline (retired on Immowelt,
+  // hidden) are not carried into it – they stay in the archive, not on the website.
+  const rows = RELEASE_BUILD ? data.listings.filter((L) => L.active !== false && L.site_hidden !== true) : data.listings;
+  const keepFinal = collectKeepImageBases(rows);
+  for (const L of rows) {
     for (const img of L.images || []) {
       const base = path.basename(String(img)).replace(/\.(jpe?g|png|webp)$/i, "");
       if (base) keepFinal.add(base);
@@ -1956,6 +1751,11 @@ async function cleanupOrphanImages(data) {
 }
 
 function serializeListing(L) {
+  if (isApi(L)) {
+    const copy = {};
+    for (const [k, v] of Object.entries(L)) if (!k.startsWith("_")) copy[k] = v;
+    return copy;
+  }
   const out = {
     id: L.id,
     slug: L.slug,
@@ -2000,66 +1800,8 @@ function serializeListing(L) {
   return out;
 }
 
-function semanticListingSnapshot(listings) {
-  return (listings || []).map((item) => {
-    const out = serializeListing(item);
-    // Enrichment bookkeeping is not an object-data change.
-    delete out.enriched_at;
-    return out;
-  }).sort((a, b) => String(a.id).localeCompare(String(b.id)));
-}
-
-function semanticListingsChanged(previousData, nextListings) {
-  if (!Array.isArray(previousData?.listings)) return true;
-  return JSON.stringify(semanticListingSnapshot(previousData.listings)) !==
-    JSON.stringify(semanticListingSnapshot(nextListings));
-}
-
 function looksLikeImmoweltId(id) {
   return typeof id === "string" && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id);
-}
-
-function listingImmoweltKey(L) {
-  if (!L) return null;
-  if (L.immowelt_id) return String(L.immowelt_id).toLowerCase();
-  const fromUrl = exposeIdFromUrl(L.expose_url);
-  if (fromUrl) return fromUrl.toLowerCase();
-  if (looksLikeImmoweltId(L.id) && L.source !== "local") return String(L.id).toLowerCase();
-  return null;
-}
-
-function hasAnyManualOverrides(prev) {
-  const mo = prev && prev.manual_overrides;
-  if (!mo || typeof mo !== "object") return false;
-  return Object.keys(mo).some((k) => k !== "updated_at" && mo[k] === true);
-}
-
-/**
- * When source is local (or Admin locked fields), Immowelt inbound must not clobber SoT.
- * Empty local fields may still be filled from Immowelt (inbound merge only).
- */
-function applyLocalAuthoritative(listing, prev) {
-  if (!prev) return listing;
-  const localSoT = prev.source === "local" || hasAnyManualOverrides(prev);
-  if (!localSoT) return listing;
-
-  for (const field of MANUAL_OVERRIDE_FIELDS) {
-    const v = prev[field];
-    const empty =
-      v == null ||
-      v === "" ||
-      (Array.isArray(v) && v.length === 0);
-    if (!empty) listing[field] = v;
-  }
-  if (prev.slug) {
-    listing.slug = prev.slug;
-    listing.local_url = prev.local_url || localExposePath(prev);
-  }
-  listing.source = prev.source || listing.source;
-  listing.sync_policy = prev.sync_policy || listing.sync_policy || "independent";
-  listing.immowelt_id = prev.immowelt_id || listing.immowelt_id || null;
-  if (prev.manual_overrides) listing.manual_overrides = { ...prev.manual_overrides };
-  return listing;
 }
 
 async function atomicWriteJson(filePath, value) {
@@ -2069,44 +1811,9 @@ async function atomicWriteJson(filePath, value) {
   await rename(tmp, filePath);
 }
 
-async function writeSyncStatus({ state, previous = null, data = null, reason = null, assessment = null, mode = null }) {
-  const previousActive = Array.isArray(previous?.listings)
-    ? previous.listings.filter((item) => item && item.active !== false).length
-    : Number(previous?.active_listing_count || 0);
-  const currentActive = Array.isArray(data?.listings)
-    ? data.listings.filter((item) => item && item.active !== false).length
-    : null;
-  const payload = {
-    source: "immowelt",
-    mode: mode || (state === "awaiting_api_key" ? "official_api" : null),
-    state,
-    // The newest real check time comes from GitHub Actions. Keep this file stable
-    // so unchanged 15-minute checks do not create artificial repository commits.
-    last_valid_at: state === "current"
-      ? (data?.scraped_at || previous?.scraped_at || null)
-      : (previous?.scraped_at || null),
-    last_valid_count: state === "current" ? currentActive : previousActive,
-    attempted_count: assessment?.count ?? null,
-    overlap_count: assessment?.overlap_count ?? null,
-    overlap_ratio: assessment?.overlap_ratio ?? null,
-    reason: reason ? publicImmoweltSyncReason(reason, state).slice(0, 500) : null,
-    policy: "fail_closed_last_known_good",
-  };
-  if (!payload.mode) delete payload.mode;
-  // keep the read-only mirror verification (scripts/verify-listings-mirror.mjs)
-  try {
-    const prev = JSON.parse(await readFile(SYNC_STATUS_PATH, "utf8"));
-    for (const k of ["last_verified_at", "last_verified_via", "last_verified_count"]) {
-      if (prev && prev[k] != null) payload[k] = prev[k];
-    }
-  } catch {}
-  if (!dryRun) await atomicWriteJson(SYNC_STATUS_PATH, payload);
-  return payload;
-}
-
 async function writeCanonical(data) {
   await mkdir(path.dirname(DATA_PATH), { recursive: true });
-  data.listings = data.listings.map(normalizeListingTextFields).map(sanitizeListingForPublic);
+  data.listings = data.listings.map((L) => (isApi(L) ? L : sanitizeListingForPublic(normalizeListingTextFields(L))));
   const out = {
     // Single Source of Truth = Immowelt. This file is a generated local mirror for rendering.
     sot: process.env.EICHMANN_SOT || "sqlite",
@@ -2114,6 +1821,8 @@ async function writeCanonical(data) {
     immowelt_profile: data.immowelt_profile || PROFILE_URL,
     scraped_at: data.scraped_at,
     ...(data.verified_at ? { verified_at: data.verified_at } : {}),
+    ...(data.immowelt_checked_date ? { immowelt_checked_date: data.immowelt_checked_date } : {}),
+    ...(data.immowelt_fingerprint ? { immowelt_fingerprint: data.immowelt_fingerprint } : {}),
     listing_count: data.listings.length,
     active_listing_count: data.listings.filter(isPublicListing).length,
     listings: data.listings.map(serializeListing),
@@ -2174,11 +1883,6 @@ function sitemapLastmod(sourceDate = null, { withTime = true } = {}) {
     offset = `${m[1]}${String(m[2]).padStart(2, "0")}:${String(m[3] || "00").padStart(2, "0")}`;
   }
   return `${datePart}T${timePart}${offset}`;
-}
-
-/** @deprecated use sitemapLastmod — kept for any callers expecting YYYY-MM-DD */
-function todayStamp(sourceDate = null) {
-  return sitemapLastmod(sourceDate, { withTime: false });
 }
 
 async function fileLastmodOr(filePath, fallbackDate) {
@@ -2321,21 +2025,14 @@ ${SITEMAP_OBJEKT_END}
 
 async function renderIntoPages(data) {
   {
-    // SSOT-Objektschicht (Status, Prüfdatum, Overrides). Neue Importer-Objekte bekommen einen Eintrag (Slug eingefroren).
-    const sot = loadSot(ROOT, { fresh: true });
-    const known = new Set(sot.listings.map((l) => l.id));
-    const fresh = (data.listings || []).filter((L) => !known.has(String(L.immowelt_id || L.id)) && L.slug);
-    if (fresh.length && !dryRun) {
-      const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
-      saveListingsLayer(sot, [...sot.listings, ...fresh.map((L) => ({
-        id: String(L.immowelt_id || L.id), slug: L.slug,
-        status: L.active !== false && L.site_hidden !== true ? "active" : "hidden",
-        source: String(L.origin || "immowelt") === "eigen" ? "eigen" : "immowelt",
-        verified_at: today, verified_by: "import", overrides: {}, waivers: [],
-      }))]);
-      console.log(`SSOT: ${fresh.length} neue(s) Objekt(e) in data/sot/listings.json aufgenommen`);
+    // Objekt-Register (data/sot/listings.json) wird aus den Daten erzeugt: Status und Prüfdatum folgen
+    // der Datenbank. Overrides/Ausnahmen wirken nur noch auf Alt-Datensätze, nie auf API-Inserate.
+    if (!dryRun) {
+      const r = syncListingsLayer(ROOT, data);
+      console.log(`Objekt-Register: ${r.active} aktiv, ${r.hidden} nicht öffentlich (${r.api} aus der Immowelt-API), Datenstand ${r.dataAsOf || "–"}`);
     }
     applyListingLayer(loadSot(ROOT, { fresh: true }), data);
+    setStandNote(data);
   }
   const publicListings = data.listings.filter(isPublicListing);
   const grid = renderGrid(publicListings);
@@ -2356,7 +2053,10 @@ async function renderIntoPages(data) {
     html = ensureMarkers(html);
     html = ensureCountMarkers(html, page);
     html = patchBetween(html, MARKER_START, MARKER_END, grid);
-    html = patchBetween(html, COUNT_START, COUNT_END, countFn(n));
+    html = patchBetween(html, COUNT_START, COUNT_END, countFn(publicListings));
+    if (page === "projekte") {
+      html = html.replace(/<h2>Aktuelle (?:Kaufangebote|Angebote)<\/h2>/, `<h2>${publicListings.some(isRent) ? "Aktuelle Angebote" : "Aktuelle Kaufangebote"}</h2>`);
+    }
     // Echtes Datum des Datenstands (zuletzt geprüft bzw. zuletzt geändert), nicht die Render-Zeit.
     const stand = dataStandLabel(data);
     html = html.replace(
@@ -2390,882 +2090,12 @@ async function renderIntoPages(data) {
   console.log(
     `Updated AI discovery (${ai.aiDoc.listing_count} public listings, ${ai.aiDoc.projects?.length || 0} projects → llms.txt, agents.txt, ai/, .well-known/mcp*)`
   );
+  await writePublishedSnapshot(data);
   // Claude global concept: English page per listing (/en/property/<slug>.html), before the sitemap (lastmod)
   data._enModels = publishEnListings(data, { siteRoot: ROOT, dryRun });
   console.log(`Updated EN property pages (${data._enModels.length} → en/property/)`);
   await updateSitemap(data);
 }
-
-/**
- * Merge Immowelt scrape (inbound only) into local SoT.
- * - New Immowelt IDs → insert candidates
- * - Existing → update unlocked fields; never clobber manual_overrides / source:local
- * - Missing on Immowelt → do NOT delete by default (flag missing_on_immowelt)
- *   Only sync_policy:"mirror" + immowelt_id may auto-remove
- * Immowelt account is NEVER written to.
- */
-function mergeListings(scrapedList, previousData, { confirmedInactiveIds = [] } = {}) {
-  const prevListAll = Array.isArray(previousData?.listings) ? previousData.listings : [];
-  // Immowelt merge must ignore eigen/local SoT rows (they live in SQLite origin=eigen).
-  const prevList = prevListAll.filter((item) => {
-    const origin = String(item?.origin || item?.source || "immowelt").toLowerCase();
-    return origin !== "eigen" && origin !== "local";
-  });
-  const prevById = new Map(prevList.map((item) => [String(item.immowelt_id || item.id || "").toLowerCase(), item]));
-  const inactive = new Set((confirmedInactiveIds || []).map((id) => String(id).toLowerCase()));
-  const seen = new Set();
-  const merged = [];
-
-  scrapedList.forEach((raw, index) => {
-    const id = String(raw.id || exposeIdFromUrl(raw.expose_url) || exposeIdFromUrl(raw.url) || "").toLowerCase();
-    if (!id) return;
-    const prev = prevById.get(id) || null;
-    const listing = normalizeListing(raw, index, prev);
-    if (!listing) return;
-    listing.active = true;
-    listing.detail_page = true;
-    listing.site_hidden = prev?.site_hidden === true;
-    listing.source = "immowelt";
-    listing.origin = "immowelt";
-    listing.immowelt_id = id;
-    listing.sync_policy = "mirror";
-    listing.missing_on_immowelt = false;
-    delete listing.manual_overrides;
-    seen.add(id);
-    merged.push(listing);
-  });
-
-  for (const prev of prevList) {
-    const id = String(prev.immowelt_id || prev.id || "").toLowerCase();
-    if (!id || seen.has(id)) continue;
-    const kept = normalizeListing(prev, merged.length, prev);
-    if (!kept) continue;
-    kept.source = "immowelt";
-    kept.origin = "immowelt";
-    kept.immowelt_id = id;
-    kept.sync_policy = "mirror";
-    kept.site_hidden = prev.site_hidden === true;
-    kept.detail_page = prev.detail_page !== false;
-    if (inactive.has(id)) {
-      kept.active = false;
-      kept.missing_on_immowelt = true;
-    } else {
-      // Already-inactive history is retained. An active object can reach here only
-      // if the reconciliation gate has explicitly resolved it; otherwise the run fails.
-      kept.active = prev.active !== false;
-      kept.missing_on_immowelt = prev.missing_on_immowelt === true;
-    }
-    delete kept.manual_overrides;
-    merged.push(kept);
-  }
-
-  console.log(`Immowelt authority: ${scrapedList.length} current offers; ${inactive.size} confirmed inactive; ${merged.length} records retained.`);
-  return merged;
-}
-
-async function enrichFromExposePage(page, listing) {
-  const url = listing.expose_url;
-  const mobileUrl = url + (url.includes("?") ? "&app=1" : "?app=1");
-  console.log(`Enrich ${shortId(listing.id)}: ${mobileUrl}`);
-  const resp = await page.goto(mobileUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
-  if (!resp || resp.status() >= 400) {
-    throw new Error(`Exposé HTTP ${resp && resp.status()}`);
-  }
-  await page.waitForTimeout(2500);
-
-  const blocked = await page.evaluate(() => {
-    const t = document.body?.innerText || "";
-    return /datadome|captcha|access denied|bitte aktivieren sie javascript/i.test(t);
-  });
-  if (blocked) throw new Error("DataDome/captcha on expose page");
-
-  // Scroll for lazy images
-  for (let s = 0; s < 4; s++) {
-    await page.mouse.wheel(0, 900);
-    await page.waitForTimeout(500);
-  }
-
-  const detail = await page.evaluate(() => {
-    const text = (document.body?.innerText || "").replace(/\s+/g, " ").trim();
-
-    // Description: common Immowelt sections
-    let description = null;
-    const candidates = [
-      ...document.querySelectorAll(
-        '[data-testid*="description"], [class*="description"], [class*="Description"], section, article'
-      ),
-    ];
-    for (const el of candidates) {
-      const t = (el.innerText || "").trim();
-      if (t.length > 180 && t.length < 12000 && /Zimmer|Wohnfläche|Lage|Ausstattung|Objekt/i.test(t)) {
-        if (!description || t.length > description.length) description = t;
-      }
-    }
-    // Fallback: largest paragraph block
-    if (!description) {
-      const paragraphs = [...document.querySelectorAll("p")]
-        .map((p) => (p.innerText || "").trim())
-        .filter((t) => t.length > 80);
-      if (paragraphs.length) description = paragraphs.slice(0, 12).join("\n\n");
-    }
-
-    const imgEls = [...document.querySelectorAll("img")];
-    const images = [];
-    const floor_plans = [];
-    const seen = new Set();
-
-    function normalizeMediaUrl(raw) {
-      let src = String(raw || "")
-        .replace(/\\u0026/gi, "&")
-        .replace(/\\u003d/gi, "=")
-        .replace(/\\\//g, "/")
-        .replace(/&amp;/g, "&")
-        .trim();
-      if (!/^https:\/\/mms\.immowelt\.de\//i.test(src)) return "";
-      src = src
-        .replace(/([?&])w=\d+/gi, "$1w=1600")
-        .replace(/([?&])h=\d+/gi, "$1h=1200");
-      return src;
-    }
-
-    function addMedia(raw, context = "") {
-      const src = normalizeMediaUrl(raw);
-      if (!src) return;
-      const key = src.split("?")[0].toLowerCase();
-      if (seen.has(key)) return;
-
-      const ctx = String(context || "").toLowerCase();
-      // Provider/logo/badge media is also served by mms.immowelt.de but must
-      // never enter a property gallery.
-      if (/companylogo|logourl|badgeimage|agencylogo|intermediary.{0,40}logo/.test(ctx)) return;
-
-      seen.add(key);
-      if (/grundriss|floor[ _-]?plan|floorplan|floor_plan|grundrissplan/.test(ctx)) {
-        floor_plans.push(src);
-      } else {
-        images.push(src);
-      }
-    }
-
-    // 1) Media that Immowelt has materialised into the DOM.
-    for (const img of imgEls) {
-      const context = `${img.alt || ""} ${img.title || ""} ${img.getAttribute("aria-label") || ""} ${img.closest("figure,li,div")?.innerText || ""}`;
-      for (const raw of [
-        img.currentSrc,
-        img.src,
-        img.getAttribute("data-src"),
-        img.getAttribute("data-lazy")
-      ]) addMedia(raw, context);
-
-      for (const srcset of [img.srcset, img.getAttribute("data-srcset")]) {
-        if (!srcset) continue;
-        for (const candidate of srcset.split(",")) addMedia(candidate.trim().split(/\s+/)[0], context);
-      }
-    }
-    for (const source of document.querySelectorAll("source[srcset]")) {
-      for (const candidate of String(source.srcset || "").split(",")) {
-        addMedia(candidate.trim().split(/\s+/)[0], source.closest("picture,figure")?.innerText || "");
-      }
-    }
-
-    // 2) Immowelt's mobile SSR embeds the complete media collection in JSON
-    // (__UFRN_* / lifecycle data). Carousel DOM only contains the currently
-    // visible slide, so scan the embedded payload as the authoritative fallback.
-    const embedded = [
-      document.documentElement?.innerHTML || "",
-      ...[...document.scripts].map((node) => node.textContent || "")
-    ].join("\n")
-      .replace(/\\u0026/gi, "&")
-      .replace(/\\u003d/gi, "=")
-      .replace(/\\\//g, "/");
-
-    const mediaRe = /https:\/\/mms\.immowelt\.de\/[A-Za-z0-9_./%-]+(?:\?[A-Za-z0-9_=&.%+-]*)?/gi;
-    let match;
-    while ((match = mediaRe.exec(embedded))) {
-      const from = Math.max(0, match.index - 260);
-      const to = Math.min(embedded.length, match.index + match[0].length + 260);
-      addMedia(match[0], embedded.slice(from, to));
-    }
-
-    const facts = {};
-    const factPatterns = [
-      [/Referenz(?:nummer|nr\.?)[\s:#-]*([A-Z0-9][A-Z0-9._/-]{0,31})/i, "Referenznummer"],
-      [/Energieeffizienzklasse\s*([A-G]\+?)/i, "Energieeffizienzklasse"],
-      [/Baujahr\s*(\d{4})/i, "Baujahr"],
-      [/(\d+\.\s*Geschoss|Erdgeschoss|Dachgeschoss)/i, "Geschoss"],
-      [/Heizungsart[:\s]+([^|,\n]{3,40})/i, "Heizung"],
-    ];
-    for (const [re, label] of factPatterns) {
-      const m = text.match(re);
-      if (m) facts[label] = m[1].trim();
-    }
-
-    return { description, images, floor_plans, facts, raw_len: text.length };
-  });
-
-  const mo = listing.manual_overrides || {};
-  if (detail.description && mo.description !== true) {
-    listing.source_description_fingerprint = contentFingerprint(detail.description);
-    listing.description = paragraphizeListingText(detail.description, "Objektbeschreibung").slice(0, 15000);
-  }
-  if (detail.images?.length && mo.images !== true) {
-    listing.images = detail.images.slice(0, 80);
-    if (!listing.main_image_url) listing.main_image_url = detail.images[0];
-  }
-  if (detail.floor_plans?.length && mo.floor_plans !== true) {
-    listing.floor_plans = detail.floor_plans.slice(0, 8);
-  }
-  if (detail.facts && Object.keys(detail.facts).length && mo.facts !== true) {
-    listing.facts = { ...(listing.facts || {}), ...detail.facts };
-  }
-  if (detail.facts?.Referenznummer && mo.reference_number !== true) {
-    listing.reference_number = String(detail.facts.Referenznummer).trim().toUpperCase();
-  }
-  listing.enriched_at = new Date().toISOString();
-  return listing;
-}
-
-async function enrichGalleryFromSparkasse(page, listing) {
-  const mirrorUrl = SPARKASSE_EXPOSE_BY_IMMOWELT_ID[String(listing.id || "").toLowerCase()];
-  if (!mirrorUrl) throw new Error("No Sparkasse mirror mapping");
-
-  console.log(`Gallery mirror ${shortId(listing.id)}: ${mirrorUrl}`);
-  const resp = await page.goto(mirrorUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
-  if (!resp || resp.status() >= 400) {
-    throw new Error(`Sparkasse HTTP ${resp && resp.status()}`);
-  }
-  await page.waitForTimeout(800);
-
-  // The syndicated detail page collapses long description/location blocks.
-  // Expand every visible "Mehr anzeigen" control before reading text so our
-  // local exposé never persists teaser text ending in an ellipsis.
-  const expanders = page.locator('button:has-text("Mehr anzeigen"), a:has-text("Mehr anzeigen")');
-  const expanderCount = await expanders.count().catch(() => 0);
-  for (let i = 0; i < expanderCount; i++) {
-    const control = expanders.nth(i);
-    if (await control.isVisible().catch(() => false)) {
-      await control.click({ timeout: 3000 }).catch(() => {});
-      await page.waitForTimeout(80);
-    }
-  }
-
-  const media = await page.evaluate(() => {
-    const urls = [];
-    const seen = new Set();
-
-    function add(raw) {
-      let value = String(raw || "").replace(/&amp;/g, "&").trim();
-      if (!/^https:\/\/cdnihddipa\.cloudimg\.io\//i.test(value)) return;
-      try {
-        const u = new URL(value);
-        const key = u.pathname.toLowerCase();
-        if (seen.has(key)) return;
-        seen.add(key);
-        // Keep the CDN's original image (not WebP transcoding) at a useful
-        // source resolution; our own Sharp pipeline creates final local files.
-        u.searchParams.set("webp", "false");
-        u.searchParams.set("width", "1920");
-        urls.push(u.toString());
-      } catch {}
-    }
-
-    // The syndicated gallery is server-rendered. Every gallery image has an
-    // object-specific alt text ("... Konstanz ... kaufen/mieten"). Provider
-    // logos use different alt text and are deliberately excluded here.
-    for (const img of document.querySelectorAll("img")) {
-      const alt = String(img.alt || "");
-      if (!/Konstanz/i.test(alt) || !/(kaufen|mieten)/i.test(alt)) continue;
-      add(img.currentSrc);
-      add(img.src);
-      for (const srcset of [img.srcset, img.getAttribute("data-srcset")]) {
-        if (!srcset) continue;
-        for (const candidate of String(srcset).split(",")) {
-          add(candidate.trim().split(/\s+/)[0]);
-        }
-      }
-      const link = img.closest("a[href]");
-      if (link) add(link.href);
-    }
-
-    // Some variants keep full-size gallery targets only on anchors.
-    for (const link of document.querySelectorAll('a[href*="cdnihddipa.cloudimg.io"]')) {
-      const img = link.querySelector("img");
-      const alt = String(img?.alt || link.getAttribute("aria-label") || "");
-      if (/Konstanz/i.test(alt) && /(kaufen|mieten)/i.test(alt)) add(link.href);
-    }
-    const lines = String(document.body?.textContent || document.body?.innerText || "")
-      .split(/\n+/)
-      .map((line) => line.replace(/\s+/g, " ").trim())
-      .filter(Boolean);
-
-    function section(name, nextNames) {
-      const start = lines.findIndex((line) => line === name);
-      if (start < 0) return [];
-      let end = lines.length;
-      for (const next of nextNames) {
-        const at = lines.findIndex((line, idx) => idx > start && line === next);
-        if (at >= 0 && at < end) end = at;
-      }
-      return lines.slice(start + 1, end);
-    }
-    function cleanProse(value) {
-      return String(value || "")
-        .replace(/\s+/g, " ")
-        .replace(/\s+([,.;:!?])/g, "$1")
-        .replace(/([.!?])(?=[A-ZÄÖÜ])/g, "$1 ")
-        .replace(/A\+(?=[A-Za-zÄÖÜäöüß])/g, "A+ ")
-        .trim();
-    }
-    function dedupeRepeatedProse(value) {
-      let text = cleanProse(value);
-      if (!text) return "";
-      const ellipsis = text.indexOf("…");
-      if (ellipsis > 50) {
-        const teaser = text.slice(0, ellipsis).trim();
-        const rest = text.slice(ellipsis + 1).trim();
-        const probe = teaser.slice(0, Math.min(90, teaser.length));
-        if (probe.length >= 40 && rest.startsWith(probe)) text = rest;
-      }
-      const probe = text.slice(0, Math.min(100, text.length));
-      if (probe.length >= 50) {
-        const second = text.indexOf(probe, probe.length);
-        if (second > 0 && text.length - second >= second * 0.75) text = text.slice(second).trim();
-      }
-      return text;
-    }
-    function cleanLocationProse(value) {
-      return dedupeRepeatedProse(value)
-        .replace(/^Straße nicht freigegeben.*?(?:OpenStreetMap contributors)\s*/i, "")
-        .replace(/^Vollständige Adresse beim Anbieter\s*/i, "")
-        .trim();
-    }
-    function longestUseful(items, strip = "") {
-      const cleaned = items
-        .filter((line) => !/^(Mehr anzeigen|Auf Karte anzeigen|Loading \(MapContainer\)|Vollständige Adresse beim Anbieter)$/i.test(line))
-        .map((line) => strip && line.startsWith(strip) ? line.slice(strip.length).trim() : line)
-        .map(dedupeRepeatedProse)
-        .filter((line) => line.length > 20);
-      return cleaned.sort((a,b) => b.length - a.length)[0] || "";
-    }
-    function dedupe(items) {
-      return [...new Set(items.map((x) => String(x || "").trim()).filter(Boolean))];
-    }
-    const knownFactLabels = new Set([
-      "Kaufpreis","Käuferprovision","Nettokaltmiete","Tiefgaragen Stellplatz (Kaufpreis)","Garagen Stellplatz (Kaufpreis)",
-      "Garagen Stellplatz (Kaufpreis)","Referenznummer","PLZ","Ort","Wohnfläche","Grundstücksfläche",
-      "Anzahl Zimmer","Anzahl Balkone","Anzahl Terrassen","Parkplatztyp",
-      "Anzahl Tiefgaragen Stellplätze","Zustand","Boden","Energieausweistyp",
-      "Energiestandard","Effizienzklasse","Ausstellungsdatum des Energieausweises",
-      "Energieausweis gültig bis","Gebäudeart","Heizung","Befeuerung","Endenergiebedarf"
-    ]);
-    function valueAfter(label, pools) {
-      for (const pool of pools) {
-        const idx = pool.findIndex((line) => line === label);
-        if (idx < 0) continue;
-        for (let j = idx + 1; j < Math.min(pool.length, idx + 4); j++) {
-          const value = pool[j];
-          if (knownFactLabels.has(value)) break;
-          if (value && value !== "Keine Angabe" && value !== label && !/^(Mehr anzeigen)$/i.test(value)) return value;
-        }
-      }
-      return "";
-    }
-
-    const prices = section("Preise und Kosten", ["Finanzierung","Lage","Objektbeschreibung"]);
-    const location = section("Lage", ["Objektbeschreibung","Ausstattung","Objektdaten"]);
-    const description = section("Objektbeschreibung", ["Ausstattung","Objektdaten","Zustand und Energieausweis"]);
-    const equipment = section("Ausstattung", ["Objektdaten","Zustand und Energieausweis","Weitere Informationen"]);
-    const objectData = section("Objektdaten", ["Zustand und Energieausweis","Weitere Informationen","Anbieterinformationen"]);
-    const energy = section("Zustand und Energieausweis", ["Weitere Informationen","Anbieterinformationen"]);
-    const more = section("Weitere Informationen", ["Anbieterinformationen"]);
-
-    // Hidden expanded prose is present in the server-rendered DOM even when
-    // the visual component initially shows a teaser. Extract the DOM range
-    // between section headings and prefer a non-ellipsis descendant.
-    function fullSectionText(name) {
-      const headings = [...document.querySelectorAll("h2,h3")];
-      const start = headings.find((el) => cleanProse(el.textContent) === name);
-      if (!start) return "";
-      const startIndex = headings.indexOf(start);
-      const end = headings.slice(startIndex + 1).find((el) => /^H2$/i.test(el.tagName)) || null;
-      try {
-        const range = document.createRange();
-        range.setStartAfter(start);
-        if (end) range.setEndBefore(end);
-        else range.setEndAfter(document.body.lastChild || document.body);
-        const fragment = range.cloneContents();
-        const candidates = [
-          fragment.textContent || "",
-          ...[...fragment.querySelectorAll("p,div,span")].map((el) => el.textContent || "")
-        ]
-          .map((value) => cleanProse(value).replace(/\s*Mehr anzeigen\s*$/i, "").trim())
-          .filter((value) => value.length > 40)
-          .filter((value, idx, arr) => arr.indexOf(value) === idx);
-        const complete = candidates.filter((value) => !/…\s*$/.test(value));
-        const pool = complete.length ? complete : candidates;
-        return pool.sort((a,b) => b.length - a.length)[0] || "";
-      } catch {
-        return "";
-      }
-    }
-
-    const fullDescription = fullSectionText("Objektbeschreibung");
-    const fullLocation = fullSectionText("Lage");
-    const fullMore = fullSectionText("Weitere Informationen");
-
-    const factLabels = [
-      "Kaufpreis","Käuferprovision","Nettokaltmiete","Tiefgaragen Stellplatz (Kaufpreis)",
-      "Referenznummer","PLZ","Ort","Wohnfläche","Grundstücksfläche","Anzahl Zimmer","Anzahl Balkone","Anzahl Terrassen",
-      "Parkplatztyp","Anzahl Tiefgaragen Stellplätze","Zustand","Boden","Energieausweistyp",
-      "Energiestandard","Effizienzklasse","Ausstellungsdatum des Energieausweises",
-      "Energieausweis gültig bis","Gebäudeart","Heizung","Befeuerung","Endenergiebedarf"
-    ];
-    const facts = {};
-    for (const label of factLabels) {
-      const value = valueAfter(label, [prices, objectData, energy]);
-      if (value) facts[label] = value;
-    }
-
-    const sourceTitle = cleanProse(document.querySelector("h1")?.innerText || "");
-    const titleRef = sourceTitle.match(/\b([AB]\d{1,2})\b/i)?.[1]?.toUpperCase() || "";
-    return {
-      urls,
-      sourceTitle,
-      titleRef,
-      description: dedupeRepeatedProse(fullDescription || longestUseful(description, "Objektbeschreibung")),
-      locationDescription: cleanLocationProse(fullLocation || longestUseful(location)),
-      amenities: dedupe(equipment.filter((line) => line.length >= 2 && line.length <= 100 && !/Mehr anzeigen/i.test(line))),
-      additionalInformation: dedupeRepeatedProse(fullMore || longestUseful(more)),
-      facts
-    };
-  });
-
-  const mediaUrls = Array.isArray(media?.urls) ? media.urls : [];
-  if (mediaUrls.length < 2) {
-    throw new Error(`Sparkasse gallery incomplete (${mediaUrls.length} image)`);
-  }
-
-  const mo = listing.manual_overrides || {};
-  if (mo.images !== true) {
-    listing.images = mediaUrls.slice(0, 80);
-    if (!listing.main_image_url) listing.main_image_url = listing.images[0];
-  }
-  const listingKey = String(listing.id || "").toLowerCase();
-  if (media.sourceTitle && mo.source_title !== true) listing.source_title = media.sourceTitle;
-  if (mo.title !== true) {
-    listing.title = PROJECT_DISPLAY_TITLE_BY_IMMOWELT_ID[listingKey] || media.sourceTitle || listing.title;
-  }
-  if (mo.location !== true && PROJECT_LOCATION_BY_IMMOWELT_ID[listingKey]) {
-    listing.location = PROJECT_LOCATION_BY_IMMOWELT_ID[listingKey];
-  }
-  if (mo.reference_number !== true) {
-    listing.reference_number =
-      media.facts?.Referenznummer ||
-      media.titleRef ||
-      PROJECT_REFERENCE_BY_IMMOWELT_ID[listingKey] ||
-      listing.reference_number ||
-      null;
-  }
-  if (mo.price !== true && media.facts?.Kaufpreis) listing.price = media.facts.Kaufpreis;
-  if (mo.rooms !== true && media.facts?.["Anzahl Zimmer"]) listing.rooms = `${media.facts["Anzahl Zimmer"]} Zimmer`;
-  if (mo.living_area !== true && media.facts?.Wohnfläche) listing.living_area = media.facts.Wohnfläche;
-  if (mo.plot_area !== true && media.facts?.Grundstücksfläche) listing.plot_area = media.facts.Grundstücksfläche;
-  if (mo.type !== true && PROJECT_TYPE_BY_IMMOWELT_ID[listingKey]) listing.type = PROJECT_TYPE_BY_IMMOWELT_ID[listingKey];
-  if (media.description && mo.description !== true) {
-    listing.source_description_fingerprint = contentFingerprint(media.description);
-    listing.description = paragraphizeListingText(media.description, "Objektbeschreibung").slice(0, 15000);
-  }
-  if (media.locationDescription && mo.location_description !== true) {
-    listing.location_description = cleanListingLocationText(media.locationDescription).slice(0, 10000);
-  }
-  if (Array.isArray(media.amenities) && media.amenities.length && mo.amenities !== true) {
-    listing.amenities = media.amenities.slice(0, 40);
-  }
-  if (media.additionalInformation && mo.additional_information !== true) {
-    listing.additional_information = paragraphizeListingText(media.additionalInformation, "Weitere Informationen").slice(0, 10000);
-  }
-  if (media.facts && Object.keys(media.facts).length && mo.facts !== true) {
-    // Mirror data is authoritative for the currently published detail page.
-    // Replace provider-derived facts instead of merging stale keys from older
-    // parser versions (e.g. a missing Nettokaltmiete swallowing the next label).
-    listing.facts = { ...media.facts };
-  }
-  if (listing.reference_number && listing.facts && mo.facts !== true) {
-    listing.facts = { Referenznummer: listing.reference_number, ...listing.facts };
-  }
-  listing.enriched_at = new Date().toISOString();
-  console.log(`Gallery mirror ${shortId(listing.id)}: ${listing.images.length} images · details ${listing.description ? "yes" : "no"} · ref ${listing.reference_number || "-"}`);
-  return listing;
-}
-
-async function enrichListings(listings) {
-  if (skipEnrich) {
-    console.log("Skipping expose enrichment (--skip-enrich)");
-    return listings;
-  }
-
-  const { chromium } = await import("playwright");
-  const browser = await chromium.launch({
-    headless: true,
-    args: ["--disable-blink-features=AutomationControlled"],
-  });
-  try {
-    const context = await browser.newContext({
-      userAgent:
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1",
-      locale: "de-DE",
-      viewport: { width: 390, height: 844 },
-      isMobile: true,
-      hasTouch: true,
-    });
-    await context.addCookies([{
-      name: "aviv_client",
-      value: "ios",
-      domain: ".immowelt.de",
-      path: "/",
-      secure: true
-    }]);
-    const page = await context.newPage();
-    page.setDefaultTimeout(60000);
-
-    for (let i = 0; i < listings.length; i++) {
-      const L = listings[i];
-      if (L.active === false || L.detail_page === false) {
-        console.log(`Enrich skip (not publicly detailed): ${shortId(L.id)}`);
-        continue;
-      }
-      const mo = L.manual_overrides || {};
-      // Admin locked both text & photos – nothing useful to pull from Immowelt
-      if (mo.description === true && mo.images === true) {
-        console.log(`Enrich skip (manual_overrides): ${shortId(L.id)}`);
-        continue;
-      }
-      // Skip recent enrichment unless forced (save scrape budget)
-      if (L.enriched_at && L.description && (L.images || []).length > 1) {
-        const age = Date.now() - Date.parse(L.enriched_at);
-        if (age < 24 * 60 * 60 * 1000 && !forceScrape) {
-          console.log(`Enrich skip (fresh): ${shortId(L.id)}`);
-          continue;
-        }
-      }
-      try {
-        const mirrorUrl = SPARKASSE_EXPOSE_BY_IMMOWELT_ID[String(L.id || "").toLowerCase()];
-        if (mirrorUrl && mo.images !== true) {
-          await enrichGalleryFromSparkasse(page, L);
-        } else {
-          await enrichFromExposePage(page, L);
-        }
-        await page.waitForTimeout(250);
-      } catch (mirrorErr) {
-        console.warn(`Gallery mirror failed for ${shortId(L.id)}:`, mirrorErr.message || mirrorErr);
-        try {
-          await enrichFromExposePage(page, L);
-        } catch (err) {
-          console.warn(`Enrich failed for ${shortId(L.id)}:`, err.message || err);
-        }
-      }
-    }
-  } finally {
-    await browser.close();
-  }
-  return listings;
-}
-
-/**
- * Live scrape via Playwright. Immowelt often fronts DataDome –
- * failures are expected; caller soft-fails.
- */
-async function probeCurrentImmoweltOffer(page, id) {
-  const url = `https://www.immowelt.de/expose/${id}?app=1`;
-  try {
-    const resp = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
-    const status = resp?.status() || 0;
-    if (status === 404 || status === 410) return { state: "inactive", reason: `HTTP ${status}` };
-    if (!resp || status >= 400) return { state: "unknown", reason: `HTTP ${status || "none"}` };
-    await page.waitForTimeout(800);
-    const text = await page.evaluate(() => String(document.body?.innerText || "").replace(/\s+/g, " ").trim());
-    if (/datadome|captcha|access denied|bitte aktivieren sie javascript/i.test(text)) {
-      return { state: "unknown", reason: "source protection page" };
-    }
-    if (/anzeige.{0,50}(?:nicht mehr|deaktiviert|gelöscht)|objekt.{0,50}(?:nicht mehr verfügbar|nicht verfügbar)|angebot.{0,50}(?:nicht mehr verfügbar|beendet)/i.test(text)) {
-      return { state: "inactive", reason: "Immowelt marks offer unavailable" };
-    }
-    if (!/Immobilien\s+Eichmann/i.test(text)) {
-      return { state: "unknown", reason: "provider identity not verifiable" };
-    }
-    return { state: "active", reason: "active Immowelt expose" };
-  } catch (err) {
-    return { state: "unknown", reason: err?.message || String(err) };
-  }
-}
-
-async function scrapeImmowelt(previousData = null) {
-  const { chromium } = await import("playwright");
-  const browser = await chromium.launch({
-    headless: true,
-    args: ["--disable-blink-features=AutomationControlled"],
-  });
-  try {
-    // Use the same Immowelt app/mobile context that already works for
-    // expose reads. The desktop profile route is blocked by DataDome on
-    // GitHub-hosted runners (HTTP 403), while the app surface is intended
-    // for programmatic/mobile clients and serves the same Immowelt data.
-    const context = await browser.newContext({
-      userAgent:
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1",
-      locale: "de-DE",
-      viewport: { width: 390, height: 844 },
-      isMobile: true,
-      hasTouch: true,
-    });
-    await context.addCookies([{
-      name: "aviv_client",
-      value: "ios",
-      domain: ".immowelt.de",
-      path: "/",
-      secure: true,
-    }]);
-    const page = await context.newPage();
-    page.setDefaultTimeout(60000);
-
-    const withAppSurface = (url) =>
-      url + (url.includes("?") ? "&app=1" : "?app=1");
-    const profileCandidates = [...new Set([
-      withAppSurface(PROFILE_URL),
-      PROFILE_URL,
-      withAppSurface(PROFILE_URL.replace("www.immowelt.de", "www.immowelt.at")),
-      PROFILE_URL.replace("www.immowelt.de", "www.immowelt.at"),
-    ])];
-    let loadedProfile = null;
-    const profileErrors = [];
-
-    for (const candidate of profileCandidates) {
-      console.log(`Scraping ${candidate}`);
-      try {
-        const resp = await page.goto(candidate, {
-          waitUntil: "domcontentloaded",
-          timeout: 60000,
-        });
-        if (!resp || resp.status() >= 400) {
-          profileErrors.push(`${candidate}: HTTP ${resp && resp.status()}`);
-          continue;
-        }
-
-        await page.waitForTimeout(1800);
-        const blocked = await page.evaluate(() => {
-          const t = document.body?.innerText || "";
-          return /datadome|captcha|access denied|bitte aktivieren sie javascript/i.test(t);
-        });
-        if (blocked) {
-          profileErrors.push(`${candidate}: bot protection`);
-          continue;
-        }
-
-        await page.waitForSelector('a[href*="/expose/"]', { timeout: 15000 }).catch(() => {});
-        const exposeCount = await page.locator('a[href*="/expose/"]').count().catch(() => 0);
-        if (!exposeCount) {
-          profileErrors.push(`${candidate}: no expose links`);
-          continue;
-        }
-
-        loadedProfile = candidate;
-        break;
-      } catch (err) {
-        profileErrors.push(`${candidate}: ${err.message || err}`);
-      }
-    }
-
-    if (!loadedProfile) {
-      console.warn(`Immowelt profile unavailable: ${profileErrors.join(" | ")}`);
-      const fallback = await scrapeEichmannFromImmoweltSearch(page);
-      fallback.confirmed_inactive_ids = await reconcileMissingImmoweltOffers(
-        fallback.listings,
-        previousData,
-        async (id) => {
-          const result = await probeCurrentImmoweltOffer(page, id);
-          console.log(`Missing-offer check ${id.slice(0, 8)}: ${result.state} · ${result.reason}`);
-          return result;
-        }
-      );
-      return fallback;
-    }
-
-    const extractCurrentPage = async () => page.evaluate(() => {
-      const out = [];
-      const seen = new Set();
-      const anchors = [...document.querySelectorAll('a[href*="/expose/"]')];
-      for (const a of anchors) {
-        const href = a.href || a.getAttribute("href") || "";
-        const m = href.match(/\/expose\/([a-f0-9-]{36})/i);
-        if (!m) continue;
-        const id = m[1].toLowerCase();
-        if (seen.has(id)) continue;
-        seen.add(id);
-
-        let node = a;
-        let best = a;
-        for (let i = 0; i < 10 && node; i++) {
-          const txt = node.innerText || "";
-          if (/\d[\d.\s]*€/.test(txt) && txt.length < 1200) best = node;
-          node = node.parentElement;
-        }
-        const text = (best.innerText || "").replace(/\s+/g, " ").trim();
-        const img =
-          best.querySelector("img")?.src ||
-          best.querySelector("img")?.getAttribute("data-src") ||
-          null;
-
-        const priceM = text.match(/(\d{1,3}(?:\.\d{3})*(?:,\d+)?\s*€)/);
-        const roomsM = text.match(/(\d+(?:,\d+)?\s*Zimmer)/i);
-        const areaM = text.match(/(\d+(?:,\d+)?\s*m²)/);
-        const plotM = text.match(/(\d+(?:\.\d{3})*(?:,\d+)?\s*m²\s*Grundstück)/i);
-
-        let title = null;
-        const parts = text.split("|").map((p) => p.trim());
-        if (parts.length >= 2) title = parts[1];
-        if (!title) {
-          const lines = (best.innerText || "")
-            .split("\n")
-            .map((l) => l.trim())
-            .filter(Boolean);
-          title =
-            lines.find((l) =>
-              /zum Kauf|Miete|Wohnung|Haus|Penthouse|Maisonette/i.test(l)
-            ) ||
-            lines[1] ||
-            "Immobilie";
-        }
-
-        const locM = text.match(/([^|]*\(\d{5}\))/);
-        const location = locM ? locM[1].trim() : null;
-
-        let type = null;
-        for (const t of [
-          "Mehrfamilienhaus",
-          "Einfamilienhaus",
-          "Doppelhaushälfte",
-          "Reihenhaus",
-          "Maisonette",
-          "Penthouse",
-          "Wohnung",
-          "Grundstück",
-          "Gewerbe",
-        ]) {
-          if (new RegExp(t, "i").test(title) || new RegExp(t, "i").test(text)) {
-            type = t;
-            break;
-          }
-        }
-
-        const referenceM = text.match(/Referenz(?:nummer|nr\.?)[\s:#-]*([A-Z0-9][A-Z0-9._/-]{0,31})/i);
-        const titleReferenceM = title.match(/\b([AB]\d{1,3})\b/i);
-        const reference_number = (referenceM?.[1] || titleReferenceM?.[1] || "").toUpperCase() || null;
-
-        const shortBits = [];
-        if (/provisionsfrei/i.test(text)) shortBits.push("provisionsfrei");
-        if (/Erstbezug/i.test(text)) shortBits.push("Erstbezug");
-        if (/Kapitalanlage/i.test(text)) shortBits.push("als Kapitalanlage geeignet");
-        const floorM = text.match(/(\d+\.\s*Geschoss|Geschoss\s*\d+\/\d+)/i);
-        if (floorM) shortBits.push(floorM[1]);
-        if (/frei ab sofort/i.test(text)) shortBits.push("frei ab sofort");
-
-        out.push({
-          id,
-          title,
-          price: priceM ? priceM[1].replace(/\s+/g, " ") : null,
-          location,
-          rooms: roomsM ? roomsM[1] : null,
-          living_area: areaM ? areaM[1] : null,
-          plot_area: plotM ? plotM[1] : null,
-          type,
-          status: /Miete/i.test(title) ? "Miete" : "Kauf",
-          reference_number,
-          short_description: shortBits.join("; ") || null,
-          expose_url: `https://www.immowelt.de/expose/${id}`,
-          main_image_url: img,
-          raw_card_text: text,
-        });
-      }
-      return out;
-    });
-
-    const expectedCount = await page.evaluate(() => {
-      const t = document.body?.innerText || "";
-      const m = t.match(/Immobilien\s+zum\s+Verkauf\s*\((\d+)\)/i);
-      return m ? Number(m[1]) : null;
-    });
-    if (!Number.isInteger(expectedCount) || expectedCount <= 0) {
-      throw new Error("Immowelt profile count unavailable – refusing to replace last-known-good");
-    }
-
-    const byId = new Map();
-    const collectCurrentPage = async () => {
-      for (const item of await extractCurrentPage()) {
-        if (item?.id) byId.set(item.id, item);
-      }
-    };
-
-    const settleAndCollect = async () => {
-      await page.waitForTimeout(700);
-      for (let i = 0; i < 3; i++) {
-        await page.mouse.wheel(0, 900);
-        await page.waitForTimeout(180);
-      }
-      await collectCurrentPage();
-    };
-
-    await settleAndCollect();
-
-    // Immowelt profile currently paginates offers. Traverse visible page-number
-    // controls and dedupe by canonical expose UUID.
-    for (let pageNumber = 2; pageNumber <= 20; pageNumber++) {
-      if (expectedCount && byId.size >= expectedCount) break;
-      const control = page
-        .locator("main button, main a")
-        .filter({ hasText: new RegExp(`^\\s*${pageNumber}\\s*$`) })
-        .first();
-      if (!(await control.count().catch(() => 0))) break;
-      if (!(await control.isVisible().catch(() => false))) break;
-
-      const before = page.url();
-      await control.click({ timeout: 5000 }).catch(() => {});
-      await page.waitForTimeout(500);
-      if (page.url() === before) {
-        await page.waitForTimeout(500);
-      }
-      await settleAndCollect();
-    }
-
-    const raw = [...byId.values()];
-    if (!raw.length) {
-      throw new Error("No expose links found on profile page");
-    }
-    if (raw.length !== expectedCount) {
-      throw new Error(`Profile count mismatch: expected ${expectedCount}, scraped ${raw.length}`);
-    }
-
-    const confirmed_inactive_ids = await reconcileMissingImmoweltOffers(
-      raw,
-      previousData,
-      async (id) => {
-        const result = await probeCurrentImmoweltOffer(page, id);
-        console.log(`Missing-offer check ${id.slice(0, 8)}: ${result.state} · ${result.reason}`);
-        return result;
-      }
-    );
-    console.log(`Scraped ${raw.length} listings from profile (${loadedProfile}); confirmed inactive ${confirmed_inactive_ids.length}.`);
-    return {
-      source: loadedProfile,
-      discovery: "immowelt_profile",
-      scraped_at: new Date().toISOString(),
-      listings: raw,
-      confirmed_inactive_ids,
-    };
-  } finally {
-    await browser.close();
-  }
-}
-
 
 /**
  * Publish path used by SQLite SoT: write listings.json export + render HTML/partials/sitemap.
@@ -3275,13 +2105,84 @@ export async function publishListingsDocument(doc, { siteRoot = ROOT, knownSlugs
   if (siteRoot && siteRoot !== ROOT) {
     console.warn(`publishListingsDocument: siteRoot=${siteRoot} (module ROOT=${ROOT}). Prefer EICHMANN_SITE_ROOT before import.`);
   }
+  const data = prepareDocument(doc);
+  data.listing_count = data.listings.length;
+
+  // Export artifact (not SoT)
+  process.env.EICHMANN_SOT = "sqlite";
+  await writeCanonical(data);
+  await renderIntoPages(data);
+  await cleanupOrphanImages(data);
+  if (knownSlugs) {
+    console.log(`Known slugs from DB: ${knownSlugs.length}`);
+  }
+  return data;
+}
+
+/**
+ * ai/immowelt-snapshot.json – what this build publishes from Immowelt, per offer: ids, marketing,
+ * price, numbers, every fact row, a hash of every text section and every picture in order
+ * (Immowelt asset → local file). It lets anyone compare "API → published → rendered page"
+ * from outside (scripts/verify/inventory-report.mjs) and contains nothing the pages do not show.
+ */
+async function writePublishedSnapshot(data) {
+  const { createHash } = await import("node:crypto");
+  const sha = (t) => createHash("sha256").update(String(t ?? "")).digest("hex");
+  const rows = (data.listings || []).filter((L) => isApi(L) && hasPublicDetail(L));
+  if (!rows.length && !RELEASE_BUILD) return null; // local/CI build from the scraper-era mirror: nothing to state
+  const doc = {
+    schema: "eichmann.immowelt-published/v1",
+    source: "immowelt_official_api",
+    data_as_of: data.immowelt_checked_date || null,
+    fingerprint: data.immowelt_fingerprint || null,
+    count: rows.length,
+    listings: rows.map((L) => ({
+      position: L.position,
+      online_id: L.immowelt_online_id,
+      estate_id: L.immowelt_estate_id,
+      guid: L.immowelt_guid,
+      slug: L.slug,
+      url: `${SITE_ORIGIN}/${L.local_url}`,
+      content_hash: L.content_hash || null,
+      marketing: L.marketing,
+      price_on_request: L.price_on_request === true,
+      price_eur: L.price_on_request ? null : L.price_eur ?? null,
+      price: L.price,
+      title: L.title,
+      type: L.type || null,
+      rooms: L.rooms_value ?? null,
+      living_area_m2: L.living_area_value ?? null,
+      plot_area_m2: L.plot_area_value ?? null,
+      location: L.location || null,
+      facts: (L.fact_rows || []).map((r) => [r.label, r.value]),
+      sections: (L.sections || []).filter((s) => s.html).map((s) => ({ id: s.id || null, title: s.title, chars: (s.text || "").length, html_sha256: sha(s.html) })),
+      pictures: (L.media || []).map((m) => ({ role: m.role, asset: m.asset_key, file: m.base ? `${m.base}.jpg` : null })),
+    })),
+  };
+  if (!dryRun) {
+    await mkdir(path.join(ROOT, "ai"), { recursive: true });
+    await writeFile(path.join(ROOT, "ai", "immowelt-snapshot.json"), JSON.stringify(doc, null, 2) + "\n", "utf8");
+  }
+  return doc;
+}
+
+/** Database document → render model. API rows are used as they are. */
+function prepareDocument(doc) {
   const data = {
     source: doc.source || PROFILE_URL,
     immowelt_profile: doc.immowelt_profile || doc.source || PROFILE_URL,
     scraped_at: doc.scraped_at || doc.exported_at || new Date().toISOString(),
+    immowelt_checked_date: doc.immowelt_checked_date || null,
+    immowelt_fingerprint: doc.immowelt_fingerprint || null,
     listings: Array.isArray(doc.listings) ? doc.listings.map((L) => ({ ...L })) : [],
   };
   data.listings.forEach((L, i) => {
+    if (isApi(L)) {
+      // Slug is frozen in the database; picture paths come from the content-addressed media store.
+      L.origin = "immowelt";
+      L.local_url = localExposePath(L);
+      return;
+    }
     if (!L.origin) {
       const src = String(L.source || "").toLowerCase();
       L.origin = src === "eigen" || src === "local" ? "eigen" : "immowelt";
@@ -3305,55 +2206,8 @@ export async function publishListingsDocument(doc, { siteRoot = ROOT, knownSlugs
     L.slug = makeSlug(L);
     L.local_url = localExposePath(L);
   });
-  data.listing_count = data.listings.length;
-
-  // Export artifact (not SoT)
-  process.env.EICHMANN_SOT = "sqlite";
-  await writeCanonical(data);
-  await renderIntoPages(data);
-  await cleanupOrphanImages(data);
-  if (knownSlugs) {
-    console.log(`Known slugs from DB: ${knownSlugs.length}`);
-  }
   return data;
 }
-
-async function persistImmoweltToSqlite(immoweltListings, meta = {}) {
-  const { openDb, upsertImmoweltBatch, exportListingsDocument, setMeta, countByOrigin, ORIGIN_EIGEN } = await import("./lib/db.mjs");
-  const db = openDb();
-  // Hard rule: Immowelt Sync never writes/deletes/hides origin=eigen
-  const onlyImmowelt = (immoweltListings || []).filter((L) => {
-    const o = String(L?.origin || L?.source || "immowelt").toLowerCase();
-    return o !== "eigen" && o !== "local" && o !== ORIGIN_EIGEN;
-  });
-  if (onlyImmowelt.length !== (immoweltListings || []).length) {
-    console.warn(
-      `persistImmoweltToSqlite: stripped ${(immoweltListings || []).length - onlyImmowelt.length} non-Immowelt row(s) before upsert`
-    );
-  }
-  const keepIds = onlyImmowelt
-    .filter((L) => L.active !== false && L.missing_on_immowelt !== true)
-    .map((L) => L.immowelt_id || L.id);
-  const results = upsertImmoweltBatch(db, onlyImmowelt, {
-    deactivateMissing: true,
-    keepImmoweltIds: keepIds,
-  });
-  if (meta.scraped_at) setMeta(db, "immowelt_scraped_at", meta.scraped_at);
-  if (meta.source || meta.immowelt_profile) {
-    setMeta(db, "immowelt_profile", meta.immowelt_profile || meta.source);
-  }
-  const counts = countByOrigin(db);
-  const doc = exportListingsDocument(db, {
-    profileUrl: meta.immowelt_profile || meta.source,
-    scrapedAt: meta.scraped_at,
-  });
-  db.close();
-  console.log(
-    `SQLite Immowelt upsert: ${results.length} ops; counts immowelt=${counts.immowelt} eigen=${counts.eigen}`
-  );
-  return doc;
-}
-
 
 async function main() {
   console.log("Immowelt sync – root:", ROOT);
@@ -3369,21 +2223,49 @@ async function main() {
 
   let data;
 
-  if (renderOnly) {
-    // Prefer SQLite SoT when present; fall back to listings.json mirror.
+  if (!renderOnly && !exportOnly) {
+    // Fetching Immowelt = official API pipeline (complete-or-nothing, atomic release).
+    if (args.has("--enrich-only") || args.has("--force-scrape") || args.has("--from-json") || args.has("--skip-enrich")) {
+      console.error("--enrich-only/--force-scrape/--from-json/--skip-enrich sind entfernt: der Abgleich läuft ausschließlich über die offizielle Immowelt-API (scripts/immowelt-sync.mjs); eine leere Datenbank wird mit scripts/db-migrate.mjs --bootstrap befüllt.");
+      process.exit(2);
+    }
+    const { main: runImmoweltSync } = await import("./immowelt-sync.mjs");
+    process.exitCode = await runImmoweltSync(["run", ...(dryRun ? ["--dry-run"] : [])]);
+    return;
+  }
+
+  if (renderOnly || exportOnly) {
+    // Database first. A release build reads ONLY the database it was given: an empty inventory is a
+    // valid state and must never be replaced by an old JSON mirror.
+    let doc = null;
+    let slugs = null;
     try {
       const { openDb, exportListingsDocument, allSlugs } = await import("./lib/db.mjs");
       const db = openDb();
-      const doc = exportListingsDocument(db);
-      const slugs = allSlugs(db);
+      doc = exportListingsDocument(db);
+      slugs = allSlugs(db);
       db.close();
-      if (doc.listings?.length) {
-        await publishListingsDocument(doc, { knownSlugs: slugs });
-        console.log("Render-only done (SQLite SoT → JSON export + HTML).");
+    } catch (e) {
+      if (RELEASE_BUILD) throw e;
+      console.warn("SQLite unavailable, falling back to JSON:", e.message || e);
+    }
+    if (doc && (RELEASE_BUILD || doc.listings?.length)) {
+      if (exportOnly) {
+        const prepared = prepareDocument(doc);
+        process.env.EICHMANN_SOT = "sqlite";
+        await writeCanonical(prepared);
+        const r = syncListingsLayer(ROOT, prepared);
+        console.log(`Export done (SQLite → data/listings.json, Objekt-Register ${r.active} aktiv).`);
         return;
       }
-    } catch (e) {
-      console.warn("SQLite render-only unavailable, falling back to JSON:", e.message || e);
+      await publishListingsDocument(doc, { knownSlugs: slugs });
+      console.log("Render-only done (SQLite SoT → JSON export + HTML).");
+      return;
+    }
+    if (exportOnly) {
+      if (previous) syncListingsLayer(ROOT, previous);
+      console.log("Export skipped (no database rows) – using data/listings.json as it is.");
+      return;
     }
     if (!previous) {
       console.error("No data/listings.json – cannot --render-only");
@@ -3398,192 +2280,7 @@ async function main() {
     return;
   }
 
-  if (enrichOnly) {
-    if (!previous) {
-      console.error("No data/listings.json – cannot --enrich-only");
-      process.exit(1);
-    }
-    data = previous;
-    data.scraped_at = new Date().toISOString();
-    data.listings = await enrichListings(data.listings);
-  } else if (fromJsonArg) {
-    const src = path.resolve(fromJsonArg);
-    console.log("Seeding from", src);
-    const seeded = await loadJson(src);
-    data = {
-      source: seeded.source || PROFILE_URL,
-      scraped_at: seeded.scraped_at || new Date().toISOString(),
-      listings: mergeListings(seeded.listings, previous),
-    };
-  } else {
-    const creds = readImmoweltCredentials();
-    const useOfficial = Boolean(creds?.api_key);
-    // When an API key is present, NEVER scrape (DataDome). Official SOAP only.
-    // Without a key: fail closed with awaiting_api_key unless --force-scrape (emergency).
-    if (!useOfficial && !forceScrape) {
-      const reason =
-        "Immowelt-Zugang fehlt. Bitte Kundennummer und API-Schlüssel im Admin unter Immowelt eintragen. Der letzte bekannte Stand bleibt online.";
-      console.error(reason);
-      await writeSyncStatus({
-        state: "awaiting_api_key",
-        mode: "official_api",
-        previous,
-        reason,
-      });
-      process.exit(1);
-    }
-
-    try {
-      let scraped;
-      let syncMode;
-      if (useOfficial) {
-        console.log("Immowelt sync mode: official_api (SOAP)");
-        scraped = await fetchOfficialImmoweltListings(creds.api_key, previous);
-        syncMode = "official_api";
-      } else {
-        console.log("Immowelt sync mode: scrape (--force-scrape, no API key)");
-        scraped = await scrapeImmowelt(previous);
-        syncMode = "scrape";
-      }
-      const assessment = validateIncomingSnapshot(scraped.listings, previous);
-      console.log(`Immowelt snapshot accepted: ${assessment.count} complete offers (${syncMode}).`);
-      data = {
-        source: scraped.source,
-        scraped_at: scraped.scraped_at,
-        listings: mergeListings(scraped.listings, previous, { confirmedInactiveIds: scraped.confirmed_inactive_ids || [] }),
-      };
-      // Playwright enrich only for scrape path; official API already pulled exposés.
-      if (syncMode === "scrape") {
-        try {
-          data.listings = await enrichListings(data.listings);
-        } catch (enrichErr) {
-          console.warn("Enrichment pass failed:", enrichErr.message || enrichErr);
-        }
-      }
-
-      // All-or-nothing: never publish a partially read Immowelt snapshot.
-      const incomplete = data.listings.filter((item) =>
-        item.active !== false && (
-          String(item.description || "").trim().length < 80 ||
-          !Array.isArray(item.images) ||
-          item.images.length < 2
-        )
-      );
-      if (incomplete.length) {
-        throw new Error(
-          `Immowelt snapshot incomplete for ${incomplete.map((item) => shortId(item.id)).join(", ")} – keeping last-known-good`
-        );
-      }
-
-      const safe = validateNoDestructiveOverwrite(data.listings, previous);
-      console.log(`Final LKG guard: ${safe.checked} existing records checked; no destructive/inconsistent overwrite.`);
-      data._snapshot_assessment = assessment;
-      data._sync_mode = syncMode;
-    } catch (err) {
-      const hard = process.env.IMMOWELT_HARD_FAIL === "1" || forceScrape;
-      const syncMode = hasImmoweltApiKey() ? "official_api" : (forceScrape ? "scrape" : "official_api");
-      console.error(`Immowelt sync failed (${hard ? "hard-fail" : "fail-closed"}, mode=${syncMode}):`, err.message || err);
-      if (previous) {
-        console.error("Keeping last good data/listings.json – site unchanged.");
-        await writeSyncStatus({
-          state: "rejected",
-          mode: syncMode,
-          previous,
-          reason: err.message || err,
-        });
-        if (hard) throw err;
-        process.exit(1);
-      }
-      console.error("No previous JSON available. Exiting without changes.");
-      await writeSyncStatus({
-        state: "rejected",
-        mode: syncMode,
-        previous: null,
-        reason: err.message || err,
-      });
-      if (hard) throw err;
-      process.exit(1);
-    }
-  }
-
-  if (!data.listings.length) {
-    const err = new Error("Empty listings – refusing to overwrite last-known-good.");
-    await writeSyncStatus({ state: "rejected", previous, reason: err.message });
-    throw err;
-  }
-
-  data.listings.forEach((L, i) => {
-    if (!(L.detail_page === false && !L.main_image_url && !(L.images || []).length)) {
-      L.image_base = L.image_base || imageBase(i, L.id);
-    } else {
-      L.image_base = null;
-    }
-    L.slug = makeSlug(L);
-    L.local_url = localExposePath(L);
-  });
-  data.listing_count = data.listings.length;
-  data._semantic_changed = semanticListingsChanged(previous, data.listings);
-  if (!data._semantic_changed && previous?.scraped_at) {
-    data.scraped_at = previous.scraped_at;
-    console.log("Immowelt check OK; no object-data change. Keeping last canonical data timestamp.");
-  }
-
-  if (dryRun) {
-    console.log(JSON.stringify({ ...data, listings: data.listings.map(serializeListing) }, null, 2));
-    console.log("Dry-run: no files written.");
-    return;
-  }
-
-  // Immowelt-only SQLite upsert (never touches origin=eigen), then publish full union.
-  if (data._semantic_changed !== false) {
-    await syncImages(data, { skipDownload: false });
-  } else {
-    console.log("Validated Immowelt snapshot is semantically unchanged; still refreshing SQLite + publish.");
-  }
-  const doc = await persistImmoweltToSqlite(data.listings, {
-    scraped_at: data.scraped_at,
-    source: data.source,
-    immowelt_profile: data.immowelt_profile || data.source,
-  });
-  // Live HTML/JSON publish requires Chris Abnahme in /admin (confirm modal).
-  // Sync may update SQLite; public site stays until "Neu publizieren" / Freigabe.
-  const { openDb, setMeta } = await import("./lib/db.mjs");
-  const dbMeta = openDb();
-  try {
-    setMeta(
-      dbMeta,
-      "publish_pending",
-      JSON.stringify({
-        reason: "immowelt_sync",
-        at: new Date().toISOString(),
-        listing_count: doc.listing_count,
-        active_listing_count: doc.active_listing_count,
-        message: "Immowelt-Sync in SQLite übernommen – öffentliche Website wartet auf Freigabe.",
-      })
-    );
-  } finally {
-    dbMeta.close();
-  }
-  if (process.env.EICHMANN_AUTO_PUBLISH === "1") {
-    await publishListingsDocument(doc);
-    console.log(`AUTO_PUBLISH: ${doc.listing_count} records published to site.`);
-  } else {
-    console.log(
-      `Accepted Immowelt sync into SQLite SoT: ${doc.listing_count} records. Live publish deferred (Abnahme in /admin).`
-    );
-  }
-  await writeSyncStatus({
-    state: "current",
-    mode: data._sync_mode || (hasImmoweltApiKey() ? "official_api" : "scrape"),
-    previous,
-    data,
-    assessment: data._snapshot_assessment || null,
-  });
-  delete data._snapshot_assessment;
-  delete data._semantic_changed;
-  delete data._sync_mode;
-
-  console.log(`Done. ${data.listing_count} Immowelt records validated.`);
+  // (render-only with the JSON mirror ends above; nothing else is reachable here)
 }
 
 const isDirectRun = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);

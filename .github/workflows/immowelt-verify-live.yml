@@ -1,0 +1,121 @@
+name: Immowelt verify live (screenshots + review page)
+
+# Evidence for a rollout, produced from outside the server. Nothing is written anywhere else.
+#
+#   label = before   run BEFORE the sync changes anything: the complete page inventory of the live
+#                    site (sitemap + every internally linked page), desktop 1440×900 and mobile
+#                    390×844, whole page. Note the run number – the "after" run asks for it.
+#   label = after    run after the publish: same inventory, same viewports; the comparison table
+#                    API ↔ published ↔ pages for every offer; with "api" the Immowelt API is read
+#                    fresh (read-only) and every offer is rendered as an Immowelt reference picture.
+#                    With "before_run_id" the review page is built:
+#                    per page three pictures – before (dt-1) · after (dt) · Immowelt (dt).
+#   label = check    like "after", any time.
+#
+# The public Immowelt pages themselves cannot be photographed from here (Immowelt answers
+# data-centre addresses with 403, and nothing is circumvented). They are added on your own
+# computer: scripts/verify/capture-screens.mjs --label immowelt --headed, see docs/IMMOWELT-SYNC.md.
+#
+# Results: artifact "immowelt-verify-<label>-<run id>" (kept 90 days); open verify/review/index.html.
+
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: "Aufnahme: before = vor dem Sync, after = nach der Veröffentlichung, check = jederzeit"
+        type: choice
+        options: [before, after, check]
+        default: check
+      api:
+        description: "Immowelt-API frisch lesen (nur lesend): Datenvergleich + Immowelt-Referenzbilder"
+        type: boolean
+        default: false
+      before_run_id:
+        description: "Nur bei after/check: Laufnummer (Run-ID) der before-Aufnahme → Sichtprüfung mit Vorher/Nachher"
+        required: false
+      url:
+        description: "Basis-URL"
+        default: "https://immobilieneichmann.de"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      - name: Screenshots – complete page inventory (desktop + mobile, whole page)
+        env:
+          LABEL: ${{ inputs.label }}
+          BASE_URL: ${{ inputs.url }}
+        run: |
+          set -euo pipefail
+          [[ "$BASE_URL" =~ ^https?://[A-Za-z0-9._:-]+/?$ ]] || { echo "url ungültig"; exit 1; }
+          # check = an "after" picture taken at any time
+          node scripts/verify/capture-screens.mjs --label "$([ "$LABEL" = before ] && echo before || echo after)" --base "$BASE_URL"
+
+      - name: Comparison table (every offer)
+        if: always()
+        env:
+          LABEL: ${{ inputs.label }}
+          BASE_URL: ${{ inputs.url }}
+          USE_API: ${{ inputs.api }}
+          IMMOWELT_API_KEY: ${{ inputs.api && secrets.IMMOWELT_API_KEY || '' }}
+        run: |
+          set -euo pipefail
+          mkdir -p test-results/verify
+          NAME="$([ "$LABEL" = before ] && echo before || echo after)"
+          ARGS=(--base "$BASE_URL" --out "test-results/verify/inventory-${NAME}.md" --json "test-results/verify/inventory-${NAME}.json")
+          if [ "$USE_API" = "true" ]; then ARGS+=(--api --api-snapshot test-results/verify/api-snapshot.json); fi
+          # "before" documents the old state: differences are the expected finding there, not a failure.
+          if [ "$LABEL" = "before" ]; then ARGS+=(--report-only); fi
+          node scripts/verify/inventory-report.mjs "${ARGS[@]}"
+
+      - name: Immowelt reference pictures (every offer as the API delivers it)
+        if: always() && inputs.api
+        run: |
+          set -euo pipefail
+          test -f test-results/verify/api-snapshot.json || { echo "Kein API-Stand gelesen – keine Referenzbilder."; exit 0; }
+          node scripts/verify/capture-screens.mjs --label immowelt-api --snapshot test-results/verify/api-snapshot.json
+
+      - name: Fetch the "before" pictures of an earlier run
+        if: always() && inputs.label != 'before' && inputs.before_run_id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE_RUN_ID: ${{ inputs.before_run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$BEFORE_RUN_ID" =~ ^[0-9]{5,20}$ ]] || { echo "before_run_id ist keine Laufnummer"; exit 1; }
+          gh run download "$BEFORE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "immowelt-verify-before-${BEFORE_RUN_ID}" --dir before-artifact
+          test -f before-artifact/verify/screens/before/manifest.json || { echo "Im Artefakt fehlen die Vorher-Aufnahmen."; exit 1; }
+          mkdir -p test-results/verify/screens
+          rm -rf test-results/verify/screens/before
+          mv before-artifact/verify/screens/before test-results/verify/screens/before
+
+      - name: Review page (before · after · Immowelt)
+        if: always() && inputs.label != 'before'
+        run: |
+          set -euo pipefail
+          node scripts/verify/build-review.mjs --root test-results/verify
+          echo "Sichtprüfung: Artefakt herunterladen und verify/review/index.html öffnen." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remember this run for the "after" run
+        if: inputs.label == 'before'
+        run: echo "Vorher-Aufnahme gespeichert. Für die Nachher-Aufnahme als before_run_id eintragen – ${{ github.run_id }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: immowelt-verify-${{ inputs.label }}-${{ github.run_id }}
+          path: test-results/
+          retention-days: 90

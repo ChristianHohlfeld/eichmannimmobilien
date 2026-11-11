@@ -1,0 +1,13 @@
+[Unit]
+Description=Immowelt-Abgleich alle 30 Minuten
+
+[Timer]
+OnCalendar=*:07,37
+RandomizedDelaySec=120
+AccuracySec=30s
+# verpasste Laeufe (Neustart, Wartung) werden sofort nachgeholt
+Persistent=true
+Unit=eichmann-immowelt-sync.service
+
+[Install]
+WantedBy=timers.target

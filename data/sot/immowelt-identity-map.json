@@ -1,0 +1,12 @@
+{
+  "schema": "eichmann.immowelt-identity-map/v1",
+  "_comment": "Nur für die einmalige Umstellung vom alten Abgleich (Website-UUIDs) auf die offizielle Immowelt-API. Ein Eintrag belegt, dass ein Alt-Datensatz dasselbe Angebot ist wie eine Immowelt-Online-ID – dann behält das Angebot seine bisherige Adresse (objekt/<slug>.html). Ohne Beleg wird nichts zugeordnet: Was im vollständigen API-Bestand fehlt, geht mit der Freigabe des Identitätsplans offline; was neu ist, bekommt eine neue Adresse. Zuordnung nie nach Titel oder Preis, nur nach nachgeschlagener Online-ID. Automatisch erkannt werden ohnehin: gleiche GUID sowie übereinstimmende Bild-Assets.",
+  "_format": {
+    "legacy_id": "UUID des Alt-Datensatzes (Spalte id in der Datenbank, steht auch im Identitätsplan)",
+    "online_id": "Immowelt-Online-ID des Angebots (z. B. aus https://www.immowelt.de/expose/<online_id>)",
+    "verified_by": "wer nachgesehen hat",
+    "verified_at": "JJJJ-MM-TT",
+    "note": "woran die Gleichheit festgemacht wurde"
+  },
+  "evidence": []
+}

@@ -23,7 +23,15 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const run = (file, ...args) => execFileSync(process.execPath, [path.join(ROOT, file), ...args], { stdio: "inherit", cwd: ROOT, env: { ...process.env, EICHMANN_SITE_ROOT: ROOT } });
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-run("scripts/validate-sot.mjs");
+// 0 Daten zuerst: Datenbank → data/listings.json + Objekt-Register, damit die Quellprüfung den Stand prüft,
+//   der gleich gerendert wird (und nicht einen alten Export im Arbeitsverzeichnis).
+if (!process.argv.includes("--no-render")) run("scripts/sync-immowelt.mjs", "--export-only");
+let ruleHits = 0;
+{
+  const out = execFileSync(process.execPath, [path.join(ROOT, "scripts/validate-sot.mjs")], { cwd: ROOT, env: { ...process.env, EICHMANN_SITE_ROOT: ROOT }, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] });
+  process.stdout.write(out.replace(/^IMMOWELT_RULE_HITS=\d+\n/m, ""));
+  ruleHits = Number(/^IMMOWELT_RULE_HITS=(\d+)$/m.exec(out)?.[1] || 0);
+}
 const sot = loadSot(ROOT, { fresh: true });
 writeFileSync(path.join(ROOT, "data/projects.json"), JSON.stringify(projectsDocument(sot), null, 2) + "\n");
 if (!process.argv.includes("--no-render")) {
@@ -61,8 +69,16 @@ console.log(`Seiten-Meta: ${metaChanged} Datei(en) aus data/sot/pages.json aktua
 run("scripts/cache-bust.mjs");
 run("scripts/check-output.mjs");
 
-let commit = null;
-try { commit = execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim(); } catch {}
-const info = { sot_hash: sot.hash, data_as_of: sot.dataAsOf, active_listings: sot.activeListings.length, built_from_commit: commit, schema: "eichmann.build/v1" };
+let commit = (process.env.EICHMANN_BUILD_COMMIT || "").trim().slice(0, 12) || null;
+if (!commit) { try { commit = execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); } catch {} }
+// Stand nach dem Rendern (das Objekt-Register wurde aus den Daten fortgeschrieben).
+const done = loadSot(ROOT, { fresh: true });
+let fingerprint = null;
+try { fingerprint = JSON.parse(readFileSync(path.join(ROOT, "data/listings.json"), "utf8")).immowelt_fingerprint || null; } catch {}
+const info = {
+  sot_hash: done.hash, data_as_of: done.dataAsOf, active_listings: done.activeListings.length, built_from_commit: commit, schema: "eichmann.build/v1",
+  // nur bei Server-Releases gesetzt: welches Release ausgeliefert wird und aus welchem Immowelt-Stand es stammt
+  ...(process.env.EICHMANN_RELEASE_ID ? { release_id: process.env.EICHMANN_RELEASE_ID, immowelt_fingerprint: fingerprint, immowelt_rule_hits: ruleHits } : {}),
+};
 writeFileSync(path.join(ROOT, "ai/build.json"), JSON.stringify(info, null, 2) + "\n");
-console.log(`✓ Build fertig · SSOT ${sot.hash} · Datenstand ${sot.dataAsOf}`);
+console.log(`✓ Build fertig · SSOT ${done.hash} · Datenstand ${done.dataAsOf}`);

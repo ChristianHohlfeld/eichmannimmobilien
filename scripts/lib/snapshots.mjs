@@ -548,7 +548,7 @@ function swapFile(livePath, incomingPath) {
   }
 }
 
-function runPublishFromDb() {
+function runPublishFromDb({ lockToken = null } = {}) {
   const appRoot = fs.existsSync("/var/lib/eichmann/app/scripts/publish-from-db.mjs")
     ? "/var/lib/eichmann/app"
     : path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -557,12 +557,16 @@ function runPublishFromDb() {
     ...process.env,
     EICHMANN_DB_PATH: resolveDbPath(),
     EICHMANN_SITE_ROOT: siteRoot(),
+    // A restore is a deliberate publish (never refused by a hold) …
+    EICHMANN_PUBLISH_REASON: "restore",
+    // … and runs under the lock the restore already holds (release layout).
+    ...(lockToken ? { EICHMANN_LOCK_TOKEN: lockToken } : {}),
   };
   const r = spawnSync(process.execPath, [script], {
     cwd: appRoot,
     env,
     encoding: "utf8",
-    timeout: 120_000,
+    timeout: lockToken ? 300_000 : 120_000,
   });
   if (r.status !== 0) {
     const err = new Error(
@@ -640,6 +644,25 @@ export async function restoreSnapshot(id, { confirmPhrase, scheduleRestart = tru
   rmrf(stagingRoot);
   fs.mkdirSync(stagingRoot, { recursive: true });
 
+  // Release layout: the restore replaces the database and republishes. It must be the only writer,
+  // so it takes the same lock as the Immowelt sync, deploys and admin publishes (waits for a running one).
+  let pipelineLock = null;
+  {
+    const { loadConfig } = await import("./immowelt/config.mjs");
+    const { isLayoutActive } = await import("./release.mjs");
+    const cfg = loadConfig();
+    if (isLayoutActive(cfg)) {
+      const { acquireLock } = await import("./immowelt/lock.mjs");
+      try {
+        pipelineLock = await acquireLock(cfg.lockDir, { purpose: `restore ${id}`, waitMs: 180_000, staleMinutes: cfg.lockStaleMinutes });
+      } catch (e) {
+        rmrf(stagingRoot);
+        if (e?.code === "pipeline_busy") e.status = 409;
+        throw e;
+      }
+    }
+  }
+
   try {
     const snapDb = path.join(snapDir, "listings.db");
     if (!fs.existsSync(snapDb)) {
@@ -683,15 +706,20 @@ export async function restoreSnapshot(id, { confirmPhrase, scheduleRestart = tru
     }
 
     const liveSync = path.join(site, "data", "immowelt-sync-status.json");
-    if (fs.existsSync(stagedSync)) {
+    // Release layout: the status file is live state of the sync job (symlink out of the release),
+    // not content – it is rewritten by the next run and must not be replaced by an old copy.
+    const syncIsLiveState = (() => { try { return fs.lstatSync(liveSync).isSymbolicLink(); } catch { return false; } })();
+    if (fs.existsSync(stagedSync) && !syncIsLiveState) {
       fs.mkdirSync(path.dirname(liveSync), { recursive: true });
       const syncIncoming = `${liveSync}.__incoming_${process.pid}`;
       copyFileAtomic(stagedSync, syncIncoming);
       swapFile(liveSync, syncIncoming);
     }
 
-    const liveCfg =
+    let liveCfg =
       process.env.EICHMANN_ADMIN_CONFIG || path.join(site, "admin", "config.json");
+    // Release layout: admin/config.json is a symlink to the persistent file – restore the target, keep the link.
+    try { if (fs.lstatSync(liveCfg).isSymbolicLink()) liveCfg = fs.realpathSync(liveCfg); } catch { /* not there yet */ }
     if (fs.existsSync(stagedCfg)) {
       fs.mkdirSync(path.dirname(liveCfg), { recursive: true });
       const cfgIncoming = `${liveCfg}.__incoming_${process.pid}`;
@@ -699,7 +727,7 @@ export async function restoreSnapshot(id, { confirmPhrase, scheduleRestart = tru
       swapFile(liveCfg, cfgIncoming);
     }
 
-    const published = runPublishFromDb();
+    const published = runPublishFromDb({ lockToken: pipelineLock?.token || null });
 
     rmrf(stagingRoot);
 
@@ -719,6 +747,8 @@ export async function restoreSnapshot(id, { confirmPhrase, scheduleRestart = tru
   } catch (e) {
     rmrf(stagingRoot);
     throw e;
+  } finally {
+    pipelineLock?.release();
   }
 }
 

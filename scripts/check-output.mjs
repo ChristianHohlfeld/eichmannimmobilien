@@ -48,6 +48,22 @@ const allowed = allowedNumberSet(sot, rules);
 for (const lab of [dataAsOfLabel(sot, "de")]) lab.split(".").forEach((x) => allowed.add(x));
 const allWaivers = sot.listings.flatMap((l) => l.waivers ?? []);
 
+// Wortlaut aus der Immowelt-API erscheint auch außerhalb der SOURCE-TEXT-Blöcke (Titel in <h1>, Karten,
+// Meta, JSON-LD, ai/*.json). Er wird 1:1 übernommen; ein Regel-Treffer, der wörtlich aus diesem Wortlaut
+// stammt, ist deshalb ein Hinweis und kein Build-Fehler. Eigene Texte bleiben voll geprüft.
+let apiCorpus = "";
+try {
+  const imp = JSON.parse(readFileSync(path.join(root, "data", "listings.json"), "utf8"));
+  apiCorpus = (imp.listings || [])
+    .filter((L) => L.immowelt_api === true && L.active !== false)
+    .flatMap((L) => [L.title, L.type, L.location, L.price, ...(L.fact_rows || []).flatMap((r) => [r.label, r.value]), ...(L.sections || []).flatMap((s) => [s.title, s.text])])
+    .filter(Boolean)
+    .join("\n")
+    .toLowerCase();
+} catch { /* kein Export vorhanden: nichts auszunehmen */ }
+const sourceQuoted = [];
+const fromApiSource = (p) => p.hit && apiCorpus.includes(String(p.hit).toLowerCase());
+
 const problems = [];
 for (const file of files) {
   const rel = path.relative(root, file);
@@ -55,7 +71,7 @@ for (const file of files) {
   const page = pageByFile.get(rel);
   const skip = page?.rule_exempt || [];
   // Rohdatei → JSON-LD, Meta, alt-Texte, JSON/TXT sind abgedeckt
-  problems.push(...checkWording(raw, rules, { where: rel, waivers: allWaivers, today, skip }));
+  for (const p of checkWording(raw, rules, { where: rel, waivers: allWaivers, today, skip })) (fromApiSource(p) ? sourceQuoted : problems).push(p);
   if (/\.html$/.test(rel) && !rel.startsWith("partials/") && !/^(admin|mcp-static)\//.test(rel)) problems.push(...checkPage(readFileSync(file, "utf8"), rel)); // Claude R4 Code 3
   const isProjectPage = sot.projects.some((p) => Object.values(p.paths).includes(rel));
   if (isProjectPage) {
@@ -114,4 +130,5 @@ if (problems.length) {
   console.error(`\n${problems.length} Verstoß/Verstöße in der Ausgabe (${files.length} Dateien).${REPORT ? " (nur Bericht)" : " Kein Deploy."}`);
   process.exit(REPORT ? 0 : 1);
 }
+if (sourceQuoted.length) console.log(`Hinweis: ${sourceQuoted.length} Regel-Treffer stammen wörtlich aus Immowelt-Inseraten (unverändert übernommen).`);
 console.log(`✓ Ausgabe regelkonform (${files.length} Dateien, hreflang/Objektzahl/Datenstand konsistent)`);

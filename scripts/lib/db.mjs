@@ -70,12 +70,65 @@ export function migrate(db) {
     CREATE INDEX IF NOT EXISTS idx_listings_active ON listings(active);
   `);
 
-  const row = db.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get();
-  if (!row) {
-    db.prepare(
-      "INSERT INTO meta (key, value) VALUES ('schema_version', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
-    ).run("1");
+  // --- schema 2: Immowelt API identities, order, history (additive; safe on every open) ---
+  const cols = new Set(db.prepare("PRAGMA table_info(listings)").all().map((c) => c.name));
+  for (const [name, type] of [
+    ["immowelt_guid", "TEXT"], // API GUID, 32 hex upper-case (EstateProperty@guid)
+    ["immowelt_estate_id", "TEXT"], // numeric estate id (EstateProperty@id)
+    ["immowelt_online_id", "TEXT"], // online id as in immowelt.de/expose/<id>
+    ["position", "INTEGER"], // order delivered by the API
+    ["retired_at", "TEXT"], // set when the offer left the Immowelt inventory
+    ["content_hash", "TEXT"],
+  ]) {
+    if (!cols.has(name)) db.exec(`ALTER TABLE listings ADD COLUMN ${name} ${type}`);
   }
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_listings_iw_guid ON listings(immowelt_guid);
+    CREATE INDEX IF NOT EXISTS idx_listings_iw_online ON listings(immowelt_online_id);
+    CREATE INDEX IF NOT EXISTS idx_listings_iw_estate ON listings(immowelt_estate_id);
+
+    CREATE TABLE IF NOT EXISTS immowelt_runs (
+      run_id TEXT PRIMARY KEY,
+      started_at TEXT NOT NULL,
+      finished_at TEXT,
+      trigger TEXT,
+      outcome TEXT NOT NULL,
+      fingerprint TEXT,
+      total_count INTEGER,
+      error_code TEXT,
+      error_message TEXT,
+      release_id TEXT,
+      details TEXT
+    );
+    CREATE TABLE IF NOT EXISTS immowelt_snapshots (
+      fingerprint TEXT PRIMARY KEY,
+      first_seen_at TEXT NOT NULL,
+      last_seen_at TEXT NOT NULL,
+      published_at TEXT,
+      total_count INTEGER NOT NULL,
+      document TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS listing_history (
+      seq INTEGER PRIMARY KEY AUTOINCREMENT,
+      at TEXT NOT NULL,
+      run_id TEXT,
+      listing_id TEXT NOT NULL,
+      change TEXT NOT NULL,
+      before TEXT,
+      after TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_history_listing ON listing_history(listing_id, seq);
+    CREATE TABLE IF NOT EXISTS listing_aliases (
+      alias TEXT PRIMARY KEY,
+      listing_id TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+  `);
+
+  db.prepare(
+    "INSERT INTO meta (key, value) VALUES ('schema_version', '2') ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+  ).run();
 }
 
 function nowIso() {
@@ -150,8 +203,11 @@ export function getListingBySlug(db, slug) {
 }
 
 export function listAllListings(db) {
+  // eigen first (as before), Immowelt offers in the order the API delivers them
   return db
-    .prepare("SELECT * FROM listings ORDER BY origin ASC, title COLLATE NOCASE ASC")
+    .prepare(
+      "SELECT * FROM listings ORDER BY origin ASC, (position IS NULL) ASC, position ASC, title COLLATE NOCASE ASC"
+    )
     .all()
     .map(rowToListing);
 }
@@ -332,11 +388,15 @@ export function exportListingsDocument(db, { profileUrl = null, scrapedAt = null
     db.prepare("SELECT value FROM meta WHERE key = 'immowelt_profile'").get()?.value ||
     null;
 
+  const meta = (key) => db.prepare("SELECT value FROM meta WHERE key = ?").get(key)?.value || null;
   return {
     sot: "sqlite",
     source: profile,
     immowelt_profile: profile,
     scraped_at: metaScraped,
+    // day (Europe/Berlin) of the last complete, validated read of the Immowelt inventory
+    immowelt_checked_date: meta("immowelt_checked_date"),
+    immowelt_fingerprint: meta("immowelt_fingerprint"),
     listing_count: listings.length,
     active_listing_count: listings.filter((L) => L.active !== false && L.site_hidden !== true).length,
     listings,

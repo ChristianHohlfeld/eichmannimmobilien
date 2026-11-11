@@ -2,11 +2,10 @@
   "name": "eichmannimmobilien",
   "private": true,
   "type": "module",
-  "description": "Static site for Immobilien Eichmann – Immowelt listings sync",
+  "description": "Static site for Immobilien Eichmann – listings from the official Immowelt API (one-way), atomic releases",
   "scripts": {
-    "sync-immowelt": "node scripts/sync-immowelt.mjs",
+    "sync-immowelt": "node scripts/immowelt-sync.mjs run",
     "sync-immowelt:render": "node scripts/sync-immowelt.mjs --render-only",
-    "sync-immowelt:seed": "node scripts/sync-immowelt.mjs --from-json ../eichmann-logo/listings.json",
     "test:logo": "node scripts/test-logo-consistency.mjs",
     "test:layout": "node scripts/test-layout-regression.mjs",
     "build:share": "node scripts/build-share-card.mjs",
@@ -24,7 +23,6 @@
     "test:immowelt-reason": "node scripts/test-immowelt-public-reason.mjs",
     "admin-api": "node scripts/admin-api.mjs",
     "test:immowelt-secrets": "node scripts/test-immowelt-secrets.mjs",
-    "test:immowelt-api": "node scripts/test-immowelt-official-api.mjs",
     "test:admin-password": "node scripts/test-admin-password.mjs",
     "ai:index": "node scripts/build-ai-index.mjs",
     "test:ai-index": "node scripts/test-ai-index.mjs",
@@ -37,12 +35,18 @@
     "build:en": "node scripts/build-en-pages.mjs",
     "test:claude-final": "node scripts/test-claude-final.mjs",
     "test:full-review": "node scripts/test-full-review-fixes.mjs",
-    "verify:mirror": "node scripts/verify-listings-mirror.mjs",
     "build": "node scripts/build.mjs",
     "sot:validate": "node scripts/validate-sot.mjs",
     "sot:check": "node scripts/check-output.mjs",
     "sot": "node scripts/sot-cli.mjs",
-    "test:sot": "node --test test/"
+    "test:sot": "node --test test/*.test.mjs",
+    "immowelt:status": "node scripts/immowelt-sync.mjs status",
+    "immowelt:probe": "node scripts/immowelt-sync.mjs probe",
+    "release": "node scripts/release.mjs",
+    "test:immowelt": "node --test test/immowelt-api.test.mjs test/immowelt-pipeline.test.mjs",
+    "verify:screens": "node scripts/verify/capture-screens.mjs",
+    "verify:inventory": "node scripts/verify/inventory-report.mjs",
+    "verify:review": "node scripts/verify/build-review.mjs"
   },
   "engines": {
     "node": ">=20"

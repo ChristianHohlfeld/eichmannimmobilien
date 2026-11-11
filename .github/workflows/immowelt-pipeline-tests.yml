@@ -1,0 +1,54 @@
+name: Immowelt pipeline tests
+
+# Replaces "Immowelt Official API" (sync-immowelt.yml). That workflow checked that a WSDL was
+# reachable, ran a mirror comparison with continue-on-error and re-rendered old data – it was
+# green for weeks while nothing was imported. This one has no network dependency and makes no
+# claim about freshness: it tests the importer against fixtures in the shape of the real API
+# (GeoID, 32-char GUID, item XML, picture variants, paging, failures, atomic release, rollback).
+# Freshness of the live site is the job of immowelt-watchdog.yml.
+
+on:
+  pull_request: {}
+  push:
+    branches: [main]
+    paths:
+      - "scripts/**"
+      - "test/**"
+      - "test-support/**"
+      - "data/sot/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/immowelt-pipeline-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: immowelt-pipeline-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: API parser, gate, identity (fixtures in the real response shape)
+        run: node --test test/immowelt-api.test.mjs
+      - name: End to end – fetch → SQLite → release → switch, failure cases, rollback (real image processing)
+        run: node --test test/immowelt-pipeline.test.mjs
+      - name: Visual check tooling – complete page inventory, review page (no browser needed)
+        run: node --test test/verify-review.test.mjs
+      - name: Build from the working tree (rules, output checks)
+        run: node scripts/build.mjs
+      - name: Legal baseline
+        run: node scripts/test-legal-baseline.mjs
+      - name: Own listings survive every sync
+        run: node scripts/test-eigen-survives-sync.mjs

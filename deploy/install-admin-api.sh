@@ -44,11 +44,24 @@ fi
 mkdir -p /var/lib/eichmann
 chmod 755 /var/lib/eichmann
 
-# Upload gallery lives on the droplet (not in git). Keep across rsync --delete.
-mkdir -p "$SITE/media/eigen"
-chown -R www-data:www-data "$SITE/media"
-chmod 775 "$SITE/media" "$SITE/media/eigen"
-chmod g+s "$SITE/media" "$SITE/media/eigen" || true
+# Upload gallery lives on the droplet (not in git). In the release layout "$SITE/media" is a symlink to
+# /var/lib/eichmann/media (shared by all releases) – resolve it, so that ownership is set on the real
+# directory. Immowelt pictures (media/immowelt, written by the sync) are left alone.
+fix_media_owner() {
+  local media
+  media="$(readlink -f "$SITE/media" 2>/dev/null || true)"
+  [ -n "$media" ] || media="$SITE/media"
+  mkdir -p "$media/eigen"
+  chown www-data:www-data "$media" || true
+  for dir in "$media"/*/; do
+    [ -d "$dir" ] || continue
+    [ "$(basename "$dir")" = "immowelt" ] && continue
+    chown -R www-data:www-data "$dir" || true
+  done
+  chmod 775 "$media" "$media/eigen"
+  chmod g+s "$media" "$media/eigen" || true
+}
+fix_media_owner
 
 
 # App-Sicherungen: Ordner + Cron (alle 12h, 14 Stände)
@@ -92,8 +105,7 @@ systemctl is-active eichmann-admin-api.service
 if [ -f "$NGINX_SITE" ]; then
   python3 "$APP/deploy/patch-nginx-admin-api.py"
 fi
-mkdir -p "$SITE/media/eigen"
-chown -R www-data:www-data "$SITE/media" || true
+fix_media_owner
 
 nginx -t
 systemctl reload nginx

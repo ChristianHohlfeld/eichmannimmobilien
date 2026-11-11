@@ -1,0 +1,51 @@
+name: Immowelt sync watchdog
+
+# Independent of the server: reads the public status of the live site every 30 minutes and
+# fails (→ GitHub notifies the repository owner) when
+#   - the last complete Immowelt read is older than the limit (job not running, API down, key revoked …)
+#   - the last run failed / waits for the identity migration / is on hold
+#   - the site does not serve the release, offer count or data date the sync reports
+#   - an offer page does not answer
+# Replaces data-age.yml (weekly, 14 days, read a file in the repository instead of the live site).
+#
+# Switched on with the repository variable IMMOWELT_WATCHDOG_ENABLED=true (Settings → Variables),
+# so merging this file sends nothing by itself. Manual runs always work.
+
+on:
+  schedule:
+    - cron: "11,41 * * * *"
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Basis-URL"
+        default: "https://immobilieneichmann.de"
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: immowelt-watchdog
+  cancel-in-progress: true
+
+jobs:
+  check:
+    if: github.event_name == 'workflow_dispatch' || vars.IMMOWELT_WATCHDOG_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check live status and site
+        env:
+          BASE_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.url || 'https://immobilieneichmann.de' }}
+        run: node scripts/watchdog-check.mjs --url "$BASE_URL"
+      - name: Keep this schedule alive (GitHub pauses schedules in public repos after 60 days without activity)
+        if: always() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method PUT "repos/${{ github.repository }}/actions/workflows/immowelt-watchdog.yml/enable" || true

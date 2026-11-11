@@ -39,11 +39,19 @@ for (const l of sot.listings) {
 
 // Exposé-Wortlaut (data/listings.json, vom Importer) so prüfen, wie er gerendert wird.
 // Projektname-Regel gilt nur für Allmannsdorf (andere Neubauten heißen bei Immowelt „Neubauprojekt …“).
+// Inserate aus der Immowelt-API werden 1:1 übernommen: Regel-Treffer in ihrem Wortlaut werden GEMELDET,
+// brechen den Build aber nicht ab und ändern nichts am Text – korrigiert wird auf Immowelt.
+const sourceHits = [];
 try {
   const imp = JSON.parse(readFileSync(path.join(sot.root, "data", "listings.json"), "utf8"));
   for (const L of imp.listings || []) {
     const lay = sot.listings.find((l) => l.id === String(L.immowelt_id || L.id));
     if (!lay || lay.status !== "active") continue;
+    if (L.immowelt_api === true) {
+      const texts = [["title", L.title], ...(L.sections || []).map((s) => [`section.${s.id || s.title}`, s.text]), ...(L.fact_rows || []).map((r) => [`fact.${r.label}`, r.value])];
+      for (const [key, text] of texts) sourceHits.push(...checkWording(text || "", rules, { where: `immowelt.${L.immowelt_online_id}.${key}`, today, skip: ["project_name"] }));
+      continue;
+    }
     for (const key of ["description", "location_description", "additional_information"]) {
       const text = stripProjectStatus(L[key] || "");
       problems.push(...checkWording(text, rules, { where: `listings.${lay.slug}.source_text.${key}`, waivers: lay.waivers, today, skip: ["project_name"] }));
@@ -67,4 +75,9 @@ if (problems.length) {
   console.error(`\n${problems.length} Verstoß/Verstöße. Build abgebrochen.`);
   process.exit(1);
 }
+if (sourceHits.length) {
+  console.log(`Hinweis: ${sourceHits.length} Regel-Treffer im Immowelt-Wortlaut (wird unverändert übernommen, Korrektur nur auf Immowelt):`);
+  for (const p of sourceHits.slice(0, 40)) console.log(`  · ${p.where} [${p.rule}] „${p.hit}“`);
+}
+console.log(`IMMOWELT_RULE_HITS=${sourceHits.length}`);
 console.log(`✓ SSOT gültig · Hash ${sot.hash} · ${sot.activeListings.length} aktive Objekte · Datenstand ${sot.dataAsOf}`);

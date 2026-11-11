@@ -35,12 +35,18 @@ export function listingEn(L) {
   const src = `${L.title || ""} ${L.type || ""}`;
   const typ = /dreifamil/i.test(src) ? "three-family house" : /maisonette/i.test(src) ? "maisonette" : /penthouse/i.test(String(L.title || "")) ? "penthouse" : /haus/i.test(String(L.type || "")) ? "house" : "apartment";
   const isHouse = /house/.test(typ);
-  const rooms = deNum(f["Anzahl Zimmer"] ?? L.rooms);
-  const area = deNum(L.living_area);
-  const plot = deNum(L.plot_area);
-  const price = deNum(f["Kaufpreis"] ?? L.price);
-  const district = (String(L.location || "").split(",")[0] || "").trim();
-  const place = district && district !== "Konstanz" ? `Konstanz-${district}` : "Konstanz";
+  // Inserate aus der Immowelt-API bringen Zahlen und Vermarktungsart strukturiert mit (kein Parsen von Anzeigetexten).
+  const api = L.immowelt_api === true;
+  const rent = api ? L.marketing === "miete" : /miete/i.test(String(L.status || ""));
+  const onRequest = api && L.price_on_request === true;
+  const rooms = api ? L.rooms_value ?? null : deNum(f["Anzahl Zimmer"] ?? L.rooms);
+  const area = api ? L.living_area_value ?? null : deNum(L.living_area);
+  const plot = api ? L.plot_area_value ?? null : deNum(L.plot_area);
+  const price = api ? (onRequest ? null : L.price_eur ?? null) : deNum(f["Kaufpreis"] ?? L.price);
+  const rentLabel = /warm/i.test(String(L.price_label || "")) ? "Rent per month incl. service charges (Warmmiete)" : /kalt/i.test(String(L.price_label || "")) ? "Basic rent per month (Kaltmiete)" : "Rent per month";
+  const cityName = api ? String(L.city || "Konstanz") : "Konstanz";
+  const district = api ? String(L.district || "").trim() : (String(L.location || "").split(",")[0] || "").trim();
+  const place = district && district !== cityName ? `${cityName}-${district}` : cityName;
   const postal = String(f["PLZ"] || (String(L.location || "").match(/\((\d{5})\)/) || [])[1] || "");
   const ref = L.reference_number || f["Referenznummer"] || "";
   const core = typ === "three-family house" || !rooms ? typ[0].toUpperCase() + typ.slice(1) : `${num.format(rooms)}-room ${typ}`;
@@ -48,41 +54,55 @@ export function listingEn(L) {
   let title = `${name} | Eichmann`;
   if (title.length > 60) title = name;
   if (title.length > 60) title = `${ref ? ref + ": " : ""}${core}, Konstanz`;
-  const provDe = String(f["Käuferprovision"] || "").trim();
-  const commission = /provisionsfrei/i.test(provDe) ? "commission-free" : /provisionspflichtig/i.test(provDe) ? "buyer's commission applies" : "commission on request";
+  const provDe = String((api ? (L.fact_rows || []).find((r) => /provision|courtage/i.test(String(r.label || "")))?.value : f["Käuferprovision"]) || "").trim();
+  const commission = rent ? "for rent" : /provisionsfrei/i.test(provDe) ? "commission-free" : /provisionspflichtig/i.test(provDe) ? "buyer's commission applies" : "commission on request";
   const commissionFact = /provisionsfrei/i.test(provDe) ? "None (commission-free)" : /provisionspflichtig/i.test(provDe) ? "Applies – see exposé" : "On request";
-  const parts = [area ? `${num.format(area)} m²` : null, price ? eur(price) : null, commission].filter(Boolean).join(", ");
+  const priceText = price ? `${eur(price)}${rent ? " per month" : ""}` : onRequest ? "price on request" : null;
+  const parts = [area ? `${num.format(area)} m²` : null, priceText, commission].filter(Boolean).join(", ");
   let description = `${name}: ${parts}. Exposé and viewings: ${TEL_DISPLAY}.`;
   if (description.length > 160) description = `${name}: ${parts}. Call ${TEL_DISPLAY}.`;
   if (description.length > 160) description = `${name}: ${parts}.`;
   const facts = [
     ...(ref ? [["Reference", ref]] : []),
-    ...(price ? [["Purchase price", eur(price)]] : []),
+    ...(price ? [[rent ? rentLabel : "Purchase price", eur(price)]] : onRequest ? [[rent ? "Rent" : "Purchase price", "On request"]] : []),
     ...(rooms ? [["Rooms", `${num.format(rooms)} (German count: living rooms and bedrooms)`]] : []),
     ...(area ? [["Living area", `${num.format(area)} m²`]] : []),
     ...(plot ? [["Plot", `${num.format(plot)} m²`]] : []),
-    ["Location", `${district || "Konstanz"}, Konstanz${postal ? ` (${postal})` : ""}, Germany`],
+    ["Location", `${district ? `${district}, ` : api ? "" : "Konstanz, "}${cityName}${postal ? ` (${postal})` : ""}, Germany`],
     ["Property type", core],
     ...(CONDITION_EN[f["Zustand"]] ? [["Condition", CONDITION_EN[f["Zustand"]]]] : []),
     ...(f["Effizienzklasse"] && /^[A-H]\+?$/.test(f["Effizienzklasse"]) ? [["Energy efficiency class", f["Effizienzklasse"]]] : []),
     ...(/€/.test(f["Tiefgaragen Stellplatz (Kaufpreis)"] || "") ? [["Underground parking space (purchase price)", eur(deNum(f["Tiefgaragen Stellplatz (Kaufpreis)"]))]] : []),
-    ["Buyer's commission", commissionFact],
+    ...(rent ? [] : [["Buyer's commission", commissionFact]]),
   ];
-  return { slug: L.slug, name, title, description, facts, price, rooms, area, postal, district, isHouse, ref, commission,
+  if (title.length > 60) title = `${title.slice(0, 59).replace(/\s+\S*$/, "")}…`; // Immowelt values can be long; never fail the build on it
+  if (description.length > 160) description = `${description.slice(0, 159).replace(/\s+\S*$/, "")}…`;
+  return { slug: L.slug, name, title, description, facts, price, rent, onRequest, rooms, area, postal, district, city: cityName, api, isHouse, ref, commission,
     titleDe: L.title || L.slug, de: `${ORIGIN}${dePath(L)}`, en: enUrl(L.slug), dataAsOf: L.verified_at || null };
 }
 
-/** Local listing images (same files as the German exposé). */
+/**
+ * Local listing images (same files as the German exposé). All paths are relative to the site root:
+ * "assets/listings/01-abcd1234.jpg" (scraper era) or "media/immowelt/ab/<sha256>-g.jpg" (API, content-addressed).
+ */
 export function listingImages(siteRoot, L, max = 12) {
   const base = L.image_base;
   if (!base) return { main: null, gallery: [], og: null };
+  if (String(base).includes("/")) {
+    const has = (rel) => existsSync(path.join(siteRoot, rel));
+    const gallery = [...new Set([base, ...(L.gallery_bases || [])].filter(Boolean))].map((b) => `${b}.jpg`).filter(has).slice(0, max);
+    const main = gallery[0] || null;
+    const og = has(`${base}-og.jpg`) ? `${base}-og.jpg` : main;
+    return { main, gallery, og, hasWebp: (f) => has(f.replace(/\.jpg$/, ".webp")) };
+  }
   const dir = path.join(siteRoot, "assets/listings");
   let files = [];
   try { files = readdirSync(dir); } catch { return { main: null, gallery: [], og: null }; }
+  const rel = (f) => `assets/listings/${f}`;
   const main = files.includes(`${base}.jpg`) ? `${base}.jpg` : null;
   const gallery = files.filter((f) => new RegExp(`^${base}-g\\d+\\.jpg$`).test(f)).sort().slice(0, max - 1);
   const og = files.includes(`${base}-og.jpg`) ? `${base}-og.jpg` : main;
-  return { main, gallery: [main, ...gallery].filter(Boolean), og, hasWebp: (f) => files.includes(f.replace(/\.jpg$/, ".webp")) };
+  return { main: main && rel(main), gallery: [main, ...gallery].filter(Boolean).map(rel), og: og && rel(og), hasWebp: (f) => files.includes(path.basename(f).replace(/\.jpg$/, ".webp")) };
 }
 
 export const hreflangHead = (dePathAbs, enPathAbs, indent = "  ") =>
@@ -99,7 +119,7 @@ export function renderEnListingHtml(m, img, { siblings = [], css = "", js = {} }
       {
         "@type": "RealEstateListing", "@id": `${m.en}#listing`, url: m.en, name: m.name, description: m.description, inLanguage: "en",
         ...(m.dataAsOf ? { dateModified: m.dataAsOf } : {}),
-        ...(img.gallery.length ? { image: img.gallery.slice(0, 6).map((f) => `${ORIGIN}/assets/listings/${f}`) } : {}),
+        ...(img.gallery.length ? { image: img.gallery.slice(0, 6).map((f) => `${ORIGIN}/${f}`) } : {}),
         provider: { "@id": `${ORIGIN}/#business` },
         translationOfWork: { "@id": m.de },
         about: {
@@ -108,7 +128,8 @@ export function renderEnListingHtml(m, img, { siblings = [], css = "", js = {} }
           ...(m.area ? { floorSize: { "@type": "QuantitativeValue", value: m.area, unitCode: "MTK" } } : {}),
           address: { "@type": "PostalAddress", addressLocality: "Konstanz", ...(m.postal ? { postalCode: m.postal } : {}), addressCountry: "DE" },
         },
-        ...(m.price ? { offers: { "@type": "Offer", price: String(m.price), priceCurrency: "EUR", url: m.en, offeredBy: { "@id": `${ORIGIN}/#business` } } } : {}),
+        ...(m.price ? { offers: { "@type": "Offer", price: String(m.price), priceCurrency: "EUR", url: m.en, offeredBy: { "@id": `${ORIGIN}/#business` },
+          ...(m.rent ? { businessFunction: "http://purl.org/goodrelations/v1#LeaseOut", priceSpecification: { "@type": "UnitPriceSpecification", price: String(m.price), priceCurrency: "EUR", unitCode: "MON" } } : {}) } } : {}),
       },
       {
         "@type": "BreadcrumbList", "@id": `${m.en}#breadcrumb`,
@@ -121,7 +142,7 @@ export function renderEnListingHtml(m, img, { siblings = [], css = "", js = {} }
     ],
   };
   const pic = (f, i) => `          <figure class="project-gallery-item">
-            <picture>${img.hasWebp?.(f) ? `<source srcset="../../assets/listings/${f.replace(/\.jpg$/, ".webp")}" type="image/webp">` : ""}<img src="../../assets/listings/${f}" alt="${esc(m.name)} – photo ${i + 1}" width="${i === 0 ? 520 : 300}" height="${i === 0 ? 390 : 225}"${i === 0 ? ' fetchpriority="high"' : ' loading="lazy"'} decoding="async"></picture>
+            <picture>${img.hasWebp?.(f) ? `<source srcset="../../${f.replace(/\.jpg$/, ".webp")}" type="image/webp">` : ""}<img src="../../${f}" alt="${esc(m.name)} – photo ${i + 1}" width="${i === 0 ? 520 : 300}" height="${i === 0 ? 390 : 225}"${i === 0 ? ' fetchpriority="high"' : ' loading="lazy"'} decoding="async"></picture>
           </figure>`;
   return `<!DOCTYPE html>
 <html lang="en">
@@ -140,7 +161,7 @@ ${hreflangHead(m.de, m.en)}
   <meta property="og:title" content="${esc(m.title)}">
   <meta property="og:description" content="${esc(m.description)}">
   <meta property="og:url" content="${m.en}">
-${img.og ? `  <meta property="og:image" content="${ORIGIN}/assets/listings/${img.og}">\n` : ""}  <meta name="twitter:card" content="summary_large_image">
+${img.og ? `  <meta property="og:image" content="${ORIGIN}/${img.og}">\n` : ""}  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="../../assets/logo.png?v=0" type="image/png">
   <link rel="apple-touch-icon" href="../../assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../../css/styles.css?v=0">
@@ -176,7 +197,7 @@ ${ld(jsonld)}
       <div class="container page-hero-inner">
         <p class="hero-links"><a href="/en/">Home</a> › <a href="/en/#listings">Properties</a></p>
         <h1>${esc(m.name)}</h1>
-        <p class="lead">${m.price ? `<strong class="nowrap">${esc(eur(m.price))}</strong> · ` : ""}${esc(m.district || "Konstanz")}, Konstanz${m.postal ? ` (${esc(m.postal)})` : ""} · ${esc(m.commission)}</p>
+        <p class="lead">${m.price ? `<strong class="nowrap">${esc(eur(m.price))}${m.rent ? " per month" : ""}</strong> · ` : m.onRequest ? "<strong>Price on request</strong> · " : ""}${esc(m.district ? `${m.district}, ` : m.api ? "" : "Konstanz, ")}${esc(m.city || "Konstanz")}${m.postal ? ` (${esc(m.postal)})` : ""} · ${esc(m.commission)}</p>
         <p class="expose-hero-meta">${m.dataAsOf ? `<span class="nowrap">Data as of: ${ddmmyyyy(m.dataAsOf)}</span> · ` : ""}<span class="nowrap">Prices in euros</span></p>
         <div class="hero-actions project-hero-actions">
           <a class="btn btn-accent expose-jump" href="#anfragen" data-location="expose_jump">Request exposé</a>
@@ -243,7 +264,7 @@ ${siblings.length ? `
       <div class="container narrow">
         <h2>More properties in Konstanz</h2>
         <ul class="check-list">
-${siblings.map((s) => `          <li><a href="${enPath(s.slug)}">${esc(s.name)}</a>${s.price ? ` – ${esc(eur(s.price))}` : ""}</li>`).join("\n")}
+${siblings.map((s) => `          <li><a href="${enPath(s.slug)}">${esc(s.name)}</a>${s.price ? ` – ${esc(eur(s.price))}${s.rent ? " per month (rent)" : ""}` : ""}</li>`).join("\n")}
         </ul>
         <p><a href="/en/buying-from-abroad.html">Buying property in Konstanz from abroad</a> · <a href="/en/buy-apartment-konstanz.html">Buy an apartment in Konstanz</a> · <a href="/en/real-estate-agent-konstanz.html">Real estate agent in Konstanz</a></p>
       </div>

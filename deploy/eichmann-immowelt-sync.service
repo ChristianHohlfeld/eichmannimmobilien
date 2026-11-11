@@ -1,0 +1,22 @@
+[Unit]
+Description=Immowelt -> Website (offizielle API, harte Einweg-Uebernahme, atomares Release)
+Documentation=file:/var/lib/eichmann/app/docs/IMMOWELT-SYNC.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/lib/eichmann/app
+Environment=NODE_ENV=production
+Environment=EICHMANN_DB_PATH=/var/lib/eichmann/listings.db
+# Optionale Einstellungen (keine Geheimnisse): z. B. IMMOWELT_ADDRESS_MODE, IMMOWELT_IMAGE_SIZE, EICHMANN_SMOKE_URL
+EnvironmentFile=-/var/lib/eichmann/sync.env
+ExecStart=/usr/bin/node /var/lib/eichmann/app/scripts/immowelt-sync.mjs run --trigger timer
+# Exit 0 = aktuell / unveraendert / Bestaetigung laeuft; alles andere laesst die Unit FEHLSCHLAGEN (sichtbar in systemctl --failed).
+TimeoutStartSec=900
+UMask=0022
+Nice=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
