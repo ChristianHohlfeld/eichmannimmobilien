@@ -61,8 +61,8 @@ async function syncProjektePageUnits({ siteRoot, units, dryRun }) {
         </div>
         <div class="project-units">
 ${units.map((u) => `          <article class="project-unit-card">
-            <div class="project-unit-head"><strong>${esc(u.title)}</strong></div>
-            <p>${esc(line(u))}</p><p class="project-unit-price">${esc(u.price || "")}</p>
+            <div class="project-unit-head"><strong>${esc(line(u))}</strong></div>
+            <p style="font-size:.9rem;line-height:1.35;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden" title="${esc(u.title)}">${esc(u.title)}</p><p class="project-unit-price">${esc(u.price || "")}</p>
             <a class="btn btn-primary btn-sm" href="${esc(u.local_url)}">Exposé</a>
           </article>`).join("\n")}
         </div>
