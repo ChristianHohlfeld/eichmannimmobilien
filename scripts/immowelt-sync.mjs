@@ -10,6 +10,7 @@
  *
  *   node scripts/immowelt-sync.mjs status                 status + verdict (exit 1 when stale or failed)
  *   node scripts/immowelt-sync.mjs probe                  read-only API contract check, prints structure only
+ *   node scripts/immowelt-sync.mjs diagnose [<guid> …]    read-only: list with/without IncludeIwObj, single offers by GUID
  *   node scripts/immowelt-sync.mjs identity-plan          which old rows map to which offers (evidence table)
  *   node scripts/immowelt-sync.mjs identity-apply --plan-hash <hash>
  *   node scripts/immowelt-sync.mjs hold --reason "…"            pause: nothing is published automatically (sync and admin saves wait)
@@ -34,6 +35,8 @@ import { readStatus, evaluateStatus } from "./lib/immowelt/status.mjs";
 import { getState, restoreImmoweltRows, pendingLegacyRows, reslugToCanonical } from "./lib/immowelt/store.mjs";
 import { acquireLock, LockBusyError } from "./lib/immowelt/lock.mjs";
 import { copyProcessor } from "./lib/immowelt/media.mjs";
+import { fetchInventory, fetchExpose } from "./lib/immowelt/soap.mjs";
+import { child as xmlChild, attributes as xmlAttributes } from "./lib/immowelt/xml.mjs";
 
 function parseArgs(argv) {
   const [cmd = "run", ...rest] = argv;
@@ -134,6 +137,40 @@ export async function main(argv = process.argv.slice(2)) {
     const verdict = evaluateStatus(status);
     console.log(JSON.stringify({ verdict, status }, null, 2));
     return verdict.ok ? 0 : 1;
+  }
+
+  if (cmd === "diagnose") {
+    // Read-only: compares what the API list delivers with and without "IncludeIwObj" and asks
+    // the API for single offers by their public GUID (e.g. offers that are visible on
+    // immowelt.de but missing in the list). Prints public ids and titles only.
+    const apiKey = (process.env.IMMOWELT_API_KEY || "").trim() || readImmoweltCredentials()?.api_key || "";
+    if (!apiKey) {
+      console.error("Kein API-Schlüssel (weder Secrets-Datei noch IMMOWELT_API_KEY).");
+      return 1;
+    }
+    const redact = (m) => String(m || "").split(apiKey).join("***");
+    const out = { lists: {}, guids: [] };
+    for (const includeIwObj of [true, false]) {
+      const name = `IncludeIwObj=${includeIwObj}`;
+      try {
+        const inv = await fetchInventory(apiKey, { geoId: config.geoIds?.[0] ?? 108, pageSize: config.pageSize, sort: config.listSort, includeIwObj });
+        out.lists[name] = { total: inv.totalCount, offers: inv.properties.map((p) => `${p.onlineId} ${p.guid}`) };
+      } catch (err) {
+        out.lists[name] = { error: `[${err.code || err.name}] ${redact(err.message)}` };
+      }
+    }
+    for (const guid of rest.filter((a) => /^[0-9a-f-]{36}$/i.test(a))) {
+      try {
+        const { expose } = await fetchExpose(apiKey, guid.toLowerCase());
+        const estate = xmlChild(expose, "estate");
+        const a = xmlAttributes(estate);
+        out.guids.push({ guid, ok: true, online_id: a.onlineid || a.onlineID || null, salestype: a.salestype || null, estate_attrs: Object.keys(a) });
+      } catch (err) {
+        out.guids.push({ guid, ok: false, error: `[${err.code || err.name}] ${redact(err.message)}` });
+      }
+    }
+    console.log(JSON.stringify(out, null, 2));
+    return 0;
   }
 
   if (cmd === "probe") {

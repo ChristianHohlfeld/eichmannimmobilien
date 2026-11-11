@@ -39,7 +39,7 @@ function xmlEscape(s) {
  * Element order follows the WSDL sequence (GeoID, parameter, ls, IncludeIwObj, CurrentPage,
  * PageSize, Intranet). Without GeoID the service answers Status=UnknownLocation.
  */
-export function buildListEnvelope(apiKey, { geoId = 108, page = 1, pageSize = 50, sort = "createdatedesc" } = {}) {
+export function buildListEnvelope(apiKey, { geoId = 108, page = 1, pageSize = 50, sort = "createdatedesc", includeIwObj = true } = {}) {
   const g = Number(geoId);
   const p = Number(page);
   const s = Number(pageSize);
@@ -57,7 +57,7 @@ export function buildListEnvelope(apiKey, { geoId = 108, page = 1, pageSize = 50
     <tns:GetListCustomerProjects>
       <tns:GeoID>${g}</tns:GeoID>
       <tns:ls>${sort}</tns:ls>
-      <tns:IncludeIwObj>true</tns:IncludeIwObj>
+      <tns:IncludeIwObj>${includeIwObj === false ? "false" : "true"}</tns:IncludeIwObj>
       <tns:CurrentPage>${p}</tns:CurrentPage>
       <tns:PageSize>${s}</tns:PageSize>
     </tns:GetListCustomerProjects>
@@ -278,7 +278,7 @@ export function parseExposeResponse(xml) {
  *     while we were reading → the whole inventory is re-read; it never yields a partial result.
  */
 export async function fetchInventory(apiKey, opts = {}) {
-  const { geoId = 108, pageSize = 50, sort = "createdatedesc", maxAttempts = 3, hardPageCap = 200, call = soapCall, soap = {}, onPage = null } = opts;
+  const { geoId = 108, pageSize = 50, sort = "createdatedesc", includeIwObj = true, maxAttempts = 3, hardPageCap = 200, call = soapCall, soap = {}, onPage = null } = opts;
   let lastErr = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -286,7 +286,7 @@ export async function fetchInventory(apiKey, opts = {}) {
       const byGuid = new Map();
       let total = null;
       for (let page = 1; page <= hardPageCap; page++) {
-        const xml = await call(ESTATE_SERVICE_URL, ACTION_LIST, buildListEnvelope(apiKey, { geoId, page, pageSize, sort }), soap);
+        const xml = await call(ESTATE_SERVICE_URL, ACTION_LIST, buildListEnvelope(apiKey, { geoId, page, pageSize, sort, includeIwObj }), soap);
         const parsed = parseListResponse(xml);
         pages.push({ page, xml, count: parsed.properties.length, totalCount: parsed.totalCount });
         if (onPage) onPage({ geoId, page, count: parsed.properties.length, totalCount: parsed.totalCount });

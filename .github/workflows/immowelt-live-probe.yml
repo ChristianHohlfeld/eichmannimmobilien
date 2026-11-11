@@ -9,6 +9,11 @@ name: Immowelt API probe (read-only)
 
 on:
   workflow_dispatch:
+    inputs:
+      guids:
+        description: "Optional: öffentliche Angebots-GUIDs (Leerzeichen-getrennt) – dann Diagnose statt Probe"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -29,6 +34,12 @@ jobs:
           IMMOWELT_API_KEY: ${{ secrets.IMMOWELT_API_KEY }}
           EICHMANN_STATE_DIR: ${{ runner.temp }}/eichmann
           EICHMANN_DB_PATH: ${{ runner.temp }}/eichmann/probe.db
+          GUIDS: ${{ inputs.guids }}
         run: |
           test -n "${IMMOWELT_API_KEY:-}" || { echo "Secret IMMOWELT_API_KEY fehlt."; exit 1; }
-          node scripts/immowelt-sync.mjs probe
+          if [ -n "${GUIDS:-}" ]; then
+            # shellcheck disable=SC2086
+            node scripts/immowelt-sync.mjs diagnose $(printf '%s' "$GUIDS" | tr -cd '0-9a-fA-F \-')
+          else
+            node scripts/immowelt-sync.mjs probe
+          fi
