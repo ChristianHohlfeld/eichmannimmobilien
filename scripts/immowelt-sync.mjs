@@ -36,7 +36,7 @@ import { getState, restoreImmoweltRows, pendingLegacyRows, reslugToCanonical } f
 import { acquireLock, LockBusyError } from "./lib/immowelt/lock.mjs";
 import { copyProcessor } from "./lib/immowelt/media.mjs";
 import { fetchInventory, fetchExpose, soapCall, parseListResponse, ESTATE_SERVICE_URL } from "./lib/immowelt/soap.mjs";
-import { child as xmlChild, attributes as xmlAttributes } from "./lib/immowelt/xml.mjs";
+import { child as xmlChild, attributes as xmlAttributes, elements as xmlElements, textContent as xmlText } from "./lib/immowelt/xml.mjs";
 
 function parseArgs(argv) {
   const [cmd = "run", ...rest] = argv;
@@ -218,6 +218,75 @@ export async function main(argv = process.argv.slice(2)) {
       } catch (err) {
         out.counts[`CustomerProject=${customerProject}`] = { error: `[${err.code || err.name}] ${redact(err.message)}` };
       }
+    }
+    // What distinguishes offers the list leaves out from offers it delivers? Compare everything the
+    // API says about them (list entry and exposé), group by group, and print only the differences.
+    try {
+      const norm = (g) => String(g).replace(/-/g, "").toUpperCase();
+      const full = await fetchInventory(apiKey, { geoId: 108, pageSize: config.pageSize, sort: config.listSort });
+      const own = await fetchInventory(apiKey, { geoId: 108, pageSize: config.pageSize, sort: config.listSort, includeIwObj: false });
+      const ownSet = new Set(own.properties.map((p) => norm(p.guid)));
+      const byGuidXml = await soapCall(ESTATE_SERVICE_URL, "http://immowelt.de/services/GetListByEstateGuids", envelope(`<tns:GetListByEstateGuids><tns:EstateGuids>${wanted.join(",")}</tns:EstateGuids></tns:GetListByEstateGuids>`), { ...config.soap, retries: 1 });
+      const missingProps = parseListResponse(byGuidXml).properties.filter((p) => !full.properties.some((q) => norm(q.guid) === norm(p.guid)));
+      const groups = {
+        fehlt_in_liste: missingProps,
+        in_liste_und_portal: full.properties.filter((p) => !ownSet.has(norm(p.guid))),
+        nur_homepage: full.properties.filter((p) => ownSet.has(norm(p.guid))),
+      };
+      const short = (v) => String(v ?? "").replace(/\s+/g, " ").trim();
+      const flatList = (p) => {
+        const m = {};
+        for (const [k, v] of Object.entries(p.attrs || {})) m[`liste@${k}`] = short(v);
+        for (const [k, f] of Object.entries(p.fields || {})) {
+          for (const e of [].concat(f)) {
+            if (short(e.text).length <= 60) m[`liste/${k}`] = short(e.text);
+            for (const [ak, av] of Object.entries(e.attrs || {})) m[`liste/${k}@${ak}`] = short(av);
+          }
+        }
+        return m;
+      };
+      const SKIP = new Set(["address", "images", "attachments"]);
+      const flatExpose = (node, prefix, m) => {
+        for (const [k, v] of Object.entries(xmlAttributes(node))) if (short(v).length <= 60) m[`${prefix}@${k}`] = short(v);
+        for (const c of xmlElements(node)) {
+          if (SKIP.has(c.lname)) { m[`${prefix}/${c.lname}`] = "(vorhanden)"; continue; }
+          const id = xmlAttributes(c).id;
+          const name = `${prefix}/${c.lname}${c.lname === "item" && id ? `#${id}` : ""}`;
+          const kids = xmlElements(c);
+          if (!kids.length) { const t = short(xmlText(c)); m[name] = t.length <= 60 ? t : "(Text)"; }
+          else if (c.lname === "item") { const d = short(xmlText(xmlChild(c, "description"))); m[name] = d.length <= 40 ? d : "(Text)"; }
+          else m[name] = "(vorhanden)";
+          if (c.lname !== "item") flatExpose(c, name, m);
+          else for (const [k, v] of Object.entries(xmlAttributes(c))) if (k !== "id" && short(v).length <= 60) m[`${name}@${k}`] = short(v);
+        }
+        return m;
+      };
+      const maps = {};
+      for (const [g, props] of Object.entries(groups)) {
+        maps[g] = [];
+        for (const p of props) {
+          const m = flatList(p);
+          try { flatExpose((await fetchExpose(apiKey, p.guid)).expose, "expose", m); } catch (err) { m["expose"] = `Fehler ${err.code || err.name}`; }
+          maps[g].push({ id: p.onlineId, m });
+        }
+      }
+      const NOISE = /guid|onlineid|@id$|liste@id|url|source|laengen|breiten|latitude|longitude|#(description|info\d|locationstreet|onlineid|arealiving|rooms|price|referencenumber)|preview|headline/i;
+      const keys = new Set(Object.values(maps).flatMap((arr) => arr.flatMap((x) => Object.keys(x.m))));
+      const diff = {};
+      for (const k of [...keys].sort()) {
+        const per = Object.fromEntries(Object.entries(maps).map(([g, arr]) => [g, arr.map((x) => (k in x.m ? x.m[k] : "—"))]));
+        const A = new Set(per.fehlt_in_liste), B = new Set(per.in_liste_und_portal);
+        const disjoint = ![...A].some((v) => B.has(v));
+        if (!disjoint || !A.size || !B.size) continue;
+        if (NOISE.test(k)) continue;
+        diff[k] = Object.fromEntries(Object.entries(per).map(([g, vals]) => [g, [...new Set(vals)].slice(0, 6)]));
+      }
+      out.unterschied = {
+        angebote: Object.fromEntries(Object.entries(maps).map(([g, arr]) => [g, arr.map((x) => `${x.id} angelegt ${x.m["liste@CreateDate"] || "?"} Intranet="${x.m["liste@Intranet"] ?? "?"}"`)])),
+        merkmale_die_fehlende_von_gelisteten_trennen: diff,
+      };
+    } catch (err) {
+      out.unterschied = { error: `[${err.code || err.name}] ${redact(err.message)}` };
     }
     console.log(JSON.stringify(out, null, 2));
     return 0;
