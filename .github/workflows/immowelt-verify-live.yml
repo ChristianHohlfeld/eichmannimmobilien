@@ -61,7 +61,7 @@ jobs:
           BASE_URL: ${{ inputs.url }}
         run: |
           set -euo pipefail
-          [[ "$BASE_URL" =~ ^https?://[A-Za-z0-9._:-]+/?$ ]] || { echo "url ungültig"; exit 1; }
+          [[ "$BASE_URL" =~ ^https?://[A-Za-z0-9._:-]+(/[A-Za-z0-9._/-]*)?$ ]] || { echo "url ungültig"; exit 1; }
           # check = an "after" picture taken at any time
           node scripts/verify/capture-screens.mjs --label "$([ "$LABEL" = before ] && echo before || echo after)" --base "$BASE_URL"
 

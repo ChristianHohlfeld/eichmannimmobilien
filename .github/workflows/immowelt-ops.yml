@@ -28,6 +28,8 @@ on:
           - timers-disable
           - admin-password-set
           - github-token-install
+          - vorher-on
+          - vorher-off
       plan_hash:
         description: "identity-apply: Hash aus dem geprüften Plan"
         required: false
@@ -93,6 +95,9 @@ jobs:
             rollback-release) node scripts/release.mjs rollback ;;
             timers-enable)    bash deploy/install-immowelt-sync.sh --enable ;;
             timers-disable)   bash deploy/install-immowelt-sync.sh --disable ;;
+            # the untouched pre-cutover webroot, temporarily reachable below /admin/sichtpruefung/_vorher/ for the "before" pictures
+            vorher-on)        OLD="$(ls -d /var/www/immobilieneichmann.de.pre-release-* | tail -1)"; test -d "$OLD"; mkdir -p /var/lib/eichmann/review; ln -sfn "$OLD" /var/lib/eichmann/review/_vorher; echo "verlinkt: $OLD" ;;
+            vorher-off)       rm -f /var/lib/eichmann/review/_vorher; echo "entfernt" ;;
             admin-password-set|github-token-install) echo "wird im nächsten Schritt gesetzt" ;;
             *) echo "unbekannte Aktion"; exit 2 ;;
           esac

@@ -36,9 +36,12 @@ export function normalizePagePath(href, fromUrl, base) {
     return null;
   }
   if (!/^https?:$/.test(url.protocol)) return null;
-  const baseOrigin = new URL(base).origin;
+  const baseUrl = new URL(base);
+  const baseOrigin = baseUrl.origin;
+  const basePath = baseUrl.pathname.replace(/\/+$/, ""); // a copy of the site served below a sub-path
   if (url.origin !== baseOrigin && !SITE_ORIGINS.includes(url.origin)) return null;
   let p = decodeURI(url.pathname).replace(/\/{2,}/g, "/");
+  if (basePath && url.origin === baseOrigin && (p === basePath || p.startsWith(`${basePath}/`))) p = p.slice(basePath.length) || "/";
   if (SKIP_PREFIXES.some((x) => p === x || p.startsWith(x.endsWith("/") ? x : `${x}/`) || p === x.replace(/\/$/, ""))) return null;
   if (/\/index\.html$/.test(p)) p = p.replace(/index\.html$/, "");
   if (p.endsWith("/") || /\.html$/.test(p)) return p || "/";

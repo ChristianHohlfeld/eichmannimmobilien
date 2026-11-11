@@ -64,7 +64,9 @@ const ask = (question) => new Promise((resolve) => {
 });
 
 /** Quiet page: no cookie layer over the content, no running animations. */
-const QUIET_CSS = '[id*="cookie" i],[class*="cookie" i],[id*="consent" i],[class*="consent" i],[id^="sp_message_container"],#usercentrics-root,#onetrust-consent-sdk,#didomi-host{display:none!important}*{animation:none!important;transition:none!important;scroll-behavior:auto!important}';
+// Never html/body: this site marks <body class="cookie-banner-open"> – hiding that would hide the whole page.
+const NOT_ROOT = ":not(html):not(body):not(main)";
+const QUIET_CSS = `[id*="cookie" i]${NOT_ROOT},[class*="cookie" i]${NOT_ROOT},[id*="consent" i]${NOT_ROOT},[class*="consent" i]${NOT_ROOT},[id^="sp_message_container"],#usercentrics-root,#onetrust-consent-sdk,#didomi-host{display:none!important}*{animation:none!important;transition:none!important;scroll-behavior:auto!important}`;
 async function quiet(context) {
   await context.addInitScript((css) => {
     const add = () => document.head && document.head.appendChild(Object.assign(document.createElement("style"), { textContent: css }));
@@ -141,6 +143,8 @@ async function captureSite() {
           }
           await settle(page);
           entry.title = await page.title();
+          const visible = await page.evaluate(() => (document.body ? document.body.getBoundingClientRect().height > 50 && document.body.innerText.trim().length > 50 : false));
+          if (!visible) throw Object.assign(new Error("blank"), { name: "LeereSeite" });
           Object.assign(entry, await shoot(page, vp, pageKey(p.path)));
         } catch (err) {
           entry.error = String(err?.name || "Fehler");
