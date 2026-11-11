@@ -60,10 +60,34 @@ export async function fetchSnapshot(apiKey, config, { fetchImpl = globalThis.fet
   const call = (url, action, envelope) => soapCall(url, action, envelope, soap);
   const inventories = [];
   for (const geoId of config.geoIds) {
-    inventories.push(await fetchInventory(apiKey, { geoId, pageSize: config.pageSize, sort: config.listSort, call }));
+    const full = await fetchInventory(apiKey, { geoId, pageSize: config.pageSize, sort: config.listSort, call });
+    if (config.includeHomepageOnly) {
+      inventories.push(full);
+      continue;
+    }
+    // The list also delivers offers that Immowelt releases for the customer's own homepage only
+    // ("Projekt extern"): they are NOT public on immowelt.de. The same list without IncludeIwObj
+    // names exactly those; they are left out so the website shows what the portal shows.
+    const own = await fetchInventory(apiKey, { geoId, pageSize: config.pageSize, sort: config.listSort, includeIwObj: false, call });
+    const ownGuids = new Set(own.properties.map((p) => p.guid));
+    const fullGuids = new Set(full.properties.map((p) => p.guid));
+    const stray = own.properties.filter((p) => !fullGuids.has(p.guid));
+    if (stray.length) {
+      throw new ImmoweltError("immowelt_list_unstable", `Homepage-Liste nennt ${stray.length} Angebot(e), die im Gesamtbestand fehlen (${stray.map((p) => p.onlineId).join(", ")}).`);
+    }
+    const kept = full.properties.filter((p) => !ownGuids.has(p.guid));
+    const excluded = full.properties.filter((p) => ownGuids.has(p.guid)).map((p) => p.onlineId);
+    if (excluded.length) log(`Immowelt: ${excluded.length} Angebot(e) nur für die eigene Homepage freigegeben, nicht auf immowelt.de – nicht übernommen (${excluded.join(", ")}).`);
+    inventories.push({ ...full, properties: kept, totalCount: full.totalCount - excluded.length, reportedFull: full.totalCount, homepageOnly: excluded, extraPages: own.pages });
   }
   const exposes = new Map();
-  const raw = { lists: inventories.flatMap((inv) => inv.pages.map((p) => ({ geo_id: inv.geoId, page: p.page, xml: p.xml }))), exposes: [] };
+  const raw = {
+    lists: inventories.flatMap((inv) => [
+      ...inv.pages.map((p) => ({ geo_id: inv.geoId, page: p.page, xml: p.xml })),
+      ...(inv.extraPages || []).map((p) => ({ geo_id: inv.geoId, page: p.page, xml: p.xml, kind: "homepage" })),
+    ]),
+    exposes: [],
+  };
   for (const inv of inventories) {
     for (const prop of inv.properties) {
       if (exposes.has(prop.guid)) continue;
@@ -90,7 +114,7 @@ async function archiveRaw(config, fingerprint, snapshot, raw) {
   if (fs.existsSync(path.join(dir, "snapshot.json.gz"))) return dir;
   await fsp.mkdir(dir, { recursive: true, mode: 0o750 });
   const gz = (name, text) => fsp.writeFile(path.join(dir, name), zlib.gzipSync(text), { mode: 0o640 });
-  for (const l of raw.lists) await gz(`list-geo${l.geo_id}-p${l.page}.xml.gz`, l.xml);
+  for (const l of raw.lists) await gz(`list${l.kind ? "-" + l.kind : ""}-geo${l.geo_id}-p${l.page}.xml.gz`, l.xml);
   for (const e of raw.exposes) await gz(`expose-${e.online_id}.xml.gz`, e.xml);
   await gz("snapshot.json.gz", JSON.stringify(snapshot, null, 1));
   return dir;

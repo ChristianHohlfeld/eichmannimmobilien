@@ -154,7 +154,7 @@ export async function main(argv = process.argv.slice(2)) {
       const name = `IncludeIwObj=${includeIwObj}`;
       try {
         const inv = await fetchInventory(apiKey, { geoId: config.geoIds?.[0] ?? 108, pageSize: config.pageSize, sort: config.listSort, includeIwObj });
-        out.lists[name] = { total: inv.totalCount, offers: inv.properties.map((p) => `${p.onlineId} ${p.guid}`) };
+        out.lists[name] = { total: inv.totalCount, offers: inv.properties.map((p) => `${p.onlineId} ${p.guid} ${JSON.stringify(p.attrs)}`) };
       } catch (err) {
         out.lists[name] = { error: `[${err.code || err.name}] ${redact(err.message)}` };
       }
@@ -164,7 +164,12 @@ export async function main(argv = process.argv.slice(2)) {
         const { expose } = await fetchExpose(apiKey, guid.toLowerCase());
         const estate = xmlChild(expose, "estate");
         const a = xmlAttributes(estate);
-        out.guids.push({ guid, ok: true, online_id: a.onlineid || a.onlineID || null, salestype: a.salestype || null, estate_attrs: Object.keys(a) });
+        const owner = xmlAttributes(xmlChild(expose, "address") || { attrs: {} });
+        out.guids.push({
+          guid, ok: true, online_id: a.onlineid || a.onlineID || null, salestype: a.salestype || null,
+          type: `${a["type-id"] ?? "?"} ${a["type-description"] ?? ""}`.trim(), category: `${a["category-id"] ?? "?"} ${a["category-description"] ?? ""}`.trim(),
+          owner_guid: owner.AdrGuid || owner.adrguid || null,
+        });
       } catch (err) {
         out.guids.push({ guid, ok: false, error: `[${err.code || err.name}] ${redact(err.message)}` });
       }
@@ -187,6 +192,7 @@ export async function main(argv = process.argv.slice(2)) {
         ok: verdict.ok,
         geo_ids: snapshot.geo_ids,
         reported_total_counts: snapshot.reported_total_counts,
+        homepage_only_excluded: snapshot.homepage_only_excluded,
         count: snapshot.listings.length,
         core_fingerprint: snapshotFingerprint(snapshot.listings).slice(0, 16),
         errors: verdict.errors,

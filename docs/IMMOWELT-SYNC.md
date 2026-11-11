@@ -77,6 +77,8 @@ Timer (:07 / :37)  →  node scripts/immowelt-sync.mjs run --trigger timer
  3  Nachholen         wurde der letzte Lauf zwischen Datenbank und Umschalten unterbrochen → Umschalten abschließen
  4  Schlüssel         /var/lib/eichmann/secrets/immowelt-api.json; fehlt → „awaiting_api_key“
  5  Bestand lesen     GetListCustomerProjects (GeoID 108), alle Seiten, bis TotalCount erreicht ist
+                      danach dieselbe Liste ohne IncludeIwObj: sie nennt die Angebote, die Immowelt nur für die
+                      eigene Homepage freigibt (auf immowelt.de nicht öffentlich) – diese werden ausgelassen
  6  Exposés lesen     GetEstateExposeByEstateGuid für JEDES Angebot
  7  Normalisieren     ein Datensatz je Angebot: Kennungen, Kauf/Miete, Preis, Fakten, Texte, Bilder
  8  Prüfen            vollständig und widerspruchsfrei? sonst Abbruch
@@ -140,6 +142,7 @@ Kennungen, Preis, Fakten, Abschnitts-Hashes, Bildliste).
 | Inhalt | Quelle in der API | Auf der Website |
 |---|---|---|
 | An / aus | Angebot steht in der vollständigen Liste (`TotalCount` bestätigt) | In der Liste = online. Nicht in der Liste = offline; der Datensatz bleibt als zurückgezogen in der Datenbank. Wieder an = dieselbe URL wie vorher. |
+| Nur Homepage | Angebot steht zusätzlich in der Liste ohne `IncludeIwObj` („Projekt extern“) | Wird nicht übernommen: Die Website zeigt, was auf immowelt.de öffentlich ist (Entscheidung seit 19.09.2026: Quelle ist das öffentliche Profil). Ausnahme nur mit `IMMOWELT_INCLUDE_HOMEPAGE_ONLY=true` in `sync.env`. Ist diese Liste nicht lesbar oder widersprüchlich, gilt der Lauf als fehlgeschlagen. |
 | Reihenfolge der Angebote | Reihenfolge der Liste (Sortierung `createdatedesc`) | Karten in dieser Reihenfolge, eigene Inserate davor |
 | Kennungen | `EstateProperty@id`, `@guid` (32 Hex-Zeichen), `@onlineID`; Liste und Exposé müssen übereinstimmen | intern und in `/ai/immowelt-snapshot.json`; die Objektseite trägt `data-online-id` |
 | Kauf / Miete | `Category@saleRentID` (Liste) und `estate@salestype` (Exposé): 1 = Kauf, 2 = Miete. Widerspruch oder unbekannter Wert = Fehler, keine Annahme | Faktzeile „Vermarktung“, Preiszeile, Zähltext („n Angebote (x Kauf, y Miete)“); sobald ein Mietangebot dabei ist, heißt die Überschrift „Aktuelle Angebote“ statt „Aktuelle Kaufangebote“. Mietangebote stehen nicht auf den Kauf-Themenseiten und zeigen keine Käuferprovision |

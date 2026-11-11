@@ -628,12 +628,21 @@ function listingDisplayTitle(listing) {
   return title || raw;
 }
 
+/** "A3 · <Titel>" – aber nicht doppelt, wenn der Immowelt-Titel schon mit der Referenz beginnt. */
+function withReference(ref, title) {
+  if (!ref) return title;
+  const t = String(title || "");
+  const r = String(ref);
+  if (t.toLowerCase().startsWith(r.toLowerCase()) && !/[0-9a-zäöüß]/i.test(t.charAt(r.length))) return t;
+  return r + " · " + t;
+}
+
 function renderCard(listing) {
   const badge = badgeFor(listing);
   const base = listing.image_base;
   const ref = listingReference(listing);
   const displayTitle = listingDisplayTitle(listing);
-  const accessibleTitle = ref ? ref + " · " + displayTitle : displayTitle;
+  const accessibleTitle = withReference(ref, displayTitle);
   const alt = `${accessibleTitle} – Immobilien Eichmann Konstanz`;
   const meta = [
     listing.rooms ? `<span>${escapeHtml(listing.rooms)}</span>` : "",
@@ -1005,7 +1014,7 @@ function renderExposeHtml(listing, ogShare = null) {
   const badge = badgeFor(listing);
   const ref = listingReference(listing);
   const title = listingDisplayTitle(listing);
-  const fullTitle = ref ? ref + " · " + title : title;
+  const fullTitle = withReference(ref, title);
   const pageTitle = shortPageTitle(listing, ref); // Claude R4 #18: ≤ 60 Zeichen
   const metaDesc = exposeMetaDescription(listing);
 
@@ -1197,7 +1206,7 @@ function renderExposeHtml(listing, ogShare = null) {
                   const r = listingReference(L);
                   const t = listingDisplayTitle(L);
                   const bits = [L.living_area, L.price].filter(Boolean).join(" · ");
-                  return `<li><a href="${p}${escapeHtml(L.local_url)}">${escapeHtml(r ? r + " · " + t : t)}</a>${bits ? ` <span>${escapeHtml(bits)}</span>` : ""}</li>`;
+                  return `<li><a href="${p}${escapeHtml(L.local_url)}">${escapeHtml(withReference(r, t))}</a>${bits ? ` <span>${escapeHtml(bits)}</span>` : ""}</li>`;
                 })
                 .join("\n              ")}
             </ul>
@@ -1213,7 +1222,7 @@ function renderExposeHtml(listing, ogShare = null) {
                   const r = listingReference(L);
                   const t = listingDisplayTitle(L);
                   const bits = [L.living_area, L.price].filter(Boolean).join(" · ");
-                  return `<li><a href="${p}${escapeHtml(L.local_url)}">${escapeHtml(r ? r + " · " + t : t)}</a>${bits ? ` <span>${escapeHtml(bits)}</span>` : ""}</li>`;
+                  return `<li><a href="${p}${escapeHtml(L.local_url)}">${escapeHtml(withReference(r, t))}</a>${bits ? ` <span>${escapeHtml(bits)}</span>` : ""}</li>`;
                 })
                 .join("\n              ")}
             </ul>
