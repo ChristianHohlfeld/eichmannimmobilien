@@ -52,7 +52,8 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      # The runner image already has the system libraries; a failing apt mirror must not stop the browser download.
+      - run: npx playwright install --with-deps chromium || npx playwright install chromium
 
       - name: Screenshots – complete page inventory (desktop + mobile, whole page)
         env:
