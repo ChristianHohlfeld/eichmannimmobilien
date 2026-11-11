@@ -1362,7 +1362,7 @@ ${JSON.stringify(breadcrumbSchema, null, 2).replace(/</g, "\\u003c").replace(/&/
     <section class="page-hero expose-hero">
       <div class="container">
         <p class="eyebrow"><a href="/#angebote">← Alle Angebote</a></p>
-        <h1 class="expose-title">${ref ? `<span class="expose-reference">${escapeHtml(ref)}</span><span class="sr-only"> · </span>` : ""}<span>${escapeHtml(title)}</span></h1>
+        <h1 class="expose-title">${ref && withReference(ref, title) !== title ? `<span class="expose-reference">${escapeHtml(ref)}</span><span class="sr-only"> · </span>` : ""}<span>${escapeHtml(title)}</span></h1>
         <p class="expose-hero-facts">${heroFactsHtml(listing)}</p>
         <p class="expose-hero-meta">${heroMetaHtml(listing)}</p>
         <p class="expose-hero-actions"><a class="btn btn-accent expose-jump" href="#anfragen" data-location="expose_jump">Exposé anfragen</a> <a class="btn btn-outline btn-call" href="tel:+491705225568" data-location="hero_number">Jetzt anrufen <span class="nowrap">0170 522 5568</span></a></p>

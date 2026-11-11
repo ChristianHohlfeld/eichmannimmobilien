@@ -35,7 +35,7 @@ import { readStatus, evaluateStatus } from "./lib/immowelt/status.mjs";
 import { getState, restoreImmoweltRows, pendingLegacyRows, reslugToCanonical } from "./lib/immowelt/store.mjs";
 import { acquireLock, LockBusyError } from "./lib/immowelt/lock.mjs";
 import { copyProcessor } from "./lib/immowelt/media.mjs";
-import { fetchInventory, fetchExpose } from "./lib/immowelt/soap.mjs";
+import { fetchInventory, fetchExpose, soapCall, parseListResponse, ESTATE_SERVICE_URL } from "./lib/immowelt/soap.mjs";
 import { child as xmlChild, attributes as xmlAttributes } from "./lib/immowelt/xml.mjs";
 
 function parseArgs(argv) {
@@ -172,6 +172,51 @@ export async function main(argv = process.argv.slice(2)) {
         });
       } catch (err) {
         out.guids.push({ guid, ok: false, error: `[${err.code || err.name}] ${redact(err.message)}` });
+      }
+    }
+    // Other read-only list methods of the same service (shapes from EstateService.asmx?WSDL), to find
+    // out which one delivers offers that are public on immowelt.de but missing in the list above.
+    const esc = (v) => String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const envelope = (body) => `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tns="http://immowelt.de/services"><soap:Header><tns:ListAuthenticationHeader><tns:ApiKey>${esc(apiKey)}</tns:ApiKey></tns:ListAuthenticationHeader></soap:Header><soap:Body>${body}</soap:Body></soap:Envelope>`;
+    const params = (pairs) => (pairs.length ? `<tns:parameter>${pairs.map(([k, v]) => `<tns:EstateParameter><tns:Key>${k}</tns:Key><tns:Value>${esc(v)}</tns:Value></tns:EstateParameter>`).join("")}</tns:parameter>` : "");
+    const customer = (pairs, { v2 = false } = {}) => `<tns:GetListCustomerProjects${v2 ? "V2" : ""}><tns:GeoID>108</tns:GeoID>${params(pairs)}<tns:ls>createdatedesc</tns:ls><tns:IncludeIwObj>true</tns:IncludeIwObj><tns:CurrentPage>1</tns:CurrentPage><tns:PageSize>100</tns:PageSize>${v2 ? "<tns:UseBigImage>true</tns:UseBigImage>" : ""}</tns:GetListCustomerProjects${v2 ? "V2" : ""}>`;
+    const plain = (geo, pairs = []) => `<tns:GetList><tns:GeoID>${geo}</tns:GeoID>${params(pairs)}<tns:CurrentPage>1</tns:CurrentPage><tns:PageSize>100</tns:PageSize></tns:GetList>`;
+    const allTypes = "1,2,3,4,5,6,7,8,10,11,12,13,15,16,17,19";
+    const wanted = rest.filter((a) => /^[0-9a-f-]{36}$/i.test(a)).map((g) => g.replace(/-/g, "").toUpperCase());
+    const variants = [
+      ["CustomerProjects EType=alle", "GetListCustomerProjects", customer([["EType", allTypes]])],
+      ["CustomerProjects EType=2 (Häuser)", "GetListCustomerProjects", customer([["EType", "2"]])],
+      ["CustomerProjects ECat=25 (Penthouse)", "GetListCustomerProjects", customer([["ECat", "25"]])],
+      ["CustomerProjects ESR=1,2", "GetListCustomerProjects", customer([["ESR", "1,2"]])],
+      ["CustomerProjectsV2 UseBigImage", "GetListCustomerProjectsV2", customer([], { v2: true })],
+      ["GetList GeoID=108", "GetList", plain("108")],
+      ["GetList GeoID=108 EType=alle", "GetList", plain("108", [["EType", allTypes]])],
+      ["GetList Konstanz EType=alle", "GetList", plain("10808335043", [["EType", allTypes]])],
+      ["GetListByEstateGuids", "GetListByEstateGuids", `<tns:GetListByEstateGuids><tns:EstateGuids>${wanted.join(",")}</tns:EstateGuids></tns:GetListByEstateGuids>`],
+    ];
+    out.variants = {};
+    for (const [name, op, body] of variants) {
+      try {
+        const xml = await soapCall(ESTATE_SERVICE_URL, `http://immowelt.de/services/${op}`, envelope(body), { ...config.soap, retries: 1 });
+        const parsed = parseListResponse(xml);
+        const ids = parsed.properties.map((p) => p.onlineId);
+        out.variants[name] = {
+          status: parsed.status, total: parsed.totalCount, on_page: ids.length,
+          ...(ids.length <= 30 ? { offers: ids } : {}),
+          wanted_found: parsed.properties.filter((p) => wanted.includes(p.guid.replace(/-/g, "").toUpperCase())).map((p) => p.onlineId),
+        };
+      } catch (err) {
+        out.variants[name] = { error: `[${err.code || err.name}] ${redact(err.message)}` };
+      }
+    }
+    out.counts = {};
+    for (const customerProject of [false, true]) {
+      try {
+        const xml = await soapCall(ESTATE_SERVICE_URL, "http://immowelt.de/services/GetCountEstateType", envelope(`<tns:GetCountEstateType><tns:StartGeoID>108</tns:StartGeoID><tns:CustomerProject>${customerProject}</tns:CustomerProject></tns:GetCountEstateType>`), { ...config.soap, retries: 1 });
+        out.counts[`CustomerProject=${customerProject}`] = redact(xml.replace(/^[\s\S]*?<soap:Body>/i, "").replace(/<\/soap:Body>[\s\S]*$/i, "").replace(/\s+/g, " ").slice(0, 1500));
+      } catch (err) {
+        out.counts[`CustomerProject=${customerProject}`] = { error: `[${err.code || err.name}] ${redact(err.message)}` };
       }
     }
     console.log(JSON.stringify(out, null, 2));
