@@ -203,7 +203,7 @@ export async function main(argv = process.argv.slice(2)) {
         const ids = parsed.properties.map((p) => p.onlineId);
         out.variants[name] = {
           status: parsed.status, total: parsed.totalCount, on_page: ids.length,
-          ...(ids.length <= 30 ? { offers: ids } : {}),
+          ...(ids.length <= 30 ? { offers: ids, geo: parsed.properties.map((p) => `${p.onlineId}: GeoID="${p.attrs.GeoID ?? "—"}" ${p.attrs.GeoDescription ?? ""}`) } : {}),
           wanted_found: parsed.properties.filter((p) => wanted.includes(p.guid.replace(/-/g, "").toUpperCase())).map((p) => p.onlineId),
         };
       } catch (err) {
