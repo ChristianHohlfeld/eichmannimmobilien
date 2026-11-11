@@ -48,38 +48,24 @@ async function syncProjektePageUnits({ siteRoot, units, dryRun }) {
   const wanted = units.map((u) => u.local_url).sort();
   // scraper-era rows: keep the block while its links are right; Immowelt offers: always rebuilt (no second price source)
   if (!units.some((u) => u.immowelt_api === true) && JSON.stringify(linked) === JSON.stringify(wanted)) return;
-  const line = (u) => [u.rooms, u.living_area].filter(Boolean).join(" · ");
-  // Cards are built from Immowelt's structured fields (rooms, type, area, floor, first photo) – not from the
-  // free-text headline, which is written for the portal and far too long for a card.
-  const unit = (u) => /^\s*([A-Z]\d{1,2})\b/.exec(u.title || "")?.[1] || "";
-  const kind = (u) => String(u.type || "Wohnung").split(/\s+/)[0];
-  const roomsNo = (u) => (u.rooms_value != null ? String(u.rooms_value).replace(".", ",") : "");
-  const head = (u) => (roomsNo(u) ? `${roomsNo(u)}-Zimmer-${kind(u)}` : kind(u));
-  const floor = (u) => (u.fact_rows || []).find((r) => /stockwerk|etage|geschoss/i.test(`${r.id} ${r.label}`))?.value || "";
-  const sub = (u) => [u.living_area, floor(u)].filter(Boolean).join(" · ");
-  const photo = (u) => (u.image_base ? `<a href="${esc(u.local_url)}" aria-label="Exposé öffnen"><img src="${esc(u.image_base)}.jpg" alt="" loading="lazy" width="800" height="600" style="display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:10px;margin-bottom:12px"></a>` : "");
+  // Immowelt offers: no second list of the same flats on this page (they are in the offer grid right below) –
+  // one line that leads to the project page. Scraper-era rows keep the old block until the cutover.
   const block = units.length
     ? `    <section class="section project-inventory-section" id="sunside-haus-a">
       <div class="container">
         <div class="section-head project-inventory-head">
           <div>
             <p class="eyebrow">Sunside Living · Konstanz-Wollmatingen</p>
-            <h2>Verfügbare Wohnungen</h2>
+            <h2>${units.length} ${units.length === 1 ? "Wohnung" : "Wohnungen"} verfügbar</h2>
+            <p>Neubau-Eigentumswohnungen – alle Einheiten mit Preis und Exposé in der Liste unten.</p>
           </div>
-          <p class="project-inventory-note"><a href="${SUNSIDE_PAGE}">Zum Projekt</a></p>
-        </div>
-        <div class="project-units">
-${units.map((u) => `          <article class="project-unit-card">
-            ${photo(u)}
-            <div class="project-unit-head"><strong>${esc(head(u))}</strong>${unit(u) ? `<span class="project-unit-status is-free">${esc(unit(u))}</span>` : ""}</div>
-            <p>${esc(sub(u))}</p><p class="project-unit-price">${esc(u.price || "")}</p>
-            <a class="btn btn-primary btn-sm" href="${esc(u.local_url)}">Exposé</a>
-          </article>`).join("\n")}
+          <p class="project-inventory-note"><a class="btn btn-primary btn-sm" href="${SUNSIDE_PAGE}">Zum Projekt Sunside Living</a></p>
         </div>
       </div>
     </section>
 `
     : "";
+  if (block === m[0]) return;
   if (!dryRun) await writeFile(file, html.replace(m[0], block), "utf8");
 }
 
