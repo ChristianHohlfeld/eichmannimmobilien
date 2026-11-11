@@ -57,7 +57,7 @@ async function syncProjektePageUnits({ siteRoot, units, dryRun }) {
   const head = (u) => (roomsNo(u) ? `${roomsNo(u)}-Zimmer-${kind(u)}` : kind(u));
   const floor = (u) => (u.fact_rows || []).find((r) => /stockwerk|etage|geschoss/i.test(`${r.id} ${r.label}`))?.value || "";
   const sub = (u) => [u.living_area, floor(u)].filter(Boolean).join(" · ");
-  const photo = (u) => (u.image_base ? `<img src="${esc(u.image_base)}.jpg" alt="" loading="lazy" width="800" height="600" style="display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:10px;margin-bottom:12px">` : "");
+  const photo = (u) => (u.image_base ? `<a href="${esc(u.local_url)}" aria-label="Exposé öffnen"><img src="${esc(u.image_base)}.jpg" alt="" loading="lazy" width="800" height="600" style="display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:10px;margin-bottom:12px"></a>` : "");
   const block = units.length
     ? `    <section class="section project-inventory-section" id="sunside-haus-a">
       <div class="container">
