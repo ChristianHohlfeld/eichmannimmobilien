@@ -163,6 +163,22 @@ function readImages(exposeNode) {
   return { images: out, duplicates, declared: childrenNamed(holder || {}, "image").length };
 }
 
+/** Structure of elements the importer does not map yet: names, attribute names, kind of text – no content. */
+function describeUnmapped(expose, names) {
+  const out = new Set();
+  const walk = (node, trail) => {
+    const kids = elements(node);
+    const here = `${trail}${node.lname}${Object.keys(attributes(node)).length ? `@${Object.keys(attributes(node)).sort().join(",")}` : ""}`;
+    if (!kids.length) {
+      const t = textContent(node).trim();
+      const kind = !t ? "leer" : /^https?:\/\//i.test(t) ? `url:${(() => { try { const u = new URL(t); return `${u.hostname}${(/\.[a-z0-9]{2,5}$/i.exec(u.pathname) || [""])[0]}`; } catch { return "?"; } })()}` : `text:${t.length}`;
+      out.add(`${here}[${kind}]`);
+    } else for (const k of kids) walk(k, `${here}>`);
+  };
+  for (const c of elements(expose)) if (names.includes(c.lname)) walk(c, "");
+  return [...out].slice(0, 40);
+}
+
 function sectionFromItem(it) {
   if (it.sub.length) {
     const parts = [];
@@ -357,7 +373,7 @@ export function normalizeListing(prop, expose, ctx) {
     gallery_bases: [],
     floor_plan_bases: [],
     extensions,
-    api_notes: { declared_images: declared, duplicate_image_assets: duplicates, unmapped_elements: unmapped, owner_guid_checked: Boolean(expectedOwnerGuid && ownerGuid) },
+    api_notes: { declared_images: declared, duplicate_image_assets: duplicates, unmapped_elements: unmapped, unmapped_outline: describeUnmapped(expose, unmapped), owner_guid_checked: Boolean(expectedOwnerGuid && ownerGuid) },
     active: true,
     detail_page: true,
     site_hidden: false,

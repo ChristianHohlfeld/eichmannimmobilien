@@ -161,7 +161,7 @@ export async function main(argv = process.argv.slice(2)) {
           pictures: L.media.length, photos: L.images.length, floorplans: L.floor_plans.length,
           sections: L.sections.map((s) => `${s.id || "?"}:${s.title} (${s.text.length} Zeichen)`),
           fact_ids: L.fact_rows.map((r) => r.id || r.label),
-          extensions: L.extensions, unmapped: L.api_notes.unmapped_elements,
+          extensions: L.extensions, unmapped: L.api_notes.unmapped_elements, unmapped_outline: L.api_notes.unmapped_outline,
         })),
       }, null, 2));
       return verdict.ok ? 0 : 1;
