@@ -600,38 +600,15 @@ test("Sperre: exklusiv, vererbbar an Kindprozesse, wird freigegeben", async () =
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
-test("Bestand: nur für die eigene Homepage freigegebene Angebote werden nicht übernommen", { skip }, async () => {
+test("Bestand: Angebote, die Immowelt nur für die eigene Homepage freigibt, gehören dazu", { skip }, async () => {
+  // Entscheidung (Chris, 11.11.2026): Solche Angebote werden bewusst in Immowelt gepflegt und nur auf der
+  // Website gezeigt. Der Abgleich übernimmt die vollständige Liste (IncludeIwObj=true) ohne Abzug.
   const { loadConfig } = await import("../scripts/lib/immowelt/config.mjs");
-  const { validateSnapshot } = await import("../scripts/lib/immowelt/validate.mjs");
-  const base = { EICHMANN_STATE_DIR: path.join(os.tmpdir(), "eichmann-none"), EICHMANN_SETTINGS_FILE: "/nonexistent", IMMOWELT_EXPOSE_DELAY_MS: "0" };
-  const opts = (state) => ({ fetchImpl: B.fakeImmowelt(state), sleepImpl: async () => {} });
-
-  // Lage vom 11.11.2026: 10 in der Liste, davon 2 nur für die Homepage (auf immowelt.de nicht öffentlich)
-  const state = { offers: B.realInventory(), homepageOnly: ["2ql2c52", "2gwzk5x"] };
-  const { snapshot } = await Pipeline.fetchSnapshot("k", loadConfig(base), opts(state));
+  const state = { offers: B.realInventory() };
+  const config = loadConfig({ EICHMANN_STATE_DIR: path.join(os.tmpdir(), "eichmann-none"), EICHMANN_SETTINGS_FILE: "/nonexistent", IMMOWELT_EXPOSE_DELAY_MS: "0" });
+  const { snapshot } = await Pipeline.fetchSnapshot("k", config, { fetchImpl: B.fakeImmowelt(state), sleepImpl: async () => {} });
   const ids = snapshot.listings.map((L) => L.immowelt_online_id);
-  assert.equal(ids.length, 8);
-  assert.ok(!ids.includes("2ql2c52") && !ids.includes("2gwzk5x"));
-  assert.deepEqual(snapshot.homepage_only_excluded.sort(), ["2gwzk5x", "2ql2c52"]);
-  assert.deepEqual(snapshot.reported_total_counts.map((r) => [r.total_count, r.api_total, r.homepage_only]), [[8, 10, 2]]);
-  assert.equal(validateSnapshot(snapshot).ok, true, "Vollständigkeit bleibt belegt");
-  assert.equal(state.calls.expose, 8, "kein Exposé-Abruf für ausgelassene Angebote");
-
-  // keine Homepage-Angebote → alles bleibt
-  const plain = { offers: B.realInventory() };
-  assert.equal((await Pipeline.fetchSnapshot("k", loadConfig(base), opts(plain))).snapshot.listings.length, 10);
-
-  // ausdrücklich gewünscht → alle 10
-  const all = { offers: B.realInventory(), homepageOnly: ["2ql2c52", "2gwzk5x"] };
-  const withOwn = await Pipeline.fetchSnapshot("k", loadConfig({ ...base, IMMOWELT_INCLUDE_HOMEPAGE_ONLY: "true" }), opts(all));
-  assert.equal(withOwn.snapshot.listings.length, 10);
-  assert.equal(all.calls.listHomepage || 0, 0);
-
-  // Homepage-Liste nicht lesbar → kein Bestand (nie „im Zweifel alles zeigen“)
-  const broken = { offers: B.realInventory(), hooks: { listHomepage: () => B.listEnvelope({ status: "Error", offers: [], totalCount: 0 }) } };
-  await assert.rejects(Pipeline.fetchSnapshot("k", loadConfig(base), opts(broken)), (err) => err.code === "immowelt_list_status");
-
-  // Homepage-Liste nennt ein Angebot, das im Gesamtbestand fehlt → widersprüchlich, kein Bestand
-  const stray = { offers: B.realInventory(), hooks: { listHomepage: () => B.listEnvelope({ offers: [B.offer("2xxxx11", {})], totalCount: 1 }) } };
-  await assert.rejects(Pipeline.fetchSnapshot("k", loadConfig(base), opts(stray)), (err) => err.code === "immowelt_list_unstable");
+  assert.equal(ids.length, 10);
+  assert.ok(ids.includes("2ql2c52") && ids.includes("2gwzk5x"), "Nur-Homepage-Angebote bleiben im Bestand");
+  assert.equal(state.calls.list, 1, "genau eine Listenabfrage, kein zweiter Abzug");
 });

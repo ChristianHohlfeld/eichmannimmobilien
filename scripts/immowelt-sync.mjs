@@ -237,7 +237,6 @@ export async function main(argv = process.argv.slice(2)) {
         ok: verdict.ok,
         geo_ids: snapshot.geo_ids,
         reported_total_counts: snapshot.reported_total_counts,
-        homepage_only_excluded: snapshot.homepage_only_excluded,
         count: snapshot.listings.length,
         core_fingerprint: snapshotFingerprint(snapshot.listings).slice(0, 16),
         errors: verdict.errors,
