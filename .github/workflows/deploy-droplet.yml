@@ -56,7 +56,7 @@ jobs:
     # Only code that is on main is ever deployed (a dispatch from another ref is ignored).
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     # Never cancel a deploy half-way: the server-side build holds the pipeline lock.
     concurrency:
       group: deploy-eichmann-droplet
@@ -111,7 +111,13 @@ jobs:
           [ -z "$SEEN" ] || [ "$SEEN" = "$SELF" ] || { echo "::error::Host-Schlüssel stimmen nicht überein – Abbruch."; exit 1; }
           case "${STATE}:${LAYOUT}" in
             release:*) ;;
-            legacy:install) echo "Einmalige Umstellung auf das Release-Layout wird in diesem Lauf durchgeführt." ;;
+            legacy:install)
+              echo "Einmalige Umstellung auf das Release-Layout wird in diesem Lauf durchgeführt – zuerst Server-Snapshot (DigitalOcean)."
+              # Same script the weekly cron runs on the server. No snapshot → no conversion, nothing changed.
+              ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "${DEPLOY_USER}@${DEPLOY_HOST}" \
+                'S=/var/lib/eichmann/bin/eichmann-do-snapshot.sh; [ -x "$S" ] || { echo "Snapshot-Skript fehlt: $S"; exit 1; }; timeout 1500 "$S" 2>&1 | tail -15; exit "${PIPESTATUS[0]}"' \
+                || { echo "::error title=Kein Server-Snapshot::Der DigitalOcean-Snapshot konnte nicht angelegt werden. Die Umstellung wurde NICHT begonnen."; exit 1; }
+              ;;
             legacy:*)
               echo "::error title=Einmalige Umstellung steht aus::Der Server hat noch das alte Layout. Dieser Lauf hat NICHTS am Server verändert. Erst sichern (DigitalOcean-Snapshot, App-Sicherung, Vorher-Screenshots), dann diesen Workflow über 'Run workflow' mit layout = install starten. Siehe docs/IMMOWELT-SYNC.md, Abschnitt Rollout."
               exit 1 ;;
