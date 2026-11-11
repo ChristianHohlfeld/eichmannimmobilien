@@ -47,6 +47,18 @@ export function formatEuro(n) {
   const cents = Math.abs(round2(n) % 1) > 0.004;
   return `${new Intl.NumberFormat("de-DE", { minimumFractionDigits: cents ? 2 : 0, maximumFractionDigits: 2 }).format(round2(n))} €`;
 }
+/**
+ * The API delivers some dates as machine timestamps ("2026-05-22T22:00:00.000Z"). Same value, shown
+ * as a calendar date in German time – nothing else is touched.
+ */
+export function displayValue(text) {
+  const t = String(text ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?$/.test(t)) return t;
+  const d = new Date(/(Z|[+-]\d{2}:?\d{2})$/.test(t) ? t : `${t}Z`);
+  if (Number.isNaN(d.getTime())) return t;
+  return new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", year: "numeric" }).format(d);
+}
+
 export function formatArea(n) {
   return `${new Intl.NumberFormat("de-DE", { maximumFractionDigits: 2 }).format(round2(n))} m²`;
 }
@@ -304,7 +316,7 @@ export function normalizeListing(prop, expose, ctx) {
       continue;
     }
     if (!flat) continue; // deliberately empty on Immowelt → not shown, nothing kept from earlier
-    factRows.push({ id: it.id || null, label: it.title || it.id || "Angabe", value: flat });
+    factRows.push({ id: it.id || null, label: it.title || it.id || "Angabe", value: displayValue(flat) });
   }
   if (priceOnRequest && !factRows.some((r) => ON_REQUEST_RE.test(r.value))) {
     factRows.splice(Math.min(3, factRows.length), 0, { id: "_price", label: marketing === "miete" ? "Miete" : "Kaufpreis", value: "auf Anfrage" });

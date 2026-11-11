@@ -308,3 +308,10 @@ test("Hilfsfunktionen: deutsche Zahlen und Preisformat", () => {
   assert.equal(typeof coreHash, "function");
   assert.ok(new ImmoweltError("x", "y") instanceof Error);
 });
+
+test("Zeitstempel der API werden als Datum gezeigt, alles andere bleibt wörtlich", async () => {
+  const { displayValue } = await import("../scripts/lib/immowelt/normalize.mjs");
+  assert.equal(displayValue("2026-05-22T22:00:00.000Z"), "23.05.2026", "deutsche Zeit, nicht UTC");
+  assert.equal(displayValue("2023-07-01T00:00:00Z"), "01.07.2023");
+  for (const v of ["Erstbezug", "ab sofort", "2024", "", "2026-13-45T00:00:00Z"]) assert.equal(displayValue(v), v);
+});
