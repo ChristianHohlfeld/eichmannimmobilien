@@ -49,6 +49,8 @@ async function syncProjektePageUnits({ siteRoot, units, dryRun }) {
   // scraper-era rows: keep the block while its links are right; Immowelt offers: always rebuilt (no second price source)
   if (!units.some((u) => u.immowelt_api === true) && JSON.stringify(linked) === JSON.stringify(wanted)) return;
   const line = (u) => [u.rooms, u.living_area].filter(Boolean).join(" · ");
+  // card head as before: the unit name when Immowelt's headline starts with one ("A2 …"), otherwise the type
+  const head = (u) => /^\s*([A-Z]\d{1,2})\b/.exec(u.title || "")?.[1] || u.type || "Wohnung";
   const block = units.length
     ? `    <section class="section project-inventory-section" id="sunside-haus-a">
       <div class="container">
@@ -61,8 +63,8 @@ async function syncProjektePageUnits({ siteRoot, units, dryRun }) {
         </div>
         <div class="project-units">
 ${units.map((u) => `          <article class="project-unit-card">
-            <div class="project-unit-head"><strong>${esc(line(u))}</strong></div>
-            <p style="font-size:.9rem;line-height:1.35;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden" title="${esc(u.title)}">${esc(u.title)}</p><p class="project-unit-price">${esc(u.price || "")}</p>
+            <div class="project-unit-head"><strong>${esc(head(u))}</strong></div>
+            <p>${esc(line(u))}</p><p class="project-unit-price">${esc(u.price || "")}</p>
             <a class="btn btn-primary btn-sm" href="${esc(u.local_url)}">Exposé</a>
           </article>`).join("\n")}
         </div>
