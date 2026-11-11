@@ -43,6 +43,29 @@ function uniqueSlug(db, wanted, ownId) {
 
 const json = (v) => (v == null ? null : JSON.stringify(v));
 
+/**
+ * One-time: give every published Immowelt offer the address derived from Immowelt itself
+ * (<objektart>-<ort>-<online-id>). The previous address is remembered and keeps redirecting.
+ */
+export function reslugToCanonical(db, { now = new Date().toISOString() } = {}) {
+  const tx = db.transaction(() => {
+    const changed = [];
+    for (const row of db.prepare("SELECT * FROM listings WHERE origin = ? AND immowelt_guid IS NOT NULL AND active = 1").all(ORIGIN_IMMOWELT)) {
+      const L = rowToListing(row);
+      if (!L.immowelt_online_id || String(row.slug).endsWith(`-${L.immowelt_online_id}`)) continue;
+      const slug = uniqueSlug(db, proposeSlug(L), row.id);
+      db.prepare("INSERT OR REPLACE INTO listing_aliases (alias, listing_id, kind, created_at) VALUES (?, ?, 'previous_slug', ?)").run(row.slug, row.id, now);
+      const previous = db.prepare("SELECT alias FROM listing_aliases WHERE listing_id = ? AND kind = 'previous_slug'").all(row.id).map((r) => r.alias);
+      const payload = { ...JSON.parse(row.payload), slug, local_url: `objekt/${slug}.html`, previous_slugs: previous };
+      db.prepare("UPDATE listings SET slug = ?, payload = ?, updated_at = ? WHERE id = ?").run(slug, JSON.stringify(payload), now, row.id);
+      history(db, { at: now, runId: null, id: row.id, change: "reslug", before: { slug: row.slug }, after: { slug } });
+      changed.push({ online_id: L.immowelt_online_id, from: row.slug, to: slug });
+    }
+    return changed;
+  });
+  return tx.immediate ? tx.immediate() : tx();
+}
+
 export function getState(db) {
   const parse = (key) => {
     const raw = getMeta(db, key);
@@ -174,8 +197,11 @@ export function applySnapshot(db, snapshot, ctx) {
         first_seen_at: prev?.first_seen_at || hit?.row.created_at || now,
         ...(Array.isArray(prev?.legacy_ids) && prev.legacy_ids.length ? { legacy_ids: prev.legacy_ids } : {}),
       };
-      const aliases = db.prepare("SELECT alias FROM listing_aliases WHERE listing_id = ?").all(id).map((r) => r.alias);
+      const aliasRows = db.prepare("SELECT alias, kind FROM listing_aliases WHERE listing_id = ?").all(id);
+      const aliases = aliasRows.filter((r) => r.kind !== "previous_slug").map((r) => r.alias);
       if (aliases.length) payload.legacy_ids = aliases;
+      const previousSlugs = aliasRows.filter((r) => r.kind === "previous_slug").map((r) => r.alias);
+      if (previousSlugs.length) payload.previous_slugs = previousSlugs; // old addresses keep redirecting
       touched.add(id);
 
       if (!hit) {

@@ -18,6 +18,7 @@ on:
           - identity-apply
           - run
           - history
+          - reslug
           - releases
           - hold
           - resume
@@ -81,6 +82,7 @@ jobs:
             identity-plan)    node scripts/immowelt-sync.mjs identity-plan ;;
             identity-apply)   test -n "$PLAN_HASH" || { echo "plan_hash fehlt"; exit 1; }; node scripts/immowelt-sync.mjs identity-apply --plan-hash "$PLAN_HASH" ;;
             run)              node scripts/immowelt-sync.mjs run --trigger manual --wait 300 ;;
+            reslug)           node scripts/immowelt-sync.mjs reslug ;;
             history)          node scripts/immowelt-sync.mjs history --limit 40 ;;
             releases)         node scripts/release.mjs list ;;
             hold)             node scripts/immowelt-sync.mjs hold --reason "${REASON:-ohne Angabe}" ;;

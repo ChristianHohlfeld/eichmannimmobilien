@@ -176,6 +176,18 @@ export async function buildRelease(config, { dbPath, doc, reason, commit = null,
     /* no mirror written by this build */
   }
 
+  // previous addresses of an offer redirect to its current one (static site: canonical + immediate refresh)
+  for (const L of doc.listings || []) {
+    if (L.active === false || L.site_hidden === true || L.detail_page === false) continue;
+    for (const old of Array.isArray(L.previous_slugs) ? L.previous_slugs : []) {
+      if (!/^[a-z0-9-]+$/.test(old) || old === L.slug) continue;
+      for (const [dir, target] of [["objekt", `https://immobilieneichmann.de/objekt/${L.slug}.html`], [path.join("en", "property"), `https://immobilieneichmann.de/en/property/${L.slug}.html`]]) {
+        if (!fs.existsSync(path.join(staging, dir, `${L.slug}.html`))) continue;
+        await fsp.writeFile(path.join(staging, dir, `${old}.html`), `<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Weiterleitung</title><meta name="robots" content="noindex"><link rel="canonical" href="${target}"><meta http-equiv="refresh" content="0; url=${target}"></head><body><p><a href="${target}">Dieses Angebot hat eine neue Adresse.</a></p></body></html>\n`);
+      }
+    }
+  }
+
   // strip build-only files, wire the persistent parts
   for (const name of BUILD_ONLY) await fsp.rm(path.join(staging, name), { recursive: true, force: true });
   await fsp.mkdir(path.dirname(config.statusFile), { recursive: true });

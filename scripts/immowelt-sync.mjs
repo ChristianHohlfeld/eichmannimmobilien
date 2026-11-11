@@ -31,7 +31,7 @@ import { runSync, fetchSnapshot, publishFromDatabase, planHash, setHold, clearHo
 import { validateSnapshot } from "./lib/immowelt/validate.mjs";
 import { snapshotFingerprint } from "./lib/immowelt/normalize.mjs";
 import { readStatus, evaluateStatus } from "./lib/immowelt/status.mjs";
-import { getState, restoreImmoweltRows, pendingLegacyRows } from "./lib/immowelt/store.mjs";
+import { getState, restoreImmoweltRows, pendingLegacyRows, reslugToCanonical } from "./lib/immowelt/store.mjs";
 import { acquireLock, LockBusyError } from "./lib/immowelt/lock.mjs";
 import { copyProcessor } from "./lib/immowelt/media.mjs";
 
@@ -221,6 +221,42 @@ export async function main(argv = process.argv.slice(2)) {
       return 0;
     } catch (err) {
       console.error(`Rollback fehlgeschlagen [${err.code || err.name}] ${err.message}`);
+      return 1;
+    } finally {
+      db.close();
+      lock.release();
+    }
+  }
+
+  if (cmd === "reslug") {
+    // One-time: Immowelt-derived addresses for all published offers; the old addresses redirect.
+    let lock;
+    try {
+      lock = await acquireLock(config.lockDir, { purpose: "reslug", waitMs: 300_000, staleMinutes: config.lockStaleMinutes });
+    } catch (err) {
+      if (err instanceof LockBusyError) {
+        console.error(err.message);
+        return 75;
+      }
+      throw err;
+    }
+    const db = openDb(config.dbPath);
+    try {
+      const copyPath = path.join(config.backupsDir, `listings-before-reslug-${Date.now()}.db`);
+      fs.mkdirSync(config.backupsDir, { recursive: true });
+      db.exec(`VACUUM INTO '${copyPath.replace(/'/g, "''")}'`);
+      const changed = reslugToCanonical(db);
+      for (const c of changed) console.log(`${c.online_id}: objekt/${c.from}.html → objekt/${c.to}.html`);
+      if (!changed.length) {
+        console.log("Alle Adressen sind bereits aus Immowelt abgeleitet.");
+        return 0;
+      }
+      const rel = await publishFromDatabase(config, { db, reason: "reslug", lockToken: lock.token, log: (m) => console.log(m) });
+      console.log(`Ergebnis: ${changed.length} Adresse(n) umgestellt, alte leiten weiter · Release ${rel.id}`);
+      return 0;
+    } catch (err) {
+      console.error(`Umstellung der Adressen fehlgeschlagen [${err.code || err.name}] ${err.message}`);
+      if (err.problems) for (const p of err.problems.slice(0, 20)) console.error(`  · ${p}`);
       return 1;
     } finally {
       db.close();

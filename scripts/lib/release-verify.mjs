@@ -96,7 +96,14 @@ export function verifyRelease(dir, doc, { releaseId = null } = {}) {
   for (const [folder, label] of [["objekt", "Objektseite"], ["en/property", "EN-Objektseite"]]) {
     const have = new Set(listDir(folder, /\.html$/).map((f) => f.replace(/\.html$/, "")));
     for (const s of wantSlugs) if (!have.has(s)) bad(`${label} fehlt: ${folder}/${s}.html`);
-    for (const s of have) if (!wantSlugs.has(s)) bad(`${label} eines nicht mehr veröffentlichten Angebots: ${folder}/${s}.html`);
+    for (const s of have) {
+      if (wantSlugs.has(s)) continue;
+      // a previous address of a published offer may exist – as a redirect to exactly that offer
+      const owner = detail.find((L) => Array.isArray(L.previous_slugs) && L.previous_slugs.includes(s));
+      const stub = owner ? read(`${folder}/${s}.html`) || "" : "";
+      if (owner && stub.length < 1200 && stub.includes(`/${folder}/${owner.slug}.html">`) && /http-equiv="refresh"/.test(stub)) continue;
+      bad(`${label} eines nicht mehr veröffentlichten Angebots: ${folder}/${s}.html`);
+    }
   }
 
   // no page of the release may still link an offer that is not published (e.g. a block that was not re-rendered)
