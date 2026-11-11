@@ -315,3 +315,12 @@ test("Zeitstempel der API werden als Datum gezeigt, alles andere bleibt wörtlic
   assert.equal(displayValue("2023-07-01T00:00:00Z"), "01.07.2023");
   for (const v of ["Erstbezug", "ab sofort", "2024", "", "2026-13-45T00:00:00Z"]) assert.equal(displayValue(v), v);
 });
+
+test("Bezug: vergangenes Datum = „ab sofort“ (wie Immowelt und wie vor dem API-Umbau), künftiges bleibt Datum", async () => {
+  const { availabilityValue } = await import("../scripts/lib/immowelt/normalize.mjs");
+  const now = new Date("2026-11-11T21:00:00Z");
+  assert.equal(availabilityValue("2026-09-17T00:00:00Z", now), "ab sofort");
+  assert.equal(availabilityValue("2023-07-01T00:00:00Z", now), "ab sofort");
+  assert.equal(availabilityValue("2027-03-01T00:00:00Z", now), "01.03.2027");
+  assert.equal(availabilityValue("Erstbezug", now), "Erstbezug");
+});

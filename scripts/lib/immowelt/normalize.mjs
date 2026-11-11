@@ -59,6 +59,18 @@ export function displayValue(text) {
   return new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", year: "numeric" }).format(d);
 }
 
+/**
+ * Availability ("Bezugsfrei"): Immowelt stores a date and shows "frei ab sofort" once that date has
+ * passed – the website did the same before the API switch. A future date stays a date.
+ */
+export function availabilityValue(text, now = new Date()) {
+  const t = String(text ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(t)) return t;
+  const d = new Date(/(Z|[+-]\d{2}:?\d{2})$/.test(t) ? t : `${t}Z`);
+  if (Number.isNaN(d.getTime())) return t;
+  return d.getTime() <= now.getTime() ? "ab sofort" : displayValue(t);
+}
+
 export function formatArea(n) {
   return `${new Intl.NumberFormat("de-DE", { maximumFractionDigits: 2 }).format(round2(n))} m²`;
 }
@@ -316,7 +328,7 @@ export function normalizeListing(prop, expose, ctx) {
       continue;
     }
     if (!flat) continue; // deliberately empty on Immowelt → not shown, nothing kept from earlier
-    factRows.push({ id: it.id || null, label: it.title || it.id || "Angabe", value: displayValue(flat) });
+    factRows.push({ id: it.id || null, label: it.title || it.id || "Angabe", value: /^bezugsfrei$/i.test(it.id || "") ? availabilityValue(flat) : displayValue(flat) });
   }
   if (priceOnRequest && !factRows.some((r) => ON_REQUEST_RE.test(r.value))) {
     factRows.splice(Math.min(3, factRows.length), 0, { id: "_price", label: marketing === "miete" ? "Miete" : "Kaufpreis", value: "auf Anfrage" });
