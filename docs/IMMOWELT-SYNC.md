@@ -12,6 +12,18 @@ Wächter ist an (aus: Variable `IMMOWELT_WATCHDOG_ENABLED=false`). Abweichend vo
 - Dem Inserat beigefügte Dokumente (API-Element `attachments`) werden übernommen und als „Dokumente“ verlinkt.
 - Auf `projekte.html` stehen die Sunside-Wohnungen nur noch einmal (Raster); oben verweist eine Zeile auf das Projekt.
 - „Preis auf Anfrage“ ergibt sich nur aus dem Hauptpreis; Daten zurückgezogener Angebote stehen in keiner Datei des Release.
+- **Bestand am Abend des 11.11.2026: 11 Angebote** – dieselben elf wie vor dem API-Umbau und wie im öffentlichen
+  Immowelt-Profil. Drei davon (Online-IDs 2sw6g58, 2pj3j5e, 2nyac5n) stehen in keiner Liste der API, weil ihnen in
+  Immowelts Daten die Orts-ID fehlt (`GeoID` leer); sie werden per Kennung geholt
+  (`data/sot/immowelt-extra-guids.json`, siehe Abschnitt 3 „Einzelabruf“). Nachfrage dazu an Immowelt gesendet am
+  11.11.2026, 23:00 (Antwort offen). Ein NEUES Inserat ohne Orts-ID erscheint nicht von selbst.
+- Zwei Angebote, die Immowelt nur für die eigene Homepage freigibt (Miete Königsbau 2ql2c52, DG-Wohnung 2gwzk5x),
+  sind vorläufig ausgeblendet, bis Helmut entscheidet (siehe Abschnitt 3 „Nur Homepage“).
+- Die API liefert für 2sw6g58 und 2nyac5n keinen Stellplatzpreis (auf immowelt.de: 18.000 € / 15.000 €); er fehlt
+  deshalb auf der Website. Teil der Nachfrage an Immowelt.
+- „Bezug“ mit vergangenem Datum erscheint als „ab sofort“ (wie auf immowelt.de); Zeitstempel der API werden als Datum gezeigt.
+- Nur-Lese-Diagnose für Abweichungen zwischen API und Portal: Workflow „Immowelt API probe“ mit Eingabe `guids`
+  (`immowelt-sync.mjs diagnose <guid> …`).
 
 **Grundsatz:** Immowelt ist die einzige Quelle aller Angebotsdaten. Die Website zeigt genau das, was die
 Immowelt-API vollständig liefert – nichts wird lokal korrigiert, ergänzt, umbenannt oder zurückgehalten.
