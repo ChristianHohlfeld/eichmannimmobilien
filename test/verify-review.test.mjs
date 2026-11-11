@@ -114,9 +114,9 @@ test("Sichtprüfung: je Seite drei Bilder – Vorher (dt-1) · Nachher (dt) · I
   const b9s = section("2zbf747");
   assert.equal((b9s.match(/class="tri vp-desktop"/g) || []).length, 1);
   assert.match(b9s, /Vorher \(dt‑1\)[\s\S]*Nachher \(dt\)[\s\S]*Immowelt \(dt\) · öffentliche Seite/);
-  assert.match(b9s, /src="\.\.\/screens\/before\/desktop\/_objekt_wohnung_wollmatingen_7bff84e7_html\.jpg"/);
+  assert.match(b9s, /src="\.\.\/screens\/before\/desktop\/_objekt_wohnung_wollmatingen_7bff84e7_html\.jpg\?v=b9-alt"/);
   assert.match(b9s, /src="\.\.\/screens\/after\/desktop\//);
-  assert.match(b9s, /src="\.\.\/screens\/immowelt\/desktop\/2zbf747-1\.jpg"[\s\S]*src="\.\.\/screens\/immowelt\/desktop\/2zbf747-2\.jpg"/, "lange Seiten: alle Teile untereinander");
+  assert.match(b9s, /src="\.\.\/screens\/immowelt\/desktop\/2zbf747-1\.jpg\?v=iw"[\s\S]*src="\.\.\/screens\/immowelt\/desktop\/2zbf747-2\.jpg\?v=iw"/, "lange Seiten: alle Teile untereinander");
   assert.match(b9s, /Adresse unverändert/);
   assert.match(b9s, /Datenvergleich ✓/);
   assert.match(b9s, /chip geändert/);
@@ -126,11 +126,11 @@ test("Sichtprüfung: je Seite drei Bilder – Vorher (dt-1) · Nachher (dt) · I
   assert.match(dg, /neue Adresse/);
   assert.match(dg, /nicht vorhanden/);
   assert.match(dg, /Immowelt \(dt\) · API-Referenz[^<]*öffentliche Seite nicht aufgenommen/);
-  assert.match(dg, /src="\.\.\/screens\/immowelt-api\/desktop\/2gwzk5x\.jpg"/);
+  assert.match(dg, /src="\.\.\/screens\/immowelt-api\/desktop\/2gwzk5x\.jpg\?v=api"/);
   assert.match(dg, /Datenvergleich ✗ 1/);
   assert.match(dg, /Galerie: Seite 11 Bilder, veröffentlicht 12/);
   // englische Fassung bekommt dieselbe Immowelt-Referenz
-  assert.match(section("/en/property/wohnung-konstanz-2gwzk5x.html"), /Online-ID <b>2gwzk5x<\/b> \(englische Fassung\)[\s\S]*immowelt-api\/desktop\/2gwzk5x\.jpg/);
+  assert.match(section("/en/property/wohnung-konstanz-2gwzk5x.html"), /Online-ID <b>2gwzk5x<\/b> \(englische Fassung\)[\s\S]*immowelt-api\/desktop\/2gwzk5x\.jpg\?v=api/);
   // entfallene Seite, eigenes Inserat, unveränderte und nur in der Darstellung abweichende Seite
   assert.match(section("mehrfamilienhaus-wollmatingen-32a8908e"), /chip entfällt[\s\S]*src="\.\.\/screens\/before\/desktop\//);
   assert.match(section("eigen-testobjekt"), /ohne Immowelt-Kennung/);

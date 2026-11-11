@@ -187,7 +187,9 @@ export function buildReviewHtml({ before = null, after = null, immowelt = null, 
     if (shot.blocked) return `<div class="missing">nicht aufgenommen: ${esc(shot.blocked)}</div>`;
     const files = shot.files || (shot.file ? [shot.file] : []);
     if (!files.length) return '<div class="missing">keine Aufnahme</div>';
-    return `<a class="shot" href="${esc(dir + files[0])}" target="_blank" rel="noopener">${files.map((f) => `<img loading="lazy" src="${esc(dir + f)}" alt="">`).join("")}</a>${files.length > 1 ? `<div class="parts">${files.map((f, i) => `<a href="${esc(dir + f)}" target="_blank" rel="noopener">Teil ${i + 1}</a>`).join(" · ")}</div>` : ""}`;
+    // pictures keep their file names from run to run and are cached for days – the hash makes every new picture a new address
+    const v = shot.sha256 ? `?v=${String(shot.sha256).slice(0, 10)}` : "";
+    return `<a class="shot" href="${esc(dir + files[0] + v)}" target="_blank" rel="noopener">${files.map((f) => `<img loading="lazy" src="${esc(dir + f + v)}" alt="">`).join("")}</a>${files.length > 1 ? `<div class="parts">${files.map((f, i) => `<a href="${esc(dir + f + v)}" target="_blank" rel="noopener">Teil ${i + 1}</a>`).join(" · ")}</div>` : ""}`;
   };
   const cell = (entry, vp, dir, caption) => `<div class="col"><div class="cap">${caption}</div>${imgs(entry?.shots?.[vp], dir)}</div>`;
   const state = (b, a, vp) => {
