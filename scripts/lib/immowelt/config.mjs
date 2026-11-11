@@ -23,7 +23,7 @@ export const DEFAULT_PROFILE_GUID = "3b18336c6a2e401da38e9cc20268270d";
  * The API key is deliberately not in this list: it is never read from the settings file.
  */
 export const SETTING_KEYS = new Set([
-  "IMMOWELT_GEO_IDS", "IMMOWELT_PAGE_SIZE", "IMMOWELT_LIST_SORT", "IMMOWELT_PROFILE_GUID",
+  "IMMOWELT_GEO_IDS", "IMMOWELT_PAGE_SIZE", "IMMOWELT_LIST_SORT", "IMMOWELT_PROFILE_GUID", "IMMOWELT_INCLUDE_HOMEPAGE_ONLY",
   "IMMOWELT_TIMEOUT_MS", "IMMOWELT_RETRIES", "IMMOWELT_BACKOFF_MS", "IMMOWELT_EXPOSE_DELAY_MS",
   "IMMOWELT_ADDRESS_MODE", "IMMOWELT_IMAGE_HOSTS", "IMMOWELT_IMAGE_SIZE", "IMMOWELT_IMAGE_REVALIDATE_HOURS",
   "IMMOWELT_IMAGE_TIMEOUT_MS", "IMMOWELT_IMAGE_MAX_BYTES", "IMMOWELT_IMAGE_CONCURRENCY",
@@ -89,6 +89,8 @@ export function loadConfig(processEnv = process.env) {
     geoIds: list(env.IMMOWELT_GEO_IDS, ["108"]).map(Number),
     pageSize: int(env.IMMOWELT_PAGE_SIZE, 50),
     listSort: env.IMMOWELT_LIST_SORT || "createdatedesc",
+    // Offers released for the own homepage only (not public on immowelt.de): hidden until decided; "true" shows them.
+    includeHomepageOnly: env.IMMOWELT_INCLUDE_HOMEPAGE_ONLY === "true",
     profileGuid: env.IMMOWELT_PROFILE_GUID === "" ? null : env.IMMOWELT_PROFILE_GUID || DEFAULT_PROFILE_GUID,
     soap: { timeoutMs: int(env.IMMOWELT_TIMEOUT_MS, 30_000), retries: int(env.IMMOWELT_RETRIES, 3), backoffMs: int(env.IMMOWELT_BACKOFF_MS, 1_500) },
     exposeDelayMs: int(env.IMMOWELT_EXPOSE_DELAY_MS, 250),

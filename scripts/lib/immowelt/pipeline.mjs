@@ -79,10 +79,34 @@ export async function fetchSnapshot(apiKey, config, { fetchImpl = globalThis.fet
   const call = (url, action, envelope) => soapCall(url, action, envelope, soap);
   const inventories = [];
   for (const geoId of config.geoIds) {
-    inventories.push(await fetchInventory(apiKey, { geoId, pageSize: config.pageSize, sort: config.listSort, call }));
+    const full = await fetchInventory(apiKey, { geoId, pageSize: config.pageSize, sort: config.listSort, call });
+    if (config.includeHomepageOnly) {
+      inventories.push(full);
+      continue;
+    }
+    // The list also delivers offers that Immowelt releases for the customer's own homepage only
+    // ("Projekt extern", not public on immowelt.de). The same list without IncludeIwObj names exactly
+    // those. They are hidden until it is decided that they belong on the website
+    // (IMMOWELT_INCLUDE_HOMEPAGE_ONLY=true shows them).
+    const own = await fetchInventory(apiKey, { geoId, pageSize: config.pageSize, sort: config.listSort, includeIwObj: false, call });
+    const ownGuids = new Set(own.properties.map((p) => p.guid));
+    const fullGuids = new Set(full.properties.map((p) => p.guid));
+    const stray = own.properties.filter((p) => !fullGuids.has(p.guid));
+    if (stray.length) {
+      throw new ImmoweltError("immowelt_list_unstable", `Homepage-Liste nennt ${stray.length} Angebot(e), die im Gesamtbestand fehlen (${stray.map((p) => p.onlineId).join(", ")}).`);
+    }
+    const excluded = full.properties.filter((p) => ownGuids.has(p.guid)).map((p) => p.onlineId);
+    if (excluded.length) log(`Immowelt: ${excluded.length} Angebot(e) nur für die eigene Homepage freigegeben – ausgeblendet (${excluded.join(", ")}).`);
+    inventories.push({ ...full, properties: full.properties.filter((p) => !ownGuids.has(p.guid)), totalCount: full.totalCount - excluded.length, apiTotal: full.totalCount, homepageOnly: excluded, extraPages: own.pages });
   }
   const exposes = new Map();
-  const raw = { lists: inventories.flatMap((inv) => inv.pages.map((p) => ({ geo_id: inv.geoId, page: p.page, xml: p.xml }))), exposes: [] };
+  const raw = {
+    lists: inventories.flatMap((inv) => [
+      ...inv.pages.map((p) => ({ geo_id: inv.geoId, page: p.page, xml: p.xml })),
+      ...(inv.extraPages || []).map((p) => ({ geo_id: `${inv.geoId}-homepage`, page: p.page, xml: p.xml })),
+    ]),
+    exposes: [],
+  };
 
   // Offers that are online on Immowelt but missing in every list of the API (no location id in
   // Immowelt's data) are named in data/sot/immowelt-extra-guids.json and fetched by their GUID.

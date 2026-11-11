@@ -203,6 +203,15 @@ export function fakeImmowelt(state) {
       if (!/<tns:GeoID>\d+<\/tns:GeoID>/.test(body)) return respond(listEnvelope({ status: "UnknownLocation", offers: [], totalCount: 0 }));
       const page = Number(/<tns:CurrentPage>(\d+)</.exec(body)?.[1] || 1);
       const pageSize = state.pageSizeOverride || Number(/<tns:PageSize>(\d+)</.exec(body)?.[1] || 50);
+      if (/<tns:IncludeIwObj>false</.test(body)) {
+        // second list: only offers released for the own homepage ("Projekt extern")
+        state.calls.list--;
+        state.calls.listHomepage = (state.calls.listHomepage || 0) + 1;
+        const hookedOwn = state.hooks?.listHomepage?.(page, state.calls.listHomepage);
+        if (hookedOwn) return hookedOwn instanceof Response ? hookedOwn : respond(hookedOwn);
+        const own = (state.homepageOnly || []).map((id) => state.offers.find((o) => o.onlineId === id || o.guid === id)).filter(Boolean);
+        return respond(listEnvelope({ offers: own.slice((page - 1) * pageSize, page * pageSize), totalCount: own.length, pageSize, page, status: own.length ? "OK" : "NoData" }));
+      }
       const hooked = state.hooks?.list?.(page, state.calls.list);
       if (hooked) return hooked instanceof Response ? hooked : respond(hooked);
       const offers = state.offers.slice((page - 1) * pageSize, page * pageSize);
