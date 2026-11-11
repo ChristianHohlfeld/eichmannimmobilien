@@ -8,5 +8,62 @@
     "verified_at": "JJJJ-MM-TT",
     "note": "woran die Gleichheit festgemacht wurde"
   },
-  "evidence": []
+  "evidence": [
+    {
+      "legacy_id": "c6b1d820-4e82-416d-95ad-22472a129955",
+      "online_id": "2ql2c52",
+      "verified_by": "Abgleich Alt-Datensatz ↔ API-Bestand 11.11.2026 (gleiches Objekt nach Bezeichnung, Preis, Fläche); nur für den Erhalt der Adresse",
+      "verified_at": "2026-11-11",
+      "note": "Königsbau, 1 Zimmer"
+    },
+    {
+      "legacy_id": "e7e58fe2-a93f-44f2-bc73-dabd3c7208b3",
+      "online_id": "2k57b5v",
+      "verified_by": "Abgleich Alt-Datensatz ↔ API-Bestand 11.11.2026 (gleiches Objekt nach Bezeichnung, Preis, Fläche); nur für den Erhalt der Adresse",
+      "verified_at": "2026-11-11",
+      "note": "3 Zimmer Wollmatingen, 330.000 €"
+    },
+    {
+      "legacy_id": "86a7d4f6-0118-45fa-addc-ef5fe9edf21d",
+      "online_id": "2ewd75c",
+      "verified_by": "Abgleich Alt-Datensatz ↔ API-Bestand 11.11.2026 (gleiches Objekt nach Bezeichnung, Preis, Fläche); nur für den Erhalt der Adresse",
+      "verified_at": "2026-11-11",
+      "note": "Petershausen, 735.000 €"
+    },
+    {
+      "legacy_id": "bb241b38-d292-4047-98fd-4352b841bc5a",
+      "online_id": "2geq25e",
+      "verified_by": "Abgleich Alt-Datensatz ↔ API-Bestand 11.11.2026 (gleiches Objekt nach Bezeichnung, Preis, Fläche); nur für den Erhalt der Adresse",
+      "verified_at": "2026-11-11",
+      "note": "Sunside A3, 361.500 €"
+    },
+    {
+      "legacy_id": "ff414db8-7e3d-4a01-99f8-029fe15a4d55",
+      "online_id": "2ggn25e",
+      "verified_by": "Abgleich Alt-Datensatz ↔ API-Bestand 11.11.2026 (gleiches Objekt nach Bezeichnung, Preis, Fläche); nur für den Erhalt der Adresse",
+      "verified_at": "2026-11-11",
+      "note": "Sunside A2, 363.700 €"
+    },
+    {
+      "legacy_id": "484fee8a-e3f0-4f06-8d26-d740c290b320",
+      "online_id": "2f42h56",
+      "verified_by": "Abgleich Alt-Datensatz ↔ API-Bestand 11.11.2026 (gleiches Objekt nach Bezeichnung, Preis, Fläche); nur für den Erhalt der Adresse",
+      "verified_at": "2026-11-11",
+      "note": "Sunside A12, 738.100 €"
+    },
+    {
+      "legacy_id": "4ac199b6-606e-470b-bb7e-d8646d47ea80",
+      "online_id": "2fayg56",
+      "verified_by": "Abgleich Alt-Datensatz ↔ API-Bestand 11.11.2026 (gleiches Objekt nach Bezeichnung, Preis, Fläche); nur für den Erhalt der Adresse",
+      "verified_at": "2026-11-11",
+      "note": "Sunside A9, 696.200 €"
+    },
+    {
+      "legacy_id": "4fed09f2-bcef-4e96-ba56-810037b569c0",
+      "online_id": "2fsjg56",
+      "verified_by": "Abgleich Alt-Datensatz ↔ API-Bestand 11.11.2026 (gleiches Objekt nach Bezeichnung, Preis, Fläche); nur für den Erhalt der Adresse",
+      "verified_at": "2026-11-11",
+      "note": "Sunside A5, 641.200 €"
+    }
+  ]
 }
