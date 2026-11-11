@@ -424,6 +424,34 @@ test("Immowelt → Website: Cutover, harte Übernahme, Fehlerfälle, Rollback", 
     assert.match(page(e, "2fsjg56"), /Fehlerhafter Stand/);
   });
 
+  await t.test("Dokumente des Inserats (Anhänge) werden übernommen, verlinkt und verschwinden mit dem Inserat-Anhang", async () => {
+    e.advance(30);
+    e.state.offers.find((x) => x.onlineId === "2k57b5v").documents = ["expose-a", "grundriss-b"];
+    assert.equal((await e.run()).outcome, "published");
+    const html = page(e, "2k57b5v");
+    const links = [...html.matchAll(/href="\.\.\/(media\/immowelt\/[0-9a-f]{2}\/[0-9a-f]{64}-doc\.pdf)"[^>]*>Dokument (\d) \(PDF/g)];
+    assert.deepEqual(links.map((m) => m[2]), ["1", "2"]);
+    for (const m of links) assert.ok(fs.readFileSync(e.site(m[1])).subarray(0, 5).toString() === "%PDF-");
+    assert.ok(!e.status().warnings.some((w) => /attachments/.test(w.message || "")), "kein contract_drift mehr für attachments");
+    e.advance(30);
+    assert.equal((await e.run()).outcome, "unchanged");
+    e.advance(30);
+    e.state.offers.find((x) => x.onlineId === "2k57b5v").documents = ["expose-a"];
+    assert.equal((await e.run()).outcome, "published");
+    assert.ok(!/Dokument 2/.test(page(e, "2k57b5v")));
+    // nicht ladbares Dokument → nichts wird veröffentlicht
+    e.advance(30);
+    e.state.offers.find((x) => x.onlineId === "2k57b5v").documents = ["expose-a", "kaputt"];
+    e.state.hooks = { image: (u) => (/doc-kaputt/.test(u) ? new Response("nope", { status: 404 }) : null) };
+    const bad = await e.run();
+    assert.deepEqual([bad.outcome, bad.error.code], ["failed", "media_download"]);
+    e.state.hooks = {};
+    e.state.offers.find((x) => x.onlineId === "2k57b5v").documents = ["expose-a"];
+    e.advance(30);
+    assert.ok(["unchanged", "date_roll"].includes((await e.run()).outcome));
+    lastRelease = e.current();
+  });
+
   await t.test("Release-Rollback: Seite zurück und angehalten; Admin-Speichern wartet, Deploy veröffentlicht, 'resume' holt den aktuellen Stand", async () => {
     const { publishViaRelease } = await import("../scripts/lib/publish.mjs");
     const good = e.current();

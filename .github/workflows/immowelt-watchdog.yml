@@ -8,8 +8,8 @@ name: Immowelt sync watchdog
 #   - an offer page does not answer
 # Replaces data-age.yml (weekly, 14 days, read a file in the repository instead of the live site).
 #
-# Switched on with the repository variable IMMOWELT_WATCHDOG_ENABLED=true (Settings → Variables),
-# so merging this file sends nothing by itself. Manual runs always work.
+# On since the go-live of 11.11.2026. Switch off with the repository variable
+# IMMOWELT_WATCHDOG_ENABLED=false (Settings → Variables). Manual runs always work.
 
 on:
   schedule:
@@ -30,7 +30,7 @@ concurrency:
 
 jobs:
   check:
-    if: github.event_name == 'workflow_dispatch' || vars.IMMOWELT_WATCHDOG_ENABLED == 'true'
+    if: github.event_name == 'workflow_dispatch' || vars.IMMOWELT_WATCHDOG_ENABLED != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

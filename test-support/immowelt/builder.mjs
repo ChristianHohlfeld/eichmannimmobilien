@@ -112,7 +112,7 @@ export function exposeInner(o) {
     .join("");
   return `<expose><address AdrGuid="${o.ownerGuid}"/><estate id="${o.estateId}" guid="${o.guid}" onlineid="${o.onlineId}" salestype="${o.salesType}">
 ${items.join("\n")}
-</estate><images>${images}</images>
+</estate><images>${images}</images>${(o.documents || []).length ? `<attachments>${o.documents.map((d, i) => `<document id="${i}"><source>https://ms.immowelt.org/doc-${d}</source></document>`).join("")}</attachments>` : ""}
 <extensions><environmentmap visible="true"/><contactformular visible="true"/></extensions><GeoData><Latitude>47.0</Latitude><Longitude>9.0</Longitude></GeoData></expose>`;
 }
 
@@ -211,6 +211,7 @@ export function fakeImmowelt(state) {
       const hooked = state.hooks?.image?.(u, state.calls.image, init);
       if (hooked) return hooked;
       const asset = u.split("/")[3];
+      if (asset.startsWith("doc-")) return new Response(Buffer.from(`%PDF-1.4\n% ${asset}\n%%EOF\n`), { status: 200, headers: { "content-type": "application/pdf" } });
       const rev = state.imageRevisions.get(asset) || 0;
       const etag = `"${asset}-${rev}"`;
       if (init.headers && (init.headers["If-None-Match"] || init.headers["if-none-match"]) === etag) return new Response(null, { status: 304, headers: { etag } });

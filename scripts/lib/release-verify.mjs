@@ -172,6 +172,10 @@ export function verifyRelease(dir, doc, { releaseId = null } = {}) {
       if (!card.includes(`>${esc(L.title)}<`)) bad(`index.html: Karte ${L.slug} zeigt nicht die Überschrift von Immowelt`);
       if (!card.includes(`<p class="listing-price">${esc(L.price)}</p>`)) bad(`index.html: Karte ${L.slug} zeigt nicht „${L.price}“`);
     }
+    for (const d of L.immowelt_api === true ? L.documents || [] : []) {
+      if (!d.file || !exists(d.file)) bad(`${rel}: Dokument ${d.index + 1} fehlt im Release`);
+      else if (!html.includes(`${d.file}"`)) bad(`${rel}: Dokument ${d.index + 1} ist nicht verlinkt`);
+    }
     for (const base of [...(L.gallery_bases || []), ...(L.floor_plan_bases || [])]) {
       if (typeof base !== "string") continue;
       const fileBase = base.includes("/") ? base : `assets/listings/${base}`;

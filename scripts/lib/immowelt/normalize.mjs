@@ -316,7 +316,16 @@ export function normalizeListing(prop, expose, ctx) {
   const { images, duplicates, declared } = readImages(expose);
   const extensions = {};
   for (const c of elements(child(expose, "extensions") || {})) extensions[c.lname] = String(attr(c, "visible") ?? "").toLowerCase() === "true";
-  const known = new Set(["address", "estate", "images", "extensions", "geodata"]);
+  // documents attached to the offer on Immowelt (attachments > document > source)
+  const documents = [];
+  for (const d of childrenNamed(child(expose, "attachments") || {}, "document")) {
+    const url = textContent(child(d, "source")).trim();
+    if (!/^https:\/\//i.test(url)) continue;
+    const key = imageAssetKey(url);
+    if (documents.some((x) => x.asset_key === key)) continue;
+    documents.push({ index: documents.length, api_id: attr(d, "id"), asset_key: key, url });
+  }
+  const known = new Set(["address", "estate", "images", "extensions", "geodata", "attachments"]);
   const unmapped = [...new Set(elements(expose).map((c) => c.lname).filter((n) => !known.has(n)))];
 
   const facts = {};
@@ -366,6 +375,7 @@ export function normalizeListing(prop, expose, ctx) {
     additional_information: sectionText(/^(info2|sonstiges)$/i),
     amenities: [],
     media: images,
+    documents,
     images: images.filter((m) => m.role === "photo").map((m) => m.url),
     floor_plans: images.filter((m) => m.role === "floorplan").map((m) => m.url),
     main_image_url: images.find((m) => m.role === "photo")?.url || images[0]?.url || null,
@@ -409,7 +419,8 @@ export function coreHash(L) {
 
 /** Final per-listing hash: delivered content + the actual bytes of every picture. */
 export function contentHash(L) {
-  return sha256(stableJson({ core: L.core_hash, media: (L.media || []).map((m) => m.sha256 || null) }));
+  const docs = (L.documents || []).map((d) => d.sha256 || null);
+  return sha256(stableJson({ core: L.core_hash, media: (L.media || []).map((m) => m.sha256 || null), ...(docs.length ? { documents: docs } : {}) }));
 }
 
 /** Order-sensitive fingerprint of the whole inventory. */

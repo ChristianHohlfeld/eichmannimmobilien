@@ -4,6 +4,15 @@ Runbook für den Betrieb von immobilieneichmann.de. Erstfassung 11.11.2026, gesc
 Es wurde nichts ausgerollt, kein Schlüssel auf den Server gebracht, kein Screenshot erstellt und keine
 Nachricht versendet. Was bisher nur gegen Fixtures geprüft ist, steht in [9.5](#95-was-bisher-nicht-real-geprüft-ist).
 
+**Stand nach dem Rollout am 11.11.2026:** Die Website zeigt den Immowelt-Bestand, die Timer laufen, der äußere
+Wächter ist an (aus: Variable `IMMOWELT_WATCHDOG_ENABLED=false`). Abweichend von der Erstfassung unten gilt:
+- Die Umstellung des Servers legt vorab selbst einen DigitalOcean-Snapshot an (`layout = install`).
+- Alle Angebote haben Adressen aus Immowelt (`objekt/<objektart>-<ort>-<stadtteil>-<online-id>.html`); die früheren
+  Adressen leiten weiter (`immowelt-sync.mjs reslug`, einmalig ausgeführt).
+- Dem Inserat beigefügte Dokumente (API-Element `attachments`) werden übernommen und als „Dokumente“ verlinkt.
+- Auf `projekte.html` stehen die Sunside-Wohnungen nur noch einmal (Raster); oben verweist eine Zeile auf das Projekt.
+- „Preis auf Anfrage“ ergibt sich nur aus dem Hauptpreis; Daten zurückgezogener Angebote stehen in keiner Datei des Release.
+
 **Grundsatz:** Immowelt ist die einzige Quelle aller Angebotsdaten. Die Website zeigt genau das, was die
 Immowelt-API vollständig liefert – nichts wird lokal korrigiert, ergänzt, umbenannt oder zurückgehalten.
 Geändert wird ausschließlich auf Immowelt.

@@ -1120,6 +1120,18 @@ function renderExposeHtml(listing, ogShare = null) {
       </section>`
       : "";
 
+  // Dokumente, die dem Inserat auf Immowelt beigefügt sind (unverändert übernommen)
+  const docs = (listing.documents || []).filter((d) => d.file);
+  const mb = (n) => (n >= 1048576 ? `${(n / 1048576).toFixed(1).replace(".", ",")} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+  const docsHtml = docs.length
+    ? `<section class="expose-section" id="dokumente">
+        <h2>Dokumente</h2>
+        <ul class="check-list">
+          ${docs.map((d, i) => `<li><a href="${p}${escapeHtml(d.file)}" target="_blank" rel="noopener">Dokument ${i + 1} (${d.kind === "pdf" ? "PDF" : "Bild"}${d.bytes ? `, ${mb(d.bytes)}` : ""})</a></li>`).join("\n          ")}
+        </ul>
+      </section>`
+    : "";
+
   // Zitierter Exposé-Wortlaut (Importer): eingefasst, damit check-output ihn nicht als eigenen Text wertet.
   const proseHtml = (value) => {
     const inner = stripProjectStatus(value)
@@ -1369,6 +1381,7 @@ ${JSON.stringify(breadcrumbSchema, null, 2).replace(/</g, "\\u003c").replace(/&/
           ${apiSections ?? [descriptionSection, locationSection, amenitiesSection, additionalSection].join("\n          ")}
 
           ${floorHtml}
+          ${docsHtml}
           ${siblingsSection}
         </div>
 

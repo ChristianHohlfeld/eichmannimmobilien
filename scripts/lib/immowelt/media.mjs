@@ -241,6 +241,39 @@ export async function ensureMedia(snapshot, config, { fetchImpl = globalThis.fet
   await writeAtomic(config.mediaIndexFile, `${JSON.stringify(index)}\n`, 0o640);
   if (firstError) throw firstError;
 
+  // documents of the offers (PDF or picture): stored unchanged under a content-derived name
+  for (const L of snapshot.listings) {
+    for (const d of L.documents || []) {
+      try {
+        if (!hostAllowed(d.url, config.allowedImageHosts)) throw new ImmoweltError("media_host", "Dokument liegt auf einem nicht zugelassenen Host.");
+        const key = `doc:${d.asset_key}`;
+        const entry = index.assets[key] || null;
+        const fresh = entry?.file && (await exists(path.join(config.mediaDir, entry.file.replace(`${PUBLIC_PREFIX}/`, "immowelt/")))) && (now.getTime() - Date.parse(entry.checked_at)) / 3_600_000 < config.imageRevalidateHours;
+        if (!fresh) {
+          const got = await download(d.url, { fetchImpl, timeoutMs: config.imageTimeoutMs, maxBytes: config.imageMaxBytes });
+          const kind = got.buf.subarray(0, 5).toString("latin1") === "%PDF-" ? "pdf" : sniffImage(got.buf);
+          if (!kind) throw new ImmoweltError("media_invalid", "Dokument ist weder PDF noch Bild.");
+          const sha = createHash("sha256").update(got.buf).digest("hex");
+          const ext = kind === "jpeg" ? "jpg" : kind;
+          const dir = path.join(publicDir, sha.slice(0, 2));
+          await fsp.mkdir(dir, { recursive: true });
+          const file = path.join(dir, `${sha}-doc.${ext}`);
+          if (!(await exists(file))) await writeAtomic(file, got.buf, 0o644);
+          index.assets[key] = { sha256: sha, kind, bytes: got.buf.length, file: `${PUBLIC_PREFIX}/${sha.slice(0, 2)}/${sha}-doc.${ext}`, checked_at: now.toISOString() };
+          stats.downloaded++;
+        }
+        const e = index.assets[key];
+        Object.assign(d, { sha256: e.sha256, kind: e.kind, bytes: e.bytes, file: e.file });
+      } catch (err) {
+        await writeAtomic(config.mediaIndexFile, `${JSON.stringify(index)}\n`, 0o640);
+        const e = err instanceof ImmoweltError ? err : new ImmoweltError("media_failed", "Dokument konnte nicht übernommen werden.");
+        e.message = `Angebot ${L.immowelt_online_id}, Dokument ${d.index + 1}: ${e.message}`;
+        throw e;
+      }
+    }
+  }
+  await writeAtomic(config.mediaIndexFile, `${JSON.stringify(index)}\n`, 0o640);
+
   for (const L of snapshot.listings) {
     const photos = L.media.filter((m) => m.role === "photo");
     const plans = L.media.filter((m) => m.role === "floorplan");
@@ -268,6 +301,7 @@ export function mediaFilesOf(listings) {
       out.add(`${base}.jpg`);
       out.add(`${base}.webp`);
     }
+    for (const d of L.documents || []) if (typeof d.file === "string" && d.file.startsWith(`${PUBLIC_PREFIX}/`)) out.add(d.file);
     if (typeof L.image_base === "string" && L.image_base.startsWith(`${PUBLIC_PREFIX}/`)) {
       out.add(`${L.image_base}-og.jpg`);
       out.add(`${L.image_base}-og.webp`);
