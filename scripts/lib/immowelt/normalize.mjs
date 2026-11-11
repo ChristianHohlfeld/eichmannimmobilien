@@ -257,7 +257,10 @@ export function normalizeListing(prop, expose, ctx) {
   const zip = locText(/^locationzip$/i) || fieldOf(prop, "Zip")?.text || (zipCity ? (/\b\d{5}\b/.exec(zipCity) || [])[0] : null) || null;
   const cityRaw = locText(/^locationcity$/i) || fieldOf(prop, "City")?.text || (zipCity ? zipCity.replace(/\b\d{5}\b/, "").trim() : null) || null;
   const { city, district: cityDistrict } = splitCity(cityRaw);
-  const district = locText(/^location(district|quarter|ortsteil|stadtteil)$/i) || cityDistrict || prop.attrs.GeoDescription || null;
+  const districtRaw = locText(/^location(district|quarter|ortsteil|stadtteil)$/i) || cityDistrict || prop.attrs.GeoDescription || null;
+  // Immowelt names the quarter as "Konstanz (Wollmatingen)" – the quarter is the part in brackets
+  const dParts = splitCity(districtRaw);
+  const district = dParts.district && city && dParts.city.toLowerCase() === city.toLowerCase() ? dParts.district : districtRaw;
   const street = addressMode === "street" ? locText(/^locationstreet$/i) : null;
   const location = city ? `${district && district !== city ? `${district}, ` : ""}${city}${zip ? ` (${zip})` : ""}` : zip || null;
 
