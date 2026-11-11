@@ -97,10 +97,10 @@ jobs:
           echo "Server-Layout: ${STATE} · angefordert: ${LAYOUT}"
           # Host key for the secret EICHMANN_KNOWN_HOSTS – printed so that nobody needs a shell on the server:
           # what this runner sees on the network, and what the server reports about itself. (The key is public.)
-          SEEN="$(ssh-keyscan -T 10 -t ed25519 "$DEPLOY_HOST" 2>/dev/null | ssh-keygen -lf - | awk '{print $2}' || true)"
+          SEEN="$(ssh-keyscan -T 10 -t ed25519 "$DEPLOY_HOST" 2>/dev/null | grep -v '^#' | ssh-keygen -lf - | awk '{print $2}' || true)"
           SELF="$(ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
             "${DEPLOY_USER}@${DEPLOY_HOST}" 'ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub' | awk '{print $2}' || true)"
-          KEY="$(ssh-keyscan -T 10 -t ed25519 "$DEPLOY_HOST" 2>/dev/null | awk '{print $2" "$3}' || true)"
+          KEY="$(ssh-keyscan -T 10 -t ed25519 "$DEPLOY_HOST" 2>/dev/null | grep -v '^#' | awk '{print $2" "$3}' || true)"
           {
             echo "### SSH-Host-Schlüssel des Servers"
             echo "- vom Runner gesehen: \`${SEEN:-nicht lesbar}\`"

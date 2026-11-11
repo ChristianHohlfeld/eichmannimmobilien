@@ -142,14 +142,16 @@ async function soapOnce(url, action, envelope, { fetchImpl, timeoutMs, maxBytes 
     clearTimeout(timer);
   }
   if (text.length > maxBytes) throw new ImmoweltError("immowelt_response_too_large", "Immowelt-Antwort überschreitet die Größenbegrenzung.");
-  const denied = /Access denied|ApiKey[^<]{0,40}(invalid|ungültig)|Unauthorized/i.test(text.slice(0, 20000));
+  // Only where the API itself speaks (error status, SOAP fault, Status element) – never inside offer texts.
+  const voice = !res.ok || /<(?:\w+:)?Fault\b/i.test(text) ? text.slice(0, 20000) : (text.match(/<(?:\w+:)?Status\b[^>]*>[^<]{0,200}/gi) || []).join(" ");
+  const denied = /Access denied|ApiKey[^<]{0,40}(invalid|ungültig)|Unauthori[sz]ed/i.test(voice);
   if (res.status === 401 || res.status === 403 || denied) {
     throw new ImmoweltError("immowelt_access_denied", "Immowelt hat den API-Schlüssel abgelehnt.", { status: res.status });
   }
   if (res.status === 429) throw new ImmoweltError("immowelt_throttled", "Immowelt-API drosselt Anfragen (HTTP 429).", { status: 429 });
   if (res.status >= 500) {
-    const fault = /<(?:\w+:)?faultstring[^>]*>([^<]{0,300})/i.exec(text);
-    throw new ImmoweltError("immowelt_http_5xx", `Immowelt-API antwortete mit HTTP ${res.status}${fault ? ` (${fault[1].trim()})` : ""}.`, { status: res.status });
+    // the server's fault text is not passed on: it is public via the status file and could quote the request
+    throw new ImmoweltError("immowelt_http_5xx", `Immowelt-API antwortete mit HTTP ${res.status}.`, { status: res.status });
   }
   if (!res.ok) throw new ImmoweltError("immowelt_http_error", `Immowelt-API antwortete mit HTTP ${res.status}.`, { status: res.status });
   if (!/<\/(?:\w+:)?Envelope>\s*$/i.test(text.slice(-200))) {

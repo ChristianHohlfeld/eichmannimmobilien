@@ -59,6 +59,8 @@ export function writeStatus(file, update, { staleAfterMinutes = 120 } = {}) {
     stale_after_minutes: staleAfterMinutes,
     published,
     pending: update.pending || null,
+    // start of the current uninterrupted "waiting for confirmation" series, whatever the answers looked like
+    pending_since: update.state === "pending_confirmation" ? prev.pending_since || update.now : null,
     last_change: update.change || prev.last_change || null,
     warnings: (update.warnings || []).slice(0, 25),
     error: ok ? null : { code: update.error?.code || update.state, message: String(update.error?.message || "").slice(0, 400), at: update.now },
@@ -88,7 +90,8 @@ export function evaluateStatus(status, { now = new Date(), staleAfterMinutes = n
   else if (age > limit) problems.push(`Letzter erfolgreicher Abgleich vor ${age} Minuten (Grenze ${limit}).`);
   if (!OK_STATES.has(status.state)) problems.push(`Zustand ${status.state}${status.error?.message ? `: ${status.error.message}` : ""}`);
   const warn = [];
-  if (status.state === "pending_confirmation" && (status.pending?.sightings || 0) > 4) warn.push("Bestätigung eines großen Wegfalls steht ungewöhnlich lange aus.");
+  const waiting = status.state === "pending_confirmation" && status.pending_since ? Math.round((now.getTime() - Date.parse(status.pending_since)) / 60000) : 0;
+  if (waiting > 180) problems.push(`Bestätigung eines großen Wegfalls steht seit ${waiting} Minuten aus – Immowelt liefert keinen stabilen Bestand.`);
   if ((status.warnings || []).length) warn.push(`${status.warnings.length} Hinweis(e) im letzten Lauf.`);
   return { ok: problems.length === 0, level: problems.length ? "alarm" : warn.length ? "warn" : "ok", problems: [...problems, ...warn], age_minutes: age };
 }

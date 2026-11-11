@@ -165,7 +165,18 @@ export async function buildRelease(config, { dbPath, doc, reason, commit = null,
     await fail("release_build_failed", `Build des Releases fehlgeschlagen (Exit ${built.code ?? built.signal}).`, { buildLog: tail });
   }
 
-  // 3. strip build-only files, wire the persistent parts
+  // 3. the data mirror in the release holds public offers only (retired ones stay in the database, not on the web server)
+  const mirror = path.join(staging, "data", "listings.json");
+  try {
+    const m = JSON.parse(await fsp.readFile(mirror, "utf8"));
+    m.listings = (m.listings || []).filter((L) => L.active !== false && L.site_hidden !== true);
+    m.listing_count = m.listings.length;
+    await fsp.writeFile(mirror, `${JSON.stringify(m, null, 2)}\n`);
+  } catch {
+    /* no mirror written by this build */
+  }
+
+  // strip build-only files, wire the persistent parts
   for (const name of BUILD_ONLY) await fsp.rm(path.join(staging, name), { recursive: true, force: true });
   await fsp.mkdir(path.dirname(config.statusFile), { recursive: true });
   await symlinkFresh(config.statusFile, path.join(staging, "data", "immowelt-sync-status.json"));

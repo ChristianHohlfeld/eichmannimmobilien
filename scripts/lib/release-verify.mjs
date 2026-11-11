@@ -134,6 +134,12 @@ export function verifyRelease(dir, doc, { releaseId = null } = {}) {
       continue;
     }
     const page = inspectExposeHtml(html);
+    if (L.immowelt_api === true && L.price_on_request) {
+      // "auf Anfrage": no amount anywhere – page markup, structured data, English page
+      if (/"price"\s*:/.test(html)) bad(`${rel}: strukturierte Daten nennen einen Preis trotz „auf Anfrage“`);
+      const en = read(`en/property/${L.slug}.html`) || "";
+      if (/"price"\s*:/.test(en) || /€\s?\d|\d\s?€/.test(en.replace(/<script[\s\S]*?<\/script>/g, "").replace(/<h2>More properties in Konstanz<\/h2>[\s\S]*?<\/ul>/, ""))) bad(`en/property/${L.slug}.html: Betrag trotz „auf Anfrage“`);
+    }
     if (page.listing_id !== L.id) bad(`${rel}: gehört zu ${page.listing_id || "?"}, erwartet ${L.id}`);
     if (L.immowelt_api === true) {
       // (scraper-era rows still pass through the old display rules; only API offers are compared 1:1)

@@ -97,7 +97,9 @@ function readItems(parent) {
 const isPriceItem = (it) => /^price/i.test(it.id) || /^(kaufpreis|kaltmiete|warmmiete|nettokaltmiete|miete|pacht)$/i.test(it.id);
 const isLocationItem = (it) => /^location/i.test(it.id);
 const isSectionId = (id) => /^info\d*$/i.test(id) || /^(ausstattung|equipment|objektbeschreibung|lagebeschreibung|sonstiges)$/i.test(id);
-const ON_REQUEST_RE = /auf\s+anfrage|on\s+request|\bVB\b\s*$|preis\s+a\.\s?a\./i;
+const ON_REQUEST_RE = /auf\s+anfrage|on\s+request|preis\s+a\.\s?a\./i;
+/** Side prices (parking, service charges, deposit …) say nothing about the price of the offer itself. */
+const isSidePrice = (it) => /stellplatz|garage|parking|carport|neben|heiz|kaution|deposit|courtage|provision/i.test(`${it.id} ${it.title}`);
 
 function splitCity(raw) {
   const s = String(raw || "").replace(/\s+/g, " ").trim();
@@ -232,13 +234,13 @@ export function normalizeListing(prop, expose, ctx) {
   const listPrice = parseApiNumber(fieldAttr(priceField, "Complete"));
   const priceItems = items.filter(isPriceItem);
   const onRequestSignals = [
-    ...priceItems.map((it) => plainText(it.raw)),
+    ...priceItems.filter((it) => !isSidePrice(it)).map((it) => plainText(it.raw)),
     priceField?.text || "",
     ...Object.entries(priceField?.attrs || {}).filter(([k, v]) => /request|anfrage/i.test(k) && /^(true|1|yes|ja)$/i.test(String(v))).map(() => "auf Anfrage"),
   ];
   const priceOnRequest = !(listPrice > 0) || onRequestSignals.some((t) => ON_REQUEST_RE.test(t));
   const priceEur = priceOnRequest ? null : round2(listPrice);
-  const pricedItem = priceItems.find((it) => priceEur != null && Math.abs((parseGermanNumber(plainText(it.raw)) ?? NaN) - priceEur) < 0.005) || priceItems[0] || null;
+  const pricedItem = priceItems.find((it) => priceEur != null && Math.abs((parseGermanNumber(plainText(it.raw)) ?? NaN) - priceEur) < 0.005) || null; // no matching item → neutral label, never the label of some other price
   const priceLabel = pricedItem?.title || (marketing === "miete" ? "Miete" : "Kaufpreis");
   const price = priceOnRequest ? "Preis auf Anfrage" : marketing === "miete" ? `${formatEuro(priceEur)} ${priceLabel}` : formatEuro(priceEur);
 
@@ -275,6 +277,7 @@ export function normalizeListing(prop, expose, ctx) {
       continue;
     }
     const flat = plainText(it.raw);
+    if (priceOnRequest && isPriceItem(it) && !isSidePrice(it) && !ON_REQUEST_RE.test(flat) && parseGermanNumber(flat) != null) continue; // never leak a stored amount – in no form
     const structured = it.sub.length > 0 || isSectionId(it.id) || /<\s*(br|p|ul|ol|li|div)\b/i.test(it.raw) || flat.length > 160;
     if (structured) {
       const sec = sectionFromItem(it);
@@ -282,7 +285,6 @@ export function normalizeListing(prop, expose, ctx) {
       continue;
     }
     if (!flat) continue; // deliberately empty on Immowelt → not shown, nothing kept from earlier
-    if (priceOnRequest && isPriceItem(it) && !ON_REQUEST_RE.test(flat) && parseGermanNumber(flat) != null) continue; // never leak a stored amount
     factRows.push({ id: it.id || null, label: it.title || it.id || "Angabe", value: flat });
   }
   if (priceOnRequest && !factRows.some((r) => ON_REQUEST_RE.test(r.value))) {
