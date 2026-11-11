@@ -47,7 +47,7 @@ export function planHash(plan) {
 
 function loadManualEvidence(config) {
   try {
-    const doc = JSON.parse(fs.readFileSync(path.join(config.appDir, "data", "sot", "immowelt-identity-map.json"), "utf8"));
+    const doc = JSON.parse(fs.readFileSync(config.identityMapFile, "utf8"));
     return Array.isArray(doc.evidence) ? doc.evidence : [];
   } catch {
     return [];

@@ -76,6 +76,7 @@ export function loadConfig(processEnv = process.env) {
     backupsDir: path.join(immoweltDir, "db-backups"),
     mediaIndexFile: path.join(immoweltDir, "media-index.json"),
     identityPlanFile: path.join(immoweltDir, "identity-plan.json"),
+    identityMapFile: path.resolve(env.EICHMANN_IDENTITY_MAP_FILE || path.join(env.EICHMANN_APP_DIR || REPO_ROOT, "data", "sot", "immowelt-identity-map.json")),
 
     // Immowelt API
     geoIds: list(env.IMMOWELT_GEO_IDS, ["108"]).map(Number),
