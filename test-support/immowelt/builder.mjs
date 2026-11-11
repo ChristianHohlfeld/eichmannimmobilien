@@ -33,6 +33,7 @@ function offer(onlineId, o) {
     city: o.city || "Konstanz",
     street: o.street || "Fixturestraße 1",
     reference: o.reference || null,
+    createDate: o.createDate || null,
     items: o.items || [],
     info1: o.info1 ?? `Fixture-Objektbeschreibung ${onlineId}, Absatz eins.<br/>Zweite Zeile.<br/><br/>Absatz zwei.`,
     info2: o.info2 ?? `Fixture-Sonstiges ${onlineId}.`,
@@ -64,7 +65,7 @@ export const imageUrl = (img, size) => `https://ms.immowelt.org/${img.asset}/${i
 
 export function listProperty(o) {
   const price = o.price == null ? `<Price Complete="0.0000">auf Anfrage</Price>` : `<Price Complete="${o.price.toFixed(4)}">${x(de(o.price, 0))} €</Price>`;
-  return `<EstateProperty id="${o.estateId}" guid="${o.guid}" onlineID="${o.onlineId}">
+  return `<EstateProperty id="${o.estateId}" guid="${o.guid}" onlineID="${o.onlineId}"${o.createDate ? ` CreateDate="${o.createDate}"` : ""}>
   <Category saleRentID="${o.salesType}">${x(o.category)}</Category>
   <Description>${x(o.title)}</Description>
   ${price}
@@ -189,6 +190,16 @@ export function fakeImmowelt(state) {
       const body = String(init.body || "");
       state.calls.auth.push(/<tns:ApiKey>([^<]*)</.exec(body)?.[1] || "");
       if (state.apiKey && !body.includes(`<tns:ApiKey>${state.apiKey}</tns:ApiKey>`)) return respond("<soap:Envelope xmlns:soap='http://schemas.xmlsoap.org/soap/envelope/'><soap:Body><soap:Fault><faultstring>Access denied</faultstring></soap:Fault></soap:Body></soap:Envelope>", 500);
+      if (body.includes("<tns:GetListByEstateGuids>")) {
+        // offers Immowelt has online but keeps out of its lists (state.unlisted) are reachable by GUID
+        state.calls.list--;
+        state.calls.byGuids = (state.calls.byGuids || 0) + 1;
+        const hookedG = state.hooks?.byGuids?.(state.calls.byGuids);
+        if (hookedG) return hookedG instanceof Response ? hookedG : respond(hookedG);
+        const asked = (/<tns:EstateGuids>([^<]*)</.exec(body)?.[1] || "").split(",").map((g) => g.trim().toUpperCase());
+        const found = [...state.offers, ...(state.unlisted || [])].filter((o) => asked.includes(o.guid.toUpperCase()));
+        return respond(listEnvelope({ offers: found, totalCount: found.length, status: found.length ? "OK" : "NoData" }));
+      }
       if (!/<tns:GeoID>\d+<\/tns:GeoID>/.test(body)) return respond(listEnvelope({ status: "UnknownLocation", offers: [], totalCount: 0 }));
       const page = Number(/<tns:CurrentPage>(\d+)</.exec(body)?.[1] || 1);
       const pageSize = state.pageSizeOverride || Number(/<tns:PageSize>(\d+)</.exec(body)?.[1] || 50);
@@ -202,7 +213,7 @@ export function fakeImmowelt(state) {
       const guid = /<tns:EstateGuid>([^<]+)</.exec(String(init.body || ""))?.[1];
       const hooked = state.hooks?.expose?.(guid, state.calls.expose);
       if (hooked) return hooked instanceof Response ? hooked : respond(hooked);
-      const o = state.offers.find((c) => c.guid === guid);
+      const o = [...state.offers, ...(state.unlisted || [])].find((c) => c.guid === guid);
       if (!o) return respond(exposeEnvelope(null, { status: "Invalid" }));
       return respond(exposeEnvelope(o));
     }

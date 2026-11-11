@@ -82,6 +82,8 @@ export function loadConfig(processEnv = process.env) {
     mediaIndexFile: path.join(immoweltDir, "media-index.json"),
     identityPlanFile: path.join(immoweltDir, "identity-plan.json"),
     identityMapFile: path.resolve(env.EICHMANN_IDENTITY_MAP_FILE || path.join(env.EICHMANN_APP_DIR || REPO_ROOT, "data", "sot", "immowelt-identity-map.json")),
+    // Offers Immowelt has online but does not put into its lists (no location id): fetched by their GUID.
+    extraGuidsFile: path.resolve(env.EICHMANN_EXTRA_GUIDS_FILE || path.join(env.EICHMANN_APP_DIR || REPO_ROOT, "data", "sot", "immowelt-extra-guids.json")),
 
     // Immowelt API
     geoIds: list(env.IMMOWELT_GEO_IDS, ["108"]).map(Number),

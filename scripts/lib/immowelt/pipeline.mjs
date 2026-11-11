@@ -21,10 +21,11 @@ import { openDb, exportListingsDocument, setMeta } from "../db.mjs";
 import { readImmoweltCredentials } from "../immowelt-secrets.mjs";
 import { loadConfig, berlinDate, utcStamp } from "./config.mjs";
 import { acquireLock, LockBusyError } from "./lock.mjs";
-import { fetchInventory, fetchExpose, soapCall, ImmoweltError } from "./soap.mjs";
+import { fetchInventory, fetchExpose, soapCall, parseListResponse, buildByGuidsEnvelope, ImmoweltError, ESTATE_SERVICE_URL, ACTION_BY_GUIDS } from "./soap.mjs";
+import { attr, child } from "./xml.mjs";
 import { buildSnapshot, snapshotFingerprint, stableJson } from "./normalize.mjs";
 import { validateSnapshot, classifyChange, needsConfirmation, confirmationState } from "./validate.mjs";
-import { planLegacyMigration } from "./identity.mjs";
+import { planLegacyMigration, normalizeGuid } from "./identity.mjs";
 import { ensureMedia, gcMedia } from "./media.mjs";
 import { applySnapshot, archiveSnapshot, backupDatabase, getState, pendingLegacyRows, publishedApiListings, pruneFiles, recordRun, setJsonMeta, touchCheckedDate } from "./store.mjs";
 import { readStatus, writeStatus, writeJsonAtomic, notifySinks, STATUS_SCHEMA } from "./status.mjs";
@@ -54,6 +55,24 @@ function loadManualEvidence(config) {
   }
 }
 
+/** GUIDs named in data/sot/immowelt-extra-guids.json (pointers only, no content). Missing file = none. */
+export function readExtraGuids(file) {
+  let doc;
+  try {
+    doc = JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch (err) {
+    if (err.code === "ENOENT") return [];
+    throw new ImmoweltError("immowelt_config", `Zusatzliste nicht lesbar (${path.basename(file)}): ${err.message}`);
+  }
+  const out = [];
+  for (const o of doc.offers || []) {
+    const g = normalizeGuid(o?.guid);
+    if (!g) throw new ImmoweltError("immowelt_config", `Zusatzliste (${path.basename(file)}): ungültige GUID.`);
+    if (!out.includes(g)) out.push(g);
+  }
+  return out;
+}
+
 /** Read the API completely. Throws on anything that is not a complete, consistent answer. */
 export async function fetchSnapshot(apiKey, config, { fetchImpl = globalThis.fetch, sleepImpl = sleep, now = new Date(), log = () => {} } = {}) {
   const soap = { ...config.soap, fetchImpl, sleepImpl, onRetry: ({ attempt, code }) => log(`Immowelt-Abruf wird wiederholt (Versuch ${attempt + 1}, ${code}).`) };
@@ -64,12 +83,60 @@ export async function fetchSnapshot(apiKey, config, { fetchImpl = globalThis.fet
   }
   const exposes = new Map();
   const raw = { lists: inventories.flatMap((inv) => inv.pages.map((p) => ({ geo_id: inv.geoId, page: p.page, xml: p.xml }))), exposes: [] };
+
+  // Offers that are online on Immowelt but missing in every list of the API (no location id in
+  // Immowelt's data) are named in data/sot/immowelt-extra-guids.json and fetched by their GUID.
+  // Only the pointer is ours; whether the offer exists and everything it says comes from the API.
+  const listed = new Set(inventories.flatMap((inv) => inv.properties.map((p) => normalizeGuid(p.guid))));
+  const wanted = readExtraGuids(config.extraGuidsFile).filter((g) => !listed.has(g));
+  const byGuid = new Set();
+  if (wanted.length && inventories.length) {
+    if (!config.profileGuid) throw new ImmoweltError("immowelt_config", "Einzelabruf per GUID braucht die Anbieter-Kennung (IMMOWELT_PROFILE_GUID).");
+    const xml = await call(ESTATE_SERVICE_URL, ACTION_BY_GUIDS, buildByGuidsEnvelope(apiKey, wanted));
+    const parsed = parseListResponse(xml);
+    raw.lists.push({ geo_id: "guids", page: 1, xml });
+    const got = parsed.properties.filter((p) => wanted.includes(normalizeGuid(p.guid)));
+    if (got.length !== parsed.properties.length || new Set(got.map((p) => normalizeGuid(p.guid))).size !== got.length) {
+      throw new ImmoweltError("immowelt_list_unstable", "Einzelabruf per GUID lieferte nicht angefragte oder doppelte Angebote.");
+    }
+    // Not delivered = gone, but only when the exposé says so too (two independent answers, never a silent drop).
+    for (const guid of wanted.filter((g) => !got.some((p) => normalizeGuid(p.guid) === g))) {
+      let stillThere = true;
+      try {
+        await fetchExpose(apiKey, guid, { call });
+      } catch (err) {
+        if (!(err instanceof ImmoweltError) || err.code !== "immowelt_expose_status") throw err;
+        stillThere = false;
+      }
+      if (stillThere) throw new ImmoweltError("immowelt_list_unstable", `Einzelabruf: Angebot ${guid.slice(0, 8)} fehlt in der Antwort, das Exposé ist aber lieferbar.`);
+      log(`Immowelt: per GUID benanntes Angebot ${guid.slice(0, 8)}… ist bei Immowelt nicht mehr vorhanden – offline.`);
+    }
+    if (got.length) {
+      const inv = inventories[0];
+      const merged = [...inv.properties, ...got];
+      // keep Immowelt's own order (newest first) when every entry carries its creation date
+      const at = (p) => {
+        const m = /^(\d{2})\.(\d{2})\.(\d{4}) (\d{2}):(\d{2}):(\d{2})$/.exec(String(p.attrs?.CreateDate || ""));
+        return m ? Date.UTC(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +m[6]) : null;
+      };
+      if (config.listSort === "createdatedesc" && merged.every((p) => at(p) != null)) {
+        const order = new Map(merged.map((p, i) => [p, i]));
+        merged.sort((a, b) => at(b) - at(a) || order.get(a) - order.get(b));
+      }
+      inventories[0] = { ...inv, properties: merged, totalCount: inv.totalCount + got.length, listTotal: inv.totalCount, byGuid: got.map((p) => p.onlineId) };
+      for (const p of got) byGuid.add(p.guid);
+      log(`Immowelt: ${got.length} Angebot(e) per GUID ergänzt, die in der Liste fehlen (${got.map((p) => p.onlineId).join(", ")}).`);
+    }
+  }
   for (const inv of inventories) {
     for (const prop of inv.properties) {
       if (exposes.has(prop.guid)) continue;
       if (exposes.size && config.exposeDelayMs) await sleepImpl(config.exposeDelayMs);
       try {
         const { xml, expose } = await fetchExpose(apiKey, prop.guid, { call });
+        if (byGuid.has(prop.guid) && normalizeGuid(attr(child(expose, "address"), "AdrGuid")) !== normalizeGuid(config.profileGuid)) {
+          throw new ImmoweltError("immowelt_owner_mismatch", "Per GUID benanntes Angebot gehört laut Exposé nicht zum Eichmann-Profil.");
+        }
         exposes.set(prop.guid, expose);
         raw.exposes.push({ online_id: prop.onlineId, xml });
       } catch (err) {

@@ -14,6 +14,7 @@ export const ESTATE_SERVICE_URL = "https://api.immowelt.de/WebServices/EstateSer
 export const ESTATE_EXPOSE_URL = "https://api.immowelt.de/WebServices/EstateExpose.asmx";
 export const ACTION_LIST = "http://immowelt.de/services/GetListCustomerProjects";
 export const ACTION_EXPOSE = "http://immowelt.de/GetEstateExposeByEstateGuid";
+export const ACTION_BY_GUIDS = "http://immowelt.de/services/GetListByEstateGuids";
 const NS_SERVICES = "http://immowelt.de/services";
 const NS_EXPOSE = "http://immowelt.de/";
 
@@ -61,6 +62,25 @@ export function buildListEnvelope(apiKey, { geoId = 108, page = 1, pageSize = 50
       <tns:CurrentPage>${p}</tns:CurrentPage>
       <tns:PageSize>${s}</tns:PageSize>
     </tns:GetListCustomerProjects>
+  </soap:Body>
+</soap:Envelope>`;
+}
+
+/** List entries for explicitly named offers (GetListByEstateGuids) – same entry shape as the list. */
+export function buildByGuidsEnvelope(apiKey, guids) {
+  const clean = (guids || []).map((g) => String(g).replace(/-/g, "").toUpperCase());
+  if (!clean.length || clean.some((g) => !/^[0-9A-F]{32}$/.test(g))) throw new ImmoweltError("immowelt_config", "GUID-Liste ungültig");
+  return `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tns="${NS_SERVICES}">
+  <soap:Header>
+    <tns:ListAuthenticationHeader>
+      <tns:ApiKey>${xmlEscape(apiKey)}</tns:ApiKey>
+    </tns:ListAuthenticationHeader>
+  </soap:Header>
+  <soap:Body>
+    <tns:GetListByEstateGuids>
+      <tns:EstateGuids>${clean.join(",")}</tns:EstateGuids>
+    </tns:GetListByEstateGuids>
   </soap:Body>
 </soap:Envelope>`;
 }

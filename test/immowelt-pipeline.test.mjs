@@ -612,3 +612,124 @@ test("Bestand: Angebote, die Immowelt nur für die eigene Homepage freigibt, geh
   assert.ok(ids.includes("2ql2c52") && ids.includes("2gwzk5x"), "Nur-Homepage-Angebote bleiben im Bestand");
   assert.equal(state.calls.list, 1, "genau eine Listenabfrage, kein zweiter Abzug");
 });
+
+// The three offers Immowelt has online but keeps out of every list (no location id in its data, 11.11.2026).
+const UNLISTED = () => [
+  B.offer("2sw6g58", { guid: "C6B1D8204E82416D95AD22472A129955", title: "KfW-55 Sonnige 1 Zimmerwohnung Neubau Konstanz (Königsbau)", price: 199000, area: 26, rooms: 1, zip: "78464" }),
+  B.offer("2pj3j5e", { guid: "32A8908EC8E04944B44FF203CCDAA8A9", category: "Mehrfamilienhaus", title: "Ein Dreifamillienhaus in wunderschöner, grüner Lage", price: 1250000, area: 270, rooms: 11 }),
+  B.offer("2nyac5n", { guid: "6FD6062E32F44F02AF80D854BD090279", title: "2 1/2 Zimmer Penthouse Wohnung", price: 380000, area: 75, rooms: 2 }),
+];
+const writeExtra = (file, guids) => fs.writeFileSync(file, JSON.stringify({ offers: guids.map((guid) => ({ guid })) }));
+
+test("Einzelabruf per GUID: benannte Angebote kommen vollständig aus der API, sonst nichts", { skip }, async () => {
+  const { loadConfig } = await import("../scripts/lib/immowelt/config.mjs");
+  const { validateSnapshot } = await import("../scripts/lib/immowelt/validate.mjs");
+  const dir = fs.mkdtempSync(path.join(H.testTmpRoot(), "extra-"));
+  const file = path.join(dir, "extra.json");
+  const cfg = () => loadConfig({ EICHMANN_STATE_DIR: path.join(dir, "state"), EICHMANN_SETTINGS_FILE: "/nonexistent", EICHMANN_EXTRA_GUIDS_FILE: file, IMMOWELT_EXPOSE_DELAY_MS: "0" });
+  const opts = (state) => ({ fetchImpl: B.fakeImmowelt(state), sleepImpl: async () => {} });
+  const guids = UNLISTED().map((o) => o.guid);
+
+  // ohne Datei: wie bisher, kein zusätzlicher Aufruf
+  const plain = { offers: B.realInventory(), unlisted: UNLISTED() };
+  assert.equal((await Pipeline.fetchSnapshot("k", cfg(), opts(plain))).snapshot.listings.length, 10);
+  assert.equal(plain.calls.byGuids || 0, 0);
+
+  // drei benannt → 13, Vollständigkeit bleibt belegt, Inhalte aus dem Exposé
+  writeExtra(file, [...guids, guids[0].toLowerCase().replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, "$1-$2-$3-$4-$5")]);
+  const state = { offers: B.realInventory(), unlisted: UNLISTED() };
+  const { snapshot } = await Pipeline.fetchSnapshot("k", cfg(), opts(state));
+  assert.equal(snapshot.listings.length, 13);
+  assert.deepEqual(snapshot.fetched_by_guid.sort(), ["2nyac5n", "2pj3j5e", "2sw6g58"]);
+  assert.deepEqual(snapshot.reported_total_counts.map((r) => [r.total_count, r.list_total, r.by_guid]), [[13, 10, 3]]);
+  assert.equal(validateSnapshot(snapshot).ok, true);
+  const house = snapshot.listings.find((L) => L.immowelt_online_id === "2pj3j5e");
+  assert.deepEqual([house.price_eur, house.marketing, house.rooms_value], [1250000, "kauf", 11]);
+  assert.deepEqual([state.calls.byGuids, state.calls.expose], [1, 13]);
+
+  // steht ein benanntes Angebot wieder in der Liste (Immowelt hat es behoben), wird es nicht doppelt geholt
+  const fixed = { offers: [...B.realInventory(), UNLISTED()[1]], unlisted: [UNLISTED()[0], UNLISTED()[2]] };
+  const s2 = (await Pipeline.fetchSnapshot("k", cfg(), opts(fixed))).snapshot;
+  assert.equal(s2.listings.length, 13);
+  assert.deepEqual(s2.fetched_by_guid.sort(), ["2nyac5n", "2sw6g58"]);
+
+  // bei Immowelt gelöscht (Liste und Exposé sagen beide „nicht vorhanden“) → fällt weg, kein Fehler
+  const gone = { offers: B.realInventory(), unlisted: UNLISTED().slice(0, 2) };
+  const s3 = (await Pipeline.fetchSnapshot("k", cfg(), opts(gone))).snapshot;
+  assert.equal(s3.listings.length, 12);
+  assert.ok(!s3.listings.some((L) => L.immowelt_online_id === "2nyac5n"));
+
+  // Antwort widersprüchlich (fehlt im Einzelabruf, Exposé aber lieferbar) → kein Bestand
+  const odd = { offers: B.realInventory(), unlisted: UNLISTED(), hooks: { byGuids: () => B.listEnvelope({ offers: UNLISTED().slice(0, 2) }) } };
+  await assert.rejects(Pipeline.fetchSnapshot("k", cfg(), opts(odd)), (err) => err.code === "immowelt_list_unstable");
+
+  // Einzelabruf nicht lesbar → kein Bestand (nie stillschweigend ohne die drei)
+  const down = { offers: B.realInventory(), unlisted: UNLISTED(), hooks: { byGuids: () => B.listEnvelope({ status: "Indefinite", offers: [], totalCount: 0 }) } };
+  await assert.rejects(Pipeline.fetchSnapshot("k", cfg(), opts(down)), (err) => err.code === "immowelt_list_status");
+
+  // fremdes Angebot per GUID benannt → abgelehnt
+  const foreign = { offers: B.realInventory(), unlisted: [B.offer("2xxxx99", { guid: guids[0], title: "Fremd", price: 1, area: 1, rooms: 1, ownerGuid: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" })] };
+  writeExtra(file, [guids[0]]);
+  await assert.rejects(Pipeline.fetchSnapshot("k", cfg(), opts(foreign)), (err) => err.code === "immowelt_owner_mismatch");
+
+  // ungültiger Eintrag → Konfigurationsfehler, kein Bestand
+  fs.writeFileSync(file, JSON.stringify({ offers: [{ guid: "kaputt" }] }));
+  await assert.rejects(Pipeline.fetchSnapshot("k", cfg(), opts({ offers: B.realInventory() })), (err) => err.code === "immowelt_config");
+
+  // Reihenfolge wie bei Immowelt (neueste zuerst), wenn alle Einträge ein Anlagedatum tragen
+  writeExtra(file, [guids[0]]);
+  const dated = { offers: [B.offer("2aaaa11", { title: "Alt", price: 1, area: 1, rooms: 1, createDate: "01.01.2024 10:00:00" })], unlisted: [B.offer("2sw6g58", { guid: guids[0], title: "Neu", price: 2, area: 1, rooms: 1, createDate: "17.09.2026 17:25:35" })] };
+  assert.deepEqual((await Pipeline.fetchSnapshot("k", cfg(), opts(dated))).snapshot.listings.map((L) => L.immowelt_online_id), ["2sw6g58", "2aaaa11"]);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test("Einzelabruf auf dem Server: neue Adressen, alte leiten auf das richtige Angebot, gelöscht = offline", { skip }, async (t) => {
+  const e = await H.makeEnv();
+  t.after(() => e.cleanup());
+  e.seedLegacy();
+  // wie bei der Umstellung am 11.11.2026: das alte Kaufangebot Königsbau wurde dem Mietangebot zugeordnet
+  fs.writeFileSync(e.env.EICHMANN_IDENTITY_MAP_FILE, JSON.stringify({ evidence: [{ legacy_id: "c6b1d820-4e82-416d-95ad-22472a129955", online_id: "2ql2c52", verified_by: "test", verified_at: "2026-11-11" }] }));
+  await e.bootstrapLayout();
+  e.state.offers = B.realInventory();
+  const first = await e.run();
+  assert.equal(first.outcome, "migration_required");
+  assert.equal((await e.run({ identityPlan: first.plan })).outcome, "published");
+  {
+    const db = e.db();
+    Store.reslugToCanonical(db);
+    await Pipeline.publishFromDatabase(e.config, { db, reason: "reslug" });
+    db.close();
+  }
+  const rentSlug = slugOf(e, "2ql2c52");
+  assert.match(e.read("objekt/penthouse-konigsbau-c6b1d820.html"), new RegExp(rentSlug), "Ausgangslage: alte Kauf-Adresse leitet (falsch) auf die Miete");
+
+  writeExtra(e.env.EICHMANN_EXTRA_GUIDS_FILE, UNLISTED().map((o) => o.guid));
+  e.state.unlisted = UNLISTED();
+  e.advance(30);
+  const r = await e.run();
+  assert.deepEqual([r.outcome, r.exitCode], ["published", 0], JSON.stringify(r.error));
+  assert.equal(e.status().published.count, 13);
+  assert.equal(JSON.parse(e.read("ai/listings.json")).listing_count, 14, "13 Immowelt + 1 eigenes");
+
+  const sale = slugOf(e, "2sw6g58"), house = slugOf(e, "2pj3j5e"), pent = slugOf(e, "2nyac5n");
+  assert.ok(sale.endsWith("-2sw6g58") && house.endsWith("-2pj3j5e") && pent.endsWith("-2nyac5n"), "Adressen aus Immowelt abgeleitet");
+  assert.match(page(e, "2sw6g58"), /199\.000/);
+  assert.match(page(e, "2pj3j5e"), /1\.250\.000/);
+  // alte Adressen leiten auf das Angebot, das wirklich diese Kennung trägt
+  const stub = (old) => e.read(`objekt/${old}.html`);
+  assert.ok(stub("penthouse-konigsbau-c6b1d820").includes(`${sale}.html`) && !stub("penthouse-konigsbau-c6b1d820").includes(rentSlug), "Kauf-Adresse → Kaufangebot, nicht mehr → Miete");
+  assert.ok(stub("mehrfamilienhaus-wollmatingen-32a8908e").includes(`${house}.html`));
+  assert.ok(stub("penthouse-furstenberg-6fd6062e").includes(`${pent}.html`));
+  const db = e.db();
+  const rent = JSON.parse(db.prepare("SELECT payload FROM listings WHERE immowelt_online_id = '2ql2c52'").get().payload);
+  assert.ok(!rent.previous_slugs && !rent.legacy_ids, "Mietangebot trägt keine fremde Alt-Adresse mehr");
+  db.close();
+
+  // bei Immowelt gelöscht → beim nächsten Lauf offline
+  e.state.unlisted = UNLISTED().slice(0, 2);
+  e.advance(30);
+  const r2 = await e.run();
+  assert.equal(r2.outcome, "published", JSON.stringify(r2.error));
+  assert.equal(e.status().published.count, 12);
+  assert.ok(!e.exists(`objekt/${pent}.html`), "Penthouse offline");
+});

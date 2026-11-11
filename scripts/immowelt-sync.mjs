@@ -306,6 +306,7 @@ export async function main(argv = process.argv.slice(2)) {
         ok: verdict.ok,
         geo_ids: snapshot.geo_ids,
         reported_total_counts: snapshot.reported_total_counts,
+        fetched_by_guid: snapshot.fetched_by_guid,
         count: snapshot.listings.length,
         core_fingerprint: snapshotFingerprint(snapshot.listings).slice(0, 16),
         errors: verdict.errors,
@@ -313,7 +314,7 @@ export async function main(argv = process.argv.slice(2)) {
         listings: snapshot.listings.map((L) => ({
           position: L.position, online_id: L.immowelt_online_id, estate_id: L.immowelt_estate_id, guid: L.immowelt_guid,
           marketing: L.marketing, price_on_request: L.price_on_request, has_price: L.price_eur != null,
-          rooms: L.rooms_value, living_area: L.living_area_value, zip: L.zip,
+          rooms: L.rooms_value, living_area: L.living_area_value, zip: L.zip, location: L.location, type: L.type,
           pictures: L.media.length, photos: L.images.length, floorplans: L.floor_plans.length,
           sections: L.sections.map((s) => `${s.id || "?"}:${s.title} (${s.text.length} Zeichen)`),
           fact_ids: L.fact_rows.map((r) => r.id || r.label),

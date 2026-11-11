@@ -187,7 +187,36 @@ export function applySnapshot(db, snapshot, ctx) {
       const hit = findRow(db, L);
       const id = hit ? hit.row.id : dashedGuid(L.immowelt_guid);
       const prev = hit ? rowToListing(hit.row) : null;
-      const slug = hit ? hit.row.slug : uniqueSlug(db, proposeSlug(L), id);
+      let slug = hit ? hit.row.slug : uniqueSlug(db, proposeSlug(L), id);
+      if (hit && !hit.row.immowelt_guid) {
+        // A scraper-era record comes back through the API: it gets the address derived from
+        // Immowelt like every other offer; its old address is remembered and keeps redirecting.
+        const canonical = uniqueSlug(db, proposeSlug(L), id);
+        if (canonical !== hit.row.slug) {
+          db.prepare("INSERT OR REPLACE INTO listing_aliases (alias, listing_id, kind, created_at) VALUES (?, ?, 'previous_slug', ?)").run(hit.row.slug, id, now);
+          history(db, { at: now, runId, id, change: "reslug", before: { slug: hit.row.slug }, after: { slug: canonical } });
+          slug = canonical;
+        }
+      }
+      if (!hit) {
+        // The cut-over may have tied the old website record with this very id to a different
+        // listing of the same property. The offer that really carries the id owns the old address.
+        const stale = db.prepare("SELECT listing_id FROM listing_aliases WHERE alias = ? AND kind = 'legacy_website_uuid'").get(id);
+        if (stale && stale.listing_id !== id) {
+          db.prepare("DELETE FROM listing_aliases WHERE alias = ? AND kind = 'legacy_website_uuid'").run(id);
+          const others = db.prepare("SELECT COUNT(*) AS n FROM listing_aliases WHERE listing_id = ? AND kind = 'legacy_website_uuid'").get(stale.listing_id).n;
+          const other = db.prepare("SELECT * FROM listings WHERE id = ?").get(stale.listing_id);
+          if (!others && other) {
+            const moved = db.prepare("SELECT alias FROM listing_aliases WHERE listing_id = ? AND kind = 'previous_slug'").all(stale.listing_id).map((r) => r.alias);
+            db.prepare("UPDATE listing_aliases SET listing_id = ? WHERE listing_id = ? AND kind = 'previous_slug'").run(id, stale.listing_id);
+            const op = JSON.parse(other.payload);
+            delete op.previous_slugs;
+            delete op.legacy_ids;
+            db.prepare("UPDATE listings SET payload = ?, updated_at = ? WHERE id = ?").run(JSON.stringify(op), now, other.id);
+            history(db, { at: now, runId, id, change: "alias_moved", before: { listing_id: other.id, previous_slugs: moved }, after: { listing_id: id } });
+          }
+        }
+      }
       const payload = {
         ...L,
         id,

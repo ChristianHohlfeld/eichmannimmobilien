@@ -449,7 +449,8 @@ export function buildSnapshot({ inventories, exposes, fetchedAt, config }) {
     fetched_at: fetchedAt,
     geo_ids: inventories.map((i) => i.geoId),
     total_count: listings.length,
-    reported_total_counts: inventories.map((i) => ({ geo_id: i.geoId, total_count: i.totalCount, pages: i.pages.length })),
+    reported_total_counts: inventories.map((i) => ({ geo_id: i.geoId, total_count: i.totalCount, pages: i.pages.length, ...(i.byGuid ? { list_total: i.listTotal, by_guid: i.byGuid.length } : {}) })),
+    fetched_by_guid: inventories.flatMap((i) => i.byGuid || []),
     address_mode: config.addressMode,
     listings,
   };

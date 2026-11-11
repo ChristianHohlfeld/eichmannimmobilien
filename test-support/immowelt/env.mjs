@@ -45,6 +45,7 @@ export async function makeEnv({ appDir = REPO } = {}) {
     EICHMANN_WEBROOT: path.join(base, "www", "site"),
     EICHMANN_SMOKE_URL: "",
     EICHMANN_IDENTITY_MAP_FILE: path.join(base, "no-identity-map.json"), // tests state their own evidence
+    EICHMANN_EXTRA_GUIDS_FILE: path.join(base, "extra-guids.json"), // absent unless a test writes it
     IMMOWELT_EXPOSE_DELAY_MS: "0",
     IMMOWELT_SECRETS_FILE: path.join(base, "state", "secrets", "immowelt-api.json"),
     IMMOWELT_API_KEY: "",

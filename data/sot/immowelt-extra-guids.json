@@ -1,0 +1,8 @@
+{
+  "_comment": "Angebote, die auf immowelt.de online sind, aber in keiner Liste der Immowelt-API stehen, weil ihnen in den Immowelt-Daten die Orts-ID fehlt (Befund 11.11.2026: GeoID leer, alle Listen- und Zählmethoden suchen über den Ort). Hier steht NUR die Kennung (GUID). Ob das Angebot existiert und alles, was es zeigt (Titel, Preis, Texte, Bilder), kommt bei jedem Abgleich aus der API (GetListByEstateGuids + GetEstateExposeByEstateGuid). Löscht Immowelt das Angebot, geht es von selbst offline. Steht es wieder in der normalen Liste, wird der Eintrag hier wirkungslos und kann entfernt werden. Keine Inhalte, keine Preise in dieser Datei.",
+  "offers": [
+    { "guid": "c6b1d820-4e82-416d-95ad-22472a129955", "online_id": "2sw6g58", "note": "Königsbau, 1 Zimmer, Kauf", "added_at": "2026-11-11", "decided_by": "Chris" },
+    { "guid": "32a8908e-c8e0-4944-b44f-f203ccdaa8a9", "online_id": "2pj3j5e", "note": "Dreifamilienhaus Wollmatingen", "added_at": "2026-11-11", "decided_by": "Chris" },
+    { "guid": "6fd6062e-32f4-4f02-af80-d854bd090279", "online_id": "2nyac5n", "note": "Penthouse Fürstenberg", "added_at": "2026-11-11", "decided_by": "Chris" }
+  ]
+}
