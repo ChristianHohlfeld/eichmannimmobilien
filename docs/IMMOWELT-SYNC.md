@@ -491,17 +491,27 @@ nicht melden, dass er aus ist.
   Einstellungen Benachrichtigungen für Actions zulassen.
   GitHub kann geplante Läufe verzögern; ein Schritt im Workflow verhindert, dass der Zeitplan nach 60 Tagen ohne
   Aktivität im Repository pausiert wird.
-- **Sofortiger Alarm, optional:** `/var/lib/eichmann/secrets/alarm.json` (nur auf dem Server, 0600). Fehlt die Datei
-  oder steht `enabled` nicht auf `true`, wird nichts gesendet.
+- **Lebenszeichen (empfohlen):** Der Wächter auf dem Server prüft alle 15 Minuten den Abgleich **und** die
+  öffentliche Seite wie ein Besucher (Status, Release, Zahl der Angebote, jede Angebotsseite). Ist alles in Ordnung,
+  meldet er sich bei einem Prüfdienst (z. B. Healthchecks.io); bleibt die Meldung aus – Server aus, Timer hängt,
+  Netz weg –, schickt der Dienst eine E-Mail. Stimmt etwas nicht, meldet der Wächter sofort „fail“, ebenso der
+  Abgleich bei einem Fehler. „In Ordnung“ sagt nur der Wächter, damit ein guter Abgleich eine nicht erreichbare
+  Seite nicht überdeckt.
+
+  Einrichten: beim Dienst eine Prüfung anlegen (Takt 15 Minuten, Toleranz 30 Minuten), deren Ping-Adresse als
+  GitHub-Secret `EICHMANN_HEARTBEAT_URL` hinterlegen, dann **Immowelt ops (server)** mit `heartbeat-install`
+  starten (schreibt `/var/lib/eichmann/secrets/alarm.json`, 0600, und sendet das erste Lebenszeichen). Danach das
+  Secret löschen. `watchdog` startet den Wächter sofort und zeigt sein Ergebnis, `heartbeat-off` schaltet das Senden
+  ab. Die Adresse steht nie im Repo und erscheint in keiner Ausgabe.
 
   ```json
   { "enabled": true, "healthcheck_url": "https://hc-ping.com/<uuid>", "webhook_url": "https://example.org/hook" }
   ```
 
-  `healthcheck_url` wird nach jedem guten Lauf aufgerufen und mit `/fail` nach jedem schlechten; ein Dienst dieser
-  Art schlägt auch dann an, wenn die Aufrufe ausbleiben. `webhook_url` erhält bei jedem Zustandswechsel und bei
-  jedem Fehler ein kurzes JSON (Zustand, Zeitpunkte, Fehler, veröffentlichter Stand). Eine nicht erreichbare Senke
-  lässt den Abgleich nie scheitern.
+  `webhook_url` (optional) erhält bei jedem Zustandswechsel und bei jedem Fehler ein kurzes JSON (Zustand,
+  Zeitpunkte, Fehler, veröffentlichter Stand). Eine nicht erreichbare Senke lässt den Abgleich nie scheitern.
+- Der Wächter über GitHub Actions läuft zusätzlich, ist aber lückenhaft: GitHub hat die geplanten Läufe am
+  11./12.11.2026 nur einmal in neun Stunden gestartet. Er ersetzt das Lebenszeichen nicht.
 
 ---
 

@@ -297,7 +297,8 @@ export async function runSync(opts = {}) {
           log(`Laufprotokoll konnte nicht geschrieben werden (${e.code || e.name}).`);
         }
       }
-      await notifySinks(config.alarmFile, status, previousStatus, { fetchImpl: deps.sinkFetch || globalThis.fetch, log });
+      // a failure is reported at once; "all fine" is only said by the watchdog, after it has also checked the public site
+      await notifySinks(config.alarmFile, status, previousStatus, { fetchImpl: deps.sinkFetch || globalThis.fetch, log, okPing: false });
     }
     return status;
   };

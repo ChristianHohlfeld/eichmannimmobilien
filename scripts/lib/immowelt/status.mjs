@@ -99,11 +99,12 @@ export function evaluateStatus(status, { now = new Date(), staleAfterMinutes = n
 /**
  * Optional alarm sinks, configured in a server-only file (never in the repo):
  *   { "enabled": true,
- *     "healthcheck_url": "https://hc-ping.com/<uuid>",   // pinged on every OK run, "/fail" on failure
+ *     "healthcheck_url": "https://hc-ping.com/<uuid>",   // sign of life: "ok" from the server watchdog after its
+ *                                                        // full check (okPing), "/fail" at once from sync or watchdog
  *     "webhook_url": "https://…" }                        // POST on every state change and on each failure
  * Missing file or enabled:false → nothing is sent. A failing sink never fails the sync.
  */
-export async function notifySinks(alarmFile, status, previous, { fetchImpl = globalThis.fetch, timeoutMs = 10_000, log = () => {} } = {}) {
+export async function notifySinks(alarmFile, status, previous, { fetchImpl = globalThis.fetch, timeoutMs = 10_000, log = () => {}, okPing = true } = {}) {
   let cfg = null;
   try {
     cfg = JSON.parse(fs.readFileSync(alarmFile, "utf8"));
@@ -122,7 +123,7 @@ export async function notifySinks(alarmFile, status, previous, { fetchImpl = glo
     }
   };
   const summary = { site: "immobilieneichmann.de", state: status.state, ok: status.ok, at: status.last_attempt_at, last_success_at: status.last_success_at, error: status.error, published: status.published };
-  if (typeof cfg.healthcheck_url === "string" && /^https:\/\//.test(cfg.healthcheck_url)) {
+  if (typeof cfg.healthcheck_url === "string" && /^https:\/\//.test(cfg.healthcheck_url) && (okPing || !status.ok)) {
     const base = cfg.healthcheck_url.replace(/\/+$/, "");
     await post("healthcheck", status.ok ? base : `${base}/fail`, { method: "POST", headers: { "content-type": "text/plain; charset=utf-8" }, body: status.ok ? "ok" : `${status.state}: ${status.error?.message || ""}`.slice(0, 900) });
   }

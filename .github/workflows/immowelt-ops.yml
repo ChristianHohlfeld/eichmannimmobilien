@@ -28,6 +28,9 @@ on:
           - timers-disable
           - admin-password-set
           - github-token-install
+          - watchdog
+          - heartbeat-install
+          - heartbeat-off
           - vorher-on
           - vorher-off
       plan_hash:
@@ -98,7 +101,10 @@ jobs:
             # the untouched pre-cutover webroot, temporarily reachable below /admin/sichtpruefung/_vorher/ for the "before" pictures
             vorher-on)        OLD="$(ls -d /var/www/immobilieneichmann.de.pre-release-* | tail -1)"; test -d "$OLD"; mkdir -p /var/lib/eichmann/review; ln -sfn "$OLD" /var/lib/eichmann/review/_vorher; echo "verlinkt: $OLD" ;;
             vorher-off)       rm -f /var/lib/eichmann/review/_vorher; echo "entfernt" ;;
-            admin-password-set|github-token-install) echo "wird im nächsten Schritt gesetzt" ;;
+            # the server watchdog, now: sync fresh? public site right? → sign of life (output names no address)
+            watchdog)         node scripts/watchdog-check.mjs --local || echo "::warning::Wächter meldet ein Problem (siehe Ausgabe)." ;;
+            heartbeat-off)    node scripts/alarm-install.mjs --off ;;
+            admin-password-set|github-token-install|heartbeat-install) echo "wird im nächsten Schritt gesetzt" ;;
             *) echo "unbekannte Aktion"; exit 2 ;;
           esac
           REMOTE
@@ -126,3 +132,17 @@ jobs:
           test -n "${DISPATCH_TOKEN:-}" || { echo "::error::Secret EICHMANN_DISPATCH_TOKEN fehlt oder ist leer – nichts geändert."; exit 1; }
           printf '%s' "$DISPATCH_TOKEN" | ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
             "${DEPLOY_USER}@${DEPLOY_HOST}" "cd /var/lib/eichmann/app && node scripts/github-token-install.mjs"
+      - name: Install the sign-of-life address (from secret EICHMANN_HEARTBEAT_URL, STDIN only) and send the first one
+        if: inputs.action == 'heartbeat-install'
+        env:
+          HEARTBEAT_URL: ${{ secrets.EICHMANN_HEARTBEAT_URL }}
+          DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.EICHMANN_DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          test -n "${HEARTBEAT_URL:-}" || { echo "::error::Secret EICHMANN_HEARTBEAT_URL fehlt oder ist leer – nichts geändert."; exit 1; }
+          printf '%s' "$HEARTBEAT_URL" | ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" "cd /var/lib/eichmann/app && node scripts/alarm-install.mjs"
+          ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" "cd /var/lib/eichmann/app && node scripts/watchdog-check.mjs --local" || echo "::warning::Wächter meldet ein Problem (siehe Ausgabe)."
+          echo "Lebenszeichen eingerichtet; der Wächter meldet sich ab jetzt alle 15 Minuten." >> "$GITHUB_STEP_SUMMARY"
