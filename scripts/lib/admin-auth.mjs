@@ -77,8 +77,25 @@ export function verifyPassword(password, stored) {
 function credentialOf(email, configPath) {
   const own = readAuth().users?.[normalizeEmail(email)]?.password;
   if (typeof own === "string" && own.startsWith("scrypt$")) return { kind: "own", value: own };
+  if (readAuth().shared_off === true) return null;
   const shared = loadPasswordHash(configPath);
   return shared ? { kind: "shared", value: shared } : null;
+}
+
+/**
+ * Retire the one password everybody shared. From then on a sign-in address only works with the person's
+ * own password; whoever has none yet sets one through "Passwort vergessen?". Own passwords and open reset
+ * links stay. Returns how many addresses already have an own password (no addresses).
+ */
+export function dropSharedPassword() {
+  const data = updateAuth((d) => {
+    d.password_sha256 = "";
+    d.shared_off = true;
+  });
+  return { own_passwords: Object.values(data.users || {}).filter((u) => typeof u?.password === "string" && u.password.startsWith("scrypt$")).length };
+}
+export function sharedPasswordActive(configPath) {
+  return readAuth().shared_off !== true && Boolean(loadPasswordHash(configPath));
 }
 
 export function isAllowedEmail(email, configPath) {
@@ -130,6 +147,7 @@ export function resetEveryoneToShared(sha256) {
   if (!isSha256Hex(hash)) throw new Error("Interner Fehler beim Speichern des Passworts.");
   updateAuth((data) => {
     data.password_sha256 = hash;
+    delete data.shared_off;
     delete data.users;
     delete data.reset;
   });

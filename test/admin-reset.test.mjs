@@ -147,6 +147,48 @@ test("Passwörter je Person, Rücksetz-Link einmalig und befristet, wachsende Pa
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
+test("Gemeinsames Passwort abschalten: danach zählt nur noch das eigene; ohne Mailweg wird nichts abgeschaltet", async () => {
+  const dir = tmpRoot();
+  const { spawnSync } = await import("node:child_process");
+  const authFile = path.join(dir, "secrets", "admin-auth.json");
+  const mailFile = path.join(dir, "secrets", "mail.json");
+  process.env.EICHMANN_ADMIN_AUTH_FILE = authFile;
+  const A = await import("../scripts/lib/admin-auth.mjs");
+  const P = await import("../scripts/lib/admin-password.mjs");
+  P.saveAdminEmails(["helmut@example.com", "chris@example.com"]);
+  P.savePasswordHash("", P.sha256Hex("GemeinsamAlt1"));
+  A.setUserPassword("helmut@example.com", "HelmutsEigenes9");
+  const run = (args = []) => spawnSync(process.execPath, [path.join(ROOT, "scripts", "admin-shared-password-off.mjs"), ...args], { env: { ...process.env, EICHMANN_ADMIN_AUTH_FILE: authFile, EICHMANN_MAIL_FILE: mailFile, EICHMANN_STATE_DIR: dir, EICHMANN_ADMIN_CONFIG: "" }, encoding: "utf8" });
+  try {
+    // ohne Mailweg: verweigert, das gemeinsame Passwort gilt weiter (sonst wäre Chris ausgesperrt)
+    const refused = run();
+    assert.equal(refused.status, 1);
+    assert.match(refused.stderr, /nichts geändert/);
+    assert.ok(A.checkLogin("chris@example.com", "GemeinsamAlt1", ""));
+    assert.equal(JSON.parse(run(["--status"]).stdout).shared_password, "wird noch angenommen");
+
+    fs.writeFileSync(mailFile, JSON.stringify({ url: "smtp://user:pass@127.0.0.1:2525", from: "noreply@example.com" }));
+    const done = run();
+    assert.equal(done.status, 0, done.stderr);
+    assert.deepEqual([JSON.parse(done.stdout).sign_in_addresses, JSON.parse(done.stdout).with_own_password], [2, 1]);
+    assert.ok(!/example\.com/.test(done.stdout), "Ausgabe nennt keine Adresse");
+    assert.ok(!A.checkLogin("chris@example.com", "GemeinsamAlt1", ""), "altes gemeinsames Passwort öffnet nichts mehr");
+    assert.equal(A.credentialFingerprint("chris@example.com", ""), "", "offene Anmeldungen mit dem gemeinsamen Passwort enden");
+    assert.ok(A.checkLogin("helmut@example.com", "HelmutsEigenes9", ""), "eigenes Passwort bleibt");
+    assert.equal(JSON.parse(run(["--status"]).stdout).shared_password, "abgeschaltet");
+
+    // Chris kommt über den Link wieder hinein
+    const token = A.createResetToken("chris@example.com");
+    assert.equal(A.resetPasswordWithToken(token, "ChrisEigenes123", { configPath: "" }), "chris@example.com");
+    assert.ok(A.checkLogin("chris@example.com", "ChrisEigenes123", ""));
+    // Notfall: admin-password-set stellt ein gemeinsames Passwort wieder her
+    A.resetEveryoneToShared(P.sha256Hex("NotfallNeu12345"));
+    assert.ok(A.checkLogin("helmut@example.com", "NotfallNeu12345", ""));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("Passwort vergessen – ganzer Weg über die Admin-Schnittstelle", { skip }, async (t) => {
   const dir = tmpRoot();
   const smtp = await fakeSmtp();
