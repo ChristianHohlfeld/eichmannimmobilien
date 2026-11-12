@@ -19,6 +19,10 @@ name: Immowelt verify live (screenshots + review page)
 # Results: artifact "immowelt-verify-<label>-<run id>" (kept 90 days); open verify/review/index.html.
 
 on:
+  # Every night the review in the admin area (/admin/sichtpruefung/) is renewed on its own: label "check",
+  # Immowelt API read fresh. That way the server needs no GitHub token to ask for a new one.
+  schedule:
+    - cron: "23 3 * * *"
   workflow_dispatch:
     inputs:
       label:
@@ -41,6 +45,17 @@ permissions:
   contents: read
   actions: read
 
+# One set of values for both ways of starting (a nightly start has no inputs).
+env:
+  LABEL: ${{ inputs.label || 'check' }}
+  BASE_URL: ${{ inputs.url || 'https://immobilieneichmann.de' }}
+  USE_API: ${{ (github.event_name == 'schedule' || inputs.api) && 'true' || 'false' }}
+  BEFORE_RUN_ID: ${{ inputs.before_run_id || '' }}
+
+concurrency:
+  group: immowelt-verify-live
+  cancel-in-progress: false
+
 jobs:
   verify:
     runs-on: ubuntu-24.04 # Playwright --with-deps kennt Ubuntu 26 (ubuntu-latest im Wechsel) noch nicht
@@ -56,9 +71,6 @@ jobs:
       - run: npx playwright install --with-deps chromium || npx playwright install chromium
 
       - name: Screenshots – complete page inventory (desktop + mobile, whole page)
-        env:
-          LABEL: ${{ inputs.label }}
-          BASE_URL: ${{ inputs.url }}
         run: |
           set -euo pipefail
           [[ "$BASE_URL" =~ ^https?://[A-Za-z0-9._:-]+(/[A-Za-z0-9._/-]*)?$ ]] || { echo "url ungültig"; exit 1; }
@@ -68,10 +80,7 @@ jobs:
       - name: Comparison table (every offer)
         if: always()
         env:
-          LABEL: ${{ inputs.label }}
-          BASE_URL: ${{ inputs.url }}
-          USE_API: ${{ inputs.api }}
-          IMMOWELT_API_KEY: ${{ inputs.api && secrets.IMMOWELT_API_KEY || '' }}
+          IMMOWELT_API_KEY: ${{ env.USE_API == 'true' && secrets.IMMOWELT_API_KEY || '' }}
         run: |
           set -euo pipefail
           mkdir -p test-results/verify
@@ -83,20 +92,18 @@ jobs:
           node scripts/verify/inventory-report.mjs "${ARGS[@]}"
 
       - name: Immowelt reference pictures (every offer as the API delivers it)
-        if: always() && inputs.api
+        if: always() && env.USE_API == 'true'
         run: |
           set -euo pipefail
           test -f test-results/verify/api-snapshot.json || { echo "Kein API-Stand gelesen – keine Referenzbilder."; exit 0; }
           node scripts/verify/capture-screens.mjs --label immowelt-api --snapshot test-results/verify/api-snapshot.json
 
       - name: Watchdog check (status, release, every offer page)
-        if: always() && inputs.label != 'before'
-        env:
-          BASE_URL: ${{ inputs.url }}
+        if: always() && env.LABEL != 'before'
         run: node scripts/watchdog-check.mjs --url "$BASE_URL" || echo "::warning::Wächter meldet ein Problem – siehe Zusammenfassung."
 
       - name: Setup SSH (review is kept on the server)
-        if: always() && inputs.label != 'before' && github.ref == 'refs/heads/main' && inputs.url == 'https://immobilieneichmann.de'
+        if: always() && env.LABEL != 'before' && github.ref == 'refs/heads/main' && env.BASE_URL == 'https://immobilieneichmann.de'
         env:
           DEPLOY_KEY: ${{ secrets.EICHMANN_DEPLOY_KEY }}
           DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
@@ -110,7 +117,7 @@ jobs:
           echo "HAVE_SSH=1" >> "$GITHUB_ENV"
 
       - name: Before = the pictures of the previous check (from the server)
-        if: always() && env.HAVE_SSH == '1' && inputs.before_run_id == ''
+        if: always() && env.HAVE_SSH == '1' && env.BEFORE_RUN_ID == ''
         env:
           DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.EICHMANN_DEPLOY_USER }}
@@ -124,10 +131,9 @@ jobs:
           if [ -f test-results/verify/screens/before/manifest.json ]; then sed -i 's/"label": "after"/"label": "before"/' test-results/verify/screens/before/manifest.json; else rm -rf test-results/verify/screens/before; fi
 
       - name: Fetch the "before" pictures of an earlier run
-        if: always() && inputs.label != 'before' && inputs.before_run_id != ''
+        if: always() && env.LABEL != 'before' && env.BEFORE_RUN_ID != ''
         env:
           GH_TOKEN: ${{ github.token }}
-          BEFORE_RUN_ID: ${{ inputs.before_run_id }}
         run: |
           set -euo pipefail
           [[ "$BEFORE_RUN_ID" =~ ^[0-9]{5,20}$ ]] || { echo "before_run_id ist keine Laufnummer"; exit 1; }
@@ -138,7 +144,7 @@ jobs:
           mv before-artifact/verify/screens/before test-results/verify/screens/before
 
       - name: Review page (before · after · Immowelt)
-        if: always() && inputs.label != 'before'
+        if: always() && env.LABEL != 'before'
         run: |
           set -euo pipefail
           node scripts/verify/build-review.mjs --root test-results/verify
@@ -169,12 +175,12 @@ jobs:
           echo "Sichtprüfung veröffentlicht: https://immobilieneichmann.de/admin/sichtpruefung/" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Remember this run for the "after" run
-        if: inputs.label == 'before'
+        if: env.LABEL == 'before'
         run: echo "Vorher-Aufnahme gespeichert. Für die Nachher-Aufnahme als before_run_id eintragen – ${{ github.run_id }}" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: immowelt-verify-${{ inputs.label }}-${{ github.run_id }}
+          name: immowelt-verify-${{ env.LABEL }}-${{ github.run_id }}
           path: test-results/
           retention-days: 90

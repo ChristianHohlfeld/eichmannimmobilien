@@ -36,7 +36,7 @@ Offen – jeweils mit dem, der am Zug ist:
 | Mail für „Passwort vergessen“ | Chris: `forms-gateway-admin-reset.patch` im Repo `digitalisierungsplanung.de` einspielen (Deploy dort) | Aktion `mail-gateway-on`, dann `mail-test` |
 | Lebenszeichen des Wächters | Chris: Healthchecks-Prüfung anlegen (15 min, Karenz 30 min), Secret `EICHMANN_HEARTBEAT_URL` | Aktion `heartbeat-install` |
 | Altes gemeinsames Admin-Passwort (Hash steht in der öffentlichen Git-Historie) | erst die Reset-Mail (Zeile darüber) | Aktion `shared-password-off`; danach setzt jede Person über „Passwort vergessen?“ ein eigenes. Solange das nicht gelaufen ist, öffnet das alte Passwort jede Anmelde-Adresse ohne eigenes Passwort. |
-| Knopf „Sichtprüfung“ in der Verwaltung | Chris: Secret `EICHMANN_DISPATCH_TOKEN` (das vorhandene `ADMIN_DISPATCH_TOKEN` von 09/2026 wird von diesem Workflow nicht gelesen) | Aktion `github-token-install` |
+| Sichtprüfung in der Verwaltung | – (erledigt ohne Token) | Wird jede Nacht von selbst erneuert (Zeitplan im Workflow „Immowelt verify live“). Auf dem Server liegt kein GitHub-Token; sofort starten: der Workflow in GitHub. Ein Token nur, wenn es ein fein begrenzter ist (nur dieses Repo, nur „Actions: Read and write“). |
 | Zwei nur für die Homepage freigegebene Angebote | Helmut: zeigen oder nicht | ja → `IMMOWELT_INCLUDE_HOMEPAGE_ONLY=true` in `sync.env`; nein → auf Immowelt deaktivieren |
 | B 9 Preis, Test-Anfragen | Helmut | Preis ändert er auf Immowelt |
 | Orts-ID leer (3 Angebote), Stellplatzpreis fehlt (2) | Immowelt: Antwort auf die Nachfrage vom 11.11., 23:00 | stehen die drei in der normalen Liste, aus `data/sot/immowelt-extra-guids.json` entfernen |
@@ -406,7 +406,7 @@ Im Admin startet der Knopf „Immowelt Sync“ denselben Lauf wie der Timer.
 | `mail-install` | Ersatzweg: Postfach-Zugang aus Secret `EICHMANN_MAIL_URL` |
 | `shared-password-off` · `shared-password-status` | altes gemeinsames Passwort abschalten (nur bei eingeschaltetem Mailversand) · wird es noch angenommen? |
 | `admin-password-set` | Notfall: ein Passwort für alle aus Secret `EICHMANN_ADMIN_NEW_PASSWORD` |
-| `github-token-install` | Token für den Sichtprüfungs-Knopf aus Secret `EICHMANN_DISPATCH_TOKEN` |
+| `github-token-install` · `github-token-off` · `github-token-status` | optional: fein begrenzter Token für den Sofort-Start der Sichtprüfung aus Secret `EICHMANN_DISPATCH_TOKEN` · entfernen · ist einer hinterlegt? |
 
 Nur auf dem Server möglich: Trockenlauf, Rollback auf eine bestimmte Sicherung oder ein bestimmtes Release,
 Ändern von `sync.env` und `alarm.json`.

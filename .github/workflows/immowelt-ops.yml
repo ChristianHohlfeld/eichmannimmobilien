@@ -28,6 +28,8 @@ on:
           - timers-disable
           - admin-password-set
           - github-token-install
+          - github-token-off
+          - github-token-status
           - watchdog
           - heartbeat-install
           - heartbeat-off
@@ -119,6 +121,9 @@ jobs:
             # reset mail is switched on; afterwards everyone signs in with an own password ("Passwort vergessen?").
             shared-password-status) EICHMANN_ADMIN_CONFIG=/var/www/immobilieneichmann.de/admin/config.json node scripts/admin-shared-password-off.mjs --status ;;
             shared-password-off)    EICHMANN_ADMIN_CONFIG=/var/www/immobilieneichmann.de/admin/config.json node scripts/admin-shared-password-off.mjs ;;
+            # the token that lets the admin button start a review at once: remove it / is one stored?
+            github-token-off)    node scripts/github-token-install.mjs --remove ;;
+            github-token-status) node scripts/github-token-install.mjs --status ;;
             mail-key)         node scripts/mail-install.mjs --key ;;
             mail-gateway-on)  node scripts/mail-install.mjs --gateway-on ;;
             mail-status)      node scripts/mail-install.mjs --status ;;
