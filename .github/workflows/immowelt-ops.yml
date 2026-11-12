@@ -31,8 +31,8 @@ on:
           - watchdog
           - heartbeat-install
           - heartbeat-off
-          - admin-shared-password-status
-          - admin-shared-password-off
+          - shared-password-status
+          - shared-password-off
           - mail-key
           - mail-gateway-on
           - mail-install
@@ -117,8 +117,8 @@ jobs:
             # mail-gateway-on asks the gateway whether it accepts this server and only then switches on.
             # retire the old shared admin password (its hash is in the public git history). Only works once the
             # reset mail is switched on; afterwards everyone signs in with an own password ("Passwort vergessen?").
-            admin-shared-password-status) EICHMANN_ADMIN_CONFIG=/var/www/immobilieneichmann.de/admin/config.json node scripts/admin-shared-password-off.mjs --status ;;
-            admin-shared-password-off)    EICHMANN_ADMIN_CONFIG=/var/www/immobilieneichmann.de/admin/config.json node scripts/admin-shared-password-off.mjs ;;
+            shared-password-status) EICHMANN_ADMIN_CONFIG=/var/www/immobilieneichmann.de/admin/config.json node scripts/admin-shared-password-off.mjs --status ;;
+            shared-password-off)    EICHMANN_ADMIN_CONFIG=/var/www/immobilieneichmann.de/admin/config.json node scripts/admin-shared-password-off.mjs ;;
             mail-key)         node scripts/mail-install.mjs --key ;;
             mail-gateway-on)  node scripts/mail-install.mjs --gateway-on ;;
             mail-status)      node scripts/mail-install.mjs --status ;;

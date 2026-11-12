@@ -35,7 +35,7 @@ Offen – jeweils mit dem, der am Zug ist:
 |---|---|---|
 | Mail für „Passwort vergessen“ | Chris: `forms-gateway-admin-reset.patch` im Repo `digitalisierungsplanung.de` einspielen (Deploy dort) | Aktion `mail-gateway-on`, dann `mail-test` |
 | Lebenszeichen des Wächters | Chris: Healthchecks-Prüfung anlegen (15 min, Karenz 30 min), Secret `EICHMANN_HEARTBEAT_URL` | Aktion `heartbeat-install` |
-| Altes gemeinsames Admin-Passwort (Hash steht in der öffentlichen Git-Historie) | erst die Reset-Mail (Zeile darüber) | Aktion `admin-shared-password-off`; danach setzt jede Person über „Passwort vergessen?“ ein eigenes. Solange das nicht gelaufen ist, öffnet das alte Passwort jede Anmelde-Adresse ohne eigenes Passwort. |
+| Altes gemeinsames Admin-Passwort (Hash steht in der öffentlichen Git-Historie) | erst die Reset-Mail (Zeile darüber) | Aktion `shared-password-off`; danach setzt jede Person über „Passwort vergessen?“ ein eigenes. Solange das nicht gelaufen ist, öffnet das alte Passwort jede Anmelde-Adresse ohne eigenes Passwort. |
 | Knopf „Sichtprüfung“ in der Verwaltung | Chris: Secret `EICHMANN_DISPATCH_TOKEN` (das vorhandene `ADMIN_DISPATCH_TOKEN` von 09/2026 wird von diesem Workflow nicht gelesen) | Aktion `github-token-install` |
 | Zwei nur für die Homepage freigegebene Angebote | Helmut: zeigen oder nicht | ja → `IMMOWELT_INCLUDE_HOMEPAGE_ONLY=true` in `sync.env`; nein → auf Immowelt deaktivieren |
 | B 9 Preis, Test-Anfragen | Helmut | Preis ändert er auf Immowelt |
@@ -404,7 +404,7 @@ Im Admin startet der Knopf „Immowelt Sync“ denselben Lauf wie der Timer.
 | `mail-key` · `mail-gateway-on` | Signierschlüssel für den Mailversand anlegen (zeigt die öffentliche Hälfte) · über das Formular-Gateway einschalten |
 | `mail-status` · `mail-test` | eingerichteter Versandweg · Probe an jedes Anmelde-Postfach |
 | `mail-install` | Ersatzweg: Postfach-Zugang aus Secret `EICHMANN_MAIL_URL` |
-| `admin-shared-password-off` · `admin-shared-password-status` | altes gemeinsames Passwort abschalten (nur bei eingeschaltetem Mailversand) · wird es noch angenommen? |
+| `shared-password-off` · `shared-password-status` | altes gemeinsames Passwort abschalten (nur bei eingeschaltetem Mailversand) · wird es noch angenommen? |
 | `admin-password-set` | Notfall: ein Passwort für alle aus Secret `EICHMANN_ADMIN_NEW_PASSWORD` |
 | `github-token-install` | Token für den Sichtprüfungs-Knopf aus Secret `EICHMANN_DISPATCH_TOKEN` |
 

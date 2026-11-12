@@ -66,7 +66,7 @@ E-Mail → https://immobilieneichmann.de/admin/#reset=<Schlüssel>
   Ersatzweg ohne Gateway: Secret `EICHMANN_MAIL_URL` =
   `smtps://BENUTZER:PASSWORT@server:465/?from=absender@domain`, dann `mail-install`.
 - **Gemeinsames Passwort abschalten:** Solange eine Anmelde-Adresse kein eigenes Passwort hat, gilt für sie
-  das frühere gemeinsame. Aktion `admin-shared-password-off` beendet das (nur möglich, wenn der Mailversand
+  das frühere gemeinsame. Aktion `shared-password-off` beendet das (nur möglich, wenn der Mailversand
   eingeschaltet ist); wer dann noch kein eigenes hat, klickt „Passwort vergessen?“.
 - **Notfall** (kein Mailzugang): `admin-password-set` setzt ein Passwort für alle; eigene Passwörter und
   offene Links entfallen dabei.
