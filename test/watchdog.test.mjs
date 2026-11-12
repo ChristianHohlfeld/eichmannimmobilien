@@ -10,6 +10,10 @@ import { fileURLToPath } from "node:url";
 import { notifySinks, STATUS_SCHEMA } from "../scripts/lib/immowelt/status.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+// The server scripts read their paths from the shared configuration, which needs the database driver.
+// Where it is not installed (rules-only CI job), these two tests are skipped; the logic test above them runs everywhere.
+const hasSqlite = await import("better-sqlite3").then(() => true, () => false);
+const skip = hasSqlite ? false : "better-sqlite3 nicht installiert";
 const tmpRoot = () => {
   const base = process.env.EICHMANN_TEST_TMP || os.tmpdir();
   fs.mkdirSync(base, { recursive: true });
@@ -48,7 +52,7 @@ test("Lebenszeichen: „in Ordnung“ sagt nur der Wächter, ein Fehler wird sof
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
-test("Wächter auf dem Server: prüft Abgleich und öffentliche Seite", async (t) => {
+test("Wächter auf dem Server: prüft Abgleich und öffentliche Seite", { skip }, async (t) => {
   const dir = tmpRoot();
   const state = path.join(dir, "state");
   fs.mkdirSync(path.join(state, "status"), { recursive: true });
@@ -94,7 +98,7 @@ test("Wächter auf dem Server: prüft Abgleich und öffentliche Seite", async (t
   assert.match(JSON.parse(stale.out).problems.join(" "), /Letzter erfolgreicher Abgleich vor 300 Minuten/);
 });
 
-test("Adresse der Lebenszeichen-Prüfung: nur über STDIN, nie in der Ausgabe", async () => {
+test("Adresse der Lebenszeichen-Prüfung: nur über STDIN, nie in der Ausgabe", { skip }, async () => {
   const dir = tmpRoot();
   const env = { EICHMANN_STATE_DIR: dir, EICHMANN_SETTINGS_FILE: "/nonexistent" };
   const file = path.join(dir, "secrets", "alarm.json");
