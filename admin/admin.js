@@ -638,26 +638,26 @@ function resetTokenFromUrl() {
   return m ? m[1] : null;
 }
 
-async function setupForgot() {
-  let available = false;
+/** Is the reset mail set up? Asked at the moment of the click, so no reload is needed once it is. */
+async function resetByMailAvailable() {
   try {
-    available = (await api("/auth/options")).reset_by_mail === true;
+    return (await api("/auth/options")).reset_by_mail === true;
   } catch {
-    /* then the plain hint stays */
+    return false;
   }
-  $("forgot-line")?.classList.toggle("hidden", !available);
-  $("forgot-unavailable")?.classList.toggle("hidden", available);
 }
-
-function openForgot() {
+async function openForgot() {
   const form = $("form-forgot");
-  form.classList.remove("hidden");
+  const off = $("forgot-off");
+  const available = await resetByMailAvailable();
+  form.classList.toggle("hidden", !available);
+  off.classList.toggle("hidden", available);
+  if (!available) return;
   $("forgot-msg").classList.add("hidden");
   $("btn-forgot-send").disabled = false;
   $("forgot-email").value = normalizeEmail($("email").value) || recallEmail();
   $("forgot-email").focus();
 }
-
 async function onForgot(ev) {
   ev.preventDefault();
   const btn = $("btn-forgot-send");
@@ -2112,7 +2112,7 @@ function bind() {
   $("btn-reset-again")?.addEventListener("click", () => {
     history.replaceState(null, "", location.pathname);
     showGate(true);
-    openForgot();
+    void openForgot();
   });
   $("reset-show")?.addEventListener("change", (ev) => {
     for (const id of ["reset-new", "reset-repeat"]) $(id).type = ev.target.checked ? "text" : "password";
@@ -2179,7 +2179,6 @@ async function boot() {
     document.body.innerHTML = `<p class="err-box" style="margin:2rem">Admin-Konfiguration fehlt: ${esc(e.message)}</p>`;
     return;
   }
-  void setupForgot();
   const resetToken = resetTokenFromUrl();
   if (resetToken) {
     await showReset(resetToken);

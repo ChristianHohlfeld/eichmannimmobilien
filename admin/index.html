@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#0F2744" />
   <link rel="icon" href="../assets/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
-  <link rel="stylesheet" href="admin.css?v=einfach-3" />
+  <link rel="stylesheet" href="admin.css?v=einfach-4" />
 </head>
 <body>
   <header class="app-header hidden" id="app-header">
@@ -41,7 +41,6 @@
         <p id="login-ok" class="ok-box hidden" role="status"></p>
       </form>
       <p class="hint" id="forgot-line"><button type="button" class="link-btn" id="btn-forgot">Passwort vergessen?</button></p>
-      <p class="hint hidden" id="forgot-unavailable">Passwort vergessen? Bitte bei Chris Hohlfeld melden – er setzt es zurück.</p>
       <form id="form-forgot" class="forgot-box hidden">
         <strong>Neues Passwort anfordern</strong>
         <p class="hint" style="margin-top:4px">Geben Sie Ihre E-Mail-Adresse ein. Sie bekommen eine E-Mail mit einem Link, über den Sie ein neues Passwort festlegen.</p>
@@ -55,6 +54,7 @@
         </div>
         <p id="forgot-msg" class="ok-box hidden" role="status" aria-live="polite"></p>
       </form>
+      <p id="forgot-off" class="warn-box hidden" role="status" aria-live="polite">Das Zurücksetzen per E-Mail ist im Moment nicht verfügbar. Bitte versuchen Sie es später noch einmal.</p>
     </section>
 
     <section id="view-reset" class="card gate-card hidden">
@@ -462,6 +462,6 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="admin.js?v=einfach-3" type="module"></script>
+  <script src="admin.js?v=einfach-4" type="module"></script>
 </body>
 </html>

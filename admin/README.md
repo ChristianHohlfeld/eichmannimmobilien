@@ -60,8 +60,9 @@ E-Mail → https://immobilieneichmann.de/admin/#reset=<Schlüssel>
   Einrichten über **Immowelt ops (server)**: `mail-key` (Schlüssel einmal anlegen, zeigt die öffentliche
   Hälfte – kein Geheimnis; sie wird im Gateway hinterlegt), danach `mail-gateway-on` (fragt das Gateway, ob
   es diesen Server anerkennt, und schaltet nur dann ein). `mail-test` schickt eine Probe an jedes
-  Anmelde-Postfach, `mail-status` zeigt den eingerichteten Weg. Ohne Einrichtung zeigt die Anmeldeseite
-  stattdessen den Hinweis, sich bei der Betreuung zu melden.
+  Anmelde-Postfach, `mail-status` zeigt den eingerichteten Weg. „Passwort vergessen?“ steht immer auf der
+  Anmeldeseite; solange kein Versandweg eingeschaltet ist, sagt der Klick nur, dass das Zurücksetzen per
+  E-Mail im Moment nicht verfügbar ist (ohne Namen, ohne Mail zu versprechen).
   Ersatzweg ohne Gateway: Secret `EICHMANN_MAIL_URL` =
   `smtps://BENUTZER:PASSWORT@server:465/?from=absender@domain`, dann `mail-install`.
 - **Notfall** (kein Mailzugang): `admin-password-set` setzt ein Passwort für alle; eigene Passwörter und
