@@ -267,6 +267,29 @@ export function migrateAdminEmailsFromConfig(configPath) {
   return { moved, cleaned, count: cleanEmails(readAuthFile(adminAuthSecretsPath())?.admin_emails).length };
 }
 
+/**
+ * The publicly served admin/config.json must not carry the password hash. Once the server-only
+ * file holds a valid hash, the copy in the public file is blanked (the fallback is then unused).
+ * Never touches the public file while it is still the only place the hash is stored.
+ * @returns {{ cleaned: boolean }}
+ */
+export function scrubPasswordHashFromPublicConfig(configPath) {
+  if (!loadPasswordHash("")) return { cleaned: false }; // secrets file has no hash yet → keep the fallback
+  if (!configPath || !fs.existsSync(configPath)) return { cleaned: false };
+  try {
+    const real = fs.realpathSync(configPath);
+    const config = JSON.parse(fs.readFileSync(real, "utf8"));
+    if (!config.password_sha256) return { cleaned: false };
+    config.password_sha256 = "";
+    const tmp = `${real}.tmp-${process.pid}-${Date.now()}`;
+    fs.writeFileSync(tmp, JSON.stringify(config, null, 2) + "\n", { encoding: "utf8", mode: fs.statSync(real).mode & 0o777 });
+    fs.renameSync(tmp, real);
+    return { cleaned: true };
+  } catch {
+    return { cleaned: false };
+  }
+}
+
 export function sessionMatchesPassword(session, expectHash) {
   if (!session) return false;
   const expect = String(expectHash || "").toLowerCase();

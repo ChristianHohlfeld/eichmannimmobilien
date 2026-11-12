@@ -91,6 +91,7 @@ import {
   migratePasswordHashFromConfig,
   loadAdminEmails,
   migrateAdminEmailsFromConfig,
+  scrubPasswordHashFromPublicConfig,
 } from "./lib/admin-password.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -1269,6 +1270,13 @@ try {
 } catch (e) {
   console.error("[admin-api] auth migrate skipped:", e.message || e);
 }
+// The hash must not stay in the publicly served config.json once it is stored server-side.
+try {
+  if (scrubPasswordHashFromPublicConfig(CONFIG_PATH).cleaned) console.log(JSON.stringify({ event: "admin_hash_removed_from_public_config" }));
+} catch (e) {
+  console.error(JSON.stringify({ event: "admin_hash_scrub_failed", error: e.code || e.name }));
+}
+
 
 server.listen(PORT, HOST, () => {
   console.log(

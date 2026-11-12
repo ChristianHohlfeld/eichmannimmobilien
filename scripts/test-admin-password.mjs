@@ -181,3 +181,32 @@ console.log("test-admin-password: ok");
   fs.rmSync(dir, { recursive: true, force: true });
   console.log("test-admin-emails: ok");
 }
+
+// ---- the password hash must not stay in the publicly served config.json ----
+{
+  const { scrubPasswordHashFromPublicConfig } = await import("./lib/admin-password.mjs");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "eichmann-scrub-"));
+  const auth = path.join(dir, "secrets", "admin-auth.json");
+  const real = path.join(dir, "admin-config.json");
+  const link = path.join(dir, "config.json");
+  process.env.EICHMANN_ADMIN_AUTH_FILE = auth;
+  const hash = sha256Hex("GeheimesPasswort7");
+  fs.writeFileSync(real, JSON.stringify({ password_sha256: hash, repo: "x/y" }));
+  fs.symlinkSync(real, link);
+
+  // only place the hash is stored → must stay, signing in keeps working
+  assert.deepEqual(scrubPasswordHashFromPublicConfig(link), { cleaned: false });
+  assert.equal(loadPasswordHash(link), hash);
+
+  // moved server-side → public copy is blanked, signing in still works
+  assert.equal(migratePasswordHashFromConfig(link).migrated, true);
+  assert.deepEqual(scrubPasswordHashFromPublicConfig(link), { cleaned: true });
+  const pub = JSON.parse(fs.readFileSync(link, "utf8"));
+  assert.equal(pub.password_sha256, "");
+  assert.equal(pub.repo, "x/y");
+  assert.ok(!fs.readFileSync(real, "utf8").includes(hash), "Hash steht nicht mehr in der öffentlichen Datei");
+  assert.equal(loadPasswordHash(link), hash, "Anmeldung prüft weiter gegen die Server-Datei");
+  assert.deepEqual(scrubPasswordHashFromPublicConfig(link), { cleaned: false }, "zweiter Lauf ändert nichts");
+  fs.rmSync(dir, { recursive: true, force: true });
+  console.log("test-admin-hash-scrub: ok");
+}
