@@ -52,11 +52,11 @@ function clearStickyToast() {
 
 /** Durable status under Immowelt-Stand — stays until next Sync (not toast-only). */
 const SYNC_LOADING_MSG =
-  "Immowelt-Sync läuft… Bitte warten. Das kann ein paar Minuten dauern.";
+  "Der Abgleich mit Immowelt läuft. Bitte warten – das dauert meist etwa eine Minute.";
 const SYNC_LOADING_LONG_MSG =
-  "Immowelt-Sync läuft noch… Dauert länger als üblich — bitte weiter warten.";
+  "Der Abgleich läuft noch. Es dauert diesmal länger als üblich – bitte weiter warten.";
 const SYNC_DISCONNECT_MSG =
-  "Verbindung unterbrochen — Sync auf dem Server kann trotzdem fertig sein. Bitte Seite neu laden oder Sync-Status prüfen.";
+  "Die Verbindung wurde unterbrochen. Der Abgleich kann trotzdem geklappt haben. Bitte laden Sie diese Seite neu und schauen Sie auf die Meldung ganz oben.";
 /** Client abort slightly after server/nginx 240s so we never spin forever on iPhone. */
 const SYNC_CLIENT_TIMEOUT_MS = 250_000;
 let syncLongWaitTimer = null;
@@ -104,9 +104,9 @@ function setImmoweltSyncBusy(busy) {
   btn.classList.toggle("is-syncing", !!busy);
   if (busy) {
     btn.innerHTML =
-      '<span class="btn-sync-spinner" aria-hidden="true"></span><span>Läuft …</span>';
+      '<span class="btn-sync-spinner" aria-hidden="true"></span><span>Abgleich läuft …</span>';
   } else {
-    btn.textContent = "Immowelt Sync";
+    btn.textContent = "Jetzt mit Immowelt abgleichen";
   }
 }
 
@@ -160,7 +160,7 @@ async function resolveImmoweltSyncAfterDisconnect() {
     if (status.state === "current") {
       return {
         kind: "ok",
-        message: "Keine Änderungen. Die Website bleibt wie sie ist.",
+        message: "Fertig. Bei Immowelt hat sich nichts geändert – Ihre Website ist aktuell.",
       };
     }
   } catch {
@@ -241,7 +241,7 @@ async function api(path, options = {}) {
     const aborted = e && (e.name === "AbortError" || opts.signal?.aborted);
     const err = new Error(
       aborted || path.includes("/immowelt/sync")
-        ? "Verbindung unterbrochen — Sync auf dem Server kann trotzdem fertig sein. Bitte Seite neu laden oder Sync-Status prüfen."
+        ? "Die Verbindung wurde unterbrochen. Der Abgleich kann trotzdem geklappt haben. Bitte laden Sie diese Seite neu und schauen Sie auf die Meldung ganz oben."
         : "Verbindung unterbrochen. Bitte erneut versuchen."
     );
     err.status = 0;
@@ -272,12 +272,12 @@ async function api(path, options = {}) {
     let msg = (data && (data.error || data.message)) || "";
     if (!msg) {
       if (res.status === 499) {
-        msg = "Verbindung unterbrochen — Sync auf dem Server kann trotzdem fertig sein. Bitte Seite neu laden oder Sync-Status prüfen.";
+        msg = "Die Verbindung wurde unterbrochen. Der Abgleich kann trotzdem geklappt haben. Bitte laden Sie diese Seite neu und schauen Sie auf die Meldung ganz oben.";
       } else if (res.status === 502 || res.status === 504) {
         msg = "Der Server hat nicht rechtzeitig geantwortet. Bitte erneut versuchen.";
       } else if (!text) {
         msg = path.includes("/immowelt/sync")
-        ? "Verbindung unterbrochen — Sync auf dem Server kann trotzdem fertig sein. Bitte Seite neu laden oder Sync-Status prüfen."
+        ? "Die Verbindung wurde unterbrochen. Der Abgleich kann trotzdem geklappt haben. Bitte laden Sie diese Seite neu und schauen Sie auf die Meldung ganz oben."
         : "Leere Antwort vom Server. Bitte erneut versuchen.";
       } else {
         msg = `HTTP ${res.status}`;
@@ -291,7 +291,7 @@ async function api(path, options = {}) {
   if (data == null) {
     const err = new Error(
       path.includes("/immowelt/sync")
-        ? "Verbindung unterbrochen — Sync auf dem Server kann trotzdem fertig sein. Bitte Seite neu laden oder Sync-Status prüfen."
+        ? "Die Verbindung wurde unterbrochen. Der Abgleich kann trotzdem geklappt haben. Bitte laden Sie diese Seite neu und schauen Sie auf die Meldung ganz oben."
         : "Leere Antwort vom Server. Bitte erneut versuchen."
     );
     err.status = res.status;
@@ -305,7 +305,7 @@ function showGate(on) {
   $("view-gate").classList.toggle("hidden", !on);
   $("view-app").classList.toggle("hidden", on);
   $("app-header").classList.toggle("hidden", on);
-  $("sot-banner").classList.toggle("hidden", on);
+  $("sot-banner")?.classList.toggle("hidden", on);
 }
 
 function setTab(name, refresh = true) {
@@ -925,6 +925,7 @@ async function loadImmoweltHealth() {
   } catch {
     updatePendingBanner(null);
   }
+  renderEasyStatus(status);
   const valid = status.last_valid_at || null;
   if (status.state === "current") {
     line.innerHTML = `<span class="badge ok">OK</span> aktuelle Inserate von Immowelt ${esc(fmt(valid))}`;
@@ -973,56 +974,98 @@ function updatePendingBanner(preview) {
   }
 }
 
+/** "heute, 09:39 Uhr" – how a person would say it. */
+function friendlyTime(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const day = (x) => new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", year: "numeric" }).format(x);
+  const time = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(d);
+  const today = day(new Date());
+  const yesterday = day(new Date(Date.now() - 86_400_000));
+  const when = day(d) === today ? "heute" : day(d) === yesterday ? "gestern" : `am ${day(d).slice(0, 6)}`;
+  return `${when}, ${time} Uhr`;
+}
+
+/**
+ * The one thing the owner needs to know, in plain words: is everything fine, and do I have to do
+ * anything? Technical detail stays in the "Technik" tab.
+ */
+function easyStatusOf(status, now = Date.now()) {
+  const count = status?.published?.count;
+  const offers = count == null ? "Ihre Angebote" : count === 1 ? "1 Angebot" : `${count} Angebote`;
+  const last = friendlyTime(status?.last_success_at || status?.last_valid_at);
+  const lastMs = Date.parse(status?.last_success_at || status?.last_valid_at || "");
+  const overdue = Number.isFinite(lastMs) && now - lastMs > (status?.stale_after_minutes || 120) * 60_000;
+  const helper = "Chris Hohlfeld";
+  const stays = `Ihre Website bleibt online und zeigt weiter den Stand von ${last || "zuletzt"}.`;
+  switch (status?.state) {
+    case "current":
+      if (overdue) {
+        return { kind: "warn", icon: "!", title: "Der Abgleich ist überfällig", text: `Die Website hat Immowelt zuletzt ${last} abgefragt. ${stays}`, todo: `Drücken Sie unten „Jetzt mit Immowelt abgleichen“. Kommt die Meldung danach wieder: bitte ${helper} Bescheid geben.` };
+      }
+      return { kind: "ok", icon: "✓", title: "Alles in Ordnung", text: `Ihre Website zeigt ${offers} von Immowelt. Zuletzt abgeglichen: ${last || "gerade eben"}.`, todo: "Sie müssen nichts tun." };
+    case "pending_confirmation":
+      return { kind: "warn", icon: "!", title: "Die Website wartet zur Sicherheit kurz ab", text: "Bei Immowelt fehlen plötzlich viele Angebote. Damit nichts versehentlich verschwindet, übernimmt die Website das erst beim nächsten Abgleich in etwa 30 Minuten.", todo: "Haben Sie die Angebote absichtlich entfernt? Dann müssen Sie nichts tun. Wenn nicht: bitte bei Immowelt nachsehen." };
+    case "failed":
+    case "rejected":
+      return { kind: "err", icon: "!", title: "Der Abgleich hat gerade nicht geklappt", text: `Die Website konnte Immowelt nicht vollständig lesen. ${stays}`, todo: `Meist erledigt sich das beim nächsten Abgleich von selbst. Steht diese Meldung morgen noch hier: bitte ${helper} Bescheid geben.` };
+    case "held":
+      return { kind: "warn", icon: "!", title: "Der Abgleich ist vorübergehend angehalten", text: `Der automatische Abgleich wurde bewusst gestoppt. ${stays}`, todo: `Sie müssen nichts tun. ${helper} schaltet ihn wieder ein.` };
+    case "awaiting_api_key":
+    case "migration_required":
+      return { kind: "warn", icon: "!", title: "Die Einrichtung ist noch nicht abgeschlossen", text: `Der Abgleich mit Immowelt ist noch nicht fertig eingerichtet. ${stays}`, todo: `Bitte ${helper} Bescheid geben.` };
+    default:
+      return { kind: "warn", icon: "!", title: "Der Stand ist gerade nicht bekannt", text: "Die Website konnte ihren eigenen Stand nicht abrufen.", todo: `Laden Sie diese Seite neu. Bleibt die Meldung: bitte ${helper} Bescheid geben.` };
+  }
+}
+
+function renderEasyStatus(status) {
+  const box = $("easy-status");
+  if (!box) return;
+  const v = easyStatusOf(status);
+  box.className = `easy-status is-${v.kind}`;
+  $("easy-status-icon").textContent = v.icon;
+  $("easy-status-title").textContent = v.title;
+  $("easy-status-text").textContent = v.text;
+  $("easy-status-todo").innerHTML = `<strong>Was muss ich tun?</strong> ${esc(v.todo)}`;
+}
+
 function renderImmowelt() {
-  const tbody = $("immowelt-tbody");
-  $("immowelt-count").textContent = `(${immoweltListings.length})`;
-  if (!immoweltListings.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="muted">Keine Immowelt-Objekte vorhanden.</td></tr>`;
+  const box = $("immowelt-cards");
+  // Immowelt ist die einzige Quelle: Sichtbarkeit, Texte und Bilder werden dort gepflegt und
+  // automatisch übernommen – hier gibt es dafür bewusst keinen Schalter.
+  const online = immoweltListings.filter((L) => L.active !== false && L.site_hidden !== true);
+  $("immowelt-count").textContent = `(${online.length})`;
+  if (!online.length) {
+    box.innerHTML = `<p class="muted">Im Moment steht kein Angebot von Immowelt auf der Website.</p>`;
     return;
   }
-  tbody.innerHTML = immoweltListings
+  box.innerHTML = online
     .map((L) => {
-      const local = L.local_url ? `../${L.local_url}` : "#";
-      const ref = String(L.reference_number || L.facts?.Referenznummer || "")
-        .trim()
-        .toUpperCase();
-      // Immowelt ist die einzige Quelle: Sichtbarkeit, Texte und Bilder werden dort gepflegt und
-      // automatisch übernommen – hier gibt es dafür bewusst keinen Schalter mehr.
-      const offline = L.active === false || L.site_hidden === true;
-      const visibilityBadge = offline
-        ? ' <span class="badge warn">offline</span>'
-        : ' <span class="badge ok">öffentlich</span>';
-      return `<tr>
-        <td>
-          <strong>${ref ? `<span class="badge">${esc(ref)}</span> ` : ""}${esc(L.title || "–")}</strong>
-          <div><span class="badge">Immowelt</span>${visibilityBadge}</div>
-        </td>
-        <td>${esc(L.location || "–")}</td>
-        <td>${esc(L.price || "–")}</td>
-        <td><span class="badge">${esc(L.status || "–")}</span></td>
-        <td>
-          <span class="muted" title="An-/Ausschalten, Texte, Preise und Bilder ausschließlich bei Immowelt ändern – die Website übernimmt es automatisch.">wird bei Immowelt gepflegt</span>
-          ${
-            offline
-              ? ""
-              : `<a class="btn btn-outline btn-sm" href="${esc(local)}" target="_blank" rel="noopener">Seite</a>`
-          }
-        </td>
-      </tr>`;
+      const local = L.local_url ? `../${L.local_url}` : null;
+      const ref = String(L.reference_number || L.facts?.Referenznummer || "").trim().toUpperCase();
+      const title = String(L.title || "Angebot");
+      const thumb = thumbUrl(L);
+      const facts = [L.rooms, L.living_area, L.location].filter(Boolean).join(" · ");
+      return `<article class="offer-card">
+        ${thumb ? `<img src="${esc(thumb)}" alt="" loading="lazy" />` : `<div class="offer-card-noimg" aria-hidden="true"></div>`}
+        <div class="offer-card-body">
+          <strong>${ref && !title.toUpperCase().startsWith(ref) ? `${esc(ref)} · ` : ""}${esc(title)}</strong>
+          <div class="offer-card-price">${esc(L.price || "–")}</div>
+          <div class="muted">${esc(facts)}</div>
+          ${local ? `<a class="btn btn-outline btn-sm" href="${esc(local)}" target="_blank" rel="noopener">Auf der Website ansehen</a>` : ""}
+        </div>
+      </article>`;
     })
     .join("");
-  tbody.querySelectorAll("[data-toggle-hidden]").forEach((btn) => {
-    btn.addEventListener("click", () =>
-      toggleVisibility(btn.getAttribute("data-toggle-hidden"))
-    );
-  });
 }
 
 function renderEigen() {
   const tbody = $("eigen-tbody");
   $("eigen-count").textContent = `(${eigenListings.length})`;
   if (!eigenListings.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="muted">Keine Eigen-Inserate vorhanden.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="muted">Sie haben keine eigenen Angebote angelegt. Das ist in Ordnung – Ihre Immowelt-Angebote stehen unter „Start“.</td></tr>`;
     return;
   }
   tbody.innerHTML = eigenListings
@@ -1033,7 +1076,7 @@ function renderEigen() {
         L.site_hidden === true
           ? ' <span class="badge warn">ausgeblendet</span>'
           : ' <span class="badge ok">öffentlich</span>';
-      const toggleLabel = L.site_hidden === true ? "Einblenden" : "Ausblenden";
+      const toggleLabel = L.site_hidden === true ? "Wieder zeigen" : "Verstecken";
       const toggleClass = L.site_hidden === true ? "btn-primary" : "btn-outline";
       return `<tr>
         <td>
@@ -1048,10 +1091,10 @@ function renderEigen() {
         <td>
           <button type="button" class="btn ${toggleClass} btn-sm" data-toggle-hidden="${esc(L.id)}" title="${toggleLabel} auf der Website">${toggleLabel}</button>
           <button type="button" class="btn btn-outline btn-sm" data-edit="${esc(L.id)}">Bearbeiten</button>
-          <button type="button" class="btn btn-outline btn-sm" data-delete="${esc(L.id)}" style="color:var(--err)" title="Eigen-Inserat löschen">Löschen</button>
+          <button type="button" class="btn btn-outline btn-sm" data-delete="${esc(L.id)}" style="color:var(--err)" title="Dieses eigene Angebot löschen">Löschen</button>
           ${
             L.local_url && L.site_hidden !== true && L.active !== false
-              ? `<a class="btn btn-outline btn-sm" href="${esc(local)}" target="_blank" rel="noopener">Seite</a>`
+              ? `<a class="btn btn-outline btn-sm" href="${esc(local)}" target="_blank" rel="noopener">Ansehen</a>`
               : ""
           }
         </td>
@@ -1321,7 +1364,7 @@ function applySavedListing(saved) {
 function openEditor(id) {
   const L = id ? eigenListings.find((x) => x.id === id) : null;
   $("card-editor").classList.remove("hidden");
-  $("editor-heading").textContent = L ? "Eigen-Inserat bearbeiten" : "Neues Eigen-Inserat";
+  $("editor-heading").textContent = L ? "Angebot bearbeiten" : "Neues Angebot";
   $("btn-delete").style.display = L ? "" : "none";
   $("f-id").value = L?.id || crypto.randomUUID();
   $("f-title").value = L?.title || "";
@@ -1411,7 +1454,7 @@ async function onSubmit(ev) {
     applySavedListing(saved);
     syncGalleryFromListing(saved);
     msg.textContent = "Gespeichert. Die Website wurde geändert.";
-    toast("Eigen-Inserat übernommen", "ok");
+    toast("Angebot gespeichert", "ok");
     $("f-id").value = saved.id;
     $("btn-delete").style.display = "";
     await reloadAll();
@@ -1436,7 +1479,7 @@ async function deleteEigenListing(id) {
     eigenListings = eigenListings.filter((x) => x.id !== id);
     renderEigen();
     if (editorOpen) closeEditor();
-    toast("Eigen-Inserat gelöscht", "ok");
+    toast("Angebot gelöscht", "ok");
     await reloadAll();
   } catch (e) {
     if (editorOpen) $("form-msg").textContent = e.message || String(e);
@@ -1469,7 +1512,7 @@ async function applyImmoweltSyncSuccess(syncRes) {
   if (!syncRes.has_changes) {
     const msg =
       syncRes.message ||
-      "Keine Änderungen. Die Website bleibt wie sie ist.";
+      "Fertig. Bei Immowelt hat sich nichts geändert – Ihre Website ist aktuell.";
     await reloadAll();
     setImmoweltSyncOutcome(msg, "ok");
     return;
@@ -1497,7 +1540,7 @@ async function applyImmoweltSyncSuccess(syncRes) {
     }),
   });
   await reloadAll();
-  setImmoweltSyncOutcome("Übernommen. Die Website ist aktualisiert.", "ok");
+  setImmoweltSyncOutcome("Fertig. Ihre Website zeigt jetzt den neuen Stand von Immowelt.", "ok");
 }
 
 async function onImmoweltSync() {

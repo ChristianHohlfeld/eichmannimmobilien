@@ -494,10 +494,10 @@ function buildImmoweltSyncResponse(db, result) {
     message: failed
       ? publicError
       : statusState === "pending_confirmation"
-        ? "Immowelt meldet einen großen Wegfall von Angeboten. Er wird automatisch übernommen, sobald Immowelt denselben Stand ein zweites Mal bestätigt."
+        ? "Bei Immowelt fehlen plötzlich viele Angebote. Zur Sicherheit übernimmt die Website das erst beim nächsten Abgleich in etwa 30 Minuten."
         : changedNow
-          ? `Immowelt-Stand übernommen und veröffentlicht: ${(lastChange?.added || []).length} neu, ${(lastChange?.changed || []).length} geändert, ${(lastChange?.removed || []).length} offline.`
-          : "Keine Änderungen auf Immowelt — Website ist aktuell.",
+          ? `Fertig. Ihre Website zeigt jetzt den neuen Stand von Immowelt: ${(lastChange?.added || []).length} neu, ${(lastChange?.changed || []).length} geändert, ${(lastChange?.removed || []).length} entfernt.`
+          : "Fertig. Bei Immowelt hat sich nichts geändert – Ihre Website ist aktuell.",
   };
 }
 

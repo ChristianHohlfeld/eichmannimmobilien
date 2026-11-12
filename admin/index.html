@@ -4,56 +4,242 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Admin – Immobilien Eichmann</title>
-  <link rel="stylesheet" href="admin.css?v=passwort-aendern-1" />
+  <title>Website-Verwaltung – Immobilien Eichmann</title>
+  <link rel="stylesheet" href="admin.css?v=einfach-1" />
 </head>
 <body>
   <header class="app-header hidden" id="app-header">
     <div>
-      <h1>Admin</h1>
-      <div class="sub">Immowelt und eigene Inserate verwalten</div>
+      <h1>Website-Verwaltung</h1>
+      <div class="sub">Immobilien Eichmann</div>
     </div>
     <div class="actions">
-      <button type="button" class="btn btn-ghost btn-sm" id="btn-immowelt-sync" title="Neue Inserate von Immowelt holen">Immowelt Sync</button>
-      <button type="button" class="btn btn-ghost btn-sm" id="btn-password" title="Admin-Passwort ändern">Passwort ändern</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-password">Passwort ändern</button>
       <button type="button" class="btn btn-ghost btn-sm" id="btn-logout">Abmelden</button>
     </div>
     <div id="immowelt-sync-bar" class="immowelt-sync-bar hidden" role="status" aria-live="polite"></div>
   </header>
 
-  <div class="sot-banner hidden" id="sot-banner" role="status">
-    Immowelt-Inserate übernimmt die Website automatisch und vollständig von Immowelt (alle 30 Minuten; mit „Immowelt Sync“ sofort).
-    Änderungen an diesen Inseraten – auch An- und Ausschalten – nehmen Sie ausschließlich bei Immowelt vor. Eigene Inserate bleiben erhalten und werden hier gepflegt.
-  </div>
-
   <main class="wrap">
     <section id="view-gate" class="card gate-card">
-      <h2 style="margin-top:0;font-family:var(--font-display);color:var(--primary)">Anmeldung</h2>
-      <p class="hint">Bitte mit freigeschalteter E-Mail und Passwort anmelden.</p>
+      <h2 style="margin-top:0;font-family:var(--font-display);color:var(--primary)">Anmelden</h2>
+      <p class="hint">Bitte melden Sie sich mit Ihrer E-Mail-Adresse und Ihrem Passwort an.</p>
       <form id="form-login">
-        <label for="email">E-Mail</label>
-        <input type="email" id="email" autocomplete="username" required autofocus placeholder="chris.hohlfeld@gmail.com" />
+        <label for="email">E-Mail-Adresse</label>
+        <input type="email" id="email" autocomplete="username" required autofocus placeholder="name@beispiel.de" />
         <label for="password">Passwort</label>
         <input type="password" id="password" autocomplete="current-password" required />
         <div class="btn-row">
-          <button type="submit" class="btn btn-primary">Einloggen</button>
+          <button type="submit" class="btn btn-primary btn-big">Anmelden</button>
         </div>
         <p id="login-error" class="err-box hidden"></p>
+        <p class="hint">Passwort vergessen? Bitte bei Chris Hohlfeld melden – er setzt es zurück.</p>
       </form>
     </section>
 
     <section id="view-app" class="hidden">
-      <nav class="tabs" role="tablist" aria-label="Admin-Bereiche">
-        <button type="button" class="tab active" role="tab" aria-selected="true" data-tab="immowelt" id="tab-immowelt">Immowelt</button>
-        <button type="button" class="tab" role="tab" aria-selected="false" data-tab="eigen" id="tab-eigen">Eigen-Inserate</button>
-        <button type="button" class="tab" role="tab" aria-selected="false" data-tab="sicherung" id="tab-sicherung">Sicherung</button>
+      <nav class="tabs" role="tablist" aria-label="Bereiche">
+        <button type="button" class="tab active" role="tab" aria-selected="true" data-tab="immowelt" id="tab-immowelt">Start</button>
+        <button type="button" class="tab" role="tab" aria-selected="false" data-tab="eigen" id="tab-eigen">Eigene Angebote</button>
+        <button type="button" class="tab" role="tab" aria-selected="false" data-tab="sicherung" id="tab-sicherung">Technik</button>
       </nav>
 
-      <!-- Immowelt panel -->
+      <!-- Start: what the owner needs day to day -->
       <div id="panel-immowelt" class="tab-panel" role="tabpanel">
-        <div class="toolbar">
-          <h2>Immowelt-Objekte <span class="muted" id="immowelt-count"></span></h2>
+        <div class="easy-status is-wait" id="easy-status" role="status" aria-live="polite">
+          <div class="easy-status-icon" id="easy-status-icon" aria-hidden="true">…</div>
+          <div>
+            <h2 id="easy-status-title">Einen Moment …</h2>
+            <p id="easy-status-text">Der Stand Ihrer Website wird geladen.</p>
+            <p class="easy-status-todo" id="easy-status-todo"></p>
+          </div>
         </div>
+
+        <div class="card easy-action">
+          <h3>Gerade etwas bei Immowelt geändert?</h3>
+          <p>Die Website holt Ihre Angebote <strong>von selbst alle 30 Minuten</strong> bei Immowelt ab. Wenn Sie nicht warten möchten, drücken Sie diesen Knopf:</p>
+          <button type="button" class="btn btn-primary btn-big" id="btn-immowelt-sync">Jetzt mit Immowelt abgleichen</button>
+          <p id="immowelt-sync-outcome" class="sync-outcome hidden" role="status" aria-live="polite"></p>
+        </div>
+
+        <div class="card">
+          <h3 class="easy-h">So ändern Sie etwas auf Ihrer Website</h3>
+          <p class="easy-lead">Alles, was Ihre Angebote betrifft, ändern Sie <strong>bei Immowelt</strong> – wie gewohnt. Die Website übernimmt es automatisch.</p>
+          <ol class="easy-steps">
+            <li><span class="easy-step-num">1</span><div><strong>Bei Immowelt ändern</strong><br />Preis, Text, Fotos, neues Angebot, Angebot verkauft – alles dort.</div></li>
+            <li><span class="easy-step-num">2</span><div><strong>Kurz warten</strong><br />Spätestens nach 30 Minuten steht es auf der Website. Schneller geht es mit dem Knopf oben.</div></li>
+            <li><span class="easy-step-num">3</span><div><strong>Fertig</strong><br />Mehr ist nicht nötig. Hier müssen Sie nichts eintragen.</div></li>
+          </ol>
+          <p><a class="btn btn-outline" href="https://www.immowelt.de/" target="_blank" rel="noopener">Immowelt öffnen</a></p>
+        </div>
+
+        <div class="toolbar">
+          <h2>Ihre Angebote auf der Website <span class="muted" id="immowelt-count"></span></h2>
+        </div>
+        <p class="hint" style="margin:0 0 12px">So sehen Besucher Ihre Angebote. Zum Ändern bitte bei Immowelt.</p>
+        <div id="immowelt-cards" class="offer-cards"><p class="muted">Wird geladen …</p></div>
+
+        <div class="card easy-faq">
+          <h3 class="easy-h">Häufige Fragen</h3>
+          <details>
+            <summary>Ich habe etwas geändert, sehe es aber nicht auf der Website.</summary>
+            <p>Drücken Sie oben „Jetzt mit Immowelt abgleichen“ und warten Sie etwa eine Minute. Laden Sie danach die Website neu (auf dem Computer: Taste F5). Ist die Änderung bei Immowelt gespeichert und das Angebot dort online?</p>
+          </details>
+          <details>
+            <summary>Ein Angebot fehlt auf der Website.</summary>
+            <p>Prüfen Sie bei Immowelt, ob das Angebot dort online ist. Wenn ja und es fehlt nach einer Stunde immer noch: bitte Chris Hohlfeld Bescheid geben.</p>
+          </details>
+          <details>
+            <summary>Ein Angebot ist verkauft. Wie nehme ich es von der Website?</summary>
+            <p>Deaktivieren oder löschen Sie es bei Immowelt. Es verschwindet dann von selbst von der Website.</p>
+          </details>
+          <details>
+            <summary>Oben steht eine gelbe oder rote Meldung. Was nun?</summary>
+            <p>Lesen Sie den Satz unter „Was muss ich tun?“. Ihre Website bleibt in jedem Fall online und zeigt den letzten guten Stand. Meist erledigt sich die Meldung von selbst.</p>
+          </details>
+          <details>
+            <summary>Kann ich hier etwas kaputt machen?</summary>
+            <p>Nein. Auf dieser Seite können Sie nichts löschen. Der Knopf „Jetzt mit Immowelt abgleichen“ ist immer ungefährlich. Vorsicht ist nur im Bereich „Technik“ nötig – den brauchen Sie im Alltag nicht.</p>
+          </details>
+        </div>
+      </div>
+
+      <!-- Eigen panel -->
+      <div id="panel-eigen" class="tab-panel hidden" role="tabpanel">
+        <div class="toolbar">
+          <h2>Eigene Angebote <span class="muted" id="eigen-count"></span></h2>
+          <div class="btn-row" style="margin:0">
+            <button type="button" class="btn btn-primary" id="btn-new-eigen">+ Neues Angebot anlegen</button>
+          </div>
+        </div>
+
+        <div class="card easy-note">
+          <strong>Brauche ich das?</strong> Meistens nicht. Hier legen Sie nur Angebote an, die <strong>nicht bei Immowelt</strong> stehen. Alle Immowelt-Angebote kommen von selbst auf die Website.
+        </div>
+
+        <div class="card hidden" id="card-editor" style="margin-bottom:16px">
+          <h3 style="margin-top:0;color:var(--primary)" id="editor-heading">Neues Angebot</h3>
+          <p class="hint">Füllen Sie aus, was Sie wissen. Nur der Titel ist Pflicht. Nach „Speichern“ sehen Sie eine Vorschau – erst mit „Übernehmen“ erscheint das Angebot auf der Website.</p>
+          <form id="form-eigen">
+            <input type="hidden" id="f-id" />
+            <div class="form-grid">
+              <div class="full">
+                <label for="f-title">Titel *</label>
+                <input type="text" id="f-title" required placeholder="z. B. 3-Zimmer-Wohnung in Konstanz" />
+              </div>
+              <div>
+                <label for="f-price">Preis</label>
+                <input type="text" id="f-price" placeholder="z. B. 450.000 €" />
+              </div>
+              <div>
+                <label for="f-location">Ort</label>
+                <input type="text" id="f-location" placeholder="z. B. Konstanz" />
+              </div>
+              <div>
+                <label for="f-rooms">Zimmer</label>
+                <input type="text" id="f-rooms" placeholder="z. B. 3" />
+              </div>
+              <div>
+                <label for="f-living">Wohnfläche</label>
+                <input type="text" id="f-living" placeholder="z. B. 85 m²" />
+              </div>
+              <div class="full">
+                <label for="f-description">Beschreibung</label>
+                <textarea id="f-description" rows="6" placeholder="Beschreiben Sie das Angebot in Ihren Worten."></textarea>
+              </div>
+              <div class="full">
+                <label>Fotos</label>
+                <p class="hint" style="margin-top:0">Erst „Fotos auswählen“, dann „Hochladen“. Das erste Foto wird das Hauptbild.</p>
+                <div id="gallery-editor" class="gallery-editor">
+                  <div id="gallery-thumbs" class="gallery-thumbs"></div>
+                  <div class="gallery-actions">
+                    <label class="btn btn-outline btn-sm gallery-upload-btn">
+                      1. Fotos auswählen
+                      <input type="file" id="f-images" accept="image/jpeg,image/png,image/webp" multiple hidden />
+                    </label>
+                    <button type="button" class="btn btn-outline btn-sm" id="btn-upload-images" disabled>2. Hochladen</button>
+                  </div>
+                  <p id="gallery-msg" class="hint"></p>
+                </div>
+              </div>
+              <div class="full">
+                <label><input type="checkbox" id="f-site-hidden" /> Dieses Angebot vorerst <strong>nicht</strong> auf der Website zeigen</label>
+              </div>
+              <details class="full easy-more">
+                <summary>Weitere Angaben (selten nötig)</summary>
+                <div class="form-grid">
+                  <div>
+                    <label for="f-status">Art (Kauf oder Miete)</label>
+                    <input type="text" id="f-status" value="Kauf" />
+                  </div>
+                  <div>
+                    <label for="f-type">Objektart</label>
+                    <input type="text" id="f-type" placeholder="z. B. Wohnung" />
+                  </div>
+                  <div class="full">
+                    <label for="f-short">Kurzbeschreibung (ein bis zwei Sätze)</label>
+                    <textarea id="f-short" rows="2"></textarea>
+                  </div>
+                  <div class="full">
+                    <label for="f-slug">Seiten-Adresse (wird automatisch vergeben)</label>
+                    <input type="text" id="f-slug" placeholder="automatisch" />
+                  </div>
+                  <div class="full">
+                    <label for="f-image">Bild-Adresse aus dem Internet (statt eigener Fotos)</label>
+                    <input type="url" id="f-image" placeholder="https://…" />
+                  </div>
+                  <div class="full">
+                    <label><input type="checkbox" id="f-active" checked /> Angebot ist aktiv</label>
+                  </div>
+                </div>
+              </details>
+            </div>
+            <div class="btn-row">
+              <button type="submit" class="btn btn-primary btn-big">Speichern und Vorschau ansehen</button>
+              <button type="button" class="btn btn-outline" id="btn-cancel">Abbrechen</button>
+              <button type="button" class="btn btn-outline" id="btn-delete" style="display:none;color:var(--err)">Löschen</button>
+            </div>
+            <p id="form-msg" class="hint"></p>
+          </form>
+        </div>
+
+        <div class="card table-wrap" style="padding:0;overflow:hidden">
+          <table class="listings">
+            <thead>
+              <tr>
+                <th>Titel</th>
+                <th>Ort</th>
+                <th>Preis</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="eigen-tbody">
+              <tr><td colspan="5" class="muted">Lade …</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Technik: for whoever looks after the website -->
+      <div id="panel-sicherung" class="tab-panel hidden" role="tabpanel">
+        <div class="warn-box" style="margin-bottom:16px">
+          <strong>Dieser Bereich ist für die technische Betreuung (Chris Hohlfeld).</strong>
+          Im Alltag brauchen Sie hier nichts. Bitte ändern Sie hier nur etwas, wenn Sie darum gebeten wurden.
+        </div>
+        <details class="tech-fold">
+          <summary><strong>Abgleich mit Immowelt – Details</strong><span>Letzter Lauf und technische Meldung</span></summary>
+          <div class="tech-fold-body">
+        <div class="card" id="immowelt-health" style="margin-bottom:16px">
+          <strong>Stand des Abgleichs</strong>
+          <p class="hint" id="immowelt-health-line">Prüfe …</p>
+          <p class="hint" id="immowelt-health-detail"></p>
+        </div>
+          </div>
+        </details>
+        <details class="tech-fold">
+          <summary><strong>Immowelt-Zugang</strong><span>Kundennummer und Schlüssel für den Abgleich</span></summary>
+          <div class="tech-fold-body">
         <div class="card" id="immowelt-credentials" style="margin-bottom:16px">
           <strong>Immowelt-Zugang</strong>
           <p class="hint" style="margin-top:6px">
@@ -82,12 +268,11 @@
             <p id="iw-credentials-msg" class="hint" role="status"></p>
           </form>
         </div>
-        <div class="card" id="immowelt-health" style="margin-bottom:16px">
-          <strong>Immowelt-Daten</strong>
-          <p class="hint" id="immowelt-health-line">Prüfe …</p>
-          <p class="hint" id="immowelt-health-detail"></p>
-          <p id="immowelt-sync-outcome" class="sync-outcome hidden" role="status" aria-live="polite"></p>
-        </div>
+          </div>
+        </details>
+        <details class="tech-fold">
+          <summary><strong>Wächter und Sichtprüfung</strong><span>Prüfen, ob die Website den Immowelt-Stand richtig zeigt</span></summary>
+          <div class="tech-fold-body">
         <div class="card" id="review-card" style="margin-bottom:16px">
           <strong>Wächter &amp; Sichtprüfung</strong>
           <p class="hint">Prüft sofort, ob die Website den Immowelt-Stand korrekt ausliefert, und erstellt danach neue Aufnahmen aller Seiten: vorher · nachher · Immowelt.</p>
@@ -98,137 +283,13 @@
           <p class="hint" id="review-meta"></p>
           <div id="watchdog-result" class="hint" role="status" aria-live="polite"></div>
         </div>
-        <div class="card table-wrap" style="padding:0;overflow:hidden">
-          <table class="listings">
-            <thead>
-              <tr>
-                <th>Titel</th>
-                <th>Ort</th>
-                <th>Preis</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="immowelt-tbody">
-              <tr><td colspan="5" class="muted">Lade …</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Eigen panel -->
-      <div id="panel-eigen" class="tab-panel hidden" role="tabpanel">
-        <div class="toolbar">
-          <h2>Eigen-Inserate <span class="muted" id="eigen-count"></span></h2>
-          <div class="btn-row" style="margin:0">
-            <button type="button" class="btn btn-primary btn-sm" id="btn-new-eigen">+ Neu</button>
           </div>
-        </div>
-
-        <div class="card hidden" id="card-editor" style="margin-bottom:16px">
-          <h3 style="margin-top:0;color:var(--primary)" id="editor-heading">Neues Eigen-Inserat</h3>
-          <p class="hint">Hier legen Sie eigene Inserate an oder ändern sie. Diese Inserate gehören nicht zu Immowelt. Erst nach „Übernehmen“ sind die Änderungen auf der Website sichtbar.</p>
-          <form id="form-eigen">
-            <input type="hidden" id="f-id" />
-            <div class="form-grid">
-              <div class="full">
-                <label for="f-title">Titel *</label>
-                <input type="text" id="f-title" required placeholder="z. B. Eigentumswohnung Konstanz" />
-              </div>
-              <div>
-                <label for="f-slug">Seiten-Adresse</label>
-                <input type="text" id="f-slug" placeholder="auto" />
-              </div>
-              <div>
-                <label for="f-price">Preis</label>
-                <input type="text" id="f-price" placeholder="450.000 €" />
-              </div>
-              <div>
-                <label for="f-status">Status</label>
-                <input type="text" id="f-status" value="Kauf" />
-              </div>
-              <div>
-                <label for="f-rooms">Zimmer</label>
-                <input type="text" id="f-rooms" />
-              </div>
-              <div>
-                <label for="f-living">Wohnfläche</label>
-                <input type="text" id="f-living" />
-              </div>
-              <div class="full">
-                <label for="f-location">Ort</label>
-                <input type="text" id="f-location" placeholder="Konstanz" />
-              </div>
-              <div class="full">
-                <label for="f-type">Typ</label>
-                <input type="text" id="f-type" placeholder="Wohnung" />
-              </div>
-              <div class="full">
-                <label for="f-short">Kurzbeschreibung</label>
-                <textarea id="f-short" rows="2"></textarea>
-              </div>
-              <div class="full">
-                <label for="f-description">Beschreibung</label>
-                <textarea id="f-description" rows="6"></textarea>
-              </div>
-              <div class="full">
-                <label>Bilder / Galerie</label>
-                <p class="hint" style="margin-top:0">Fotos auswählen (JPEG, PNG oder WebP; bis 8&nbsp;MB). Das erste Foto ist das Hauptbild.</p>
-                <div id="gallery-editor" class="gallery-editor">
-                  <div id="gallery-thumbs" class="gallery-thumbs"></div>
-                  <div class="gallery-actions">
-                    <label class="btn btn-outline btn-sm gallery-upload-btn">
-                      + Bilder wählen
-                      <input type="file" id="f-images" accept="image/jpeg,image/png,image/webp" multiple hidden />
-                    </label>
-                    <button type="button" class="btn btn-outline btn-sm" id="btn-upload-images" disabled>Hochladen</button>
-                  </div>
-                  <p id="gallery-msg" class="hint"></p>
-                </div>
-                <details class="url-fallback">
-                  <summary>Optional: Bild-Adresse verwenden</summary>
-                  <label for="f-image">Bild-Adresse</label>
-                  <input type="url" id="f-image" placeholder="https://…" />
-                </details>
-              </div>
-              <div>
-                <label><input type="checkbox" id="f-active" checked /> aktiv</label>
-              </div>
-              <div>
-                <label><input type="checkbox" id="f-site-hidden" /> auf Website ausblenden</label>
-              </div>
-            </div>
-            <div class="btn-row">
-              <button type="submit" class="btn btn-primary">Speichern und prüfen</button>
-              <button type="button" class="btn btn-outline" id="btn-cancel">Abbrechen</button>
-              <button type="button" class="btn btn-outline" id="btn-delete" style="display:none;color:var(--err)">Löschen</button>
-            </div>
-            <p id="form-msg" class="hint"></p>
-          </form>
-        </div>
-
-        <div class="card table-wrap" style="padding:0;overflow:hidden">
-          <table class="listings">
-            <thead>
-              <tr>
-                <th>Titel</th>
-                <th>Ort</th>
-                <th>Preis</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="eigen-tbody">
-              <tr><td colspan="5" class="muted">Lade …</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Sicherung panel -->
-      <div id="panel-sicherung" class="tab-panel hidden" role="tabpanel">
+        </details>
+        <details class="tech-fold">
+          <summary><strong>Sicherung</strong><span>Stände sichern, herunterladen, zurückspielen</span></summary>
+          <div class="tech-fold-body">
         <div class="toolbar">
-          <h2>Sicherung</h2>
+          <h3 style="margin:0">Sicherung</h3>
           <div class="btn-row" style="margin:0">
             <button type="button" class="btn btn-primary btn-sm" id="btn-snapshot-create">Sicherung erstellen</button>
           </div>
@@ -308,6 +369,8 @@
             </tbody>
           </table>
         </div>
+          </div>
+        </details>
       </div>
     </section>
   </main>
@@ -375,6 +438,6 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="admin.js?v=passwort-aendern-1" type="module"></script>
+  <script src="admin.js?v=einfach-1" type="module"></script>
 </body>
 </html>

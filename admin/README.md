@@ -2,12 +2,17 @@
 
 Live: **https://immobilieneichmann.de/admin/**
 
-Ein einziges Admin mit Tabs:
+Für den Inhaber gebaut, nicht für Techniker: große Schrift, klare Sätze, wenige Knöpfe.
 
-| Tab | Zweck |
-|-----|--------|
-| **Immowelt** | Zugang (Kundennummer + API-Schlüssel, nur Server), Status des Abgleichs und „Immowelt Sync“. Immowelt-Angebote werden hier nur angezeigt: an/aus, Texte, Preise und Bilder kommen vollständig von Immowelt (harte Einweg-Übernahme), ein lokales Ausblenden (`site_hidden`) gibt es für sie nicht mehr. Kein Schreiben ins Immowelt-Konto. |
-| **Eigen-Inserate** | Volles CRUD für `origin=eigen` in SQLite. |
+| Tab | Für wen | Inhalt |
+|-----|---------|--------|
+| **Start** | Inhaber, täglich | Ampel in Klartext („Alles in Ordnung“ / was zu tun ist), ein Knopf „Jetzt mit Immowelt abgleichen“, „So ändern Sie etwas“ in drei Schritten, die Angebote als Karten mit Bild, häufige Fragen. Hier kann nichts gelöscht oder verstellt werden. |
+| **Eigene Angebote** | Inhaber, selten | Angebote, die nicht bei Immowelt stehen (`origin=eigen`): anlegen, ändern, verstecken, löschen. Seltene Felder liegen unter „Weitere Angaben“. |
+| **Technik** | Betreuung | Eingeklappt: Details des Abgleichs, Immowelt-Zugang (Kundennummer + API-Schlüssel, nur Server), Wächter und Sichtprüfung, Sicherung. |
+
+Regeln für Texte im Admin: keine Fachwörter (kein „Sync“, „API“, „Release“) außerhalb von „Technik“; jede Meldung sagt,
+was los ist **und** was zu tun ist; im Zweifel „Sie müssen nichts tun“. Die Klartext-Ampel entsteht in
+`easyStatusOf()` (`admin.js`) aus derselben Statusdatei wie die technische Zeile.
 
 `/admin/eigen/` leitet nach `/admin/#eigen` um.
 
@@ -43,7 +48,7 @@ Kein `repository_dispatch`, kein PAT in `sessionStorage`/`localStorage`.
 ## Immowelt
 
 - **Einzige Quelle** für Immowelt-Angebote ist Immowelt (offizielle API). Der Abgleich läuft auf dem Droplet als systemd-Timer (`eichmann-immowelt-sync.timer`, Minute :07 und :37) mit `node scripts/immowelt-sync.mjs run`.
-- **„Immowelt Sync“** startet denselben Lauf sofort. Es gibt keinen Bestätigungsschritt im Admin mehr: Ein vollständig gelesener und geprüfter Stand wird direkt veröffentlicht; bei einem Fehler bleibt der letzte vollständige Stand online und die Meldung nennt den Grund. (Zwei bewusste Ausnahmen, beide in `docs/IMMOWELT-SYNC.md` beschrieben: die einmalige Identitätsfreigabe vor der ersten Übernahme aus der API und die zweite Bestätigung bei leerem Bestand oder großem Wegfall.)
+- **„Jetzt mit Immowelt abgleichen“** startet denselben Lauf sofort. Es gibt keinen Bestätigungsschritt im Admin mehr: Ein vollständig gelesener und geprüfter Stand wird direkt veröffentlicht; bei einem Fehler bleibt der letzte vollständige Stand online und die Meldung nennt den Grund. (Zwei bewusste Ausnahmen, beide in `docs/IMMOWELT-SYNC.md` beschrieben: die einmalige Identitätsfreigabe vor der ersten Übernahme aus der API und die zweite Bestätigung bei leerem Bestand oder großem Wegfall.)
 - **Sichtbarkeit:** `/admin/api/visibility` antwortet für `origin=immowelt` mit **409** – ein- und ausgeschaltet wird auf Immowelt.
 - **Zugang:** Der API-Schlüssel liegt nur auf dem Server in `/var/lib/eichmann/secrets/immowelt-api.json` (600). Er kommt über dieses Formular oder über den Workflow „Immowelt API key → server“ (Actions-Secret `IMMOWELT_API_KEY` → STDIN) dorthin; die API gibt ihn nie vollständig zurück.
 - **Status:** `data/immowelt-sync-status.json` (Schema `eichmann.immowelt-sync-status/v2`).
