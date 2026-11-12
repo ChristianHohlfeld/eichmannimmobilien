@@ -25,6 +25,22 @@ Wächter ist an (aus: Variable `IMMOWELT_WATCHDOG_ENABLED=false`). Abweichend vo
 - Nur-Lese-Diagnose für Abweichungen zwischen API und Portal: Workflow „Immowelt API probe“ mit Eingabe `guids`
   (`immowelt-sync.mjs diagnose <guid> …`).
 
+**Stand 12.11.2026, 11:20 Uhr:** 11 Angebote online, Zustand „aktuell“, alle Läufe grün. B 9 steht mit
+„Preis auf Anfrage“ auf der Website, weil es so auf Immowelt eingetragen ist. Die Verwaltung (`/admin/`) ist
+vereinfacht; „Passwort vergessen?“ ist eingebaut (siehe `admin/README.md`).
+
+Offen – jeweils mit dem, der am Zug ist:
+
+| Punkt | Wartet auf | Danach |
+|---|---|---|
+| Mail für „Passwort vergessen“ | Chris: `forms-gateway-admin-reset.patch` im Repo `digitalisierungsplanung.de` einspielen (Deploy dort) | Aktion `mail-gateway-on`, dann `mail-test` |
+| Lebenszeichen des Wächters | Chris: Healthchecks-Prüfung anlegen (15 min, Karenz 30 min), Secret `EICHMANN_HEARTBEAT_URL` | Aktion `heartbeat-install` |
+| Admin-Passwort neu | Chris: Secret `EICHMANN_ADMIN_NEW_PASSWORD` (alter Hash steht in der öffentlichen Git-Historie) | Aktion `admin-password-set`, Secret wieder löschen |
+| Knopf „Sichtprüfung“ in der Verwaltung | Chris: Secret `EICHMANN_DISPATCH_TOKEN` (das vorhandene `ADMIN_DISPATCH_TOKEN` von 09/2026 wird von diesem Workflow nicht gelesen) | Aktion `github-token-install` |
+| Zwei nur für die Homepage freigegebene Angebote | Helmut: zeigen oder nicht | ja → `IMMOWELT_INCLUDE_HOMEPAGE_ONLY=true` in `sync.env`; nein → auf Immowelt deaktivieren |
+| B 9 Preis, Test-Anfragen | Helmut | Preis ändert er auf Immowelt |
+| Orts-ID leer (3 Angebote), Stellplatzpreis fehlt (2) | Immowelt: Antwort auf die Nachfrage vom 11.11., 23:00 | stehen die drei in der normalen Liste, aus `data/sot/immowelt-extra-guids.json` entfernen |
+
 **Grundsatz:** Immowelt ist die einzige Quelle aller Angebotsdaten. Die Website zeigt genau das, was die
 Immowelt-API vollständig liefert – nichts wird lokal korrigiert, ergänzt, umbenannt oder zurückgehalten.
 Geändert wird ausschließlich auf Immowelt.
@@ -383,6 +399,13 @@ Im Admin startet der Knopf „Immowelt Sync“ denselben Lauf wie der Timer.
 | `resume` | `resume`, danach sofort ein Lauf |
 | `rollback-data` · `rollback-release` | `immowelt-sync.mjs rollback` · `release.mjs rollback` |
 | `timers-enable` · `timers-disable` | `install-immowelt-sync.sh --enable` · `--disable` |
+| `watchdog` | `watchdog-check.mjs --local`: Abgleich frisch? öffentliche Seiten richtig? → Lebenszeichen |
+| `heartbeat-install` · `heartbeat-off` | Lebenszeichen-Adresse aus Secret `EICHMANN_HEARTBEAT_URL` hinterlegen · abschalten |
+| `mail-key` · `mail-gateway-on` | Signierschlüssel für den Mailversand anlegen (zeigt die öffentliche Hälfte) · über das Formular-Gateway einschalten |
+| `mail-status` · `mail-test` | eingerichteter Versandweg · Probe an jedes Anmelde-Postfach |
+| `mail-install` | Ersatzweg: Postfach-Zugang aus Secret `EICHMANN_MAIL_URL` |
+| `admin-password-set` | ein Passwort für alle aus Secret `EICHMANN_ADMIN_NEW_PASSWORD` |
+| `github-token-install` | Token für den Sichtprüfungs-Knopf aus Secret `EICHMANN_DISPATCH_TOKEN` |
 
 Nur auf dem Server möglich: Trockenlauf, Rollback auf eine bestimmte Sicherung oder ein bestimmtes Release,
 Ändern von `sync.env` und `alarm.json`.
