@@ -68,6 +68,8 @@ E-Mail → https://immobilieneichmann.de/admin/#reset=<Schlüssel>
 - **Gemeinsames Passwort abschalten:** Solange eine Anmelde-Adresse kein eigenes Passwort hat, gilt für sie
   das frühere gemeinsame. Aktion `shared-password-off` beendet das (nur möglich, wenn der Mailversand
   eingeschaltet ist); wer dann noch kein eigenes hat, klickt „Passwort vergessen?“.
+  Tippt jemand danach noch das alte Passwort, sagt die Anmeldeseite das klar und öffnet das Formular für den
+  Link gleich mit (hinein kommt man damit nicht mehr).
 - **Notfall** (kein Mailzugang): `admin-password-set` setzt ein Passwort für alle; eigene Passwörter und
   offene Links entfallen dabei.
 

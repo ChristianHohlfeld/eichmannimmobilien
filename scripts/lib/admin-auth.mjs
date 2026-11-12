@@ -89,10 +89,25 @@ function credentialOf(email, configPath) {
  */
 export function dropSharedPassword() {
   const data = updateAuth((d) => {
+    // kept only to recognise the retired password and tell the person what to do – it opens nothing any more
+    if (isSha256Hex(d.password_sha256)) d.retired_sha256 = d.password_sha256;
     d.password_sha256 = "";
     d.shared_off = true;
   });
   return { own_passwords: Object.values(data.users || {}).filter((u) => typeof u?.password === "string" && u.password.startsWith("scrypt$")).length };
+}
+/**
+ * Did a person who has no own password yet just type the retired shared one? Then the sign-in page can say
+ * plainly what to do ("Passwort vergessen?") instead of "wrong password". Never lets anyone in.
+ */
+export function isRetiredPassword(email, password, configPath) {
+  const key = normalizeEmail(email);
+  const data = readAuth();
+  if (data.shared_off !== true || !isSha256Hex(data.retired_sha256) || !isAllowedEmail(key, configPath)) return false;
+  if (typeof data.users?.[key]?.password === "string") return false;
+  const a = Buffer.from(sha256Hex(String(password || "")));
+  const b = Buffer.from(String(data.retired_sha256).toLowerCase());
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 export function sharedPasswordActive(configPath) {
   return readAuth().shared_off !== true && Boolean(loadPasswordHash(configPath));
@@ -148,6 +163,7 @@ export function resetEveryoneToShared(sha256) {
   updateAuth((data) => {
     data.password_sha256 = hash;
     delete data.shared_off;
+    delete data.retired_sha256;
     delete data.users;
     delete data.reset;
   });

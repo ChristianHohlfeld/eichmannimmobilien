@@ -627,6 +627,8 @@ async function login(ev) {
   } catch (e) {
     err.textContent = e.message || String(e);
     err.classList.remove("hidden");
+    // the old shared password was typed: open "Passwort vergessen?" right away, address already filled in
+    if (e?.data?.code === "password_retired") void openForgot();
   }
 }
 
@@ -1128,7 +1130,7 @@ function easyStatusOf(status, now = Date.now()) {
   const last = friendlyTime(status?.last_success_at || status?.last_valid_at);
   const lastMs = Date.parse(status?.last_success_at || status?.last_valid_at || "");
   const overdue = Number.isFinite(lastMs) && now - lastMs > (status?.stale_after_minutes || 120) * 60_000;
-  const helper = "Chris Hohlfeld";
+  const helper = "Ihrer technischen Betreuung";
   const stays = `Ihre Website bleibt online und zeigt weiter den Stand von ${last || "zuletzt"}.`;
   switch (status?.state) {
     case "current":
@@ -1142,7 +1144,7 @@ function easyStatusOf(status, now = Date.now()) {
     case "rejected":
       return { kind: "err", icon: "!", title: "Der Abgleich hat gerade nicht geklappt", text: `Die Website konnte Immowelt nicht vollständig lesen. ${stays}`, todo: `Meist erledigt sich das beim nächsten Abgleich von selbst. Steht diese Meldung morgen noch hier: bitte ${helper} Bescheid geben.` };
     case "held":
-      return { kind: "warn", icon: "!", title: "Der Abgleich ist vorübergehend angehalten", text: `Der automatische Abgleich wurde bewusst gestoppt. ${stays}`, todo: `Sie müssen nichts tun. ${helper} schaltet ihn wieder ein.` };
+      return { kind: "warn", icon: "!", title: "Der Abgleich ist vorübergehend angehalten", text: `Der automatische Abgleich wurde bewusst gestoppt. ${stays}`, todo: "Sie müssen nichts tun. Ihre technische Betreuung schaltet ihn wieder ein." };
     case "awaiting_api_key":
     case "migration_required":
       return { kind: "warn", icon: "!", title: "Die Einrichtung ist noch nicht abgeschlossen", text: `Der Abgleich mit Immowelt ist noch nicht fertig eingerichtet. ${stays}`, todo: `Bitte ${helper} Bescheid geben.` };

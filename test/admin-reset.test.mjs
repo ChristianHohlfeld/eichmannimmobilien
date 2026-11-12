@@ -166,6 +166,7 @@ test("Gemeinsames Passwort abschalten: danach zählt nur noch das eigene; ohne M
     assert.match(refused.stderr, /nichts geändert/);
     assert.ok(A.checkLogin("chris@example.com", "GemeinsamAlt1", ""));
     assert.equal(JSON.parse(run(["--status"]).stdout).shared_password, "wird noch angenommen");
+    assert.equal(A.isRetiredPassword("chris@example.com", "GemeinsamAlt1", ""), false, "solange es gilt, ist es nicht „abgelöst“");
 
     fs.writeFileSync(mailFile, JSON.stringify({ url: "smtp://user:pass@127.0.0.1:2525", from: "noreply@example.com" }));
     const done = run();
@@ -177,10 +178,18 @@ test("Gemeinsames Passwort abschalten: danach zählt nur noch das eigene; ohne M
     assert.ok(A.checkLogin("helmut@example.com", "HelmutsEigenes9", ""), "eigenes Passwort bleibt");
     assert.equal(JSON.parse(run(["--status"]).stdout).shared_password, "abgeschaltet");
 
+    // Wer das alte Passwort tippt, bekommt gesagt, was zu tun ist – hinein kommt er damit nicht
+    assert.equal(A.isRetiredPassword("Chris@Example.com", "GemeinsamAlt1", ""), true);
+    assert.equal(A.isRetiredPassword("chris@example.com", "irgendwasAnderes", ""), false);
+    assert.equal(A.isRetiredPassword("helmut@example.com", "GemeinsamAlt1", ""), false, "wer ein eigenes hat, bekommt die normale Meldung");
+    assert.equal(A.isRetiredPassword("fremd@example.com", "GemeinsamAlt1", ""), false, "fremde Adressen erfahren nichts");
+    assert.ok(!JSON.stringify(JSON.parse(fs.readFileSync(authFile, "utf8")).password_sha256 || "").includes(P.sha256Hex("GemeinsamAlt1")));
+
     // Chris kommt über den Link wieder hinein
     const token = A.createResetToken("chris@example.com");
     assert.equal(A.resetPasswordWithToken(token, "ChrisEigenes123", { configPath: "" }), "chris@example.com");
     assert.ok(A.checkLogin("chris@example.com", "ChrisEigenes123", ""));
+    assert.equal(A.isRetiredPassword("chris@example.com", "GemeinsamAlt1", ""), false);
     // Notfall: admin-password-set stellt ein gemeinsames Passwort wieder her
     A.resetEveryoneToShared(P.sha256Hex("NotfallNeu12345"));
     assert.ok(A.checkLogin("helmut@example.com", "NotfallNeu12345", ""));

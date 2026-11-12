@@ -94,7 +94,7 @@ import {
   scrubPasswordHashFromPublicConfig,
 } from "./lib/admin-password.mjs";
 import {
-  checkLogin,
+  checkLogin, isRetiredPassword,
   credentialFingerprint,
   isAllowedEmail,
   validateNewPassword,
@@ -583,6 +583,9 @@ async function handle(req, res) {
       const email = normalizeEmail(body.email);
       const password = String(body.password || "");
       if (!checkLogin(email, password, CONFIG_PATH)) {
+        if (isRetiredPassword(email, password, CONFIG_PATH)) {
+          return send(res, 401, { ok: false, code: "password_retired", error: "Dieses Passwort gilt nicht mehr – jede Person hat jetzt ihr eigenes. Bitte lassen Sie sich hier einen Link schicken und legen Sie damit Ihr Passwort fest." });
+        }
         return send(res, 401, { ok: false, error: "E-Mail-Adresse oder Passwort stimmt nicht. Bitte noch einmal versuchen." });
       }
       clearResetPause(email);
