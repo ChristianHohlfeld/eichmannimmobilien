@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Website-Verwaltung – Immobilien Eichmann</title>
-  <link rel="stylesheet" href="admin.css?v=einfach-1" />
+  <meta name="theme-color" content="#0F2744" />
+  <link rel="icon" href="../assets/logo.png" type="image/png" />
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+  <link rel="stylesheet" href="admin.css?v=einfach-2" />
 </head>
 <body>
   <header class="app-header hidden" id="app-header">
@@ -14,6 +17,7 @@
       <div class="sub">Immobilien Eichmann</div>
     </div>
     <div class="actions">
+      <a class="btn btn-ghost btn-sm" href="../" target="_blank" rel="noopener">Website ansehen</a>
       <button type="button" class="btn btn-ghost btn-sm" id="btn-password">Passwort ändern</button>
       <button type="button" class="btn btn-ghost btn-sm" id="btn-logout">Abmelden</button>
     </div>
@@ -29,6 +33,7 @@
         <input type="email" id="email" autocomplete="username" required autofocus placeholder="name@beispiel.de" />
         <label for="password">Passwort</label>
         <input type="password" id="password" autocomplete="current-password" required />
+        <label class="check-line"><input type="checkbox" id="password-show" /> Passwort anzeigen</label>
         <div class="btn-row">
           <button type="submit" class="btn btn-primary btn-big">Anmelden</button>
         </div>
@@ -46,6 +51,7 @@
 
       <!-- Start: what the owner needs day to day -->
       <div id="panel-immowelt" class="tab-panel" role="tabpanel">
+        <p class="easy-hello" id="easy-hello">Willkommen!</p>
         <div class="easy-status is-wait" id="easy-status" role="status" aria-live="polite">
           <div class="easy-status-icon" id="easy-status-icon" aria-hidden="true">…</div>
           <div>
@@ -203,22 +209,7 @@
           </form>
         </div>
 
-        <div class="card table-wrap" style="padding:0;overflow:hidden">
-          <table class="listings">
-            <thead>
-              <tr>
-                <th>Titel</th>
-                <th>Ort</th>
-                <th>Preis</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="eigen-tbody">
-              <tr><td colspan="5" class="muted">Lade …</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <div id="eigen-cards" class="offer-cards"><p class="muted">Wird geladen …</p></div>
       </div>
 
       <!-- Technik: for whoever looks after the website -->
@@ -438,6 +429,6 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="admin.js?v=einfach-1" type="module"></script>
+  <script src="admin.js?v=einfach-2" type="module"></script>
 </body>
 </html>

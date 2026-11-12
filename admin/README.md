@@ -24,9 +24,11 @@ E-Mail (Allowlist) + Passwort
   → HttpOnly Secure SameSite=Strict Cookie
 ```
 
-Passwort-Hash und E-Mail-Allowlist liegen in `admin/config.json` (wie bisher).
-Die **echte** Autorisierung für Schreibzugriffe prüft der Droplet-API-Prozess
-gegen denselben Hash und stellt die Session-Cookie aus.
+Passwort-Hash **und** die Liste der zugelassenen E-Mail-Adressen liegen nur auf dem Server in
+`/var/lib/eichmann/secrets/admin-auth.json` (0600). Die öffentlich abrufbare `admin/config.json` nennt niemanden:
+Beim Start verschiebt der API-Prozess eine dort noch vorhandene Liste einmalig in die Server-Datei und entfernt sie
+aus der öffentlichen Datei. Die Anmeldung antwortet bei unbekannter Adresse und bei falschem Passwort gleich.
+Adressen ändern: `admin_emails` in der Server-Datei anpassen (leere Liste = nur das Passwort entscheidet).
 
 `auth_mode`: `password_session`
 

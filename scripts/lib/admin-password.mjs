@@ -189,6 +189,84 @@ export function migratePasswordHashFromConfig(configPath) {
   return { migrated: true, path: filePath, prefix: fromConfig.slice(0, 7) };
 }
 
+const normalizeEmail = (e) => String(e || "").trim().toLowerCase();
+const cleanEmails = (list) => [...new Set((Array.isArray(list) ? list : []).map(normalizeEmail).filter((e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)))];
+
+function readEmailsFromConfig(configPath) {
+  if (!configPath || !fs.existsSync(configPath)) return [];
+  try {
+    return cleanEmails(JSON.parse(fs.readFileSync(configPath, "utf8")).admin_emails);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Who may sign in. Server-only store first (same file as the password hash); the public
+ * admin/config.json is only read as long as the list has not been moved yet.
+ * @returns {string[]} lowercase addresses; empty = no restriction by address
+ */
+export function loadAdminEmails(configPath) {
+  const fromSecrets = readAuthFile(adminAuthSecretsPath());
+  if (fromSecrets && Array.isArray(fromSecrets.admin_emails)) return cleanEmails(fromSecrets.admin_emails);
+  return readEmailsFromConfig(configPath);
+}
+
+/** Store the list of sign-in addresses in the server-only file (keeps the password hash). */
+export function saveAdminEmails(list) {
+  const emails = cleanEmails(list);
+  const filePath = adminAuthSecretsPath();
+  ensureSecretsDir(filePath);
+  const prev = readAuthFile(filePath) || {};
+  const tmp = `${filePath}.tmp-${process.pid}-${Date.now()}`;
+  fs.writeFileSync(tmp, JSON.stringify({ ...prev, admin_emails: emails, updated_at: new Date().toISOString() }, null, 2) + "\n", { encoding: "utf8", mode: 0o600 });
+  fs.renameSync(tmp, filePath);
+  try {
+    fs.chmodSync(filePath, 0o600);
+  } catch {
+    /* ignore */
+  }
+  return emails;
+}
+
+/**
+ * One-shot: move the sign-in addresses out of the publicly served admin/config.json into the
+ * server-only file, then remove them (and the internal note) from the public file.
+ * Never overwrites a list that is already stored server-side; the public file is only cleaned
+ * after the server-side list has been written and read back identically.
+ * @returns {{ moved: boolean, cleaned: boolean, count: number }}
+ */
+export function migrateAdminEmailsFromConfig(configPath) {
+  const stored = readAuthFile(adminAuthSecretsPath());
+  const hasStored = Boolean(stored && Array.isArray(stored.admin_emails));
+  const fromConfig = readEmailsFromConfig(configPath);
+  let moved = false;
+  if (!hasStored && fromConfig.length) {
+    saveAdminEmails(fromConfig);
+    moved = true;
+  }
+  const now = readAuthFile(adminAuthSecretsPath());
+  const safe = Boolean(now && Array.isArray(now.admin_emails)) && (!moved || JSON.stringify(cleanEmails(now.admin_emails)) === JSON.stringify(fromConfig));
+  let cleaned = false;
+  if (safe && configPath && fs.existsSync(configPath)) {
+    try {
+      const real = fs.realpathSync(configPath);
+      const config = JSON.parse(fs.readFileSync(real, "utf8"));
+      if ("admin_emails" in config || "note" in config) {
+        delete config.admin_emails;
+        delete config.note;
+        const tmp = `${real}.tmp-${process.pid}-${Date.now()}`;
+        fs.writeFileSync(tmp, JSON.stringify(config, null, 2) + "\n", { encoding: "utf8", mode: fs.statSync(real).mode & 0o777 });
+        fs.renameSync(tmp, real);
+        cleaned = true;
+      }
+    } catch {
+      /* the public file stays as it is; signing in keeps working from the server-side list */
+    }
+  }
+  return { moved, cleaned, count: cleanEmails(readAuthFile(adminAuthSecretsPath())?.admin_emails).length };
+}
+
 export function sessionMatchesPassword(session, expectHash) {
   if (!session) return false;
   const expect = String(expectHash || "").toLowerCase();

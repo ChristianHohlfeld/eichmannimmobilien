@@ -136,3 +136,48 @@ assert.equal(sessionMatchesPassword({}, sha256Hex(newPw)), false);
 fs.rmSync(tmpDir, { recursive: true, force: true });
 delete process.env.EICHMANN_ADMIN_AUTH_FILE;
 console.log("test-admin-password: ok");
+
+// ---- sign-in addresses live server-side only; the public config.json names no one ----
+{
+  const { loadAdminEmails, saveAdminEmails, migrateAdminEmailsFromConfig } = await import("./lib/admin-password.mjs");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "eichmann-emails-"));
+  const auth = path.join(dir, "secrets", "admin-auth.json");
+  const real = path.join(dir, "admin-config.json");
+  const link = path.join(dir, "config.json"); // the served file is a link to the persistent one
+  process.env.EICHMANN_ADMIN_AUTH_FILE = auth;
+  const hash = sha256Hex("EinPasswort9");
+  fs.mkdirSync(path.dirname(auth), { recursive: true });
+  fs.writeFileSync(auth, JSON.stringify({ password_sha256: hash }));
+  fs.writeFileSync(real, JSON.stringify({ password_sha256: "", repo: "x/y", note: "intern", admin_emails: ["Helmut@Example.com", "chris@example.com ", "kaputt"] }));
+  fs.symlinkSync(real, link);
+
+  assert.deepEqual(loadAdminEmails(link), ["helmut@example.com", "chris@example.com"], "vor dem Umzug: aus der öffentlichen Datei");
+  const first = migrateAdminEmailsFromConfig(link);
+  assert.deepEqual([first.moved, first.cleaned, first.count], [true, true, 2]);
+  const pub = JSON.parse(fs.readFileSync(link, "utf8"));
+  assert.ok(!("admin_emails" in pub) && !("note" in pub), "öffentliche Datei nennt niemanden mehr");
+  assert.equal(pub.repo, "x/y", "übrige Einstellungen bleiben");
+  assert.ok(fs.lstatSync(link).isSymbolicLink(), "Verknüpfung bleibt erhalten");
+  const stored = JSON.parse(fs.readFileSync(auth, "utf8"));
+  assert.equal(stored.password_sha256, hash, "Passwort unverändert");
+  assert.deepEqual(loadAdminEmails(link), ["helmut@example.com", "chris@example.com"], "Anmeldung geht weiter – jetzt aus der Server-Datei");
+  assert.equal(fs.statSync(auth).mode & 0o777, 0o600);
+
+  const again = migrateAdminEmailsFromConfig(link);
+  assert.deepEqual([again.moved, again.cleaned, again.count], [false, false, 2], "zweiter Lauf ändert nichts");
+
+  // a list already stored server-side wins and is never overwritten by the public file
+  fs.writeFileSync(real, JSON.stringify({ admin_emails: ["fremd@example.com"] }));
+  const third = migrateAdminEmailsFromConfig(link);
+  assert.deepEqual([third.moved, third.cleaned], [false, true]);
+  assert.deepEqual(loadAdminEmails(link), ["helmut@example.com", "chris@example.com"]);
+
+  // changing the password keeps the list; changing the list keeps the password
+  savePasswordHash(link, sha256Hex("NochEinPasswort3"));
+  assert.deepEqual(loadAdminEmails(link), ["helmut@example.com", "chris@example.com"]);
+  saveAdminEmails(["neu@example.com"]);
+  assert.equal(loadPasswordHash(link), sha256Hex("NochEinPasswort3"));
+  assert.deepEqual(loadAdminEmails(link), ["neu@example.com"]);
+  fs.rmSync(dir, { recursive: true, force: true });
+  console.log("test-admin-emails: ok");
+}

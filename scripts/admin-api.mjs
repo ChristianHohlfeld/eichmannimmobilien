@@ -89,6 +89,8 @@ import {
   validatePasswordChange,
   sessionMatchesPassword,
   migratePasswordHashFromConfig,
+  loadAdminEmails,
+  migrateAdminEmailsFromConfig,
 } from "./lib/admin-password.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -201,8 +203,9 @@ function normalizeEmail(e) {
     .toLowerCase();
 }
 
-function emailAllowed(config, email) {
-  const list = (config.admin_emails || []).map(normalizeEmail).filter(Boolean);
+function emailAllowed(_config, email) {
+  // The list lives server-side only (secrets file); the public config.json no longer names anyone.
+  const list = loadAdminEmails(CONFIG_PATH);
   if (!list.length) return true;
   return list.includes(normalizeEmail(email));
 }
@@ -524,7 +527,7 @@ async function handle(req, res) {
     // Login is stricter rate-limited
     if (method === "POST" && p === "/login") {
       if (!rateLimit(ip, { limit: 10, windowMs: 60_000 })) {
-        return send(res, 429, { ok: false, error: "Zu viele Versuche – bitte warten." });
+        return send(res, 429, { ok: false, error: "Zu viele Versuche. Bitte warten Sie eine Minute und versuchen Sie es dann noch einmal." });
       }
       if (!sameOriginOk(req)) {
         return send(res, 403, { ok: false, error: "Origin abgelehnt" });
@@ -534,12 +537,12 @@ async function handle(req, res) {
       const password = String(body.password || "");
       const config = loadConfig();
       if (!emailAllowed(config, email)) {
-        return send(res, 403, { ok: false, error: "E-Mail nicht freigeschaltet" });
+        return send(res, 401, { ok: false, error: "E-Mail-Adresse oder Passwort stimmt nicht. Bitte noch einmal versuchen." });
       }
       const hash = sha256Hex(password);
       const expect = expectPasswordHash();
       if (!expect || hash !== expect) {
-        return send(res, 401, { ok: false, error: "Passwort falsch" });
+        return send(res, 401, { ok: false, error: "E-Mail-Adresse oder Passwort stimmt nicht. Bitte noch einmal versuchen." });
       }
       const token = signSession({
         email,
@@ -582,7 +585,7 @@ async function handle(req, res) {
     // --- Passwort ändern (SHA-256 in admin-auth secrets; session secret unchanged) ---
     if (method === "POST" && p === "/password") {
       if (!rateLimit(ip, { limit: 8, windowMs: 60_000 })) {
-        return send(res, 429, { ok: false, error: "Zu viele Versuche – bitte warten." });
+        return send(res, 429, { ok: false, error: "Zu viele Versuche. Bitte warten Sie eine Minute und versuchen Sie es dann noch einmal." });
       }
       const body = (await readBody(req)) || {};
       const current = String(body.current_password || "");
@@ -1244,6 +1247,13 @@ const server = http.createServer((req, res) => {
     }
   });
 });
+
+try {
+  const moved = migrateAdminEmailsFromConfig(CONFIG_PATH);
+  if (moved.moved || moved.cleaned) console.log(JSON.stringify({ event: "admin_emails_server_side", moved: moved.moved, public_file_cleaned: moved.cleaned, count: moved.count }));
+} catch (e) {
+  console.error(JSON.stringify({ event: "admin_emails_migration_failed", error: e.code || e.name }));
+}
 
 try {
   const mig = migratePasswordHashFromConfig(CONFIG_PATH);

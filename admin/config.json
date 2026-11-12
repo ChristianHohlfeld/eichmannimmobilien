@@ -5,12 +5,6 @@
   "listings_path": "data/listings.json",
   "assets_prefix": "assets/listings",
   "workflow_file": "sync-immowelt.yml",
-  "note": "Login: Allowlist-E-Mail + Passwort → HttpOnly Session-Cookie via /admin/api/. Passwort-Hash nur auf dem Droplet: /var/lib/eichmann/secrets/admin-auth.json (nie in git). Kein GitHub-PAT. Eigen-CRUD + Immowelt-Sichtbarkeit über Droplet-API → SQLite SoT. Immowelt-Konto read-only.",
-  "admin_emails": [
-    "chris.hohlfeld@gmail.com",
-    "chris.hohlfeld@googlemail.com",
-    "info@immobilien-eichmann.com"
-  ],
   "auth_mode": "password_session",
   "admin_api": "/admin/api/",
   "sot": "sqlite"

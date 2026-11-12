@@ -61,11 +61,14 @@ const SYNC_DISCONNECT_MSG =
 const SYNC_CLIENT_TIMEOUT_MS = 250_000;
 let syncLongWaitTimer = null;
 
+let syncStepTimers = [];
 function clearImmoweltSyncLongWait() {
   if (syncLongWaitTimer) {
     clearTimeout(syncLongWaitTimer);
     syncLongWaitTimer = null;
   }
+  syncStepTimers.forEach(clearTimeout);
+  syncStepTimers = [];
 }
 
 function fillSyncStatusNode(el, msg, kind) {
@@ -89,7 +92,16 @@ function fillSyncStatusNode(el, msg, kind) {
 }
 
 /** One Sync status channel: header bar + Immowelt-Stand line. Never also sticky-toast (avoids duplicate covering Abmelden). */
+function celebrate() {
+  const icon = $("easy-status-icon");
+  if (!icon) return;
+  icon.classList.remove("pop");
+  void icon.offsetWidth; // restart the animation
+  icon.classList.add("pop");
+}
+
 function setImmoweltSyncOutcome(msg, kind = "") {
+  if (kind === "ok") celebrate();
   // Always dismiss any leftover sticky toast — bar is the durable UI.
   clearStickyToast();
   fillSyncStatusNode($("immowelt-sync-bar"), msg, kind);
@@ -114,6 +126,13 @@ function startImmoweltSyncLoading() {
   clearImmoweltSyncLongWait();
   setImmoweltSyncBusy(true);
   setImmoweltSyncOutcome(SYNC_LOADING_MSG, "progress");
+  // What is happening, in plain steps (timing is typical, not measured – the result decides).
+  const steps = [
+    [6_000, "Schritt 1 von 3: Ihre Angebote werden bei Immowelt gelesen …"],
+    [22_000, "Schritt 2 von 3: Texte, Preise und Fotos werden verglichen …"],
+    [50_000, "Schritt 3 von 3: Die Website wird auf den neuen Stand gebracht …"],
+  ];
+  syncStepTimers = steps.map(([ms, msg]) => setTimeout(() => setImmoweltSyncOutcome(msg, "progress"), ms));
   // Soft hint only — keep loading state; never invent a fake fail while request is open.
   syncLongWaitTimer = setTimeout(() => {
     setImmoweltSyncOutcome(SYNC_LOADING_LONG_MSG, "progress");
@@ -568,6 +587,23 @@ async function loadConfig() {
   config = await res.json();
 }
 
+/** Convenience only: the address is kept on this device so it need not be typed again. */
+const EMAIL_KEY = "eichmann_admin_email";
+function rememberEmail(email) {
+  try {
+    localStorage.setItem(EMAIL_KEY, email);
+  } catch {
+    /* private mode etc. – then it is simply typed again */
+  }
+}
+function recallEmail() {
+  try {
+    return localStorage.getItem(EMAIL_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
 async function login(ev) {
   ev.preventDefault();
   const err = $("login-error");
@@ -575,14 +611,11 @@ async function login(ev) {
   try {
     const email = normalizeEmail($("email").value);
     const password = $("password").value;
-    const allowed = (config.admin_emails || []).map(normalizeEmail);
-    if (allowed.length && !allowed.includes(email)) {
-      throw new Error("E-Mail nicht freigeschaltet");
-    }
     await api("/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
+    rememberEmail(email);
     $("password").value = "";
     sessionActive = true;
     showGate(false);
@@ -1020,9 +1053,18 @@ function easyStatusOf(status, now = Date.now()) {
   }
 }
 
+function greeting(now = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", hour: "2-digit", hour12: false }).formatToParts(now).find((p) => p.type === "hour")?.value);
+  const hello = hour >= 5 && hour < 11 ? "Guten Morgen" : hour >= 11 && hour < 18 ? "Guten Tag" : "Guten Abend";
+  const date = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", weekday: "long", day: "numeric", month: "long" }).format(now);
+  return `${hello}! Heute ist ${date}.`;
+}
+
 function renderEasyStatus(status) {
   const box = $("easy-status");
   if (!box) return;
+  const hello = $("easy-hello");
+  if (hello) hello.textContent = greeting();
   const v = easyStatusOf(status);
   box.className = `easy-status is-${v.kind}`;
   $("easy-status-icon").textContent = v.icon;
@@ -1062,54 +1104,46 @@ function renderImmowelt() {
 }
 
 function renderEigen() {
-  const tbody = $("eigen-tbody");
+  const box = $("eigen-cards");
   $("eigen-count").textContent = `(${eigenListings.length})`;
   if (!eigenListings.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="muted">Sie haben keine eigenen Angebote angelegt. Das ist in Ordnung – Ihre Immowelt-Angebote stehen unter „Start“.</td></tr>`;
+    box.innerHTML = `<p class="muted">Sie haben keine eigenen Angebote angelegt. Das ist in Ordnung – Ihre Immowelt-Angebote stehen unter „Start“.</p>`;
     return;
   }
-  tbody.innerHTML = eigenListings
+  box.innerHTML = eigenListings
     .map((L) => {
       const local = L.local_url ? `../${L.local_url}` : "#";
-      const nImg = (L.gallery_bases || L.images || []).length;
-      const visibilityBadge =
-        L.site_hidden === true
-          ? ' <span class="badge warn">ausgeblendet</span>'
-          : ' <span class="badge ok">öffentlich</span>';
-      const toggleLabel = L.site_hidden === true ? "Wieder zeigen" : "Verstecken";
-      const toggleClass = L.site_hidden === true ? "btn-primary" : "btn-outline";
-      return `<tr>
-        <td>
-          <strong>${esc(L.title || "–")}</strong>
-          <div><span class="badge ok">nur bei uns</span>${visibilityBadge}
-          ${L.active === false ? ' <span class="badge warn">inaktiv</span>' : ""}
-          ${nImg ? ` <span class="badge">${nImg} Fotos</span>` : ""}</div>
-        </td>
-        <td>${esc(L.location || "–")}</td>
-        <td>${esc(L.price || "–")}</td>
-        <td>${esc(L.status || "–")}</td>
-        <td>
-          <button type="button" class="btn ${toggleClass} btn-sm" data-toggle-hidden="${esc(L.id)}" title="${toggleLabel} auf der Website">${toggleLabel}</button>
-          <button type="button" class="btn btn-outline btn-sm" data-edit="${esc(L.id)}">Bearbeiten</button>
-          <button type="button" class="btn btn-outline btn-sm" data-delete="${esc(L.id)}" style="color:var(--err)" title="Dieses eigene Angebot löschen">Löschen</button>
-          ${
-            L.local_url && L.site_hidden !== true && L.active !== false
-              ? `<a class="btn btn-outline btn-sm" href="${esc(local)}" target="_blank" rel="noopener">Ansehen</a>`
-              : ""
-          }
-        </td>
-      </tr>`;
+      const hidden = L.site_hidden === true;
+      const inactive = L.active === false;
+      const thumb = thumbUrl(L);
+      const facts = [L.rooms, L.living_area, L.location].filter(Boolean).join(" · ");
+      const state = hidden || inactive
+        ? '<span class="badge warn">nicht auf der Website</span>'
+        : '<span class="badge ok">auf der Website</span>';
+      return `<article class="offer-card${hidden || inactive ? " is-hidden" : ""}">
+        ${thumb ? `<img src="${esc(thumb)}" alt="" loading="lazy" />` : `<div class="offer-card-noimg" aria-hidden="true"></div>`}
+        <div class="offer-card-body">
+          <strong>${esc(L.title || "Angebot")}</strong>
+          <div class="offer-card-price">${esc(L.price || "–")}</div>
+          <div class="muted">${esc(facts)}</div>
+          <div>${state}</div>
+          <div class="offer-card-actions">
+            <button type="button" class="btn btn-primary btn-sm" data-edit="${esc(L.id)}">Bearbeiten</button>
+            <button type="button" class="btn btn-outline btn-sm" data-toggle-hidden="${esc(L.id)}">${hidden ? "Wieder zeigen" : "Verstecken"}</button>
+            ${L.local_url && !hidden && !inactive ? `<a class="btn btn-outline btn-sm" href="${esc(local)}" target="_blank" rel="noopener">Ansehen</a>` : ""}
+            <button type="button" class="btn btn-outline btn-sm" data-delete="${esc(L.id)}" style="color:var(--err)">Löschen</button>
+          </div>
+        </div>
+      </article>`;
     })
     .join("");
-  tbody.querySelectorAll("[data-toggle-hidden]").forEach((btn) => {
-    btn.addEventListener("click", () =>
-      toggleVisibility(btn.getAttribute("data-toggle-hidden"))
-    );
+  box.querySelectorAll("[data-toggle-hidden]").forEach((btn) => {
+    btn.addEventListener("click", () => toggleVisibility(btn.getAttribute("data-toggle-hidden")));
   });
-  tbody.querySelectorAll("[data-edit]").forEach((btn) => {
+  box.querySelectorAll("[data-edit]").forEach((btn) => {
     btn.addEventListener("click", () => openEditor(btn.getAttribute("data-edit")));
   });
-  tbody.querySelectorAll("[data-delete]").forEach((btn) => {
+  box.querySelectorAll("[data-delete]").forEach((btn) => {
     btn.addEventListener("click", () => deleteEigenListing(btn.getAttribute("data-delete")));
   });
 }
@@ -1197,7 +1231,7 @@ async function toggleVisibility(id) {
       toast("Abgebrochen. Alles bleibt wie vorher.", "");
       return;
     }
-    toast(nextHidden ? "Auf der Website ausgeblendet" : "Auf der Website eingeblendet", "ok");
+    toast(nextHidden ? "Das Angebot ist jetzt versteckt" : "Das Angebot ist wieder auf der Website", "ok");
     await reloadAll();
   } catch (e) {
     toast(e.message || String(e), "err");
@@ -1966,6 +2000,14 @@ async function onConfirmRestore() {
 
 function bind() {
   $("form-login").addEventListener("submit", login);
+  const remembered = recallEmail();
+  if (remembered && $("email")) {
+    $("email").value = remembered;
+    $("email").removeAttribute("autofocus");
+    setTimeout(() => $("password")?.focus(), 50);
+  }
+  const showPw = $("password-show");
+  if (showPw) showPw.addEventListener("change", () => ($("password").type = showPw.checked ? "text" : "password"));
   $("btn-logout").addEventListener("click", logout);
   const pwBtn = $("btn-password");
   if (pwBtn) pwBtn.addEventListener("click", openPasswordModal);

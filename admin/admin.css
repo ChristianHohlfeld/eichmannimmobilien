@@ -940,3 +940,44 @@ body { font-size: 17px; }
 .tech-fold > summary::-webkit-details-marker { display: none; }
 .tech-fold > summary::after { content: "Öffnen"; margin-left: auto; color: var(--primary-mid); font-size: 0.9rem; font-weight: 600; }
 .tech-fold[open] > summary::after { content: "Schließen"; }
+
+/* ===== Feinschliff: freundlich, ruhig, gut bedienbar ===== */
+.easy-hello { margin: 0 0 12px; font-size: 1.05rem; color: var(--slate); }
+.check-line { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-weight: 500; cursor: pointer; }
+.check-line input { width: 18px; height: 18px; }
+.gate-card input[type="email"], .gate-card input[type="password"], .gate-card input[type="text"] { font-size: 1.1rem; padding: 12px 14px; }
+
+/* gut sichtbar, wo man gerade ist (Tastatur) */
+:where(a, button, input, textarea, summary, .btn):focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn { min-height: 40px; }
+.btn-sm { min-height: 36px; }
+
+.offer-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.offer-card:hover { transform: translateY(-3px); box-shadow: 0 10px 26px rgba(15, 39, 68, 0.14); }
+.offer-card.is-hidden img, .offer-card.is-hidden .offer-card-noimg { filter: grayscale(1); opacity: 0.6; }
+.offer-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.offer-card-body .offer-card-actions .btn { margin-top: 0; }
+
+/* kleiner "geschafft"-Moment nach einem Abgleich */
+@keyframes easy-pop { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
+.easy-status-icon.pop { animation: easy-pop 0.6s ease; }
+
+/* laufender Abgleich: ruhiger Balken unter der Meldung */
+.easy-action .sync-outcome.progress { position: relative; overflow: hidden; padding-bottom: 16px; }
+.easy-action .sync-outcome.progress::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 4px;
+  width: 35%;
+  background: var(--primary-mid);
+  border-radius: 2px;
+  animation: easy-slide 1.6s ease-in-out infinite;
+}
+@keyframes easy-slide { 0% { left: -35%; } 100% { left: 100%; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .offer-card, .offer-card:hover { transition: none; transform: none; }
+  .easy-status-icon.pop, .easy-action .sync-outcome.progress::after { animation: none; }
+}
