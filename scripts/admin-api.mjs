@@ -106,7 +106,7 @@ import {
   clearResetPause,
   RESET_TTL_MS,
 } from "./lib/admin-auth.mjs";
-import { readMailSettings, sendMail } from "./lib/smtp.mjs";
+import { readMailer } from "./lib/mailer.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const HOST = process.env.EICHMANN_ADMIN_API_HOST || "127.0.0.1";
@@ -388,31 +388,13 @@ function queueResetMail(email, ip) {
   setImmediate(async () => {
     try {
       if (!isAllowedEmail(email, CONFIG_PATH)) return;
-      const settings = readMailSettings();
-      if (!settings) return console.error(JSON.stringify({ event: "admin_reset_mail_skipped", reason: "mail_not_configured" }));
+      const mailer = readMailer();
+      if (!mailer) return console.error(JSON.stringify({ event: "admin_reset_mail_skipped", reason: "mail_not_configured" }));
       const slot = takeResetSlot({ email, ip });
       if (!slot.ok) return console.log(JSON.stringify({ event: "admin_reset_mail_paused", reason: slot.reason }));
       const token = createResetToken(email);
-      const minutes = Math.round(RESET_TTL_MS / 60_000);
-      await sendMail(settings, {
-        to: email,
-        subject: "Neues Passwort für Ihre Website-Verwaltung",
-        text: [
-          "Guten Tag,",
-          "",
-          "für die Website-Verwaltung von Immobilien Eichmann wurde ein neues Passwort angefordert.",
-          "",
-          "Mit diesem Link legen Sie Ihr neues Passwort fest:",
-          `${PUBLIC_ORIGIN}/admin/#reset=${token}`,
-          "",
-          `Der Link gilt ${minutes} Minuten und funktioniert nur einmal.`,
-          "",
-          "Sie haben das nicht angefordert? Dann müssen Sie nichts tun – Ihr Passwort bleibt, wie es ist.",
-          "",
-          "Diese Nachricht wurde automatisch verschickt. Bitte antworten Sie nicht darauf.",
-        ].join("\n"),
-      });
-      console.log(JSON.stringify({ event: "admin_reset_mail_sent", at: new Date().toISOString() }));
+      await mailer.sendReset({ to: email, link: `${PUBLIC_ORIGIN}/admin/#reset=${token}`, minutes: Math.round(RESET_TTL_MS / 60_000) });
+      console.log(JSON.stringify({ event: "admin_reset_mail_sent", via: mailer.kind, at: new Date().toISOString() }));
     } catch (e) {
       console.error(JSON.stringify({ event: "admin_reset_mail_failed", error: String(e?.message || e).slice(0, 120) }));
     }
@@ -633,7 +615,7 @@ async function handle(req, res) {
 
     // --- Passwort vergessen (ohne Anmeldung) ---
     if (method === "GET" && p === "/auth/options") {
-      return send(res, 200, { ok: true, reset_by_mail: Boolean(readMailSettings()) });
+      return send(res, 200, { ok: true, reset_by_mail: Boolean(readMailer()) });
     }
 
     if (method === "POST" && p === "/password/forgot") {

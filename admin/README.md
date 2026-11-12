@@ -50,11 +50,20 @@ E-Mail → https://immobilieneichmann.de/admin/#reset=<Schlüssel>
   nach einem ruhigen Tag oder erfolgreicher Anmeldung von vorn), dazu höchstens 8 Mails pro Stunde insgesamt
   und ein unsichtbares Feld, das nur automatische Formular-Ausfüller füllen. Abgelehnte Versuche bekommen
   dieselbe freundliche Antwort – es geht nur keine Mail hinaus.
-- **Mailversand einrichten:** Secret `EICHMANN_MAIL_URL` =
-  `smtps://BENUTZER:PASSWORT@server:465/?from=absender@domain` (z. B. SMTP-Zugang von Amazon SES), dann
-  **Immowelt ops (server)** → `mail-install`; `mail-test` schickt eine Probe an alle Anmelde-Adressen,
-  `mail-status` zeigt Server und Absender. Ohne Einrichtung zeigt die Anmeldeseite stattdessen den Hinweis,
-  sich bei der Betreuung zu melden.
+- **Mailversand:** über das **Formular-Gateway**, das schon die Kontakt- und Exposé-Anfragen der Website
+  zustellt (`forms.digitalisierungsplanung.de` → Amazon SES). Auf diesem Server liegt dafür kein
+  Mail-Passwort, sondern nur ein Signierschlüssel (`secrets/mail-gateway-key.pem`, 0600), der ihn nie verlässt.
+  Die Admin-API schickt dem Gateway nur: welche Art (Passwort-Link oder Test), an wen, welcher Link –
+  signiert. Das Gateway kennt die öffentliche Hälfte des Schlüssels, schreibt den Mailtext selbst und nimmt
+  nur seine fest hinterlegten Empfänger und nur Links nach `https://immobilieneichmann.de/admin/` an.
+  Eine Anmelde-Adresse, die dort nicht als Empfänger steht, bekommt deshalb keine Mail.
+  Einrichten über **Immowelt ops (server)**: `mail-key` (Schlüssel einmal anlegen, zeigt die öffentliche
+  Hälfte – kein Geheimnis; sie wird im Gateway hinterlegt), danach `mail-gateway-on` (fragt das Gateway, ob
+  es diesen Server anerkennt, und schaltet nur dann ein). `mail-test` schickt eine Probe an jedes
+  Anmelde-Postfach, `mail-status` zeigt den eingerichteten Weg. Ohne Einrichtung zeigt die Anmeldeseite
+  stattdessen den Hinweis, sich bei der Betreuung zu melden.
+  Ersatzweg ohne Gateway: Secret `EICHMANN_MAIL_URL` =
+  `smtps://BENUTZER:PASSWORT@server:465/?from=absender@domain`, dann `mail-install`.
 - **Notfall** (kein Mailzugang): `admin-password-set` setzt ein Passwort für alle; eigene Passwörter und
   offene Links entfallen dabei.
 

@@ -31,6 +31,8 @@ on:
           - watchdog
           - heartbeat-install
           - heartbeat-off
+          - mail-key
+          - mail-gateway-on
           - mail-install
           - mail-status
           - mail-test
@@ -108,6 +110,11 @@ jobs:
             watchdog)         node scripts/watchdog-check.mjs --local || echo "::warning::Wächter meldet ein Problem (siehe Ausgabe)." ;;
             heartbeat-off)    node scripts/alarm-install.mjs --off ;;
             # mail for "Passwort vergessen": what is configured / a test message to every sign-in address
+            # usual way: through the form gateway that already delivers the inquiries. mail-key creates this
+            # server's signing key once and prints its PUBLIC half (not a secret; the gateway needs it).
+            # mail-gateway-on asks the gateway whether it accepts this server and only then switches on.
+            mail-key)         node scripts/mail-install.mjs --key ;;
+            mail-gateway-on)  node scripts/mail-install.mjs --gateway-on ;;
             mail-status)      node scripts/mail-install.mjs --status ;;
             mail-test)        EICHMANN_ADMIN_CONFIG=/var/www/immobilieneichmann.de/admin/config.json node scripts/mail-install.mjs --test ;;
             admin-password-set|github-token-install|heartbeat-install|mail-install) echo "wird im nächsten Schritt gesetzt" ;;
