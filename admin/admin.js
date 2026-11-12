@@ -321,6 +321,7 @@ async function api(path, options = {}) {
 }
 
 function showGate(on) {
+  $("view-reset")?.classList.add("hidden");
   $("view-gate").classList.toggle("hidden", !on);
   $("view-app").classList.toggle("hidden", on);
   $("app-header").classList.toggle("hidden", on);
@@ -608,6 +609,7 @@ async function login(ev) {
   ev.preventDefault();
   const err = $("login-error");
   err.classList.add("hidden");
+  $("login-ok")?.classList.add("hidden");
   try {
     const email = normalizeEmail($("email").value);
     const password = $("password").value;
@@ -626,6 +628,102 @@ async function login(ev) {
     err.textContent = e.message || String(e);
     err.classList.remove("hidden");
   }
+}
+
+/* ---------- Passwort vergessen / neues Passwort über den Link aus der E-Mail ---------- */
+
+/** The link in the mail carries its key after "#reset=" – that part never reaches a server log. */
+function resetTokenFromUrl() {
+  const m = /^#reset=([A-Za-z0-9_-]{40,64})$/.exec(location.hash || "");
+  return m ? m[1] : null;
+}
+
+async function setupForgot() {
+  let available = false;
+  try {
+    available = (await api("/auth/options")).reset_by_mail === true;
+  } catch {
+    /* then the plain hint stays */
+  }
+  $("forgot-line")?.classList.toggle("hidden", !available);
+  $("forgot-unavailable")?.classList.toggle("hidden", available);
+}
+
+function openForgot() {
+  const form = $("form-forgot");
+  form.classList.remove("hidden");
+  $("forgot-msg").classList.add("hidden");
+  $("btn-forgot-send").disabled = false;
+  $("forgot-email").value = normalizeEmail($("email").value) || recallEmail();
+  $("forgot-email").focus();
+}
+
+async function onForgot(ev) {
+  ev.preventDefault();
+  const btn = $("btn-forgot-send");
+  const msg = $("forgot-msg");
+  const email = normalizeEmail($("forgot-email").value);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    msg.className = "err-box";
+    msg.textContent = "Bitte geben Sie Ihre E-Mail-Adresse ein.";
+    return;
+  }
+  btn.disabled = true;
+  msg.className = "ok-box";
+  try {
+    const r = await api("/password/forgot", { method: "POST", body: JSON.stringify({ email, website: $("forgot-website").value }) });
+    msg.textContent = `${r.message} Der Link gilt 30 Minuten. Kommt nichts an, können Sie es in ein paar Minuten noch einmal versuchen.`;
+  } catch (e) {
+    msg.className = "err-box";
+    msg.textContent = e.message || "Das hat gerade nicht geklappt. Bitte versuchen Sie es gleich noch einmal.";
+    btn.disabled = false;
+  }
+}
+
+async function showReset(token) {
+  $("view-gate").classList.add("hidden");
+  $("view-app").classList.add("hidden");
+  $("app-header").classList.add("hidden");
+  $("view-reset").classList.remove("hidden");
+  const stale = (text) => {
+    $("form-reset").classList.add("hidden");
+    $("reset-stale").classList.remove("hidden");
+    $("reset-stale-text").textContent = text;
+  };
+  try {
+    await api("/password/reset/check", { method: "POST", body: JSON.stringify({ token }) });
+  } catch (e) {
+    return stale(e.message || "Dieser Link ist abgelaufen oder wurde schon benutzt.");
+  }
+  $("reset-stale").classList.add("hidden");
+  const form = $("form-reset");
+  form.classList.remove("hidden");
+  $("reset-new").focus();
+  form.onsubmit = async (ev) => {
+    ev.preventDefault();
+    const err = $("reset-error");
+    err.classList.add("hidden");
+    $("btn-reset-save").disabled = true;
+    try {
+      const r = await api("/password/reset", {
+        method: "POST",
+        body: JSON.stringify({ token, new_password: $("reset-new").value, new_password_repeat: $("reset-repeat").value }),
+      });
+      form.reset();
+      history.replaceState(null, "", location.pathname);
+      showGate(true);
+      const ok = $("login-ok");
+      ok.textContent = r.message || "Ihr neues Passwort ist gespeichert. Bitte melden Sie sich jetzt damit an.";
+      ok.classList.remove("hidden");
+      $("password").focus();
+    } catch (e) {
+      if (e.status === 410) return stale(e.message);
+      err.textContent = e.message || String(e);
+      err.classList.remove("hidden");
+    } finally {
+      $("btn-reset-save").disabled = false;
+    }
+  };
 }
 
 async function logout() {
@@ -2008,6 +2106,17 @@ function bind() {
   }
   const showPw = $("password-show");
   if (showPw) showPw.addEventListener("change", () => ($("password").type = showPw.checked ? "text" : "password"));
+  $("btn-forgot")?.addEventListener("click", openForgot);
+  $("btn-forgot-cancel")?.addEventListener("click", () => $("form-forgot").classList.add("hidden"));
+  $("form-forgot")?.addEventListener("submit", onForgot);
+  $("btn-reset-again")?.addEventListener("click", () => {
+    history.replaceState(null, "", location.pathname);
+    showGate(true);
+    openForgot();
+  });
+  $("reset-show")?.addEventListener("change", (ev) => {
+    for (const id of ["reset-new", "reset-repeat"]) $(id).type = ev.target.checked ? "text" : "password";
+  });
   $("btn-logout").addEventListener("click", logout);
   const pwBtn = $("btn-password");
   if (pwBtn) pwBtn.addEventListener("click", openPasswordModal);
@@ -2068,6 +2177,12 @@ async function boot() {
     await loadConfig();
   } catch (e) {
     document.body.innerHTML = `<p class="err-box" style="margin:2rem">Admin-Konfiguration fehlt: ${esc(e.message)}</p>`;
+    return;
+  }
+  void setupForgot();
+  const resetToken = resetTokenFromUrl();
+  if (resetToken) {
+    await showReset(resetToken);
     return;
   }
   if (await ensureSession()) {

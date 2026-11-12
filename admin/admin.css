@@ -981,3 +981,9 @@ body { font-size: 17px; }
   .offer-card, .offer-card:hover { transition: none; transform: none; }
   .easy-status-icon.pop, .easy-action .sync-outcome.progress::after { animation: none; }
 }
+
+/* Passwort vergessen */
+.link-btn { background: none; border: none; padding: 0; font: inherit; color: var(--primary-mid); text-decoration: underline; cursor: pointer; }
+.link-btn:hover { color: var(--primary); }
+.forgot-box { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+.trap { position: absolute; left: -10000px; width: 1px; height: 1px; opacity: 0; }

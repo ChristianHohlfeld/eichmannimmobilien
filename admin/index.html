@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#0F2744" />
   <link rel="icon" href="../assets/logo.png" type="image/png" />
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
-  <link rel="stylesheet" href="admin.css?v=einfach-2" />
+  <link rel="stylesheet" href="admin.css?v=einfach-3" />
 </head>
 <body>
   <header class="app-header hidden" id="app-header">
@@ -38,7 +38,40 @@
           <button type="submit" class="btn btn-primary btn-big">Anmelden</button>
         </div>
         <p id="login-error" class="err-box hidden"></p>
-        <p class="hint">Passwort vergessen? Bitte bei Chris Hohlfeld melden – er setzt es zurück.</p>
+        <p id="login-ok" class="ok-box hidden" role="status"></p>
+      </form>
+      <p class="hint" id="forgot-line"><button type="button" class="link-btn" id="btn-forgot">Passwort vergessen?</button></p>
+      <p class="hint hidden" id="forgot-unavailable">Passwort vergessen? Bitte bei Chris Hohlfeld melden – er setzt es zurück.</p>
+      <form id="form-forgot" class="forgot-box hidden" novalidate>
+        <strong>Neues Passwort anfordern</strong>
+        <p class="hint" style="margin-top:4px">Geben Sie Ihre E-Mail-Adresse ein. Sie bekommen eine E-Mail mit einem Link, über den Sie ein neues Passwort festlegen.</p>
+        <label for="forgot-email">E-Mail-Adresse</label>
+        <input type="email" id="forgot-email" autocomplete="username" required placeholder="name@beispiel.de" />
+        <!-- stays empty; filled only by automated form-fillers -->
+        <input type="text" id="forgot-website" name="website" tabindex="-1" autocomplete="off" class="trap" aria-hidden="true" />
+        <div class="btn-row">
+          <button type="submit" class="btn btn-primary" id="btn-forgot-send">Link per E-Mail schicken</button>
+          <button type="button" class="btn btn-outline" id="btn-forgot-cancel">Abbrechen</button>
+        </div>
+        <p id="forgot-msg" class="ok-box hidden" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section id="view-reset" class="card gate-card hidden">
+      <h2 style="margin-top:0;font-family:var(--font-display);color:var(--primary)">Neues Passwort festlegen</h2>
+      <div id="reset-stale" class="hidden">
+        <p class="err-box" id="reset-stale-text"></p>
+        <div class="btn-row"><button type="button" class="btn btn-primary" id="btn-reset-again">Neuen Link anfordern</button></div>
+      </div>
+      <form id="form-reset" class="hidden" autocomplete="off">
+        <p class="hint">Bitte wählen Sie ein Passwort mit mindestens 8 Zeichen und geben Sie es zweimal ein.</p>
+        <label for="reset-new">Neues Passwort</label>
+        <input type="password" id="reset-new" autocomplete="new-password" required minlength="8" />
+        <label for="reset-repeat">Neues Passwort wiederholen</label>
+        <input type="password" id="reset-repeat" autocomplete="new-password" required minlength="8" />
+        <label class="check-line"><input type="checkbox" id="reset-show" /> Passwort anzeigen</label>
+        <div class="btn-row"><button type="submit" class="btn btn-primary btn-big" id="btn-reset-save">Passwort speichern</button></div>
+        <p id="reset-error" class="err-box hidden" role="alert"></p>
       </form>
     </section>
 
@@ -429,6 +462,6 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="admin.js?v=einfach-2" type="module"></script>
+  <script src="admin.js?v=einfach-3" type="module"></script>
 </body>
 </html>

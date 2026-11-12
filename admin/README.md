@@ -24,11 +24,39 @@ E-Mail (Allowlist) + Passwort
   → HttpOnly Secure SameSite=Strict Cookie
 ```
 
-Passwort-Hash **und** die Liste der zugelassenen E-Mail-Adressen liegen nur auf dem Server in
-`/var/lib/eichmann/secrets/admin-auth.json` (0600). Die öffentlich abrufbare `admin/config.json` nennt niemanden:
-Beim Start verschiebt der API-Prozess eine dort noch vorhandene Liste einmalig in die Server-Datei und entfernt sie
-aus der öffentlichen Datei. Die Anmeldung antwortet bei unbekannter Adresse und bei falschem Passwort gleich.
-Adressen ändern: `admin_emails` in der Server-Datei anpassen (leere Liste = nur das Passwort entscheidet).
+Alles zur Anmeldung liegt nur auf dem Server in `/var/lib/eichmann/secrets/admin-auth.json` (0600):
+
+- `admin_emails` – wer sich anmelden darf. Die öffentlich abrufbare `admin/config.json` nennt niemanden und
+  enthält keinen Hash; beim Start räumt der API-Prozess Altbestände dort weg.
+- `users[adresse].password` – **eigenes Passwort je Person** (scrypt, gesalzen). Wer noch keines gesetzt hat,
+  meldet sich mit dem bisherigen gemeinsamen Passwort an (`password_sha256`).
+- Eine Anmeldung endet, sobald sich das Passwort **dieser Person** ändert; andere bleiben angemeldet.
+- Unbekannte Adresse und falsches Passwort bekommen dieselbe Antwort.
+
+### Passwort vergessen
+
+```text
+Anmeldeseite → „Passwort vergessen?“ → Adresse eingeben
+  → POST /admin/api/password/forgot      antwortet immer gleich und sofort
+  → im Hintergrund: Adresse zugelassen? Pause abgelaufen? → Link erzeugen → E-Mail an genau diese Adresse
+E-Mail → https://immobilieneichmann.de/admin/#reset=<Schlüssel>
+  → POST /admin/api/password/reset/check  (Link noch gültig?)
+  → POST /admin/api/password/reset        neues Passwort für diese Person
+```
+
+- Der Link gilt 30 Minuten und einmal; gespeichert wird nur sein SHA-256. Ein neuer Link ersetzt den alten.
+  Der Schlüssel steht hinter `#` und erreicht deshalb kein Server-Protokoll.
+- **Schutz vor Fluten:** je Person und je Absender wachsende Pausen (1, 2, 4, 8 … Minuten, höchstens ein Tag;
+  nach einem ruhigen Tag oder erfolgreicher Anmeldung von vorn), dazu höchstens 8 Mails pro Stunde insgesamt
+  und ein unsichtbares Feld, das nur automatische Formular-Ausfüller füllen. Abgelehnte Versuche bekommen
+  dieselbe freundliche Antwort – es geht nur keine Mail hinaus.
+- **Mailversand einrichten:** Secret `EICHMANN_MAIL_URL` =
+  `smtps://BENUTZER:PASSWORT@server:465/?from=absender@domain` (z. B. SMTP-Zugang von Amazon SES), dann
+  **Immowelt ops (server)** → `mail-install`; `mail-test` schickt eine Probe an alle Anmelde-Adressen,
+  `mail-status` zeigt Server und Absender. Ohne Einrichtung zeigt die Anmeldeseite stattdessen den Hinweis,
+  sich bei der Betreuung zu melden.
+- **Notfall** (kein Mailzugang): `admin-password-set` setzt ein Passwort für alle; eigene Passwörter und
+  offene Links entfallen dabei.
 
 `auth_mode`: `password_session`
 

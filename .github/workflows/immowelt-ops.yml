@@ -31,6 +31,9 @@ on:
           - watchdog
           - heartbeat-install
           - heartbeat-off
+          - mail-install
+          - mail-status
+          - mail-test
           - vorher-on
           - vorher-off
       plan_hash:
@@ -104,7 +107,10 @@ jobs:
             # the server watchdog, now: sync fresh? public site right? → sign of life (output names no address)
             watchdog)         node scripts/watchdog-check.mjs --local || echo "::warning::Wächter meldet ein Problem (siehe Ausgabe)." ;;
             heartbeat-off)    node scripts/alarm-install.mjs --off ;;
-            admin-password-set|github-token-install|heartbeat-install) echo "wird im nächsten Schritt gesetzt" ;;
+            # mail for "Passwort vergessen": what is configured / a test message to every sign-in address
+            mail-status)      node scripts/mail-install.mjs --status ;;
+            mail-test)        EICHMANN_ADMIN_CONFIG=/var/www/immobilieneichmann.de/admin/config.json node scripts/mail-install.mjs --test ;;
+            admin-password-set|github-token-install|heartbeat-install|mail-install) echo "wird im nächsten Schritt gesetzt" ;;
             *) echo "unbekannte Aktion"; exit 2 ;;
           esac
           REMOTE
@@ -146,3 +152,15 @@ jobs:
           ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
             "${DEPLOY_USER}@${DEPLOY_HOST}" "cd /var/lib/eichmann/app && node scripts/watchdog-check.mjs --local" || echo "::warning::Wächter meldet ein Problem (siehe Ausgabe)."
           echo "Lebenszeichen eingerichtet; der Wächter meldet sich ab jetzt alle 15 Minuten." >> "$GITHUB_STEP_SUMMARY"
+      - name: Install mail settings for "Passwort vergessen" (from secret EICHMANN_MAIL_URL, STDIN only)
+        if: inputs.action == 'mail-install'
+        env:
+          MAIL_URL: ${{ secrets.EICHMANN_MAIL_URL }}
+          DEPLOY_HOST: ${{ secrets.EICHMANN_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.EICHMANN_DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          test -n "${MAIL_URL:-}" || { echo "::error::Secret EICHMANN_MAIL_URL fehlt oder ist leer – nichts geändert."; exit 1; }
+          printf '%s' "$MAIL_URL" | ssh -i ~/.ssh/eichmann_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" "cd /var/lib/eichmann/app && node scripts/mail-install.mjs"
+          echo "Mailversand eingerichtet. Mit der Aktion mail-test eine Probe an alle Anmelde-Adressen schicken; danach das Secret EICHMANN_MAIL_URL löschen." >> "$GITHUB_STEP_SUMMARY"

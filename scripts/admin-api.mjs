@@ -93,6 +93,20 @@ import {
   migrateAdminEmailsFromConfig,
   scrubPasswordHashFromPublicConfig,
 } from "./lib/admin-password.mjs";
+import {
+  checkLogin,
+  credentialFingerprint,
+  isAllowedEmail,
+  validateNewPassword,
+  setUserPassword,
+  createResetToken,
+  resetTokenOwner,
+  resetPasswordWithToken,
+  takeResetSlot,
+  clearResetPause,
+  RESET_TTL_MS,
+} from "./lib/admin-auth.mjs";
+import { readMailSettings, sendMail } from "./lib/smtp.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const HOST = process.env.EICHMANN_ADMIN_API_HOST || "127.0.0.1";
@@ -355,10 +369,60 @@ function changeSummaryFromPreview(preview) {
   return items;
 }
 
+/** A sign-in ends as soon as that person's password changes. */
+function sessionValid(session) {
+  if (!session?.email || !session.ph) return false;
+  const now = credentialFingerprint(session.email, CONFIG_PATH);
+  return Boolean(now) && session.ph === now;
+}
+
+// The link in a reset mail always points to the real site – never to whatever host a request names.
+const PUBLIC_ORIGIN = String(process.env.EICHMANN_PUBLIC_ORIGIN || "https://immobilieneichmann.de").replace(/\/+$/, "");
+
+/**
+ * "Passwort vergessen": decided and sent after the answer has gone out, so the answer is the same
+ * and equally fast whether or not the address may sign in. Growing pauses per person and per caller
+ * plus an overall hourly limit keep the form from being used to flood a mailbox.
+ */
+function queueResetMail(email, ip) {
+  setImmediate(async () => {
+    try {
+      if (!isAllowedEmail(email, CONFIG_PATH)) return;
+      const settings = readMailSettings();
+      if (!settings) return console.error(JSON.stringify({ event: "admin_reset_mail_skipped", reason: "mail_not_configured" }));
+      const slot = takeResetSlot({ email, ip });
+      if (!slot.ok) return console.log(JSON.stringify({ event: "admin_reset_mail_paused", reason: slot.reason }));
+      const token = createResetToken(email);
+      const minutes = Math.round(RESET_TTL_MS / 60_000);
+      await sendMail(settings, {
+        to: email,
+        subject: "Neues Passwort für Ihre Website-Verwaltung",
+        text: [
+          "Guten Tag,",
+          "",
+          "für die Website-Verwaltung von Immobilien Eichmann wurde ein neues Passwort angefordert.",
+          "",
+          "Mit diesem Link legen Sie Ihr neues Passwort fest:",
+          `${PUBLIC_ORIGIN}/admin/#reset=${token}`,
+          "",
+          `Der Link gilt ${minutes} Minuten und funktioniert nur einmal.`,
+          "",
+          "Sie haben das nicht angefordert? Dann müssen Sie nichts tun – Ihr Passwort bleibt, wie es ist.",
+          "",
+          "Diese Nachricht wurde automatisch verschickt. Bitte antworten Sie nicht darauf.",
+        ].join("\n"),
+      });
+      console.log(JSON.stringify({ event: "admin_reset_mail_sent", at: new Date().toISOString() }));
+    } catch (e) {
+      console.error(JSON.stringify({ event: "admin_reset_mail_failed", error: String(e?.message || e).slice(0, 120) }));
+    }
+  });
+}
+
 function requireAuth(req) {
   const cookies = parseCookies(req.headers.cookie);
   const session = verifySession(cookies[COOKIE_NAME]);
-  if (!session || !sessionMatchesPassword(session, expectPasswordHash())) {
+  if (!sessionValid(session)) {
     const err = new Error("Nicht angemeldet");
     err.status = 401;
     throw err;
@@ -536,20 +600,15 @@ async function handle(req, res) {
       const body = (await readBody(req)) || {};
       const email = normalizeEmail(body.email);
       const password = String(body.password || "");
-      const config = loadConfig();
-      if (!emailAllowed(config, email)) {
+      if (!checkLogin(email, password, CONFIG_PATH)) {
         return send(res, 401, { ok: false, error: "E-Mail-Adresse oder Passwort stimmt nicht. Bitte noch einmal versuchen." });
       }
-      const hash = sha256Hex(password);
-      const expect = expectPasswordHash();
-      if (!expect || hash !== expect) {
-        return send(res, 401, { ok: false, error: "E-Mail-Adresse oder Passwort stimmt nicht. Bitte noch einmal versuchen." });
-      }
+      clearResetPause(email);
       const token = signSession({
         email,
         exp: Date.now() + SESSION_TTL_MS,
         iat: Date.now(),
-        ph: expect,
+        ph: credentialFingerprint(email, CONFIG_PATH),
       });
       return send(
         res,
@@ -566,10 +625,48 @@ async function handle(req, res) {
     if (method === "GET" && p === "/me") {
       const cookies = parseCookies(req.headers.cookie);
       const session = verifySession(cookies[COOKIE_NAME]);
-      if (!session || !sessionMatchesPassword(session, expectPasswordHash())) {
+      if (!sessionValid(session)) {
         return send(res, 401, { ok: false, authenticated: false });
       }
       return send(res, 200, { ok: true, authenticated: true, email: session.email });
+    }
+
+    // --- Passwort vergessen (ohne Anmeldung) ---
+    if (method === "GET" && p === "/auth/options") {
+      return send(res, 200, { ok: true, reset_by_mail: Boolean(readMailSettings()) });
+    }
+
+    if (method === "POST" && p === "/password/forgot") {
+      const answer = {
+        ok: true,
+        message: "Wenn diese Adresse zur Website-Verwaltung gehört, ist jetzt eine E-Mail mit einem Link unterwegs. Bitte schauen Sie in Ihr Postfach – auch im Spam-Ordner.",
+      };
+      // too many attempts from one place get the same friendly answer – and nothing is sent
+      const fast = rateLimit(`forgot:${ip}`, { limit: 5, windowMs: 60_000 });
+      if (!sameOriginOk(req)) return send(res, 403, { ok: false, error: "Origin abgelehnt" });
+      const body = (await readBody(req)) || {};
+      const email = normalizeEmail(body.email);
+      if (fast && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) && email.length <= 200 && !body.website) queueResetMail(email, ip);
+      return send(res, 200, answer);
+    }
+
+    if (method === "POST" && (p === "/password/reset/check" || p === "/password/reset")) {
+      if (!rateLimit(`reset:${ip}`, { limit: 10, windowMs: 60_000 })) {
+        return send(res, 429, { ok: false, error: "Zu viele Versuche. Bitte warten Sie eine Minute und versuchen Sie es dann noch einmal." });
+      }
+      if (!sameOriginOk(req)) return send(res, 403, { ok: false, error: "Origin abgelehnt" });
+      const body = (await readBody(req)) || {};
+      const stale = "Dieser Link ist abgelaufen oder wurde schon benutzt. Bitte fordern Sie auf der Anmeldeseite einen neuen an.";
+      if (p === "/password/reset/check") {
+        return resetTokenOwner(String(body.token || "")) ? send(res, 200, { ok: true }) : send(res, 410, { ok: false, error: stale });
+      }
+      const problem = validateNewPassword(body.new_password, body.new_password_repeat);
+      if (problem) return send(res, 400, { ok: false, error: problem });
+      const email = resetPasswordWithToken(String(body.token || ""), String(body.new_password), { configPath: CONFIG_PATH });
+      if (!email) return send(res, 410, { ok: false, error: stale });
+      clearResetPause(email);
+      console.log(JSON.stringify({ event: "admin_password_reset_by_link", at: new Date().toISOString(), sessions_invalidated: true }));
+      return send(res, 200, { ok: true, message: "Ihr neues Passwort ist gespeichert. Bitte melden Sie sich jetzt damit an." });
     }
 
     // Everything below requires auth
@@ -594,23 +691,23 @@ async function handle(req, res) {
       const wieder = String(
         body.new_password_repeat || body.new_password_confirm || body.confirm_password || ""
       );
-      const expect = expectPasswordHash();
-      const checked = validatePasswordChange({
-        currentPassword: current,
-        newPassword: neu,
-        newPasswordRepeat: wieder,
-        expectHash: expect,
-      });
-      if (!checked.ok) {
-        return send(res, checked.status, { ok: false, error: checked.error });
+      if (!current || !neu || !wieder) {
+        return send(res, 400, { ok: false, error: "Bitte alle drei Felder ausfüllen: aktuelles Passwort, neues Passwort und Wiederholung." });
       }
-      const newHash = checked.newHash;
-      writePasswordHash(CONFIG_PATH, newHash);
+      if (!checkLogin(session.email, current, CONFIG_PATH)) {
+        return send(res, 401, { ok: false, error: "Aktuelles Passwort ist falsch." });
+      }
+      const problem = validateNewPassword(neu, wieder);
+      if (problem) return send(res, 400, { ok: false, error: problem });
+      if (neu === current) {
+        return send(res, 400, { ok: false, error: "Das neue Passwort muss sich vom bisherigen unterscheiden." });
+      }
+      setUserPassword(session.email, neu);
       const token = signSession({
         email: session.email,
         exp: Date.now() + SESSION_TTL_MS,
         iat: Date.now(),
-        ph: newHash,
+        ph: credentialFingerprint(session.email, CONFIG_PATH),
       });
       console.log(
         JSON.stringify({
