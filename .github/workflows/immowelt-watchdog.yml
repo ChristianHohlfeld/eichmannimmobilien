@@ -48,7 +48,23 @@ jobs:
         if: always() && github.event_name == 'schedule'
         env:
           GH_TOKEN: ${{ github.token }}
+        run: gh api --method PUT "repos/${{ github.repository }}/actions/workflows/immowelt-watchdog.yml/enable" || true
+      # The review in the admin area (/admin/sichtpruefung/) renews itself about once a day: this run starts
+      # "Immowelt verify live" when the last good review is older than 20 hours and none was started in the
+      # last 2 hours. Uses this run's own short-lived token – nothing is stored on the server.
+      - name: Renew the review (Sichtprüfung) when it is a day old
+        if: always() && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUNS: repos/${{ github.repository }}/actions/workflows/immowelt-verify-live.yml
         run: |
-          gh api --method PUT "repos/${{ github.repository }}/actions/workflows/immowelt-watchdog.yml/enable" || true
-          # the nightly review (Sichtprüfung) has a schedule too
-          gh api --method PUT "repos/${{ github.repository }}/actions/workflows/immowelt-verify-live.yml/enable" || true
+          set -euo pipefail
+          minutes_since() { [[ -n "$1" ]] && echo $(( ( $(date -u +%s) - $(date -u -d "$1" +%s) ) / 60 )) || echo 999999; }
+          good=$(minutes_since "$(gh api "$RUNS/runs?per_page=1&status=success" --jq '.workflow_runs[0].created_at // ""')")
+          any=$(minutes_since "$(gh api "$RUNS/runs?per_page=1" --jq '.workflow_runs[0].created_at // ""')")
+          if (( good >= 1200 && any >= 120 )); then
+            gh api --method POST "$RUNS/dispatches" -f ref=main -f 'inputs[label]=check' -f 'inputs[api]=true'
+            echo "Sichtprüfung gestartet (letzte gute vor ${good} min)." | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Sichtprüfung nicht nötig (letzte gute vor ${good} min, letzter Start vor ${any} min)."
+          fi

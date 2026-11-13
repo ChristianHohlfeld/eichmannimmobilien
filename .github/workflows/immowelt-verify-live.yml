@@ -18,11 +18,10 @@ name: Immowelt verify live (screenshots + review page)
 #
 # Results: artifact "immowelt-verify-<label>-<run id>" (kept 90 days); open verify/review/index.html.
 
+# Started by hand, or once a day by the watchdog workflow (immowelt-watchdog.yml) when the last review is
+# older than 20 hours – so the server needs no GitHub token to ask for a new one. No schedule of its own:
+# GitHub drops most scheduled starts in this repository (a nightly one did not run at all).
 on:
-  # Every night the review in the admin area (/admin/sichtpruefung/) is renewed on its own: label "check",
-  # Immowelt API read fresh. That way the server needs no GitHub token to ask for a new one.
-  schedule:
-    - cron: "23 3 * * *"
   workflow_dispatch:
     inputs:
       label:
@@ -45,11 +44,10 @@ permissions:
   contents: read
   actions: read
 
-# One set of values for both ways of starting (a nightly start has no inputs).
 env:
   LABEL: ${{ inputs.label || 'check' }}
   BASE_URL: ${{ inputs.url || 'https://immobilieneichmann.de' }}
-  USE_API: ${{ (github.event_name == 'schedule' || inputs.api) && 'true' || 'false' }}
+  USE_API: ${{ inputs.api && 'true' || 'false' }}
   BEFORE_RUN_ID: ${{ inputs.before_run_id || '' }}
 
 concurrency:

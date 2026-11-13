@@ -855,7 +855,7 @@ async function loadReviewMeta() {
     el.textContent = m
       ? `Letzte Sichtprüfung: ${new Date(m.updated_at).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })} · ${m.pages_after ?? "?"} Seiten · Datenvergleich: ${m.differences === 0 ? "keine Abweichung" : m.differences == null ? "–" : `${m.differences} Abweichung(en)`}`
       : "Noch keine Sichtprüfung auf dem Server.";
-    if (!r.can_dispatch) el.textContent += " · Wird jede Nacht automatisch erneuert.";
+    if (!r.can_dispatch) el.textContent += " · Wird täglich automatisch erneuert.";
   } catch {
     el.textContent = "";
   }

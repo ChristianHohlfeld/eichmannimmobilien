@@ -797,7 +797,7 @@ async function handle(req, res) {
         child.on("close", (code) => { clearTimeout(timer); resolve({ ok: code === 0, lines: out.split("\n").map((l) => l.trim()).filter(Boolean).slice(-20) }); });
       });
       // 2. screenshots need a browser: started as a GitHub workflow, which uploads the new review to this server
-      let review = { dispatched: false, reason: "Die Bilder werden jede Nacht automatisch erneuert. Sofort geht es in GitHub über den Workflow „Immowelt verify live“." };
+      let review = { dispatched: false, reason: "Die Bilder werden täglich automatisch erneuert. Sofort geht es in GitHub über den Workflow „Immowelt verify live“." };
       try {
         const token = String(JSON.parse(fs.readFileSync(cfg.dispatchTokenFile, "utf8")).token || "").trim();
         if (token) {
