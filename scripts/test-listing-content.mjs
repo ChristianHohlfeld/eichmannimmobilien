@@ -200,6 +200,37 @@ if (problems.length) {
   process.exit(1);
 }
 
+// Regression: the editorial buyer guides must survive the listing renderer.
+{
+  const { loadSot, sitemapStatic } = await import("./lib/sot.mjs");
+  const sot = loadSot(ROOT, { fresh: true });
+  const staticUrls = sitemapStatic(sot);
+  const xml = await readFile(path.join(ROOT, "sitemap.xml"), "utf8");
+  const lastmods = JSON.parse(await readFile(path.join(ROOT, "data/sitemap-lastmod.json"), "utf8"));
+  for (const id of ["neubauprojekte-konstanz", "kapitalanlage-konstanz"]) {
+    const file = id + ".html";
+    const loc = "/" + file;
+    const page = sot.pages.pages.find(p => p.id === id);
+    assert.ok(page, id + ": missing from SSOT");
+    assert.deepEqual(page.paths, { de: loc });
+    assert.deepEqual(page.file, { de: file });
+    assert.equal(staticUrls.filter(u => u.loc === loc).length, 1, id + ": missing or duplicate static URL");
+    const html = await readFile(path.join(ROOT, file), "utf8");
+    assert.ok(html.includes("<title>" + page.title.de + "</title>"), id + ": title drift");
+    assert.ok(html.includes('<meta name="description" content="' + page.description.de + '">'), id + ": description drift");
+    assert.equal(xml.split("<loc>https://immobilieneichmann.de" + loc + "</loc>").length, 2, id + ": missing or duplicate sitemap URL");
+    assert.match(lastmods[file]?.hash || "", /^[0-9a-f]{16}$/);
+    assert.ok(lastmods[file]?.lastmod, id + ": missing lastmod");
+    const entry = xml.split("<url>").find(part => part.startsWith("<loc>https://immobilieneichmann.de" + loc + "</loc>"));
+    assert.ok(entry, id + ": missing sitemap entry");
+    const row = entry.split("</url>")[0];
+    assert.ok(row.includes("<lastmod>" + lastmods[file].lastmod + "</lastmod>"), id + ": sitemap lastmod differs from state");
+    assert.ok(row.includes("<priority>" + page.sitemap.de.priority + "</priority>"), id + ": sitemap priority drift");
+    assert.ok(row.includes("<changefreq>" + page.sitemap.de.changefreq + "</changefreq>"), id + ": sitemap changefreq drift");
+    assert.ok(!row.includes("hreflang="), id + ": DE-only entry must not advertise alternate languages");
+  }
+}
+
 assert.ok(checked > 0, "expected at least one public detailed listing");
 console.log(
   `Listing content OK: ${checked} exposés; source fingerprint parity + duplicate guard passed.`

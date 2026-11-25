@@ -495,6 +495,48 @@
       }
     },
     {
+      "id": "neubauprojekte-konstanz",
+      "paths": {
+        "de": "/neubauprojekte-konstanz.html"
+      },
+      "file": {
+        "de": "neubauprojekte-konstanz.html"
+      },
+      "title": {
+        "de": "Neubauprojekte Konstanz | Immobilien Eichmann"
+      },
+      "description": {
+        "de": "Neubauwohnungen in Konstanz: Projekte in Allmannsdorf und Wollmatingen entdecken und die wichtigsten Fragen vor dem Kauf klären."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.8",
+          "changefreq": "weekly"
+        }
+      }
+    },
+    {
+      "id": "kapitalanlage-konstanz",
+      "paths": {
+        "de": "/kapitalanlage-konstanz.html"
+      },
+      "file": {
+        "de": "kapitalanlage-konstanz.html"
+      },
+      "title": {
+        "de": "Kapitalanlage Immobilien Konstanz | Immobilien Eichmann"
+      },
+      "description": {
+        "de": "Immobilien als Kapitalanlage in Konstanz: Kaufpreis, Miete, Hausgeld, Rücklagen und Rendite richtig vergleichen. Angebote von Immobilien Eichmann."
+      },
+      "sitemap": {
+        "de": {
+          "priority": "0.8",
+          "changefreq": "weekly"
+        }
+      }
+    },
+    {
       "id": "immobilienbewertung-konstanz",
       "paths": {
         "de": "/immobilienbewertung-konstanz.html",
