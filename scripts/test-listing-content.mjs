@@ -221,6 +221,13 @@ if (problems.length) {
     assert.equal(xml.split("<loc>https://immobilieneichmann.de" + loc + "</loc>").length, 2, id + ": missing or duplicate sitemap URL");
     assert.match(lastmods[file]?.hash || "", /^[0-9a-f]{16}$/);
     assert.ok(lastmods[file]?.lastmod, id + ": missing lastmod");
+    const entry = xml.split("<url>").find(part => part.startsWith("<loc>https://immobilieneichmann.de" + loc + "</loc>"));
+    assert.ok(entry, id + ": missing sitemap entry");
+    const row = entry.split("</url>")[0];
+    assert.ok(row.includes("<lastmod>" + lastmods[file].lastmod + "</lastmod>"), id + ": sitemap lastmod differs from state");
+    assert.ok(row.includes("<priority>" + page.sitemap.de.priority + "</priority>"), id + ": sitemap priority drift");
+    assert.ok(row.includes("<changefreq>" + page.sitemap.de.changefreq + "</changefreq>"), id + ": sitemap changefreq drift");
+    assert.ok(!row.includes("hreflang="), id + ": DE-only entry must not advertise alternate languages");
   }
 }
 
