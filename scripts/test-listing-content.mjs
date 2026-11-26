@@ -216,6 +216,14 @@ if (problems.length) {
     assert.deepEqual(page.file, { de: file });
     assert.equal(staticUrls.filter(u => u.loc === loc).length, 1, id + ": missing or duplicate static URL");
     const html = await readFile(path.join(ROOT, file), "utf8");
+    // Keep the guides tied to existing project and offer pages, not copied inventory.
+    const evidenceLinks = id === "neubauprojekte-konstanz"
+      ? ["allmannsdorf.html", "sunside-living-wollmatingen.html", "projekte.html"]
+      : ["mehrfamilienhaus-konstanz.html", "neubauprojekte-konstanz.html", "projekte.html"];
+    for (const target of evidenceLinks) {
+      assert.ok(html.includes('href="' + target + '"'), id + ": missing source link " + target);
+      await readFile(path.join(ROOT, target), "utf8");
+    }
     assert.ok(html.includes("<title>" + page.title.de + "</title>"), id + ": title drift");
     assert.ok(html.includes('<meta name="description" content="' + page.description.de + '">'), id + ": description drift");
     assert.equal(xml.split("<loc>https://immobilieneichmann.de" + loc + "</loc>").length, 2, id + ": missing or duplicate sitemap URL");
